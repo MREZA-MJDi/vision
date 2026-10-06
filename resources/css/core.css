@@ -1,0 +1,276 @@
+/* =========================================================
+   JANAN CORE
+   Shared font faces + browser normalization.
+   Imported by page-level stylesheets.
+========================================================= */
+
+@font-face {
+    font-family: 'IRANYekanX';
+    src: url('../fonts/iranyekanx/IRANYekanXVF.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 100 1000;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'IranNastaliq';
+    src: url('../fonts/nastaliq/IranNastaliq-Web.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'IRANYekanX', Tahoma, Arial, sans-serif;
+    line-height: 1.9;
+    color: #39414a;
+    background: #f8f9fa;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+svg {
+    display: block;
+    width: 1em;
+    height: 1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+ 
+/* =========================================================
+   SHARED MOBILE NAV PRIMITIVE
+========================================================= */
+.mobile-bottom-nav {
+    display: none;
+    box-sizing: border-box;
+    max-width: 620px;
+    overscroll-behavior: contain;
+    isolation: isolate;
+    -webkit-tap-highlight-color: transparent;
+}
+.mobile-bottom-nav *,
+.mobile-bottom-nav *::before,
+.mobile-bottom-nav *::after {
+    box-sizing: border-box;
+}
+.mobile-bottom-nav a {
+    min-width: 0;
+    min-height: 50px;
+    touch-action: manipulation;
+    text-decoration: none;
+}
+
+@media (max-width: 900px) {
+    .mobile-bottom-nav {
+        position: fixed;
+        right: max(10px, env(safe-area-inset-right));
+        bottom: max(10px, env(safe-area-inset-bottom));
+        left: max(10px, env(safe-area-inset-left));
+        z-index: 500;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        min-height: 64px;
+        padding: 6px;
+        border-radius: 20px;
+        box-shadow: 0 18px 44px rgba(20,28,34,.16);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .mobile-bottom-nav a {
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 3px;
+        overflow: hidden;
+        border-radius: 14px;
+        font-size: 8px;
+        line-height: 1.2;
+    }
+
+    .mobile-bottom-nav__icon,
+    .mobile-bottom-nav svg {
+        width: 18px;
+        height: 18px;
+        display: block;
+        flex: 0 0 18px;
+    }
+
+    .mobile-bottom-nav__icon {
+        display: grid;
+        place-items: center;
+        line-height: 1;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-bottom-nav {
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        left: 8px;
+        min-height: 60px;
+        padding: 5px;
+        border-radius: 18px;
+    }
+
+    .mobile-bottom-nav a {
+        min-height: 48px;
+        font-size: 7px;
+        border-radius: 13px;
+    }
+
+    .mobile-bottom-nav__icon,
+    .mobile-bottom-nav svg {
+        width: 17px;
+        height: 17px;
+        flex-basis: 17px;
+    }
+
+    .mobile-bottom-nav__icon {
+        font-size: 13px;
+    }
+}
+
+
+/* =========================================================
+   JANAN DESIGN TOKENS
+   Shared by public, customer, auth and feature layers.
+========================================================= */
+
+:root {
+/* ---------- Brand ---------- */
+
+    --janan-sky-50: #f4fbfe;
+    --janan-sky-100: #e9f7fc;
+    --janan-sky-200: #d7eff8;
+    --janan-sky-300: #b9e3f2;
+    --janan-sky-400: #98d4e9;
+    --janan-sky-500: #7bc4df;
+    --janan-sky-600: #62b2d1;
+
+    --janan-pink-50: #fff7fa;
+    --janan-pink-100: #fdf0f5;
+    --janan-pink-200: #f9e1eb;
+    --janan-pink-300: #f3c7d7;
+    --janan-pink-400: #e7a8bf;
+    --janan-pink-500: #da8ea9;
+    --janan-pink-600: #cb7694;
+
+    /* ---------- Neutral ---------- */
+
+    --janan-white: #ffffff;
+    --janan-pearl: #f8f9fa;
+    --janan-pearl-warm: #fcfbfa;
+
+    --janan-surface: rgba(255, 255, 255, .86);
+    --janan-surface-solid: #ffffff;
+
+    --janan-ink: #39414a;
+    --janan-ink-strong: #252d35;
+    --janan-ink-soft: #606b76;
+    --janan-muted: #7f8992;
+    --janan-faint: #aeb6bd;
+
+    --janan-line: rgba(57, 65, 74, .08);
+    --janan-line-strong: rgba(57, 65, 74, .14);
+
+    /* ---------- Accent ---------- */
+
+    --janan-blue-ink: #4f91ad;
+    --janan-pink-ink: #bd6783;
+
+    /* ---------- Layout ---------- */
+
+    --janan-container: 1220px;
+    --janan-container-wide: 1340px;
+    --janan-gutter: 24px;
+
+    --janan-radius-xs: 8px;
+    --janan-radius-sm: 12px;
+    --janan-radius-md: 16px;
+    --janan-radius-lg: 22px;
+    --janan-radius-xl: 30px;
+    --janan-radius-pill: 999px;
+
+    /* ---------- Shadows ---------- */
+
+    --janan-shadow-xs:
+        0 6px 16px rgba(66, 75, 83, .04);
+
+    --janan-shadow-sm:
+        0 12px 28px rgba(66, 75, 83, .055);
+
+    --janan-shadow-md:
+        0 22px 55px rgba(66, 75, 83, .075);
+
+    --janan-shadow-lg:
+        0 34px 90px rgba(66, 75, 83, .10);
+
+    /* ---------- Motion ---------- */
+
+    --janan-ease:
+        cubic-bezier(.22, .75, .26, 1);
+
+    --janan-fast: .18s;
+    --janan-base: .28s;
+    --janan-slow: .55s;
+
+    /* ---------- Typography ---------- */
+
+    --janan-font:
+        'IRANYekanX',
+        Tahoma,
+        Arial,
+        sans-serif;
+
+    --janan-display:
+        Georgia,
+        'Times New Roman',
+        serif;
+}
