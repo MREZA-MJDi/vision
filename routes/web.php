@@ -1,7 +1,250 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Admin\AdminBrandController;
+use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminChequeController;
+use App\Http\Controllers\Admin\AdminCustomerController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminFinancialController;
+use App\Http\Controllers\Admin\AdminInventoryController;
+use App\Http\Controllers\Admin\AdminMediaController;
+use App\Http\Controllers\Admin\AdminNilaController;
+use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminProductMediaController;
+use App\Http\Controllers\Admin\AdminProductVariantController;
+use App\Http\Controllers\Admin\AdminProfileController;
+use App\Http\Controllers\Admin\AdminSiteContentController;
+use App\Http\Controllers\Admin\AdminWholesaleController;
+use App\Http\Controllers\Admin\AdminWholesalePackController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check() && auth()->user()->isAdmin()
+        ? redirect()->route('admin.dashboard')
+        : redirect()->route('login');
 });
+
+Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('login');
+Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:5,1'])->name('login.store');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'admin'])
+    ->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Catalog
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('products', AdminProductController::class)
+            ->except(['show']);
+        Route::patch('products/{product}/hero', [AdminProductController::class, 'toggleHero'])
+            ->name('products.hero.toggle');
+        Route::get('products/{product}/media', [AdminProductMediaController::class, 'index'])
+            ->name('products.media.index');
+
+        Route::post('products/{product}/media', [AdminProductMediaController::class, 'store'])
+            ->name('products.media.store');
+
+        Route::patch('products/{product}/media/{media}', [AdminProductMediaController::class, 'update'])
+            ->name('products.media.update');
+
+        Route::post('products/{product}/media/reorder', [AdminProductMediaController::class, 'reorder'])
+            ->name('products.media.reorder');
+
+        Route::delete('products/{product}/media/{media}', [AdminProductMediaController::class, 'destroy'])
+            ->name('products.media.destroy');
+
+
+        Route::resource('products.variants', AdminProductVariantController::class)
+            ->except(['show']);
+        Route::get('variant-lookup', [AdminProductVariantController::class, 'lookup'])
+            ->name('variant-lookup');
+
+        Route::resource('categories', AdminCategoryController::class)
+            ->except(['show']);
+
+        Route::resource('brands', AdminBrandController::class)
+            ->except(['show']);
+
+        // Reusable media actions for brand/category/variant admin surfaces.
+        Route::post('media/{type}/{id}', [AdminMediaController::class, 'store'])
+            ->name('media.store');
+
+        Route::delete('media/{type}/{id}/{media}', [AdminMediaController::class, 'destroy'])
+            ->name('media.destroy');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Customers
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('customers', [AdminCustomerController::class, 'index'])
+            ->name('customers.index');
+
+        Route::get('wholesale', [AdminWholesaleController::class, 'index'])
+            ->name('wholesale.index');
+
+        Route::resource('wholesale-packs', AdminWholesalePackController::class)
+            ->except(['show']);
+
+        Route::patch(
+            'customers/{customer}/wholesale/approve',
+            [AdminWholesaleController::class, 'approve']
+        )->name('customers.wholesale.approve');
+
+        Route::patch(
+            'customers/{customer}/wholesale/reject',
+            [AdminWholesaleController::class, 'reject']
+        )->name('customers.wholesale.reject');
+
+        Route::patch(
+            'customers/{customer}/wholesale/terms',
+            [AdminWholesaleController::class, 'updateTerms']
+        )->name('customers.wholesale.terms');
+
+        Route::patch(
+            'customers/{customer}/wholesale/suspend',
+            [AdminWholesaleController::class, 'suspend']
+        )->name('customers.wholesale.suspend');
+
+        Route::patch(
+            'customers/{customer}/cheque/enable',
+            [AdminWholesaleController::class, 'enableCheque']
+        )->name('customers.cheque.enable');
+
+        Route::patch(
+            'customers/{customer}/cheque/reject',
+            [AdminWholesaleController::class, 'rejectCheque']
+        )->name('customers.cheque.reject');
+
+        Route::patch(
+            'customers/{customer}/cheque/disable',
+            [AdminWholesaleController::class, 'disableCheque']
+        )->name('customers.cheque.disable');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Orders
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('orders', [AdminOrderController::class, 'index'])
+            ->name('orders.index');
+
+        Route::get('orders/{order}', [AdminOrderController::class, 'show'])
+            ->name('orders.show');
+
+        Route::put('orders/{order}', [AdminOrderController::class, 'update'])
+            ->name('orders.update');
+
+        Route::get('cheques', [AdminChequeController::class, 'index'])
+            ->name('cheques.index');
+
+        Route::get('cheques/{chequePayment}/image', [AdminChequeController::class, 'image'])
+            ->name('cheques.image');
+
+        Route::patch(
+            'cheques/{chequePayment}/review',
+            [AdminChequeController::class, 'review']
+        )->name('cheques.review');
+
+        Route::patch(
+            'cheques/{chequePayment}/accept',
+            [AdminChequeController::class, 'accept']
+        )->name('cheques.accept');
+
+        Route::patch(
+            'cheques/{chequePayment}/reject',
+            [AdminChequeController::class, 'reject']
+        )->name('cheques.reject');
+
+        Route::patch(
+            'cheques/{chequePayment}/deposit',
+            [AdminChequeController::class, 'deposit']
+        )->name('cheques.deposit');
+
+        Route::patch(
+            'cheques/{chequePayment}/clear',
+            [AdminChequeController::class, 'clear']
+        )->name('cheques.clear');
+
+        Route::patch(
+            'cheques/{chequePayment}/bounce',
+            [AdminChequeController::class, 'bounce']
+        )->name('cheques.bounce');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Inventory
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('inventory', [AdminInventoryController::class, 'index'])
+            ->name('inventory.index');
+
+        Route::get('nila', [AdminNilaController::class, 'index'])
+            ->name('nila.index');
+
+        Route::post('inventory', [AdminInventoryController::class, 'store'])
+            ->name('inventory.store');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Store content / support
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('content/about', [AdminSiteContentController::class, 'about'])
+            ->name('content.about');
+
+        Route::post('content/about', [AdminSiteContentController::class, 'updateAbout'])
+            ->name('content.about.update');
+
+        Route::get('contact', [AdminSiteContentController::class, 'contact'])
+            ->name('contact.index');
+
+        Route::post('contact/settings', [AdminSiteContentController::class, 'updateContact'])
+            ->name('content.contact.update');
+
+        Route::get('contact/{message}', [AdminSiteContentController::class, 'showContact'])
+            ->name('contact.show');
+
+        Route::patch('contact/{message}/status', [AdminSiteContentController::class, 'updateContactStatus'])
+            ->name('contact.status');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Admin profile
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('profile', [AdminProfileController::class, 'edit'])
+            ->name('profile.edit');
+
+        Route::patch('profile', [AdminProfileController::class, 'update'])
+            ->name('profile.update');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Accounting
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('accounting', [AdminFinancialController::class, 'index'])
+            ->name('accounting.index');
+
+        Route::post('accounting', [AdminFinancialController::class, 'store'])
+            ->name('accounting.store');
+
+        Route::get('accounting/{transaction}', [AdminFinancialController::class, 'show'])
+            ->name('accounting.show');
+    });
