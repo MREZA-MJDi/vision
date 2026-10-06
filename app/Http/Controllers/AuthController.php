@@ -12,9 +12,9 @@ class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check()) {
-            return Auth::user()->isAdmin()
-                ? redirect()->route('admin.dashboard')
-                : redirect()->route('login');
+            abort_unless(Auth::user()->isAdmin(), 403, 'این بخش فقط برای مدیر فروشگاه است.');
+
+            return redirect()->route('admin.dashboard');
         }
 
         return view('auth.login');
