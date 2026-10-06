@@ -14,7 +14,7 @@
             </p>
         </div>
 
-        <a href="{{ route('contact') }}" target="_blank" rel="noopener" class="admin-btn admin-btn--ghost">
+        <a href="{{ route('admin.contact.index') }}" target="_blank" rel="noopener" class="admin-btn admin-btn--ghost">
             مشاهده صفحه تماس
             <span>↗</span>
         </a>
