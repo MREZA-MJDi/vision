@@ -4,22 +4,6 @@
    Imported by page-level stylesheets.
 ========================================================= */
 
-@font-face {
-    font-family: 'IRANYekanX';
-    src: url('../fonts/iranyekanx/IRANYekanXVF.woff2') format('woff2');
-    font-style: normal;
-    font-weight: 100 1000;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'IranNastaliq';
-    src: url('../fonts/nastaliq/IranNastaliq-Web.woff2') format('woff2');
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-}
-
 *,
 *::before,
 *::after {
@@ -33,7 +17,7 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: 'IRANYekanX', Tahoma, Arial, sans-serif;
+    font-family: Tahoma, Arial, sans-serif;
     line-height: 1.9;
     color: #39414a;
     background: #f8f9fa;
