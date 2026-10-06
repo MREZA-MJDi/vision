@@ -14,7 +14,7 @@
             </p>
         </div>
 
-        <a href="{{ route('about') }}" target="_blank" rel="noopener" class="admin-btn admin-btn--ghost">
+        <a href="{{ route('admin.content.about') }}" target="_blank" rel="noopener" class="admin-btn admin-btn--ghost">
             مشاهده صفحه
             <span>↗</span>
         </a>
