@@ -251,8 +251,8 @@
             </div>
 
             <div class="dashboard-v2__panel-links">
-                <a href="{{ route('seo.sitemap') }}" target="_blank" rel="noopener">مشاهده نقشه سایت XML ↗</a>
-                <a href="{{ route('seo.robots') }}" target="_blank" rel="noopener">مشاهده robots.txt ↗</a>
+                <a href="{{ '#' }}" target="_blank" rel="noopener">مشاهده نقشه سایت XML ↗</a>
+                <a href="{{ '#' }}" target="_blank" rel="noopener">مشاهده robots.txt ↗</a>
                 <a href="{{ route('admin.content.about') }}">ویرایش محتوای درباره ما ↗</a>
             </div>
         </section>
