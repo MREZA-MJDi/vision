@@ -214,8 +214,8 @@
             </div>
 
             <div class="admin-header__left">
-                <a href="{{ route('home') }}" class="admin-header-link">
-                    فروشگاه
+                <a href="{{ route('admin.dashboard') }}" class="admin-header-link">
+                    پیشخوان
                     <span aria-hidden="true">↗</span>
                 </a>
 
