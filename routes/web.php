@@ -3,7 +3,6 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\AdminBrandController;
 use App\Http\Controllers\Admin\AdminCategoryController;
-use App\Http\Controllers\Admin\AdminChequeController;
 use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminFinancialController;
@@ -16,8 +15,6 @@ use App\Http\Controllers\Admin\AdminProductMediaController;
 use App\Http\Controllers\Admin\AdminProductVariantController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSiteContentController;
-use App\Http\Controllers\Admin\AdminWholesaleController;
-use App\Http\Controllers\Admin\AdminWholesalePackController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -90,47 +87,6 @@ Route::prefix('admin')
         Route::get('customers', [AdminCustomerController::class, 'index'])
             ->name('customers.index');
 
-        Route::get('wholesale', [AdminWholesaleController::class, 'index'])
-            ->name('wholesale.index');
-
-        Route::resource('wholesale-packs', AdminWholesalePackController::class)
-            ->except(['show']);
-
-        Route::patch(
-            'customers/{customer}/wholesale/approve',
-            [AdminWholesaleController::class, 'approve']
-        )->name('customers.wholesale.approve');
-
-        Route::patch(
-            'customers/{customer}/wholesale/reject',
-            [AdminWholesaleController::class, 'reject']
-        )->name('customers.wholesale.reject');
-
-        Route::patch(
-            'customers/{customer}/wholesale/terms',
-            [AdminWholesaleController::class, 'updateTerms']
-        )->name('customers.wholesale.terms');
-
-        Route::patch(
-            'customers/{customer}/wholesale/suspend',
-            [AdminWholesaleController::class, 'suspend']
-        )->name('customers.wholesale.suspend');
-
-        Route::patch(
-            'customers/{customer}/cheque/enable',
-            [AdminWholesaleController::class, 'enableCheque']
-        )->name('customers.cheque.enable');
-
-        Route::patch(
-            'customers/{customer}/cheque/reject',
-            [AdminWholesaleController::class, 'rejectCheque']
-        )->name('customers.cheque.reject');
-
-        Route::patch(
-            'customers/{customer}/cheque/disable',
-            [AdminWholesaleController::class, 'disableCheque']
-        )->name('customers.cheque.disable');
-
         /*
         |--------------------------------------------------------------------------
         | Orders
@@ -145,42 +101,6 @@ Route::prefix('admin')
 
         Route::put('orders/{order}', [AdminOrderController::class, 'update'])
             ->name('orders.update');
-
-        Route::get('cheques', [AdminChequeController::class, 'index'])
-            ->name('cheques.index');
-
-        Route::get('cheques/{chequePayment}/image', [AdminChequeController::class, 'image'])
-            ->name('cheques.image');
-
-        Route::patch(
-            'cheques/{chequePayment}/review',
-            [AdminChequeController::class, 'review']
-        )->name('cheques.review');
-
-        Route::patch(
-            'cheques/{chequePayment}/accept',
-            [AdminChequeController::class, 'accept']
-        )->name('cheques.accept');
-
-        Route::patch(
-            'cheques/{chequePayment}/reject',
-            [AdminChequeController::class, 'reject']
-        )->name('cheques.reject');
-
-        Route::patch(
-            'cheques/{chequePayment}/deposit',
-            [AdminChequeController::class, 'deposit']
-        )->name('cheques.deposit');
-
-        Route::patch(
-            'cheques/{chequePayment}/clear',
-            [AdminChequeController::class, 'clear']
-        )->name('cheques.clear');
-
-        Route::patch(
-            'cheques/{chequePayment}/bounce',
-            [AdminChequeController::class, 'bounce']
-        )->name('cheques.bounce');
 
         /*
         |--------------------------------------------------------------------------
