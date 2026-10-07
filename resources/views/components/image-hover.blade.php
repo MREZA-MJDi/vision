@@ -15,7 +15,7 @@
     >
         @for($i = 0; $i < 10; $i++)
             <div
-                class="vision-image-hover__layer {{ $i === 0 ? 'rectangle' : '' }}"
+                class="vision-image-hover__layer rectangle"
                 aria-hidden="true"
             ></div>
         @endfor
