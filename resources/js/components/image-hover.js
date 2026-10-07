@@ -44,6 +44,7 @@ const initImageHover = (container) => {
 
             const scale = Math.max(1 - index * 0.06, 0.4);
             const rotation = index % 2 === 0 ? index * 15 : -index * 15;
+            const depth = index * 36;
 
             const from = hoveredState
                 ? {
