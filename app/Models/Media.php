@@ -42,6 +42,6 @@ class Media extends Model
             return $this->path;
         }
 
-        return route('store.media', ['path' => ltrim($this->path, '/')]);
+        return asset('storage/' . ltrim($this->path, '/'));
     }
 }
