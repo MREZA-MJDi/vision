@@ -15,7 +15,7 @@ class ProductVariant extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_id','sku','size','color','color_code','price','sale_price','wholesale_price','stock',
+        'product_id','sku','size','color','color_code','price','sale_price','stock',
         'low_stock_threshold','is_active','sort_order',
     ];
 
@@ -24,7 +24,6 @@ class ProductVariant extends Model
         return [
             'price' => 'decimal:2',
             'sale_price' => 'decimal:2',
-            'wholesale_price' => 'decimal:2',
             'stock' => 'integer',
             'low_stock_threshold' => 'integer',
             'is_active' => 'boolean',
@@ -44,7 +43,7 @@ class ProductVariant extends Model
     }
 
     /**
-     * Keep card/pack eager loading bounded to one real gallery asset per variant.
+     * Keep card eager loading bounded to one real gallery asset per variant.
      * Without ofMany(), eager loading this relation can hydrate every matching
      * gallery row even though storefront cards only consume the first image.
      */
@@ -62,7 +61,6 @@ class ProductVariant extends Model
     public function cartItems(): HasMany { return $this->hasMany(CartItem::class); }
     public function orderItems(): HasMany { return $this->hasMany(OrderItem::class); }
     public function inventoryMovements(): HasMany { return $this->hasMany(InventoryMovement::class); }
-    public function wholesalePackItems(): HasMany { return $this->hasMany(WholesalePackItem::class); }
 
     public function getEffectivePriceAttribute(): float
     {
