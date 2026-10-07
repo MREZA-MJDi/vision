@@ -303,7 +303,7 @@
                             </th>
 
                             <th>
-                                واریانت / قیمت عمده
+                                واریانت
                             </th>
 
                             <th>
@@ -486,16 +486,8 @@
                                 </td>
 
 
-                                {{-- VARIANTS / WHOLESALE PRICE --}}
-
                                 <td>
-                                    <div class="admin-price">
-                                        {{ number_format($product->variants_count) }}
-                                        <span class="admin-muted">واریانت</span>
-                                    </div>
-                                    <div class="admin-muted">
-                                        {{ number_format($product->wholesale_variants_count) }} قیمت عمده
-                                    </div>
+                                    {{ number_format($product->variants_count) }} واریانت
                                 </td>
 
 
