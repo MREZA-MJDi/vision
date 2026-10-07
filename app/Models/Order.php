@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -48,7 +47,6 @@ class Order extends Model
         'status',
         'payment_status',
         'payment_method',
-        'order_type',
         'subtotal',
         'discount',
         'shipping_cost',
@@ -95,16 +93,6 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
-    }
-
-    public function chequePayment(): HasOne
-    {
-        return $this->hasOne(ChequePayment::class);
-    }
-
-    public function isWholesale(): bool
-    {
-        return $this->order_type === 'wholesale';
     }
 
     public function scopeActiveProcessing($query)
