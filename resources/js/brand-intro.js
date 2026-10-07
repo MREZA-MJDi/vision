@@ -1,12 +1,3 @@
-/**
- * RMMajidi — Global Brand Intro
- *
- * Exact display duration:
- * 4000ms
- *
- * No external dependency.
- */
-
 (() => {
     "use strict";
 
@@ -21,17 +12,17 @@
             return;
         }
 
-        /*
-         * Prevent the intro from blocking the page after
-         * the initial display.
-         */
         document.documentElement.classList.add("rmm-intro-active");
 
+        const redirectTo = intro.dataset.redirectTo || "";
+        let completed = false;
+
         const closeIntro = () => {
-            if (!intro || intro.classList.contains("is-leaving")) {
+            if (completed || intro.classList.contains("is-leaving")) {
                 return;
             }
 
+            completed = true;
             intro.classList.add("is-leaving");
 
             window.setTimeout(() => {
@@ -44,20 +35,16 @@
                 window.dispatchEvent(
                     new CustomEvent("rmm:brand-intro:complete")
                 );
+
+                if (redirectTo) {
+                    window.location.replace(redirectTo);
+                }
             }, EXIT_DURATION);
         };
 
-        /*
-         * The complete intro lifecycle is exactly 4 seconds
-         * before the exit transition begins.
-         */
         window.setTimeout(closeIntro, DURATION);
     };
 
-    /*
-     * DOM may already be ready because Vite can load
-     * the module dynamically.
-     */
     if (document.readyState === "loading") {
         document.addEventListener(
             "DOMContentLoaded",
