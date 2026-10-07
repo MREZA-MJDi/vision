@@ -42,11 +42,7 @@ class AdminProductController extends Controller
                 'primaryActiveVariant',
                 'primaryGalleryMedia',
             ])
-            ->withCount([
-                'variants',
-                'variants as wholesale_variants_count' => fn ($query) =>
-                    $query->whereNotNull('wholesale_price'),
-            ])
+            ->withCount('variants')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $search = trim((string) $request->input('q'));
 
@@ -190,7 +186,6 @@ class AdminProductController extends Controller
                     'color_code' => $data['color_code'] ?? null,
                     'price' => $data['price'],
                     'sale_price' => $data['sale_price'] ?? null,
-                    'wholesale_price' => $data['wholesale_price'] ?? null,
                     'stock' => (int) ($data['stock'] ?? 0),
                     'low_stock_threshold' => (int) (
                         $data['low_stock_threshold'] ?? 5
@@ -305,8 +300,7 @@ class AdminProductController extends Controller
                         'color_code' => $data['color_code'] ?? null,
                         'price' => $data['price'],
                         'sale_price' => $data['sale_price'] ?? null,
-                        'wholesale_price' => $data['wholesale_price'] ?? null,
-                        'stock' => (int) ($data['stock'] ?? 0),
+                            'stock' => (int) ($data['stock'] ?? 0),
                         'low_stock_threshold' => (int) (
                             $data['low_stock_threshold'] ?? 5
                         ),
