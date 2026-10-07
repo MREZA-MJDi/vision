@@ -110,97 +110,7 @@
                 <i>01</i>
             </article>
 
-            <article class="dashboard-v2__stat">
-                <span>NET CASH</span>
-                <strong>{{ $formatFaNumber((float) $netCash) }}</strong>
-                <small>خالص جریان نقدی</small>
-                <i>02</i>
-            </article>
-
-            <article class="dashboard-v2__stat">
-                <span>ORDERS</span>
-                <strong>{{ $formatFaNumber((int) $ordersCount) }}</strong>
-                <small>{{ $formatFaNumber((int) $paidOrdersCount) }} پرداخت‌شده</small>
-                <i>03</i>
-            </article>
-
-            <article class="dashboard-v2__stat dashboard-v2__stat--accent">
-                <span>PROCESSING</span>
-                <strong>{{ $formatFaNumber($processingCount) }}</strong>
-                <small>{{ $formatFaNumber((int) $pendingOrders) }} سفارش جاری</small>
-                <i>04</i>
-            </article>
-
-            <article class="dashboard-v2__stat">
-                <span>CUSTOMERS</span>
-                <strong>{{ $formatFaNumber((int) $customers) }}</strong>
-                <small>حساب مشتری</small>
-                <i>05</i>
-            </article>
-
-            <article class="dashboard-v2__stat">
-                <span>LOW STOCK</span>
-                <strong>{{ $formatFaNumber((int) $lowStock) }}</strong>
-                <small>تنوع در محدوده هشدار</small>
-                <i>06</i>
-            </article>
-
-            <article class="dashboard-v2__stat dashboard-v2__stat--accent">
-                <span>CONTACT INBOX</span>
-                <strong>{{ $formatFaNumber((int) ($unreadContactMessages ?? 0)) }}</strong>
-                <small>پیام خوانده‌نشده</small>
-                <i>07</i>
-            </article>
-        </section>
-
-        <section class="dashboard-v2__panel" aria-label="وضعیت کاتالوگ">
-            <header class="dashboard-v2__panel-head">
-                <div>
-                    <span class="dashboard-v2__kicker">CATALOG CONTROL</span>
-                    <h2>وضعیت کاتالوگ و قیمت‌گذاری</h2>
-                    <p>تعداد واقعی محصولات، برندها، دسته‌بندی‌ها، واریانت‌ها و قیمت‌های عمده از دیتابیس.</p>
-                </div>
-                <a href="{{ route('admin.products.index') }}" class="dashboard-v2__small-link">
-                    مدیریت محصولات <span aria-hidden="true">↗</span>
-                </a>
-            </header>
-
-            <div class="dashboard-v2__stats" style="margin-top:0;">
-                <article class="dashboard-v2__stat">
-                    <span>PRODUCTS</span>
-                    <strong>{{ $formatFaNumber((int) $catalogProducts) }}</strong>
-                    <small>محصول ثبت‌شده</small>
-                    <i>01</i>
-                </article>
-
-                <article class="dashboard-v2__stat">
-                    <span>BRANDS</span>
-                    <strong>{{ $formatFaNumber((int) $catalogBrands) }}</strong>
-                    <small>برند فعال در کاتالوگ</small>
-                    <i>02</i>
-                </article>
-
-                <article class="dashboard-v2__stat">
-                    <span>CATEGORIES</span>
-                    <strong>{{ $formatFaNumber((int) $catalogCategories) }}</strong>
-                    <small>دسته‌بندی</small>
-                    <i>03</i>
-                </article>
-
-                <article class="dashboard-v2__stat">
-                    <span>VARIANTS</span>
-                    <strong>{{ $formatFaNumber((int) $catalogVariants) }}</strong>
-                    <small>واریانت فعال</small>
-                    <i>04</i>
-                </article>
-
-                <article class="dashboard-v2__stat dashboard-v2__stat--accent">
-                    <span>WHOLESALE PRICE</span>
-                    <strong>{{ $formatFaNumber((int) $catalogWholesalePricedVariants) }}</strong>
-                    <small>واریانت دارای قیمت عمده</small>
-                    <i>05</i>
-                </article>
-            </div>
+</div>
         </section>
 
         <section class="dashboard-v2__control-center" aria-label="آمادگی محتوا و SEO">
@@ -267,25 +177,7 @@
             </div>
 
             <div class="dashboard-v2__control-grid">
-                <a href="{{ route('admin.cheques.index') }}" class="dashboard-v2__control-item {{ $chequesAwaitingReview > 0 ? 'is-attention' : '' }}">
-                    <span class="dashboard-v2__control-icon">چک</span>
-                    <div>
-                        <strong>پرداخت‌های چکی</strong>
-                        <small>{{ $formatFaNumber((int) $chequesAwaitingReview) }} مورد نیازمند بررسی · {{ $formatFaNumber((float) $chequesAwaitingReviewAmount) }} تومان</small>
-                    </div>
-                    <b aria-hidden="true">←</b>
-                </a>
-
-                <a href="{{ route('admin.wholesale.index', ['status' => 'pending']) }}" class="dashboard-v2__control-item {{ $pendingWholesaleApplications > 0 ? 'is-attention' : '' }}">
-                    <span class="dashboard-v2__control-icon">عمده</span>
-                    <div>
-                        <strong>درخواست‌های عمده</strong>
-                        <small>{{ $formatFaNumber((int) $pendingWholesaleApplications) }} درخواست در انتظار تصمیم مدیریتی</small>
-                    </div>
-                    <b aria-hidden="true">←</b>
-                </a>
-
-                <a href="{{ route('admin.wholesale.index') }}#cheque-permission-requests" class="dashboard-v2__control-item {{ ($pendingChequePermissions ?? 0) > 0 ? 'is-attention' : '' }}">
+<a href="{{ route('admin.wholesale.index') }}#cheque-permission-requests" class="dashboard-v2__control-item {{ ($pendingChequePermissions ?? 0) > 0 ? 'is-attention' : '' }}">
                     <span class="dashboard-v2__control-icon">مجوز</span>
                     <div>
                         <strong>درخواست مجوز پرداخت چکی</strong>
