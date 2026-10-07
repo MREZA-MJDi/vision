@@ -46,10 +46,7 @@ final class OrderService
             $oldStatus = $order->status;
             $oldPaymentStatus = $order->payment_status;
 
-            $this->assertStatusTransition(
-                $oldStatus,
-                $newStatus
-            );
+            $this->assertStatusTransition($oldStatus, $newStatus);
 
             abort_if(
                 $newStatus === 'returned'
@@ -90,16 +87,12 @@ final class OrderService
                 'status' => $newStatus,
                 'customer_note' => $customerNote,
                 'tracking_code' => $trackingCode,
-                'shipped_at' => $this->statusTimestamp(
-                    $newStatus,
-                    'shipped_at',
-                    $order->shipped_at
-                ),
-                'delivered_at' => $this->statusTimestamp(
-                    $newStatus,
-                    'delivered_at',
-                    $order->delivered_at
-                ),
+                'shipped_at' => $newStatus === 'shipped'
+                    ? ($order->shipped_at ?? now())
+                    : $order->shipped_at,
+                'delivered_at' => $newStatus === 'delivered'
+                    ? ($order->delivered_at ?? now())
+                    : $order->delivered_at,
                 'cancelled_at' => $willBeCancelledLike
                     ? ($order->cancelled_at ?? now())
                     : $order->cancelled_at,
@@ -118,16 +111,10 @@ final class OrderService
                     'بازپرداخت باید از مسیر امن پرداخت انجام شود.'
                 );
 
-                $this->payment->matchStatus(
-                    $order,
-                    $paymentStatus
-                );
+                $this->payment->matchStatus($order, $paymentStatus);
             }
 
-            return $order->fresh([
-                'items',
-                'payments',
-            ]);
+            return $order->fresh(['items', 'payments']);
         }, 3);
     }
 
@@ -148,11 +135,7 @@ final class OrderService
                 continue;
             }
 
-            $variant->increment(
-                'stock',
-                (int) $item->quantity
-            );
-
+            $variant->increment('stock', (int) $item->quantity);
             $variant->refresh();
 
             $variant->inventoryMovements()->create([
@@ -181,17 +164,12 @@ final class OrderService
                 ->find($item->product_variant_id);
 
             abort_unless(
-                $variant
-                && $variant->stock >= $item->quantity,
+                $variant && $variant->stock >= $item->quantity,
                 422,
                 "موجودی برای فعال‌سازی مجدد سفارش «{$order->order_number}» کافی نیست."
             );
 
-            $variant->decrement(
-                'stock',
-                (int) $item->quantity
-            );
-
+            $variant->decrement('stock', (int) $item->quantity);
             $variant->refresh();
 
             $variant->inventoryMovements()->create([
@@ -206,42 +184,19 @@ final class OrderService
         }
     }
 
-    private function assertStatusTransition(
-        string $from,
-        string $to
-    ): void {
+    private function assertStatusTransition(string $from, string $to): void
+    {
         if ($from === $to) {
             return;
         }
 
         $allowed = match ($from) {
-            'pending' => [
-                'confirmed',
-                'cancelled',
-            ],
-
-            'confirmed' => [
-                'preparing',
-                'cancelled',
-            ],
-
-            'preparing' => [
-                'shipped',
-                'cancelled',
-            ],
-
-            'shipped' => [
-                'delivered',
-                'returned',
-            ],
-
-            'delivered' => [
-                'returned',
-            ],
-
-            'cancelled',
-            'returned' => [],
-
+            'pending' => ['confirmed', 'cancelled'],
+            'confirmed' => ['preparing', 'cancelled'],
+            'preparing' => ['shipped', 'cancelled'],
+            'shipped' => ['delivered', 'returned'],
+            'delivered' => ['returned'],
+            'cancelled', 'returned' => [],
             default => [],
         };
 
@@ -251,24 +206,4 @@ final class OrderService
             'تغییر وضعیت سفارش از وضعیت فعلی مجاز نیست.'
         );
     }
-
-    private function statusTimestamp(
-        string $status,
-        string $field,
-        mixed $current
-    ): mixed {
-        return match ($field) {
-            'shipped_at' => $status === 'shipped'
-                ? ($current ?? now())
-                : $current,
-
-            'delivered_at' => $status === 'delivered'
-                ? ($current ?? now())
-                : $current,
-
-            default => $current,
-        };
-    }
-
 }
-
