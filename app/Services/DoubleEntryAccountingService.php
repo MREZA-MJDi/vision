@@ -12,7 +12,6 @@ final class DoubleEntryAccountingService
     public const ACCOUNTS = [
         'cash' => ['name' => 'صندوق', 'type' => 'asset'],
         'bank' => ['name' => 'بانک', 'type' => 'asset'],
-        'cheques_receivable' => ['name' => 'اسناد دریافتنی / چک', 'type' => 'asset'],
         'accounts_receivable' => ['name' => 'حساب‌های دریافتنی', 'type' => 'asset'],
         'inventory' => ['name' => 'موجودی کالا', 'type' => 'asset'],
         'sales' => ['name' => 'فروش', 'type' => 'revenue'],
