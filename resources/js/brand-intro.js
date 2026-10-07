@@ -25,20 +25,18 @@
             completed = true;
             intro.classList.add("is-leaving");
 
+            document.documentElement.classList.remove("rmm-intro-active");
+
+            if (redirectTo) {
+                window.location.replace(redirectTo);
+                return;
+            }
+
             window.setTimeout(() => {
                 intro.remove();
-
-                document.documentElement.classList.remove(
-                    "rmm-intro-active"
-                );
-
                 window.dispatchEvent(
                     new CustomEvent("rmm:brand-intro:complete")
                 );
-
-                if (redirectTo) {
-                    window.location.replace(redirectTo);
-                }
             }, EXIT_DURATION);
         };
 
