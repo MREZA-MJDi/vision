@@ -120,11 +120,7 @@
                 نوع سفارش
             </div>
 
-            <div style="margin-top:10px;">
-                <span class="admin-badge admin-badge--{{ $order->isWholesale() ? 'info' : 'neutral' }}">
-                    {{ $order->isWholesale() ? 'عمده' : 'خرده' }}
-                </span>
-            </div>
+            <div style="margin-top:10px;"></div>
 
         </div>
 
