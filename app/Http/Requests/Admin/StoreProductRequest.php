@@ -28,9 +28,7 @@ class StoreProductRequest extends FormRequest
             'color' => $this->trimValue($this->input('color')),
             'color_code' => $this->trimValue($this->input('color_code')),
             'price' => NumericInput::normalize($this->input('price')),
-            'sale_price' => NumericInput::normalize($this->input('sale_price')),
-            'wholesale_price' => NumericInput::normalize($this->input('wholesale_price')),
-        ];
+            'sale_price' => NumericInput::normalize($this->input('sale_price')),        ];
 
         $price = $data['price'];
         $salePrice = $data['sale_price'];
@@ -211,13 +209,6 @@ class StoreProductRequest extends FormRequest
                 'max:999999999999.99',
             ],
 
-            'wholesale_price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                'max:999999999999.99',
-            ],
-
             'stock' => [
                 'required',
                 'integer',
@@ -262,9 +253,7 @@ class StoreProductRequest extends FormRequest
             'color' => 'رنگ',
             'color_code' => 'رنگ',
             'price' => 'قیمت',
-            'sale_price' => 'قیمت فروش ویژه',
-            'wholesale_price' => 'قیمت عمده',
-            'stock' => 'موجودی',
+            'sale_price' => 'قیمت فروش ویژه',            'stock' => 'موجودی',
             'low_stock_threshold' => 'حد هشدار موجودی',
             'image_file' => 'تصویر محصول',
         ];
