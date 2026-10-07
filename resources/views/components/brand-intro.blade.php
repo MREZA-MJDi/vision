@@ -1,3 +1,7 @@
+@props([
+    'redirectTo' => null,
+])
+
 @once
     @push('head')
         @vite(['resources/css/brand-intro.css'])
@@ -11,6 +15,7 @@
 <div
     id="rmm-brand-intro"
     class="rmm-brand-intro"
+    data-redirect-to="{{ $redirectTo }}"
     aria-hidden="true"
 >
     <div class="rmm-brand-intro__noise"></div>
