@@ -17,6 +17,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class AdminOperationsTest extends TestCase
@@ -582,6 +583,11 @@ class AdminOperationsTest extends TestCase
         $this->assertFalse(class_exists(\App\Models\WholesalePackItem::class));
         $this->assertFalse(class_exists(\App\Models\WholesaleProfile::class));
         $this->assertFalse(class_exists(\App\Services\ChequePaymentService::class));
+        $this->assertFalse(in_array('wholesale_price', (new ProductVariant())->getFillable(), true));
+        $this->assertFalse(in_array('order_type', (new Order())->getFillable(), true));
+        $this->assertFalse(Route::has('admin.wholesale.index'));
+        $this->assertFalse(Route::has('admin.wholesale-packs.index'));
+        $this->assertFalse(Route::has('admin.cheques.index'));
 
         $this->get('/wholesale')->assertNotFound();
         $this->get('/cheques')->assertNotFound();
