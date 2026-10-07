@@ -60,7 +60,7 @@ Route::prefix('admin')
         Route::get('contact/{message}', [AdminSiteContentController::class, 'showContact'])->name('contact.show');
         Route::patch('contact/{message}/status', [AdminSiteContentController::class, 'updateContactStatus'])->name('contact.status');
         Route::get('profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
-        Route::patch('profile', [AdminProfileController::class, 'update'])->name('admin.profile.update');
+        Route::patch('profile', [AdminProfileController::class, 'update'])->name('profile.update');
         Route::get('accounting', [AdminFinancialController::class, 'index'])->name('accounting.index');
         Route::post('accounting', [AdminFinancialController::class, 'store'])->name('accounting.store');
         Route::get('accounting/{transaction}', [AdminFinancialController::class, 'show'])->name('accounting.show');
