@@ -25,7 +25,8 @@ class UpdateProductVariantRequest extends FormRequest
             'color_code' => $this->trimValue($this->input('color_code')),
 
             'price' => $this->normalizeNumber($this->input('price')),
-            'sale_price' => $this->normalizeNumber($this->input('sale_price')),            'stock' => $this->normalizeNumber($this->input('stock')),
+            'sale_price' => $this->normalizeNumber($this->input('sale_price')),
+            'stock' => $this->normalizeNumber($this->input('stock')),
             'low_stock_threshold' => $this->normalizeNumber(
                 $this->input('low_stock_threshold')
             ),
