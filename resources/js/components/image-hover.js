@@ -52,13 +52,13 @@ const initImageHover = (container) => {
                 }
                 : {
                     opacity: 1,
-                    transform: `translate3d(0,0,0) scale(${scale}) rotateZ(${rotation}deg)`,
+                    transform: `translate3d(0,0,${depth}px) scale(${scale}) rotateZ(${rotation}deg)`,
                 };
 
             const to = hoveredState
                 ? {
                     opacity: 1,
-                    transform: `translate3d(0,0,0) scale(${scale}) rotateZ(${rotation}deg)`,
+                    transform: `translate3d(0,0,${depth}px) scale(${scale}) rotateZ(${rotation}deg)`,
                 }
                 : {
                     opacity: 0,
