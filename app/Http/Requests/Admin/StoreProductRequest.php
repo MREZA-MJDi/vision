@@ -28,7 +28,8 @@ class StoreProductRequest extends FormRequest
             'color' => $this->trimValue($this->input('color')),
             'color_code' => $this->trimValue($this->input('color_code')),
             'price' => NumericInput::normalize($this->input('price')),
-            'sale_price' => NumericInput::normalize($this->input('sale_price')),        ];
+            'sale_price' => NumericInput::normalize($this->input('sale_price')),
+        ];
 
         $price = $data['price'];
         $salePrice = $data['sale_price'];
