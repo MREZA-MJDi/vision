@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\ChequePermission;
-use App\Models\ChequePayment;
 use App\Models\ContactMessage;
 use App\Models\FinancialTransaction;
 use App\Models\IntegrationMapping;
@@ -16,7 +14,6 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
-use App\Models\WholesaleProfile;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -270,11 +267,6 @@ class AdminDashboardController extends Controller
         $catalogBrands = Brand::query()->count();
         $catalogCategories = Category::query()->count();
         $catalogVariants = ProductVariant::query()->where('is_active', true)->count();
-        $catalogWholesalePricedVariants = ProductVariant::query()
-            ->where('is_active', true)
-            ->whereNotNull('wholesale_price')
-            ->count();
-
         $productsMissingSeo = Product::query()
             ->active()
             ->where(fn ($query) => $query
@@ -307,30 +299,6 @@ class AdminDashboardController extends Controller
         /*
         |--------------------------------------------------------------------------
         | Management queues
-        |--------------------------------------------------------------------------
-        */
-
-        $chequesAwaitingReview = ChequePayment::query()
-            ->whereIn('status', ['submitted', 'under_review'])
-            ->count();
-
-        $chequesAwaitingReviewAmount = (float) ChequePayment::query()
-            ->whereIn('status', ['submitted', 'under_review'])
-            ->sum('amount');
-
-        $pendingWholesaleApplications = WholesaleProfile::query()
-            ->where('status', 'pending')
-            ->count();
-
-        $pendingChequePermissions = ChequePermission::query()
-            ->where('enabled', false)
-            ->whereNotNull('requested_at')
-            ->whereNull('disabled_at')
-            ->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Nila mapping metrics
         |--------------------------------------------------------------------------
         */
 
@@ -477,16 +445,11 @@ class AdminDashboardController extends Controller
                 'catalogBrands' => $catalogBrands,
                 'catalogCategories' => $catalogCategories,
                 'catalogVariants' => $catalogVariants,
-                'catalogWholesalePricedVariants' => $catalogWholesalePricedVariants,
                 'productsMissingSeo' => $productsMissingSeo,
                 'productsMissingImage' => $productsMissingImage,
                 'categoriesMissingSeo' => $categoriesMissingSeo,
                 'brandsMissingSeo' => $brandsMissingSeo,
 
-                'chequesAwaitingReview' => $chequesAwaitingReview,
-                'chequesAwaitingReviewAmount' => $chequesAwaitingReviewAmount,
-                'pendingWholesaleApplications' => $pendingWholesaleApplications,
-                'pendingChequePermissions' => $pendingChequePermissions,
 
                 'nilaProductMappings' => $nilaProductMappings,
                 'nilaVariantMappings' => $nilaVariantMappings,
