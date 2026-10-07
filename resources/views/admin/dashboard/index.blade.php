@@ -177,16 +177,7 @@
             </div>
 
             <div class="dashboard-v2__control-grid">
-<a href="{{ route('admin.wholesale.index') }}#cheque-permission-requests" class="dashboard-v2__control-item {{ ($pendingChequePermissions ?? 0) > 0 ? 'is-attention' : '' }}">
-                    <span class="dashboard-v2__control-icon">مجوز</span>
-                    <div>
-                        <strong>درخواست مجوز پرداخت چکی</strong>
-                        <small>{{ $formatFaNumber((int) ($pendingChequePermissions ?? 0)) }} درخواست در انتظار تأیید مدیر</small>
-                    </div>
-                    <b aria-hidden="true">←</b>
-                </a>
-
-                <a href="{{ route('admin.inventory.index') }}" class="dashboard-v2__control-item {{ $lowStock > 0 ? 'is-attention' : '' }}">
+<a href="{{ route('admin.inventory.index') }}" class="dashboard-v2__control-item {{ $lowStock > 0 ? 'is-attention' : '' }}">
                     <span class="dashboard-v2__control-icon">انبار</span>
                     <div>
                         <strong>کنترل موجودی</strong>
