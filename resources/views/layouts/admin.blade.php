@@ -23,81 +23,7 @@
 
     <aside class="admin-sidebar" data-admin-sidebar>
         <div class="admin-brand">
-            <a href="{{ route('admin.dashboard') }}" class="admin-brand__main">
-                <span class="admin-brand__name">VISION</span>
-                <span class="admin-brand__sub">ADMIN / STORE</span>
-            </a>
-
-            <span class="admin-brand__status">
-                <i aria-hidden="true"></i>
-                LIVE
-            </span>
-        </div>
-
-        <nav class="admin-menu" aria-label="منوی مدیریت">
-
-            <span class="admin-menu-label">نمای کلی</span>
-
-            <a
-                href="{{ route('admin.dashboard') }}"
-                class="admin-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
-                @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif
-            >
-                <span class="admin-link-icon">⌂</span>
-                <span>داشبورد</span>
-            </a>
-
-            <span class="admin-menu-label">فروشگاه</span>
-
-            <a
-                href="{{ route('admin.products.index') }}"
-                class="admin-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">◈</span>
-                <span>محصولات</span>
-            </a>
-
-            <a
-                href="{{ route('admin.categories.index') }}"
-                class="admin-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">▦</span>
-                <span>دسته‌بندی‌ها</span>
-            </a>
-
-            <a
-                href="{{ route('admin.brands.index') }}"
-                class="admin-link {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">◇</span>
-                <span>برندها</span>
-            </a>
-
-            <a
-                href="{{ route('admin.customers.index') }}"
-                class="admin-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">◉</span>
-                <span>مشتریان</span>
-            </a>
-
-            <a
-                href="{{ route('admin.orders.index') }}"
-                class="admin-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">◫</span>
-                <span>سفارش‌ها</span>
-            </a>
-
-            <a
-                href="{{ route('admin.wholesale.index') }}"
-                class="admin-link {{ request()->routeIs('admin.wholesale.*') || request()->routeIs('admin.customers.wholesale.*') || request()->routeIs('admin.customers.cheque.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">ع</span>
-                <span>عمده و مجوز چک</span>
-            </a>
-
-            <a
+<a
                 href="{{ route('admin.wholesale-packs.index') }}"
                 class="admin-link {{ request()->routeIs('admin.wholesale-packs.*') ? 'active' : '' }}"
             >
@@ -105,15 +31,7 @@
                 <span>پک‌های عمده</span>
             </a>
 
-            <a
-                href="{{ route('admin.cheques.index') }}"
-                class="admin-link {{ request()->routeIs('admin.cheques.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">▣</span>
-                <span>پرداخت‌های چکی</span>
-            </a>
-
-            <a
+<a
                 href="{{ route('admin.contact.index') }}"
                 class="admin-link {{ request()->routeIs('admin.contact.*') ? 'active' : '' }}"
             >
