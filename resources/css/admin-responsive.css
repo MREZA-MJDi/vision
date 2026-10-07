@@ -750,10 +750,6 @@
 }
 
 @media (max-width: 700px) {
-    .admin-wholesale-cheque {
-        align-items: stretch;
-        flex-direction: column;
-    }
 
     .admin-inline-form {
         align-items: stretch;
