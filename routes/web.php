@@ -19,10 +19,10 @@ use App\Http\Controllers\Admin\AdminSiteContentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return auth()->check() && auth()->user()->isAdmin()
-        ? redirect()->route('admin.dashboard')
-        : app(HomeController::class)();
-})->name('home');
+    return view('intro');
+})->name('intro');
+
+Route::get('/home', HomeController::class)->name('home');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:5,1'])->name('login.store');
@@ -60,7 +60,7 @@ Route::prefix('admin')
         Route::get('contact/{message}', [AdminSiteContentController::class, 'showContact'])->name('contact.show');
         Route::patch('contact/{message}/status', [AdminSiteContentController::class, 'updateContactStatus'])->name('contact.status');
         Route::get('profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
-        Route::patch('profile', [AdminProfileController::class, 'update'])->name('profile.update');
+        Route::patch('profile', [AdminProfileController::class, 'update'])->name('admin.profile.update');
         Route::get('accounting', [AdminFinancialController::class, 'index'])->name('accounting.index');
         Route::post('accounting', [AdminFinancialController::class, 'store'])->name('accounting.store');
         Route::get('accounting/{transaction}', [AdminFinancialController::class, 'show'])->name('accounting.show');
