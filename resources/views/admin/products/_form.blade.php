@@ -621,12 +621,7 @@
                     اگر تخفیف ندارید خالی بگذارید. اگر بیشتر از قیمت اصلی باشد، نادیده گرفته می‌شود.
                 </small>
 
-            </div>
-
-
-            {{-- Wholesale price --}}
-
-            <div class="admin-field">
+            </div>div class="admin-field">
 
                 <label for="wholesale_price">
                     قیمت عمده
