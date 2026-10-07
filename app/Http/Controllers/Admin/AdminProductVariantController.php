@@ -23,7 +23,6 @@ class AdminProductVariantController extends Controller
             ->with(['product:id,name,slug,brand_id', 'product.brand:id,name'])
             ->where('is_active', true)
             ->whereHas('product', fn ($query) => $query->where('is_active', true))
-            ->when($request->boolean('wholesale'), fn ($query) => $query->whereNotNull('wholesale_price'))
             ->when($term !== '', function ($query) use ($term): void {
                 $query->where(function ($query) use ($term): void {
                     $query->where('sku', 'like', "%{$term}%")
@@ -52,7 +51,6 @@ class AdminProductVariantController extends Controller
                 'color' => $variant->color,
                 'display_name' => $variant->display_name,
                 'stock' => (int) $variant->stock,
-                'wholesale_price' => $variant->wholesale_price,
             ])->values(),
             'next_page_url' => $variants->nextPageUrl(),
             'current_page' => $variants->currentPage(),
