@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#070707">
+    <meta name="theme-color" content="#050505">
     <title>@yield('title', config('app.name', 'Vision'))</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
