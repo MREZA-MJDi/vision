@@ -23,6 +23,13 @@
 
     <aside class="admin-sidebar" data-admin-sidebar>
         <div class="admin-brand">
+<a
+                href="{{ route('admin.wholesale-packs.index') }}"
+                class="admin-link {{ request()->routeIs('admin.wholesale-packs.*') ? 'active' : '' }}"
+            >
+                <span class="admin-link-icon">▤</span>
+                <span>پک‌های عمده</span>
+            </a>
 
 <a
                 href="{{ route('admin.contact.index') }}"
@@ -66,10 +73,14 @@
                 <span>حسابداری</span>
             </a>
 
-            </nav>
+            <a href="{{ route('dashboard.guide') }}" class="admin-link">
+                <span class="admin-link-icon">؟</span>
+                <span>راهنمای استفاده از پنل</span>
+            </a>
+        </nav>
 
         <div class="admin-sidebar-footer">
-            <form method="POST" action="{{ route('logout') }}">
+    <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="admin-side-action admin-side-action--logout">
                     <span>↪</span>
@@ -125,12 +136,8 @@
             </div>
 
             <div class="admin-header__left">
-                <a href="{{ route('admin.dashboard') }}" class="admin-header-link">
-                    پیشخوان
-                    <span aria-hidden="true">↗</span>
-                </a>
-
-                <a
+                <a href="{{ route('admin.dashboard') }}" class="admin-header-link">داشبورد <span aria-hidden="true">↗</span></a>
+<a
                     href="{{ route('admin.profile.edit') }}"
                     class="admin-user admin-user--link"
                     title="پروفایل مدیر"
