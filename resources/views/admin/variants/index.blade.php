@@ -165,7 +165,6 @@
                             قیمت ویژه
                         </th>
                         <th>
-                            قیمت عمده
                         </th>
 
                         <th>
@@ -327,16 +326,6 @@
                             </td>
 
 
-                            {{-- WHOLESALE PRICE --}}
-
-                            <td>
-                                @if($variant->wholesale_price !== null)
-                                    <div class="admin-price">{{ number_format((float) $variant->wholesale_price) }}</div>
-                                    <div class="admin-muted">تومان</div>
-                                @else
-                                    <span class="admin-muted">ثبت نشده</span>
-                                @endif
-                            </td>
 
                             {{-- STOCK --}}
 
