@@ -23,13 +23,6 @@
 
     <aside class="admin-sidebar" data-admin-sidebar>
         <div class="admin-brand">
-<a
-                href="{{ route('admin.wholesale-packs.index') }}"
-                class="admin-link {{ request()->routeIs('admin.wholesale-packs.*') ? 'active' : '' }}"
-            >
-                <span class="admin-link-icon">▤</span>
-                <span>پک‌های عمده</span>
-            </a>
 
 <a
                 href="{{ route('admin.contact.index') }}"
