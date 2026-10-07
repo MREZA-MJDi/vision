@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 final class OrderService
 {
+    public function __construct(
+        private readonly PaymentService $payment,
+    ) {
+    }
+
     public function updateStatus(
         Order $order,
         string $newStatus,
@@ -201,45 +206,6 @@ final class OrderService
         }
     }
 
-    private function resolveAddressId(
-        ?int $addressId,
-        ?User $user
-    ): ?int {
-        if (! $addressId) {
-            return null;
-        }
-
-        abort_unless(
-            $user
-            && Address::query()
-                ->whereKey($addressId)
-                ->where('user_id', $user->id)
-                ->exists(),
-            422,
-            'آدرس انتخاب‌شده معتبر نیست.'
-        );
-
-        return $addressId;
-    }
-
-    private function variantName(
-        ProductVariant $variant
-    ): ?string {
-        $parts = array_values(array_filter([
-            $variant->size
-                ? "سایز {$variant->size}"
-                : null,
-
-            $variant->color
-                ? "رنگ {$variant->color}"
-                : null,
-        ]));
-
-        return $parts
-            ? implode(' / ', $parts)
-            : null;
-    }
-
     private function assertStatusTransition(
         string $from,
         string $to
@@ -304,33 +270,5 @@ final class OrderService
         };
     }
 
-    private function nullableString(mixed $value): ?string
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $value = trim($value);
-
-        return $value !== ''
-            ? $value
-            : null;
-    }
-
-    private function orderNumber(): string
-    {
-        do {
-            $number = 'JN-'
-                . now()->format('Ymd')
-                . '-'
-                . Str::upper(Str::random(6));
-        } while (
-            Order::query()
-                ->where('order_number', $number)
-                ->exists()
-        );
-
-        return $number;
-    }
 }
 
