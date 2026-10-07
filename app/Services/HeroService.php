@@ -37,25 +37,17 @@ final class HeroService
             5,
             function () use ($product): bool {
                 return DB::transaction(function () use ($product): bool {
-                    $current = Product::query()
-                        ->whereKey($product->getKey())
-                        ->lockForUpdate()
-                        ->firstOrFail();
+                    $current = Product::query()->whereKey($product->getKey())->lockForUpdate()->firstOrFail();
 
                     if (! $current->is_hero) {
-                        $heroCount = Product::query()
-                            ->where('is_hero', true)
-                            ->lockForUpdate()
-                            ->count();
+                        $heroCount = Product::query()->where('is_hero', true)->lockForUpdate()->count();
 
                         if ($heroCount >= self::MAX_SLIDES) {
                             throw new RuntimeException('hero_limit');
                         }
                     }
 
-                    $current->update([
-                        'is_hero' => ! $current->is_hero,
-                    ]);
+                    $current->update(['is_hero' => ! $current->is_hero]);
 
                     return (bool) $current->is_hero;
                 });
@@ -69,43 +61,23 @@ final class HeroService
 
     public function invalidate(): void
     {
-        Cache::put(
-            self::VERSION_KEY,
-            (string) Str::uuid(),
-            now()->addYear()
-        );
+        Cache::put(self::VERSION_KEY, (string) Str::uuid(), now()->addYear());
     }
 
     private function loadSlides(): array
     {
         return Product::query()
-            ->select([
-                'id',
-                'brand_id',
-                'category_id',
-                'name',
-                'slug',
-                'short_description',
-                'description',
-                'sort_order',
-            ])
+            ->select(['id', 'brand_id', 'category_id', 'name', 'slug', 'short_description', 'description', 'sort_order'])
             ->where('is_active', true)
             ->where('is_hero', true)
-            ->with([
-                'brand:id,name',
-                'brand.logoMedia',
-                'category:id,name',
-                'primaryGalleryMedia',
-            ])
+            ->with(['brand:id,name', 'brand.logoMedia', 'category:id,name', 'primaryGalleryMedia'])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->limit(self::MAX_SLIDES)
             ->get()
             ->values()
             ->map(function (Product $product, int $index): array {
-                $description = trim((string) (
-                    $product->short_description ?: $product->description
-                ));
+                $description = trim((string) ($product->short_description ?: $product->description));
 
                 if ($description === '') {
                     $description = $product->category?->name
@@ -116,12 +88,11 @@ final class HeroService
                 return [
                     'id' => $product->getKey(),
                     'number' => str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT),
-                    'image' => $product->primaryGalleryMedia?->url
-                        ?: $product->brand?->logoMedia?->url,
+                    'image' => $product->primaryGalleryMedia?->url ?: $product->brand?->logoMedia?->url,
                     'title' => $product->name,
                     'description' => Str::limit($description, 220),
                     'brand' => $product->brand?->name ?? 'JANAN',
-                    'url' => route('products.show', $product),
+                    'url' => url('/products/' . $product->slug),
                 ];
             })
             ->all();
