@@ -1,0 +1,107 @@
+:root {
+    --vision-hover-depth: 36px;
+    --vision-hover-scale: .07;
+    --vision-hover-tilt: 45deg;
+    --vision-hover-pan: 88px;
+    --vision-hover-stagger: 70ms;
+}
+
+.vision-image-hover {
+    --vision-hover-radius: 0px;
+    position: relative;
+    width: min(100%, 680px);
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: var(--vision-hover-radius);
+    cursor: pointer;
+    touch-action: pan-y;
+    contain: layout paint style;
+    transform: translateZ(0);
+}
+
+.vision-image-hover__stack {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    will-change: transform;
+}
+
+.vision-image-hover__layer {
+    position: absolute;
+    inset: 0;
+    background-image: var(--vision-image);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    backface-visibility: hidden;
+    transform: translate3d(0, 0, 0) scale(.95);
+    opacity: 0;
+    will-change: transform, opacity;
+    pointer-events: none;
+}
+
+.vision-image-hover__layer:first-child {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+.vision-image-hover__layer.rectangle {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.vision-image-hover__layer.circle {
+    clip-path: circle(45% at 50% 50%);
+}
+
+.vision-image-hover__layer.diamond {
+    clip-path: polygon(50% 0, 14.1% 50%, 50% 100%, 85.9% 50%);
+}
+
+.vision-image-hover__layer.hexagon {
+    clip-path: polygon(
+        25% 6.7%, 75% 6.7%, 100% 50%,
+        75% 93.3%, 25% 93.3%, 0 50%
+    );
+}
+
+.vision-image-hover.is-3d {
+    overflow: visible;
+    perspective: 1600px;
+    perspective-origin: 50% 50%;
+}
+
+.vision-image-hover.is-3d .vision-image-hover__stack {
+    transform-style: preserve-3d;
+}
+
+.vision-image-hover:focus-visible {
+    outline: 1px solid rgba(255,255,255,.72);
+    outline-offset: 8px;
+}
+
+@media (max-width: 900px) {
+    .vision-image-hover {
+        width: min(100%, 560px);
+    }
+}
+
+@media (max-width: 640px) {
+    .vision-image-hover {
+        width: 100%;
+        max-width: 430px;
+    }
+
+    .vision-image-hover.is-3d {
+        perspective: 1100px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vision-image-hover__layer,
+    .vision-image-hover__stack {
+        will-change: auto;
+        transition: none !important;
+        animation: none !important;
+    }
+}
