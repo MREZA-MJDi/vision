@@ -3543,12 +3543,3 @@ body.admin-nav-open {
     margin-bottom: 10px;
 }
 
-.admin-wholesale-pack-search {
-    width: 100%;
-    margin-bottom: 14px;
-}
-
-.admin-wholesale-pack-list {
-    display: grid;
-    gap: 8px;
-}
