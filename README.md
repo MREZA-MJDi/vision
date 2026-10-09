@@ -2,6 +2,9 @@
 
 Vision is a Laravel application focused on the administration side of a commerce system. Its current routes include admin dashboard, brands, categories, customers, financial operations, inventory, media, products, product variants, orders, and site content. This repository is a separate project from `psychic-spork`; its README describes only the code present here, not features that may exist in another repository.
 
+## Dedicated admin dashboard
+Vision has its own dedicated administration dashboard for the modules implemented in this repository, including products, categories, customers, orders, inventory, media, and financial operations. Keep its scope distinct from other repositories and verify each workflow through tests before production use.
+
 ## Stack
 - PHP `^8.2`, Laravel `^12.0`
 - Blade, Vite and Eloquent
