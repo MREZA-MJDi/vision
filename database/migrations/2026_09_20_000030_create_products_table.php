@@ -47,6 +47,10 @@ return new class extends Migration
                 ->default(false)
                 ->index();
 
+            $table->boolean('is_hero')
+                ->default(false)
+                ->index();
+
             $table->unsignedInteger('sort_order')
                 ->default(0);
 
