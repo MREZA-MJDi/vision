@@ -19,16 +19,8 @@
             </div>
         </div>
         <div class="fashion-hero__visual">
-            @php
-                $heroProduct = $heroProducts->first();
-                $heroImage = $heroProduct?->primaryGalleryMedia?->url;
-            @endphp
             <div class="hero-image hero-image--main">
-                @if($heroImage)
-                    <img src="{{ $heroImage }}" alt="{{ $heroProduct->name }}" fetchpriority="high">
-                @else
-                    <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=85" alt="Fashion editorial look" fetchpriority="high">
-                @endif
+                <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=85" alt="Fashion editorial look" fetchpriority="high">
                 <div class="hero-image__label"><span>VISION / STUDIO</span><span>FW — 026</span></div>
             </div>
             <div class="hero-image hero-image--detail">
