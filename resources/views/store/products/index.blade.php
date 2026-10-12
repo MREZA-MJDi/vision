@@ -17,9 +17,9 @@
                 <div class="catalog-search"><input id="catalog-search" type="search" name="q" value="{{ request('q') }}" placeholder="Try “bag”, “heel”..."><button type="submit" aria-label="Search">↗</button></div>
                 <div class="filter-block">
                     <span>CATEGORY</span>
-                    <a href="{{ route('products.index', request()->except('category', 'page')) }}" class="{{ request('category') ? '' : 'is-active' }}">Everything <small>{{ $products->total() }}</small></a>
+                    <a href="{{ route('products.index', request()->except(['category', 'page'])) }}" class="{{ request('category') ? '' : 'is-active' }}">Everything <small>{{ $products->total() }}</small></a>
                     @foreach($categories as $category)
-                        <a href="{{ route('products.index', array_merge(request()->except('page'), ['category' => $category->slug])) }}" class="{{ request('category') === $category->slug ? 'is-active' : '' }}">{{ $category->name }} <span>↗</span></a>
+                        <a href="{{ route('products.index', array_merge(request()->except(['page']), ['category' => $category->slug])) }}" class="{{ request('category') === $category->slug ? 'is-active' : '' }}">{{ $category->name }} <span>↗</span></a>
                     @endforeach
                 </div>
                 <div class="filter-block">
@@ -32,7 +32,7 @@
             </form>
         </aside>
         <div class="catalog-results">
-            <div class="catalog-toolbar"><span>SHOWING {{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }} OF {{ $products->total() }}</span><form method="get" action="{{ route('products.index') }}">@foreach(request()->except('sort','page') as $key => $value)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endforeach<label for="catalog-sort">SORT BY</label><select id="catalog-sort" name="sort" onchange="this.form.submit()"><option value="newest" @selected($sort === 'newest')>Latest arrivals</option><option value="price_asc" @selected($sort === 'price_asc')>Price: low to high</option><option value="price_desc" @selected($sort === 'price_desc')>Price: high to low</option></select></form></div>
+            <div class="catalog-toolbar"><span>SHOWING {{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }} OF {{ $products->total() }}</span><form method="get" action="{{ route('products.index') }}">@foreach(request()->except(['sort', 'page']) as $key => $value)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endforeach<label for="catalog-sort">SORT BY</label><select id="catalog-sort" name="sort" onchange="this.form.submit()"><option value="newest" @selected($sort === 'newest')>Latest arrivals</option><option value="price_asc" @selected($sort === 'price_asc')>Price: low to high</option><option value="price_desc" @selected($sort === 'price_desc')>Price: high to low</option></select></form></div>
             @if($products->isNotEmpty())
                 <div class="product-grid product-grid--catalog">
                     @foreach($products as $product)
