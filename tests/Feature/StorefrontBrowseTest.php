@@ -2,9 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Brand;
 use App\Models\Category;
-use App\Models\Media;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,7 +80,6 @@ class StorefrontBrowseTest extends TestCase
         ProductVariant::create([
             'product_id' => $product->id,
             'sku' => 'VISION-BAG-001',
-            'size' => null,
             'color' => 'Tan',
             'price' => 12900,
             'sale_price' => 10900,
@@ -94,7 +91,7 @@ class StorefrontBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee('The Everyday Icon');
         $response->assertSee('An everyday statement.');
-        $response->assertSee('10900');
+        $response->assertSee('10,900');
 
         $product->update(['is_active' => false]);
         $this->get('/products/the-everyday-icon')->assertNotFound();
