@@ -13,7 +13,7 @@
     @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/js/app.js', 'resources/js/storefront.js'])
     @stack('head')
 </head>
-<body class="storefront-body">
+<body id="top" class="storefront-body">
     <div class="announcement-bar"><span>THE NEW SEASON HAS ARRIVED</span><span class="announcement-bar__center">COMPLIMENTARY SHIPPING ON ORDERS OVER $150</span><span>DISCOVER YOUR NEXT ICON&nbsp; ↗</span></div>
     <header class="store-header" data-store-header>
         <button class="store-header__menu" type="button" data-menu-toggle aria-expanded="false" aria-label="Open menu"><span></span><span></span></button>
