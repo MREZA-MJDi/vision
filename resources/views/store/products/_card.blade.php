@@ -5,7 +5,7 @@
     $isSale = $variant?->is_on_sale;
 @endphp
 <article class="product-card">
-    <a class="product-card__image" href="{{ route('products.show', $product) }}" aria-label="View {{ $product->name }}">
+    <a class="product-card__image" href="{{ route('products.show', ['product' => $product->slug]) }}" aria-label="View {{ $product->name }}">
         @if($image)
             <img src="{{ $image }}" alt="{{ $product->name }}" loading="lazy" decoding="async">
         @else
@@ -16,7 +16,7 @@
         <span class="product-card__quick">VIEW PIECE ↗</span>
     </a>
     <div class="product-card__meta">
-        <div><span>{{ $product->brand?->name ?? $product->category?->name ?? 'VISION STUDIO' }}</span><h3><a href="{{ route('products.show', $product) }}">{{ $product->name }}</a></h3></div>
+        <div><span>{{ $product->brand?->name ?? $product->category?->name ?? 'VISION STUDIO' }}</span><h3><a href="{{ route('products.show', ['product' => $product->slug]) }}">{{ $product->name }}</a></h3></div>
         <div class="product-price">
             @if($price !== null)
                 @if($isSale)<del>{{ number_format((float) $variant->price, 0) }}</del>@endif
