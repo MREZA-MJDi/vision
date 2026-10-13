@@ -227,8 +227,20 @@ class OrderController
             [$model->status],
             Order::STATUS_TRANSITIONS[$model->status] ?? []
         )));
+        $paymentTransitions = [
+            'pending' => ['paid', 'failed'],
+            'failed' => ['pending', 'paid'],
+            'paid' => ['refunded'],
+            'refunded' => [],
+        ];
+        $availablePaymentStatuses = array_values(array_unique(array_merge(
+            [$model->payment_status],
+            $paymentTransitions[$model->payment_status] ?? []
+        )));
 
-        return view('commerce-admin::orders.show', compact('model', 'items', 'availableStatuses'));
+        return view('commerce-admin::orders.show', compact(
+            'model', 'items', 'availableStatuses', 'availablePaymentStatuses'
+        ));
     }
 
     public function updateStatus(Request $request, int $order): RedirectResponse
