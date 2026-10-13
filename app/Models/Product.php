@@ -17,7 +17,7 @@ class Product extends Model
 
     protected $fillable = [
         'category_id','brand_id','name','slug','short_description','description','attributes',
-        'meta_title','meta_description','is_active','is_featured','is_hero','sort_order',
+        'meta_title','meta_description','is_active','is_featured','is_hero','is_taxable','sort_order',
     ];
 
     protected function casts(): array
@@ -27,6 +27,7 @@ class Product extends Model
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
             'is_hero' => 'boolean',
+            'is_taxable' => 'boolean',
             'sort_order' => 'integer',
         ];
     }
@@ -57,6 +58,13 @@ class Product extends Model
             ['sort_order' => 'min', 'id' => 'min'],
             fn ($query) => $query->where('is_active', true)
         );
+    }
+
+    public function reviews(): HasMany { return $this->hasMany(ProductReview::class); }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->reviews()->where('status', 'approved');
     }
 
     public function orderItems(): HasMany { return $this->hasMany(OrderItem::class); }
