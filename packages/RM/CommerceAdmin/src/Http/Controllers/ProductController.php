@@ -80,7 +80,7 @@ class ProductController
                 ->whereColumn('stock', '<=', 'low_stock_threshold'));
         } elseif ($status === 'sale') {
             $query->whereHas('variants', fn ($variants) => $variants
-                ->whereNotNull('sale_price')->whereColumn('sale_price', '<', 'price'));
+                ->whereNotNull('sale_price')->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price'));
         }
 
         $products = $query->orderByDesc('created_at')
@@ -99,7 +99,7 @@ class ProductController
             'low_stock' => $variantModel::query()->where('is_active', true)
                 ->whereColumn('stock', '<=', 'low_stock_threshold')->count(),
             'discounted' => $variantModel::query()->whereNotNull('sale_price')
-                ->whereColumn('sale_price', '<', 'price')->count(),
+                ->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price')->count(),
             'units_sold' => $orderItemModel::query()->sum('quantity'),
         ];
 
