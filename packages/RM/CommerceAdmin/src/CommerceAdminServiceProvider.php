@@ -1,9 +1,9 @@
 <?php
 
-namespace Rm\\CommerceAdmin;
+namespace Rm\CommerceAdmin;
 
-use Illuminate\\Support\\ServiceProvider;
-use Rm\\CommerceAdmin\\Console\\MakeAdminCommand;
+use Illuminate\Support\ServiceProvider;
+use Rm\CommerceAdmin\Console\MakeAdminCommand;
 
 class CommerceAdminServiceProvider extends ServiceProvider
 {
