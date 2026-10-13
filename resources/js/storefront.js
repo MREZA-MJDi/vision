@@ -391,9 +391,6 @@
     root.querySelector('[data-fitting-reset]')?.addEventListener('click', () => {
         picks.clear();
         currentSelection = null;
-        fittingName && (fittingName.textContent = 'Choose a piece');
-        fittingDescription && (fittingDescription.textContent = 'Select the fit icon on any product to preview it here.');
-        fittingPrice && (fittingPrice.textContent = 'Waiting for your edit');
         updatePreviewImage(null);
         root.querySelectorAll('[data-fit-product]').forEach((button) => {
             button.classList.remove('is-active');
@@ -403,8 +400,4 @@
         showToast('Fitting room reset.');
     });
 
-    if (currentSelection) {
-        selectProduct(currentSelection);
-        renderPicks();
-    }
 })();
