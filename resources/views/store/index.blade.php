@@ -64,7 +64,7 @@
                             <span>SELECT A PIECE<br>TO START YOUR PREVIEW</span>
                         </div>
                     </div>
-                    <div class="fitting-preview__footer"><span>YOUR CANVAS</span><span>01 / 05</span></div>
+                    <div class="fitting-preview__footer"><span>YOUR CANVAS</span><span data-fitting-canvas-count>00 / 05</span></div>
                 </div>
 
                 <div class="fitting-picks">
@@ -75,7 +75,7 @@
                 </div>
 
                 <button class="fitting-room__action" type="button" data-fitting-action disabled>
-                    <span>Add to your edit</span><span class="fitting-room__action-icon" aria-hidden="true">↗</span>
+                    <span>Add another piece</span><span class="fitting-room__action-icon" aria-hidden="true">↗</span>
                 </button>
                 <p class="fitting-room__note">Add another piece and it goes on top.</p>
                 <div class="fitting-room__footer-actions">
