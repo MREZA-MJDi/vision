@@ -12,6 +12,7 @@
     const fittingDescription = root.querySelector('[data-fitting-description]');
     const fittingPrice = root.querySelector('[data-fitting-price]');
     const fittingLookNumber = root.querySelector('[data-fitting-look-number]');
+    const fittingCanvasCount = root.querySelector('[data-fitting-canvas-count]');
     const fittingPicks = root.querySelector('[data-fitting-picks]');
     const fittingPickCount = root.querySelector('[data-fitting-pick-count]');
     const fittingAction = root.querySelector('[data-fitting-action]');
@@ -134,6 +135,7 @@
         if (fittingDescription) fittingDescription.textContent = product.description || 'A considered piece from the latest edit.';
         if (fittingPrice) fittingPrice.textContent = product.price || 'Price unavailable';
         if (fittingLookNumber) fittingLookNumber.textContent = String(Math.max(1, picks.size)).padStart(2, '0');
+        if (fittingCanvasCount) fittingCanvasCount.textContent = String(picks.size).padStart(2, '0') + ' / 05';
         if (fittingAction) {
             fittingAction.disabled = false;
             fittingAction.querySelector('span:first-child').textContent = 'Add another piece';
@@ -210,6 +212,7 @@
         }
 
         if (fittingLookNumber) fittingLookNumber.textContent = String(Math.max(1, picks.size)).padStart(2, '0');
+        if (fittingCanvasCount) fittingCanvasCount.textContent = String(picks.size).padStart(2, '0') + ' / 05';
         if (fittingAction) {
             fittingAction.disabled = !currentSelection;
             fittingAction.querySelector('span:first-child').textContent = 'Add another piece';
@@ -230,6 +233,8 @@
         button.setAttribute('aria-pressed', 'false');
         button.addEventListener('click', () => {
             const product = readProductData(button);
+            const isMobile = window.matchMedia('(max-width: 720px)').matches;
+            if (isMobile) setFiltersOpen(true);
             setFittingRoomOpen(true);
 
             if (!picks.has(product.id)) {
@@ -247,9 +252,6 @@
                 renderPicks();
             }
 
-            if (window.matchMedia('(max-width: 720px)').matches) {
-                setFiltersOpen(true);
-            }
         });
     });
 
