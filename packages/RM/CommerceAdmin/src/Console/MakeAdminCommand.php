@@ -1,8 +1,8 @@
 <?php
 
-namespace Rm\\CommerceAdmin\\Console;
+namespace Rm\CommerceAdmin\Console;
 
-use Illuminate\\Console\\Command;
+use Illuminate\Console\Command;
 
 class MakeAdminCommand extends Command
 {
