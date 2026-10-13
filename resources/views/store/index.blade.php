@@ -154,8 +154,8 @@
                         @php
                             $variant = $product->primaryActiveVariant;
                             $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
-                            $effectivePrice = $variant?->sale_price ?? $variant?->price;
-                            $isOnSale = $variant && $variant->sale_price !== null && (float) $variant->sale_price < (float) $variant->price;
+                            $effectivePrice = $variant?->effective_price ?? $variant?->price;
+                            $isOnSale = $variant?->is_on_sale ?? false;
                             $rating = $product->approved_reviews_avg_rating;
                         @endphp
                         <article class="product-card" data-product-card>
