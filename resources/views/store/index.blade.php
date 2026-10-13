@@ -67,9 +67,6 @@
                     <div class="fitting-preview__footer"><span>YOUR CANVAS</span><span>01 / 05</span></div>
                 </div>
 
-
-                </div>
-
                 <div class="fitting-picks">
                     <div class="fitting-picks__heading"><span>Your picks</span><span><b data-fitting-pick-count>0</b> / 5 pieces</span></div>
                     <div class="fitting-picks__list" data-fitting-picks>
