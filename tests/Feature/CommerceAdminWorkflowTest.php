@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -169,4 +170,52 @@ class CommerceAdminWorkflowTest extends TestCase
 
         $this->assertSame('pending', $order->fresh()->status);
     }
+
+    public function test_manual_payment_updates_are_persisted_to_order_and_payment_records(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Payment Admin',
+            'email' => 'payment-admin@example.test',
+            'password' => 'admin-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $order = Order::query()->create([
+            'order_number' => 'VS-PAYMENT-TEST-0001',
+            'customer_name' => 'Test Buyer',
+            'customer_phone' => '555-0188',
+            'shipping_address' => '3 Test Road',
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'payment_method' => 'cash_on_delivery',
+            'subtotal' => 42.50,
+            'discount' => 0,
+            'shipping_cost' => 0,
+            'tax' => 0,
+            'total' => 42.50,
+            'placed_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('commerce-admin.orders.payment', $order->getKey()), [
+                'payment_status' => 'paid',
+            ])
+            ->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
+
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertNotNull($order->fresh()->paid_at);
+
+        $payment = Payment::query()->where('order_id', $order->getKey())->firstOrFail();
+        $this->assertSame('paid', $payment->status);
+        $this->assertSame('42.50', $payment->amount);
+        $this->assertNotNull($payment->paid_at);
+
+        $this->patch(route('commerce-admin.orders.payment', $order->getKey()), [
+            'payment_status' => 'refunded',
+        ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
+
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame('refunded', $payment->fresh()->status);
+    }
+
 }
