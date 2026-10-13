@@ -109,7 +109,7 @@ class Product extends Model
         $direction = strtolower($direction) === 'desc' ? 'desc' : 'asc';
 
         $priceSubquery = ProductVariant::query()
-            ->selectRaw('COALESCE(sale_price, price)')
+            ->selectRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END')
             ->whereColumn('product_id', 'products.id')
             ->where('is_active', true)
             ->orderBy('sort_order')
