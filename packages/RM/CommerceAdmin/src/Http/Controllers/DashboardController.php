@@ -41,7 +41,7 @@ class DashboardController
         $customersCount = $userModel::query()->where($adminFlag, false)->count();
 
         $series = $this->revenueSeries($orderModel);
-        $recentOrders = $orderModel::query()->with(['items'])
+        $recentOrders = $orderModel::query()->with(['items', 'user'])
             ->orderByDesc('created_at')->limit(7)->get();
         $recentProducts = $productModel::query()->with(['category', 'brand', 'variants', 'galleryMedia'])
             ->orderByDesc('created_at')->limit(5)->get();
