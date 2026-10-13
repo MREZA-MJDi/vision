@@ -394,6 +394,61 @@
         if (url) window.location.assign(url);
     });
 
+    root.querySelectorAll('[data-variant-select]').forEach((select) => {
+        const priceDisplay = root.querySelector('[data-variant-price]');
+        const stockDisplay = root.querySelector('[data-variant-stock]');
+        const quantityInput = root.querySelector('[data-variant-quantity]');
+        const addButton = root.querySelector('[data-product-add]');
+
+        const refreshVariant = () => {
+            const option = select.selectedOptions?.[0];
+            if (!option) {
+                if (addButton) addButton.disabled = true;
+                if (stockDisplay) stockDisplay.textContent = 'Currently unavailable';
+                return;
+            }
+
+            const price = Number(option.dataset.price);
+            const originalPrice = Number(option.dataset.originalPrice);
+            const onSale = option.dataset.sale === '1';
+            const stock = Math.max(0, Number(option.dataset.stock) || 0);
+
+            if (priceDisplay && Number.isFinite(price)) {
+                priceDisplay.replaceChildren();
+                if (onSale && Number.isFinite(originalPrice)) {
+                    const del = document.createElement('del');
+                    del.textContent = new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD'
+                    }).format(originalPrice);
+                    priceDisplay.append(del);
+                }
+                const strong = document.createElement('strong');
+                strong.textContent = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(price);
+                priceDisplay.append(strong);
+            }
+
+            if (stockDisplay) {
+                stockDisplay.textContent = stock > 0
+                    ? stock + ' available'
+                    : 'Currently unavailable';
+            }
+            if (quantityInput) {
+                quantityInput.max = String(Math.min(100, Math.max(1, stock)));
+                if (stock > 0 && Number(quantityInput.value) > stock) {
+                    quantityInput.value = String(stock);
+                }
+            }
+            if (addButton) addButton.disabled = stock < 1;
+        };
+
+        select.addEventListener('change', refreshVariant);
+        refreshVariant();
+    });
+
     root.querySelector('[data-store-language]')?.addEventListener('click', () => {
         showToast('English is the only storefront language currently enabled.');
     });
