@@ -7,15 +7,15 @@ return [
     | and relationships (see docs/commerce-admin-kit.md).
     */
     'models' => [
-        'user' => App\\Models\\User::class,
-        'product' => App\\Models\\Product::class,
-        'variant' => App\\Models\\ProductVariant::class,
-        'category' => App\\Models\\Category::class,
-        'brand' => App\\Models\\Brand::class,
-        'order' => App\\Models\\Order::class,
-        'order_item' => App\\Models\\OrderItem::class,
-        'media' => App\\Models\\Media::class,
-        'inventory_movement' => App\\Models\\InventoryMovement::class,
+        'user' => App\Models\User::class,
+        'product' => App\Models\Product::class,
+        'variant' => App\Models\ProductVariant::class,
+        'category' => App\Models\Category::class,
+        'brand' => App\Models\Brand::class,
+        'order' => App\Models\Order::class,
+        'order_item' => App\Models\OrderItem::class,
+        'media' => App\Models\Media::class,
+        'inventory_movement' => App\Models\InventoryMovement::class,
     ],
 
     'admin_flag_column' => 'is_admin',
