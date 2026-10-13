@@ -192,17 +192,17 @@
                                 </button>
 
                                 <button class="product-card__cart" type="button"
-                                    data-cart-add="{{ $product->id }}"
+                                    data-cart-add="{{ $variant?->id ?? '' }}"
                                     data-cart-name="{{ $product->name }}"
                                     data-cart-price="{{ $effectivePrice !== null ? $formatPrice($effectivePrice) : 'Price unavailable' }}"
-                                    aria-label="Add {{ $product->name }} to bag" title="Add to bag">
+                                    aria-label="Add {{ $product->name }} to bag" title="Add to bag" @disabled(!$variant || (int) $variant->stock < 1)>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2M12 12v4m-2-2h4"></path></svg>
                                 </button>
                             </div>
 
                             <div class="product-card__details">
                                 <div class="product-card__text">
-                                    <h2><a href="#catalog" data-card-preview>{{ $product->name }}</a></h2>
+                                    <h2><a href="{{ route('products.show', ['product' => $product->slug]) }}">{{ $product->name }}</a></h2>
                                 </div>
                                 <div class="product-card__price">
                                     @if($isOnSale)
