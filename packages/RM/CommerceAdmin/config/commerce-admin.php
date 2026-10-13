@@ -2,9 +2,8 @@
 
 return [
     /*
-    | Existing commerce models are adapters. Projects can replace these classes
-    | without forking the UI. Models must expose conventional commerce fields
-    | and relationships (see docs/commerce-admin-kit.md).
+    | Model adapters let other Laravel applications reuse the module without
+    | changing the UI. See docs/commerce-admin-kit.md for the model contract.
     */
     'models' => [
         'user' => App\Models\User::class,
@@ -16,14 +15,16 @@ return [
         'order_item' => App\Models\OrderItem::class,
         'media' => App\Models\Media::class,
         'inventory_movement' => App\Models\InventoryMovement::class,
+        'review' => App\Models\ProductReview::class,
     ],
-
     'admin_flag_column' => 'is_admin',
     'guard' => 'web',
     'login_throttle_attempts' => 5,
     'login_throttle_seconds' => 60,
     'currency' => env('COMMERCE_ADMIN_CURRENCY', 'USD'),
     'currency_symbol' => env('COMMERCE_ADMIN_CURRENCY_SYMBOL', '$'),
+    // Fractional rate: set COMMERCE_ADMIN_TAX_RATE=0.08 for 8%; no tax is assumed by default.
+    'tax_rate' => (float) env('COMMERCE_ADMIN_TAX_RATE', 0),
     'items_per_page' => 10,
     'media_disk' => env('COMMERCE_ADMIN_MEDIA_DISK', 'public'),
     'media_directory' => 'products',
