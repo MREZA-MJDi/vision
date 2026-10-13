@@ -136,7 +136,7 @@
         if (fittingLookNumber) fittingLookNumber.textContent = String(Math.max(1, picks.size)).padStart(2, '0');
         if (fittingAction) {
             fittingAction.disabled = false;
-            fittingAction.querySelector('span:first-child').textContent = picks.has(product.id) ? 'Remove from your edit' : 'Add to your edit';
+            fittingAction.querySelector('span:first-child').textContent = 'Add another piece';
         }
 
         root.querySelectorAll('[data-fit-product]').forEach((button) => {
@@ -212,9 +212,7 @@
         if (fittingLookNumber) fittingLookNumber.textContent = String(Math.max(1, picks.size)).padStart(2, '0');
         if (fittingAction) {
             fittingAction.disabled = !currentSelection;
-            fittingAction.querySelector('span:first-child').textContent = currentSelection
-                ? (picks.has(currentSelection.id) ? 'Remove from your edit' : 'Add to your edit')
-                : 'Choose a piece first';
+            fittingAction.querySelector('span:first-child').textContent = 'Add another piece';
         }
     }
 
@@ -314,35 +312,16 @@
 
     fittingAction?.addEventListener('click', () => {
         if (!currentSelection) return;
-
-        if (picks.has(currentSelection.id)) {
-            picks.delete(currentSelection.id);
-            showToast('Removed from your edit.');
-            if (picks.size > 0) {
-                const next = [...picks.values()][picks.size - 1];
-                selectProduct(next);
-            } else {
-                currentSelection = null;
-                fittingName && (fittingName.textContent = 'Choose a piece');
-                fittingDescription && (fittingDescription.textContent = 'Select the hanger icon on any product to preview it here.');
-                fittingPrice && (fittingPrice.textContent = 'Waiting for your edit');
-                updatePreviewImage(null);
-                root.querySelectorAll('[data-fit-product]').forEach((button) => {
-                    button.classList.remove('is-active');
-                    button.setAttribute('aria-pressed', 'false');
-                });
-            }
-        } else {
-            if (picks.size >= maxPicks) {
-                showToast('Your edit is full. Remove a piece before adding another.');
-                return;
-            }
-            picks.set(currentSelection.id, currentSelection);
-            showToast('Added to your edit.');
+        if (window.matchMedia('(max-width: 720px)').matches) {
+            setFiltersOpen(false);
         }
-
-        renderPicks();
-        if (currentSelection) selectProduct(currentSelection);
+        root.querySelector('[data-product-grid]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const nextProductButton = [...root.querySelectorAll('[data-fit-product]')]
+            .find((button) => !picks.has(String(button.dataset.productId)));
+        nextProductButton?.focus({ preventScroll: true });
+        showToast(picks.size >= maxPicks
+            ? 'Your edit is full. Remove a piece before adding another.'
+            : 'Choose another piece to add it to your look.');
     });
 
     fittingPicks?.addEventListener('click', (event) => {
