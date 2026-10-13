@@ -1,27 +1,37 @@
-# Vision — Administration Platform
+# Vision — Storefront
 
-Vision is a Laravel application focused on the administration side of a commerce system. Its current routes include admin dashboard, brands, categories, customers, financial operations, inventory, media, products, product variants, orders, and site content. This repository is a separate project from `psychic-spork`; its README describes only the code present here, not features that may exist in another repository.
+Vision is a Laravel 12 commerce storefront built with Blade, Eloquent, Vite, and a responsive product catalog.
 
-## Dedicated admin dashboard
-Vision has its own dedicated administration dashboard for the modules implemented in this repository, including products, categories, customers, orders, inventory, media, and financial operations. Keep its scope distinct from other repositories and verify each workflow through tests before production use.
+## Current scope
+
+- Public storefront routes: `/` and `/shop`
+- Catalog browsing with search, category/brand/price/sale filters, sorting, and pagination
+- Product cards with wishlist feedback and a client-side bag preview
+- A visual fitting-room panel for selecting and previewing catalog pieces
+
+**There is no admin dashboard or admin login in this build.** The previous admin routes, dashboard screens, management controllers, admin assets, and admin-account seeder have been removed. Existing database models, migrations, and commerce records are preserved. Catalog data must be provisioned through a separate trusted workflow until another management interface is introduced.
+
+The fitting-room panel previews existing product imagery; it does not generate an AI try-on image. The client-side bag is not connected to a server-side checkout.
 
 ## Stack
+
 - PHP `^8.2`, Laravel `^12.0`
-- Blade, Vite and Eloquent
-- Database migrations and seeders
-- PHPUnit tests
+- Blade, Vite, Tailwind CSS, and Eloquent
+- Database migrations and PHPUnit tests
 
 ## Requirements
+
 PHP 8.2+, Composer, Node.js/npm, and a Laravel-supported database.
 
 ## Local installation
+
 ```bash
 git clone https://github.com/MREZA-MJDi/vision.git
 cd vision
 composer install
 ```
 
-Copy `.env.example` to `.env` (`copy .env.example .env` in Windows CMD; `cp .env.example .env` on macOS/Linux). Create a local database and configure `DB_*` values.
+Copy `.env.example` to `.env` (`copy .env.example .env` in Windows CMD or `cp .env.example .env` on macOS/Linux). Create a local database and configure `DB_*` values.
 
 ```bash
 php artisan key:generate
@@ -34,14 +44,16 @@ php artisan serve
 
 Open `http://127.0.0.1:8000`. During frontend development, run `npm run dev` separately.
 
-## Tests
+## Verification
+
 ```bash
 php artisan test
+npm run build
 ```
 
-## Scope and safety
-The current route definitions do not include the cheque and wholesale controllers present in `psychic-spork`. Do not assume that business rules, migrations, or tests from that separate project exist here. Review authorization and financial/inventory transitions before deployment, and never reset a database containing needed data.
+The feature tests check that the public storefront loads and that the removed `/admin` and `/login` endpoints remain unavailable.
 
 ## Links
+
 - Repository: https://github.com/MREZA-MJDi/vision
 - Laravel documentation: https://laravel.com/docs/12.x
