@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -118,4 +120,50 @@ class StorefrontController extends Controller
             'initialImage' => $initialImage,
         ]);
     }
+
+    /**
+     * Render a public product detail page from active catalog records only.
+     */
+    public function show(Product $product): View
+    {
+        abort_unless((bool) $product->is_active, 404);
+
+        $product->load([
+            'category',
+            'brand',
+            'galleryMedia',
+            'primaryGalleryMedia',
+            'activeVariants.primaryGalleryMedia',
+        ]);
+
+        if ($product->activeVariants->isEmpty()) {
+            abort(404);
+        }
+
+        $relatedQuery = Product::query()
+            ->active()
+            ->whereKeyNot($product->getKey())
+            ->whereHas('activeVariants')
+            ->with([
+                'category',
+                'brand',
+                'primaryGalleryMedia',
+                'primaryActiveVariant.primaryGalleryMedia',
+            ])
+            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
+            ->withCount('approvedReviews');
+
+        if ($product->category_id !== null) {
+            $relatedQuery->where('category_id', $product->category_id);
+        }
+
+        $relatedProducts = $relatedQuery
+            ->orderByDesc('is_featured')
+            ->orderByDesc('created_at')
+            ->limit(4)
+            ->get();
+
+        return view('store.products.show', compact('product', 'relatedProducts'));
+    }
+
 }
