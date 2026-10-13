@@ -246,7 +246,9 @@ class OrderController
             $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
             $next = $validated['status'];
             $terminal = ['cancelled', 'returned'];
-            if (! $model instanceof Order || ! $model->canTransitionTo($next)) {
+            $allowedTransitions = Order::STATUS_TRANSITIONS;
+
+            if ($next !== $model->status && ! in_array($next, $allowedTransitions[$model->status] ?? [], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'That status change is not allowed from the current order state.',
                 ]);
