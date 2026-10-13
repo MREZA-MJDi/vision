@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\Admin\AdminBrandController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCustomerController;
@@ -17,11 +18,17 @@ use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSiteContentController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check() && auth()->user()->isAdmin()
-        ? redirect()->route('admin.dashboard')
-        : redirect()->route('login');
-});
+/*
+|--------------------------------------------------------------------------
+| Public storefront
+|--------------------------------------------------------------------------
+|
+| The storefront is the public entry point. Admin tools stay isolated under
+| /admin and authentication remains available under /login.
+|
+*/
+Route::get('/', [StorefrontController::class, 'index'])->name('storefront.index');
+Route::get('/shop', [StorefrontController::class, 'index'])->name('shop.index');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:5,1'])->name('login.store');
@@ -58,7 +65,6 @@ Route::prefix('admin')
 
         Route::delete('products/{product}/media/{media}', [AdminProductMediaController::class, 'destroy'])
             ->name('products.media.destroy');
-
 
         Route::resource('products.variants', AdminProductVariantController::class)
             ->except(['show']);
