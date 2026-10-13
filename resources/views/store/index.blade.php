@@ -43,8 +43,9 @@
             <section class="fitting-room" aria-labelledby="fitting-room-title" data-fitting-room>
                 <div class="fitting-room__header">
                     <div>
-                        <p class="store-eyebrow"><span class="fitting-live-dot"></span> PERSONAL PREVIEW</p>
+                        <p class="store-eyebrow"><span class="fitting-live-dot"></span> FITTING ROOM</p>
                         <h2 id="fitting-room-title">Fitting room<span class="fitting-room__period">.</span></h2>
+                        <p class="fitting-room__instruction">Tap the hanger on any product to preview it.</p>
                     </div>
                     <button class="fitting-room__close" type="button" data-fitting-close aria-label="Close fitting room" title="Close fitting room">×</button>
                 </div>
@@ -66,13 +67,7 @@
                     <div class="fitting-preview__footer"><span>YOUR CANVAS</span><span>01 / 05</span></div>
                 </div>
 
-                <div class="fitting-room__copy">
-                    <p class="fitting-room__selected-label">CURRENT SELECTION</p>
-                    <h3 data-fitting-name>Choose a piece</h3>
-                    <p data-fitting-description>Select the hanger icon on any product to preview it here.</p>
-                    <div class="fitting-room__price" data-fitting-price>
-                        <span>Waiting for your edit</span>
-                    </div>
+
                 </div>
 
                 <div class="fitting-picks">
