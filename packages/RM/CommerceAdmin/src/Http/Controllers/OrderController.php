@@ -132,7 +132,7 @@ class OrderController
                     ]);
                 }
 
-                $unitPrice = (float) ($variant->sale_price ?? $variant->price);
+                $unitPrice = (float) $variant->effective_price;
                 $lineTotal = round($unitPrice * $quantity, 2);
                 $lineTax = (bool) $variant->product->getAttribute('is_taxable')
                     ? round($lineTotal * $taxRate, 2)
