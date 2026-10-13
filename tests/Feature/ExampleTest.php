@@ -75,7 +75,7 @@ class ExampleTest extends TestCase
 
         $this->get(route('commerce-admin.products.index'))
             ->assertOk()
-            ->assertSee('CATALOG ITEMS')
+            ->assertSee('TOTAL SALES')
             ->assertSee('Product list');
 
         $this->get(route('commerce-admin.products.create'))
