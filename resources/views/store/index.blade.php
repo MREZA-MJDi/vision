@@ -101,7 +101,7 @@
                             <path d="M70 57c-11 6-19 17-22 34l-9 48 19 5 10-39 2 48-8 60h22l6-50 6 50h22l-8-60 2-48 10 39 19-5-9-48c-3-17-11-28-22-34l-13-5H83z"></path>
                             <path d="M78 56 90 76l12-20M70 59l20 17 20-17M70 111l20 24 20-24" class="fitting-model__detail"></path>
                         </svg>
-                        <img class="fitting-preview__image" src="{{ $initialImage ?? '' }}" alt="{{ $initialProduct?->name ?? 'Selected piece preview' }}" data-fitting-image @if(!$initialImage) hidden @endif>
+                        <img class="fitting-preview__image" @if($initialImage) src="{{ $initialImage }}" @endif alt="{{ $initialProduct?->name ?? 'Selected piece preview' }}" data-fitting-image @if(!$initialImage) hidden @endif>
                         <div class="fitting-preview__placeholder" data-fitting-placeholder @if($initialImage) hidden @endif>
                             <span class="fitting-preview__placeholder-mark">V</span>
                             <span>YOUR NEXT LOOK<br>STARTS HERE</span>
