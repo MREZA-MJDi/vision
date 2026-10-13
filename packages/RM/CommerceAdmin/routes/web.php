@@ -25,6 +25,9 @@ Route::middleware('web')->prefix('admin')->as('commerce-admin.')->group(function
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->whereNumber('product')->name('products.destroy');
         Route::delete('/products/{product}/media/{media}', [ProductController::class, 'deleteMedia'])->whereNumber('product')->whereNumber('media')->name('products.media.destroy');
 
+        Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+        Route::patch('/reviews/{review}/status', [ReviewController::class, 'updateStatus'])->whereNumber('review')->name('reviews.status');
+
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
