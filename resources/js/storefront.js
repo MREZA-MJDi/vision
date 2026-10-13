@@ -134,7 +134,7 @@
         if (fittingName) fittingName.textContent = product.name;
         if (fittingDescription) fittingDescription.textContent = product.description || 'A considered piece from the latest edit.';
         if (fittingPrice) fittingPrice.textContent = product.price || 'Price unavailable';
-        if (fittingLookNumber) fittingLookNumber.textContent = String(Math.max(1, picks.size)).padStart(2, '0');
+        if (fittingLookNumber) fittingLookNumber.textContent = picks.size ? String(picks.size).padStart(2, '0') : '—';
         if (fittingCanvasCount) fittingCanvasCount.textContent = String(picks.size).padStart(2, '0') + ' / 05';
         if (fittingAction) {
             fittingAction.disabled = false;
@@ -339,7 +339,7 @@
                 selectProduct(currentSelection);
             } else {
                 fittingName && (fittingName.textContent = 'Choose a piece');
-                fittingDescription && (fittingDescription.textContent = 'Select the fit icon on any product to preview it here.');
+                fittingDescription && (fittingDescription.textContent = 'Select the hanger icon on any product to preview it here.');
                 fittingPrice && (fittingPrice.textContent = 'Waiting for your edit');
                 updatePreviewImage(null);
                 root.querySelectorAll('[data-fit-product]').forEach((fitButton) => {
