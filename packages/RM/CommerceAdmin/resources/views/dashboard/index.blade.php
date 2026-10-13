@@ -85,7 +85,7 @@
         <article class="ak-panel ak-activity-panel">
             <div class="ak-panel-heading">
                 <div><h2>Store Activity</h2><p>Monthly revenue and order volume, based on saved orders</p></div>
-                <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.analytics') }}">Export view ↗</a>
+                <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.analytics.export') }}">Export CSV ↓</a>
             </div>
             <div class="ak-activity-summary">
                 <div><small>Total revenue</small><strong>{{ $currency }}{{ number_format((float) $revenue, 2) }}</strong></div>
