@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -37,5 +38,18 @@ class ExampleTest extends TestCase
         $this->assertTrue(Route::has('commerce-admin.products.index'));
         $this->assertTrue(Route::has('commerce-admin.orders.index'));
         $this->assertTrue(Route::has('commerce-admin.login'));
+    }
+
+    public function test_an_administrator_can_render_the_database_backed_dashboard(): void
+    {
+        $administrator = User::factory()->create();
+        $administrator->forceFill(['is_admin' => true])->save();
+
+        $this->actingAs($administrator)
+            ->get(route('commerce-admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Revenue overview')
+            ->assertSee('Recent orders')
+            ->assertSee('Recently added products');
     }
 }
