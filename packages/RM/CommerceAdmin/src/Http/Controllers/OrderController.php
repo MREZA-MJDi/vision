@@ -42,7 +42,13 @@ class OrderController
             });
         }
 
-        if ($status !== 'all' && in_array($status, Order::STATUSES, true)) {
+        if ($status === 'pending') {
+            $query->whereIn('status', ['pending', 'confirmed', 'preparing']);
+        } elseif ($status === 'shipped') {
+            $query->whereIn('status', ['shipped', 'out_for_delivery']);
+        } elseif ($status === 'cancelled') {
+            $query->whereIn('status', ['cancelled', 'returned']);
+        } elseif ($status !== 'all' && in_array($status, Order::STATUSES, true)) {
             $query->where('status', $status);
         }
 
@@ -53,7 +59,7 @@ class OrderController
         $stats = [
             'all' => $orderModel::query()->count(),
             'pending' => $orderModel::query()->whereIn('status', ['pending', 'confirmed', 'preparing'])->count(),
-            'shipped' => $orderModel::query()->where('status', 'shipped')->count(),
+            'shipped' => $orderModel::query()->whereIn('status', ['shipped', 'out_for_delivery'])->count(),
             'delivered' => $orderModel::query()->where('status', 'delivered')->count(),
             'cancelled' => $orderModel::query()->whereIn('status', ['cancelled', 'returned'])->count(),
             'gross' => $orderItemModel::query()->sum('line_total'),
@@ -99,10 +105,12 @@ class OrderController
         ]);
 
         $order = DB::transaction(function () use ($validated, $orderModel, $itemModel, $variantModel, $inventoryModel, $userModel) {
+            $taxRate = max(0, (float) config('commerce-admin.tax_rate', 0));
             $email = $validated['customer_email'] ?? null;
             $customer = $email ? $userModel::query()->where('email', $email)->first() : null;
             $number = 'VS-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(4));
-            $subtotal = 0;
+            $subtotal = 0.0;
+            $taxAmount = 0.0;
             $preparedItems = [];
 
             foreach ($validated['items'] as $index => $input) {
@@ -124,19 +132,26 @@ class OrderController
                 }
 
                 $unitPrice = (float) ($variant->sale_price ?? $variant->price);
-                $lineTotal = $unitPrice * $quantity;
+                $lineTotal = round($unitPrice * $quantity, 2);
+                $lineTax = (bool) $variant->product->getAttribute('is_taxable')
+                    ? round($lineTotal * $taxRate, 2)
+                    : 0.0;
                 $subtotal += $lineTotal;
+                $taxAmount += $lineTax;
                 $preparedItems[] = [
                     'variant' => $variant,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
                     'line_total' => $lineTotal,
+                    'tax_amount' => $lineTax,
                     'image' => $variant->primaryGalleryMedia?->url
                         ?? $variant->product->primaryGalleryMedia?->url,
                 ];
             }
 
-            $shipping = (float) $validated['shipping_cost'];
+            $subtotal = round($subtotal, 2);
+            $taxAmount = round($taxAmount, 2);
+            $shipping = round((float) $validated['shipping_cost'], 2);
             $order = $orderModel::query()->create([
                 'user_id' => $customer?->getKey(),
                 'address_id' => null,
@@ -154,7 +169,8 @@ class OrderController
                 'subtotal' => $subtotal,
                 'discount' => 0,
                 'shipping_cost' => $shipping,
-                'total' => $subtotal + $shipping,
+                'tax' => $taxAmount,
+                'total' => round($subtotal + $shipping + $taxAmount, 2),
                 'placed_at' => now(),
             ]);
 
@@ -176,6 +192,7 @@ class OrderController
                     'unit_price' => $line['unit_price'],
                     'quantity' => $line['quantity'],
                     'line_total' => $line['line_total'],
+                    'tax_amount' => $line['tax_amount'],
                 ]);
 
                 $variant->stock = $after;
@@ -225,10 +242,20 @@ class OrderController
             $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
             $next = $validated['status'];
             $terminal = ['cancelled', 'returned'];
+            $allowedTransitions = [
+                'pending' => ['confirmed', 'cancelled'],
+                'confirmed' => ['preparing', 'cancelled'],
+                'preparing' => ['shipped', 'cancelled'],
+                'shipped' => ['out_for_delivery', 'returned'],
+                'out_for_delivery' => ['delivered', 'returned'],
+                'delivered' => ['returned'],
+                'cancelled' => [],
+                'returned' => [],
+            ];
 
-            if (in_array($model->status, $terminal, true) && ! in_array($next, $terminal, true)) {
+            if ($next !== $model->status && ! in_array($next, $allowedTransitions[$model->status] ?? [], true)) {
                 throw ValidationException::withMessages([
-                    'status' => 'A cancelled or returned order cannot be re-opened. Create a new order to sell these items again.',
+                    'status' => 'That status change is not allowed from the current order state.',
                 ]);
             }
 
@@ -266,8 +293,11 @@ class OrderController
             }
 
             $model->status = $next;
-            if ($next === 'shipped' && ! $model->shipped_at) {
+            if (in_array($next, ['shipped', 'out_for_delivery', 'delivered'], true) && ! $model->shipped_at) {
                 $model->shipped_at = now();
+            }
+            if ($next === 'out_for_delivery' && ! $model->out_for_delivery_at) {
+                $model->out_for_delivery_at = now();
             }
             if ($next === 'delivered' && ! $model->delivered_at) {
                 $model->delivered_at = now();
