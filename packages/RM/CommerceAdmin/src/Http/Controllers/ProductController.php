@@ -44,7 +44,10 @@ class ProductController
         $orderModel = $this->model('order', Order::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
 
-        $query = $productModel::query()->with(['category', 'brand', 'variants', 'galleryMedia']);
+        $query = $productModel::query()
+            ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
+            ->withCount('approvedReviews');
 
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
@@ -84,7 +87,11 @@ class ProductController
         $stats = [
             'revenue' => $orderModel::query()->where('payment_status', 'paid')
                 ->whereNotIn('status', ['cancelled', 'returned'])->sum('total'),
-            'orders' => $orderModel::query()->count(),
+            'orders' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->count(),
+            'sales' => $orderItemModel::query()->whereHas('order', fn ($query) => $query
+                ->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']))->sum('line_total'),
+            'customers' => $this->model('user', User::class)::query()->where(config('commerce-admin.admin_flag_column', 'is_admin'), false)->count(),
+            'discount_total' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->sum('discount'),
             'products' => $productModel::query()->count(),
             'low_stock' => $variantModel::query()->where('is_active', true)
                 ->whereColumn('stock', '<=', 'low_stock_threshold')->count(),
@@ -127,13 +134,19 @@ class ProductController
         $orderItemModel = $this->model('order_item', OrderItem::class);
         $model = $productModel::query()
             ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
+            ->withCount('approvedReviews')
             ->findOrFail($product);
 
-        $sales = $orderItemModel::query()->where('product_id', $model->getKey());
+        $sales = $orderItemModel::query()
+            ->where('product_id', $model->getKey())
+            ->whereHas('order', fn ($query) => $query
+                ->where('payment_status', 'paid')
+                ->whereNotIn('status', ['cancelled', 'returned']));
         $unitsSold = (clone $sales)->sum('quantity');
         $grossSales = (clone $sales)->sum('line_total');
         $ordersCount = (clone $sales)->distinct('order_id')->count('order_id');
-        $stock = $model->variants->sum('stock');
+        $stock = $model->variants->where('is_active', true)->sum('stock');
 
         return view('commerce-admin::products.show', compact(
             'product', 'model', 'unitsSold', 'grossSales', 'ordersCount', 'stock'
@@ -175,17 +188,20 @@ class ProductController
         $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
         $productTable = (new $productModel())->getTable();
+        $categoryModel = $this->model('category', Category::class);
+        $brandModel = $this->model('brand', Brand::class);
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($productTable, 'slug')->ignore($product->getKey())],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
-            'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
+            'category_id' => ['nullable', 'integer', Rule::exists((new $categoryModel())->getTable(), 'id')],
+            'brand_id' => ['nullable', 'integer', Rule::exists((new $brandModel())->getTable(), 'id')],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'is_featured' => ['sometimes', 'boolean'],
             'is_hero' => ['sometimes', 'boolean'],
+            'is_taxable' => ['sometimes', 'boolean'],
             'status' => ['required', Rule::in(['active', 'draft'])],
             'variants' => ['required', 'array', 'min:1', 'max:30'],
             'variants.*.id' => ['nullable', 'integer'],
@@ -231,6 +247,7 @@ class ProductController
                 'is_active' => ($validated['status'] ?? 'draft') === 'active',
                 'is_featured' => (bool) ($validated['is_featured'] ?? false),
                 'is_hero' => (bool) ($validated['is_hero'] ?? false),
+                'is_taxable' => (bool) ($validated['is_taxable'] ?? false),
             ]);
             $product->save();
 
