@@ -9,14 +9,27 @@
 @endphp
 
 <main class="store-main">
-    <div class="store-overline">
-        <span class="store-overline__left"><span class="store-status-dot"></span> THE VISION EDIT <span class="store-overline__slash">/</span> 2026</span>
-        <span class="store-overline__right">CONSIDERED PIECES, CONSIDERED DETAILS</span>
+    <div class="store-titlebar">
+        <div class="store-titlebar__left">
+            <h1 id="catalog-title">{{ $saleOnly ? 'The Sale Edit' : ($search !== '' ? 'Search results' : 'New Arrivals') }}</h1>
+            <span class="store-titlebar__count">{{ number_format($products->total()) }} {{ $products->total() === 1 ? 'product' : 'products' }}</span>
+        </div>
+        <label class="catalog-sort">
+            <span>Sort by</span>
+            <select data-store-sort aria-label="Sort products">
+                <option value="newest" @selected($sort === 'newest')>Newest</option>
+                <option value="featured" @selected($sort === 'featured')>Featured</option>
+                <option value="price_asc" @selected($sort === 'price_asc')>Price: low to high</option>
+                <option value="price_desc" @selected($sort === 'price_desc')>Price: high to low</option>
+            </select>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"></path></svg>
+        </label>
     </div>
 
     <div class="store-catalog-layout">
         <aside class="store-sidebar" id="store-sidebar" data-store-sidebar>
-            <section class="filter-panel" aria-labelledby="filter-title">
+                        <section class="filter-panel filter-panel--heading" aria-labelledby="filter-title">
+
                 <div class="filter-panel__header">
                     <div>
                         <p class="store-eyebrow">REFINE THE EDIT</p>
@@ -25,6 +38,64 @@
                     <a class="text-action" href="{{ route('storefront.index') }}">Reset <span aria-hidden="true">↺</span></a>
                 </div>
 
+            </section>
+
+            <section class="fitting-room" aria-labelledby="fitting-room-title" data-fitting-room>
+                <div class="fitting-room__header">
+                    <div>
+                        <p class="store-eyebrow"><span class="fitting-live-dot"></span> PERSONAL PREVIEW</p>
+                        <h2 id="fitting-room-title">Fitting room<span class="fitting-room__period">.</span></h2>
+                    </div>
+                    <button class="fitting-room__close" type="button" data-fitting-close aria-label="Close fitting room" title="Close fitting room">×</button>
+                </div>
+
+                <div class="fitting-preview" data-fitting-preview>
+                    <div class="fitting-preview__label"><span>LOOK <b data-fitting-look-number>—</b></span><span class="fitting-preview__live"><i></i> LIVE PREVIEW</span></div>
+                    <div class="fitting-preview__stage">
+                        <svg class="fitting-model" viewBox="0 0 180 240" aria-hidden="true">
+                            <circle cx="90" cy="34" r="19"></circle>
+                            <path d="M70 57c-11 6-19 17-22 34l-9 48 19 5 10-39 2 48-8 60h22l6-50 6 50h22l-8-60 2-48 10 39 19-5-9-48c-3-17-11-28-22-34l-13-5H83z"></path>
+                            <path d="M78 56 90 76l12-20M70 59l20 17 20-17M70 111l20 24 20-24" class="fitting-model__detail"></path>
+                        </svg>
+                        <img class="fitting-preview__image" alt="Selected piece preview" data-fitting-image hidden>
+                        <div class="fitting-preview__placeholder" data-fitting-placeholder>
+                            <span class="fitting-preview__placeholder-mark">V</span>
+                            <span>SELECT A PIECE<br>TO START YOUR PREVIEW</span>
+                        </div>
+                    </div>
+                    <div class="fitting-preview__footer"><span>YOUR CANVAS</span><span>01 / 05</span></div>
+                </div>
+
+                <div class="fitting-room__copy">
+                    <p class="fitting-room__selected-label">CURRENT SELECTION</p>
+                    <h3 data-fitting-name>Choose a piece</h3>
+                    <p data-fitting-description>Select the hanger icon on any product to preview it here.</p>
+                    <div class="fitting-room__price" data-fitting-price>
+                        <span>Waiting for your edit</span>
+                    </div>
+                </div>
+
+                <div class="fitting-picks">
+                    <div class="fitting-picks__heading"><span>Your picks</span><span><b data-fitting-pick-count>0</b> / 5 pieces</span></div>
+                    <div class="fitting-picks__list" data-fitting-picks>
+                        <p class="fitting-picks__empty" data-fitting-picks-empty>Your shortlist is waiting.</p>
+                    </div>
+                </div>
+
+                <button class="fitting-room__action" type="button" data-fitting-action disabled>
+                    <span>Add to your edit</span><span class="fitting-room__action-icon" aria-hidden="true">↗</span>
+                </button>
+                <p class="fitting-room__note">A visual preview of your selected pieces.</p>
+                <div class="fitting-room__footer-actions">
+                    <button type="button" data-fitting-reset>Start over <span aria-hidden="true">↻</span></button>
+                </div>
+            </section>
+
+            <button class="fitting-room-reopen" type="button" data-fitting-reopen hidden>
+                <span aria-hidden="true">◉</span> Fitting room <span aria-hidden="true">↗</span>
+            </button>
+
+            <section class="filter-panel filter-panel--details" aria-label="Product filters">
                 <form class="filter-search" action="{{ route('storefront.index') }}" method="GET">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg>
                     <input type="search" name="q" value="{{ $search }}" placeholder="Search the collection..." aria-label="Search the collection">
@@ -81,105 +152,10 @@
                     <span class="sale-filter__icon">%</span>
                     <span><strong>On sale</strong><small>Pieces with a reduced price</small></span>
                     <span class="sale-filter__toggle" aria-hidden="true"><i></i></span>
-                </a>
-            </section>
-
-            <section class="fitting-room" aria-labelledby="fitting-room-title" data-fitting-room>
-                <div class="fitting-room__header">
-                    <div>
-                        <p class="store-eyebrow"><span class="fitting-live-dot"></span> PERSONAL PREVIEW</p>
-                        <h2 id="fitting-room-title">Fitting room<span class="fitting-room__period">.</span></h2>
-                    </div>
-                    <button class="fitting-room__reset" type="button" data-fitting-reset aria-label="Reset fitting room" title="Reset preview">↺</button>
-                </div>
-
-                <div class="fitting-preview" data-fitting-preview>
-                    <div class="fitting-preview__label"><span>LOOK <b data-fitting-look-number>{{ $initialProduct ? '01' : '—' }}</b></span><span class="fitting-preview__live"><i></i> LIVE PREVIEW</span></div>
-                    <div class="fitting-preview__stage">
-                        <svg class="fitting-model" viewBox="0 0 180 240" aria-hidden="true">
-                            <circle cx="90" cy="34" r="19"></circle>
-                            <path d="M70 57c-11 6-19 17-22 34l-9 48 19 5 10-39 2 48-8 60h22l6-50 6 50h22l-8-60 2-48 10 39 19-5-9-48c-3-17-11-28-22-34l-13-5H83z"></path>
-                            <path d="M78 56 90 76l12-20M70 59l20 17 20-17M70 111l20 24 20-24" class="fitting-model__detail"></path>
-                        </svg>
-                        <img class="fitting-preview__image" @if($initialImage) src="{{ $initialImage }}" @endif alt="{{ $initialProduct?->name ?? 'Selected piece preview' }}" data-fitting-image @if(!$initialImage) hidden @endif>
-                        <div class="fitting-preview__placeholder" data-fitting-placeholder @if($initialImage) hidden @endif>
-                            <span class="fitting-preview__placeholder-mark">V</span>
-                            <span>YOUR NEXT LOOK<br>STARTS HERE</span>
-                        </div>
-                    </div>
-                    <div class="fitting-preview__footer"><span>YOUR CANVAS</span><span>01 / 05</span></div>
-                </div>
-
-                <div class="fitting-room__copy">
-                    <p class="fitting-room__selected-label">CURRENT SELECTION</p>
-                    <h3 data-fitting-name>{{ $initialProduct?->name ?? 'Choose a piece' }}</h3>
-                    <p data-fitting-description>{{ $initialProduct ? ($initialProduct->short_description ?: 'A considered piece from the latest edit.') : 'Select the fit icon on any product to preview it here.' }}</p>
-                    <div class="fitting-room__price" data-fitting-price>
-                        @if($initialProduct?->primaryActiveVariant)
-                            {{ $formatPrice($initialProduct->primaryActiveVariant->sale_price ?? $initialProduct->primaryActiveVariant->price) }}
-                        @else
-                            <span>Waiting for your edit</span>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="fitting-picks">
-                    <div class="fitting-picks__heading"><span>Your picks</span><span><b data-fitting-pick-count>{{ $initialProduct ? 1 : 0 }}</b> / 5 pieces</span></div>
-                    <div class="fitting-picks__list" data-fitting-picks>
-                        @if($initialProduct)
-                            <button class="fitting-pick is-current" type="button" data-fitting-pick data-product-id="{{ $initialProduct->id }}" data-product-name="{{ $initialProduct->name }}" data-product-price="{{ $formatPrice($initialProduct->primaryActiveVariant?->sale_price ?? $initialProduct->primaryActiveVariant?->price ?? 0) }}" data-product-image="{{ $initialImage ?? '' }}" data-product-description="{{ $initialProduct->short_description ?? '' }}">
-                                <span class="fitting-pick__dot">01</span><span class="fitting-pick__name">{{ $initialProduct->name }}</span><span class="fitting-pick__remove" aria-hidden="true">×</span>
-                            </button>
-                        @else
-                            <p class="fitting-picks__empty" data-fitting-picks-empty>Your shortlist is waiting.</p>
-                        @endif
-                    </div>
-                </div>
-
-                <button class="fitting-room__action" type="button" data-fitting-action {{ $initialProduct ? '' : 'disabled' }}>
-                    <span>Add to your edit</span><span class="fitting-room__action-icon" aria-hidden="true">↗</span>
-                </button>
-                <p class="fitting-room__note">A visual preview of your selected pieces.</p>
-            </section>
+                </a>            </section>
         </aside>
 
         <section class="store-catalog" id="catalog" aria-labelledby="catalog-title">
-            <div class="catalog-heading">
-                <div class="catalog-heading__title">
-                    <p class="store-eyebrow">CURATED / NOT CROWDED</p>
-                    <h1 id="catalog-title">{{ $saleOnly ? 'The Sale Edit' : ($search !== '' ? 'Search results' : 'New Arrivals') }}<span class="catalog-heading__count">{{ number_format($products->total()) }} {{ $products->total() === 1 ? 'piece' : 'pieces' }}</span></h1>
-                    <p class="catalog-heading__description">
-                        @if($search !== '')
-                            Showing pieces matching “{{ $search }}”.
-                        @elseif($saleOnly)
-                            Good pieces. Better prices. Nothing extra.
-                        @else
-                            New season, familiar feeling. Find the piece that feels like you.
-                        @endif
-                    </p>
-                </div>
-
-                <div class="catalog-heading__tools">
-                    <span class="catalog-result-count">
-                        @if($products->total() > 0)
-                            {{ $products->firstItem() }}–{{ $products->lastItem() }} <span>of</span> {{ $products->total() }}
-                        @else
-                            0 <span>results</span>
-                        @endif
-                    </span>
-                    <label class="catalog-sort">
-                        <span>Sort by</span>
-                        <select data-store-sort aria-label="Sort products">
-                            <option value="newest" @selected($sort === 'newest')>Newest</option>
-                            <option value="featured" @selected($sort === 'featured')>Featured</option>
-                            <option value="price_asc" @selected($sort === 'price_asc')>Price: low to high</option>
-                            <option value="price_desc" @selected($sort === 'price_desc')>Price: high to low</option>
-                        </select>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"></path></svg>
-                    </label>
-                </div>
-            </div>
-
             @if($products->count())
                 <div class="product-grid" data-product-grid>
                     @foreach($products as $product)
