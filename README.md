@@ -1,15 +1,17 @@
-# Vision — Storefront
+# Vision — Storefront + Commerce Admin
 
-Vision is a Laravel 12 commerce storefront built with Blade, Eloquent, Vite, and a responsive product catalog.
+Vision is a Laravel 12 commerce application built with Blade, Eloquent, Vite, and a responsive product catalog. The reusable administration UI lives in `packages/RM/CommerceAdmin`.
 
 ## Current scope
 
-- Public storefront routes: `/` and `/shop`
-- Catalog browsing with search, category/brand/price/sale filters, sorting, and pagination
-- Product cards with wishlist feedback and a client-side bag preview
-- A visual fitting-room panel for selecting and previewing catalog pieces
-
-**There is no admin dashboard or admin login in this build.** The previous admin routes, dashboard screens, management controllers, admin assets, and admin-account seeder have been removed. Existing database models, migrations, and commerce records are preserved. Catalog data must be provisioned through a separate trusted workflow until another management interface is introduced.
+- Public storefront: `/` and `/shop`, with catalog search, category/brand/price/sale filters, sorting, and pagination.
+- Product cards with wishlist feedback, a client-side bag preview, and a visual fitting-room panel.
+- Admin login and role-gated routes under `/admin`.
+- Database-backed overview and analytics dashboards.
+- Product list, create/edit form, product details, variant/SKU/barcode and stock management, and product image management.
+- Order list, manual order creation, order details, payment status, and guarded fulfillment-status transitions.
+- Customer-review moderation.
+- A reusable Laravel module with configurable model adapters and its own views, CSS, JavaScript, routes, and migrations.
 
 The fitting-room panel previews existing product imagery; it does not generate an AI try-on image. The client-side bag is not connected to a server-side checkout.
 
@@ -44,6 +46,16 @@ php artisan serve
 
 Open `http://127.0.0.1:8000`. During frontend development, run `npm run dev` separately.
 
+## Admin access
+
+Create or choose a trusted user account first, then promote that existing user to administrator:
+
+```bash
+php artisan commerce-admin:make-admin admin@example.com
+```
+
+Sign in at `http://127.0.0.1:8000/admin/login`. The command does not create demo users or seed fake commerce records. Protect administrator credentials and never expose the promotion command to untrusted users.
+
 ## Verification
 
 ```bash
@@ -51,7 +63,7 @@ php artisan test
 npm run build
 ```
 
-The feature tests check that the public storefront loads and that the removed `/admin` and `/login` endpoints remain unavailable.
+The feature tests cover public storefront responses and core admin route protection/rendering. Review `docs/commerce-admin-kit.md` for the module's integration and reuse contract.
 
 ## Links
 
