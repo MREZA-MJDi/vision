@@ -223,8 +223,12 @@ class OrderController
         $itemModel = $this->model('order_item', OrderItem::class);
         $model = $orderModel::query()->with(['user', 'payments'])->findOrFail($order);
         $items = $itemModel::query()->where('order_id', $model->getKey())->get();
+        $availableStatuses = array_values(array_unique(array_merge(
+            [$model->status],
+            Order::STATUS_TRANSITIONS[$model->status] ?? []
+        )));
 
-        return view('commerce-admin::orders.show', compact('model', 'items'));
+        return view('commerce-admin::orders.show', compact('model', 'items', 'availableStatuses'));
     }
 
     public function updateStatus(Request $request, int $order): RedirectResponse
@@ -242,18 +246,7 @@ class OrderController
             $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
             $next = $validated['status'];
             $terminal = ['cancelled', 'returned'];
-            $allowedTransitions = [
-                'pending' => ['confirmed', 'cancelled'],
-                'confirmed' => ['preparing', 'cancelled'],
-                'preparing' => ['shipped', 'cancelled'],
-                'shipped' => ['out_for_delivery', 'returned'],
-                'out_for_delivery' => ['delivered', 'returned'],
-                'delivered' => ['returned'],
-                'cancelled' => [],
-                'returned' => [],
-            ];
-
-            if ($next !== $model->status && ! in_array($next, $allowedTransitions[$model->status] ?? [], true)) {
+            if (! $model instanceof Order || ! $model->canTransitionTo($next)) {
                 throw ValidationException::withMessages([
                     'status' => 'That status change is not allowed from the current order state.',
                 ]);
