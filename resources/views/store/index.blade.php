@@ -77,7 +77,7 @@
                 <button class="fitting-room__action" type="button" data-fitting-action disabled>
                     <span>Add to your edit</span><span class="fitting-room__action-icon" aria-hidden="true">↗</span>
                 </button>
-                <p class="fitting-room__note">A visual preview of your selected pieces.</p>
+                <p class="fitting-room__note">Add another piece and it goes on top.</p>
                 <div class="fitting-room__footer-actions">
                     <button type="button" data-fitting-reset>Start over <span aria-hidden="true">↻</span></button>
                 </div>
