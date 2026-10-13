@@ -16,7 +16,11 @@
     const fittingPickCount = root.querySelector('[data-fitting-pick-count]');
     const fittingAction = root.querySelector('[data-fitting-action]');
     const fittingPreview = root.querySelector('[data-fitting-preview]');
+    const fittingRoom = root.querySelector('[data-fitting-room]');
+    const fittingClose = root.querySelector('[data-fitting-close]');
+    const fittingReopen = root.querySelector('[data-fitting-reopen]');
     const maxPicks = 5;
+    const cartStorageKey = 'vision.storefront.cart.v1';
     const picks = new Map();
     let currentSelection = null;
     let toastTimer = null;
@@ -53,6 +57,39 @@
         filterToggle.setAttribute('aria-expanded', String(open));
         filterToggle.setAttribute('aria-label', open ? 'Close filters' : 'Open filters');
         document.documentElement.style.overflow = open ? 'hidden' : '';
+    }
+
+    function setFittingRoomOpen(open) {
+        if (fittingRoom) fittingRoom.hidden = !open;
+        if (fittingReopen) fittingReopen.hidden = open;
+        if (open) fittingRoom?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function readStoredCart() {
+        try {
+            const value = JSON.parse(window.localStorage.getItem(cartStorageKey) || '[]');
+            return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object' && item.id) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveCart(cart) {
+        try {
+            window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    function updateCartCount(cart = readStoredCart()) {
+        const count = cart.reduce((sum, item) => sum + Math.max(0, Number(item.qty) || 0), 0);
+        root.querySelectorAll('[data-cart-count]').forEach((element) => {
+            element.textContent = String(count);
+            element.setAttribute('aria-label', `${count} item${count === 1 ? '' : 's'} in bag`);
+        });
+        return count;
     }
 
     function updatePreviewImage(product) {
@@ -140,6 +177,19 @@
                 number.className = 'fitting-pick__dot';
                 number.textContent = String(index).padStart(2, '0');
 
+                const thumb = document.createElement('span');
+                thumb.className = 'fitting-pick__thumb';
+                if (product.image) {
+                    const image = document.createElement('img');
+                    image.src = product.image;
+                    image.alt = '';
+                    image.loading = 'lazy';
+                    thumb.append(image);
+                } else {
+                    thumb.classList.add('fitting-pick__thumb--empty');
+                    thumb.textContent = 'V';
+                }
+
                 const name = document.createElement('span');
                 name.className = 'fitting-pick__name';
                 name.textContent = product.name;
@@ -149,7 +199,7 @@
                 remove.setAttribute('aria-hidden', 'true');
                 remove.textContent = '×';
 
-                button.append(number, name, remove);
+                button.append(number, thumb, name, remove);
                 fittingPicks.append(button);
             });
         }
@@ -165,14 +215,35 @@
 
     filterToggle?.addEventListener('click', () => setFiltersOpen(!sidebar?.classList.contains('is-open')));
     backdrop?.addEventListener('click', () => setFiltersOpen(false));
+    fittingClose?.addEventListener('click', () => setFittingRoomOpen(false));
+    fittingReopen?.addEventListener('click', () => setFittingRoomOpen(true));
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') setFiltersOpen(false);
+        if (event.key === 'Escape') {
+            setFiltersOpen(false);
+        }
     });
 
     root.querySelectorAll('[data-fit-product]').forEach((button) => {
         button.setAttribute('aria-pressed', 'false');
         button.addEventListener('click', () => {
-            selectProduct(readProductData(button), button);
+            const product = readProductData(button);
+            setFittingRoomOpen(true);
+
+            if (!picks.has(product.id)) {
+                if (picks.size >= maxPicks) {
+                    selectProduct(product, button);
+                    showToast('Your edit is full. Remove a piece before adding another.');
+                } else {
+                    picks.set(product.id, product);
+                    selectProduct(product, button);
+                    renderPicks();
+                    showToast('Piece added to your fitting room.');
+                }
+            } else {
+                selectProduct(product, button);
+                renderPicks();
+            }
+
             if (window.matchMedia('(max-width: 720px)').matches) {
                 setFiltersOpen(true);
             }
@@ -298,6 +369,55 @@
 
         selectProduct(product, button);
     });
+
+
+    root.querySelectorAll('[data-cart-add]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const id = String(button.dataset.cartAdd || '');
+            if (!id) return;
+
+            const cart = readStoredCart();
+            const existing = cart.find((item) => String(item.id) === id);
+            if (existing) {
+                existing.qty = Math.max(1, Number(existing.qty) || 1) + 1;
+            } else {
+                cart.push({
+                    id,
+                    name: button.dataset.cartName || 'Selected product',
+                    price: button.dataset.cartPrice || 'Price unavailable',
+                    qty: 1
+                });
+            }
+
+            saveCart(cart);
+            const count = updateCartCount(cart);
+            showToast(`Added to your bag · ${count} item${count === 1 ? '' : 's'}`);
+        });
+    });
+
+    root.querySelector('[data-cart-toggle]')?.addEventListener('click', () => {
+        const cart = readStoredCart();
+        const count = updateCartCount(cart);
+        if (count === 0) {
+            showToast('Your bag is empty.');
+            return;
+        }
+
+        const names = cart.slice(0, 2).map((item) => item.name).join(', ');
+        const more = cart.length > 2 ? ` +${cart.length - 2} more` : '';
+        showToast(`Your bag: ${names}${more}. Checkout is not connected yet.`);
+    });
+
+    root.querySelector('[data-store-language]')?.addEventListener('click', () => {
+        showToast('English is the only storefront language currently enabled.');
+    });
+
+    root.querySelector('[data-store-settings]')?.addEventListener('click', () => {
+        const compact = root.classList.toggle('store-shell--compact');
+        showToast(compact ? 'Compact product view enabled.' : 'Standard product view enabled.');
+    });
+
+    updateCartCount();
 
     root.querySelector('[data-fitting-reset]')?.addEventListener('click', () => {
         picks.clear();
