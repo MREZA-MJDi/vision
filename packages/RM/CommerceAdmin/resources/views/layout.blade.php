@@ -31,9 +31,9 @@
                 <span class="ak-nav-icon" aria-hidden="true">▦</span><span>Classic Dashboard</span>
             </a>
 
-            <button class="ak-nav-group {{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.reviews.*') ? 'is-open' : '' }}"
+            <button class="ak-nav-group is-open"
                     type="button" data-nav-toggle
-                    aria-expanded="{{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.reviews.*') ? 'true' : 'false' }}">
+                    aria-expanded="true">
                 <span class="ak-nav-icon" aria-hidden="true">▤</span><span>E-Commerce</span><span class="ak-nav-caret" aria-hidden="true">⌄</span>
             </button>
             <div class="ak-nav-submenu" data-nav-submenu>
