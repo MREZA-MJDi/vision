@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -51,5 +52,60 @@ class ExampleTest extends TestCase
             ->assertSee('Revenue overview')
             ->assertSee('Recent orders')
             ->assertSee('Recently added products');
+    }
+
+    public function test_reference_commerce_screens_render_and_remain_connected_to_catalog_and_orders(): void
+    {
+        $administrator = User::factory()->create();
+        $administrator->forceFill(['is_admin' => true])->save();
+
+        $this->actingAs($administrator)
+            ->get(route('commerce-admin.analytics'))
+            ->assertOk()
+            ->assertSee('E-Commerce Dashboard')
+            ->assertSee('Returning Rate')
+            ->assertSee('Sales by Location')
+            ->assertSee('Customer Reviews');
+
+        $this->get(route('commerce-admin.products.index'))
+            ->assertOk()
+            ->assertSee('TOTAL SALES')
+            ->assertSee('Product list');
+
+        $this->get(route('commerce-admin.products.create'))
+            ->assertOk()
+            ->assertSee('Product information');
+
+        $this->post(route('commerce-admin.products.store'), [
+            'name' => 'Reference View Sample',
+            'slug' => '',
+            'status' => 'active',
+            'is_taxable' => '1',
+            'variants' => [
+                [
+                    'sku' => 'REF-VIEW-001',
+                    'barcode' => 'REF-VIEW-001',
+                    'size' => 'M',
+                    'color' => 'Black',
+                    'color_code' => '#000000',
+                    'price' => '49.00',
+                    'sale_price' => '',
+                    'stock' => '5',
+                    'low_stock_threshold' => '2',
+                    'is_active' => '1',
+                ],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $product = Product::query()->where('name', 'Reference View Sample')->firstOrFail();
+
+        $this->get(route('commerce-admin.products.show', $product->getKey()))
+            ->assertOk()
+            ->assertSee('Reference View Sample')
+            ->assertSee('Variants & inventory');
+
+        $this->get(route('commerce-admin.orders.index'))
+            ->assertOk()
+            ->assertSee('Orders');
     }
 }
