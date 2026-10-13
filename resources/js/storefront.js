@@ -100,8 +100,13 @@
             fittingImage.hidden = true;
             fittingPlaceholder.hidden = false;
             fittingPreview?.classList.add('is-placeholder');
+            const caption = fittingPlaceholder.querySelector('span:last-child');
+            if (caption) caption.textContent = product?.name ? product.name.toUpperCase() + ' · IMAGE UNAVAILABLE' : 'SELECT A PIECE TO START YOUR PREVIEW';
             return;
         }
+
+        const caption = fittingPlaceholder.querySelector('span:last-child');
+        if (caption) caption.innerHTML = 'SELECT A PIECE<br>TO START YOUR PREVIEW';
 
         fittingImage.hidden = false;
         fittingPlaceholder.hidden = true;
@@ -256,9 +261,8 @@
             const card = link.closest('[data-product-card]');
             const button = card?.querySelector('[data-fit-product]');
             if (button) {
-                selectProduct(readProductData(button), button);
+                button.click();
                 root.querySelector('[data-fitting-room]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                if (window.matchMedia('(max-width: 720px)').matches) setFiltersOpen(true);
             }
         });
     });
@@ -320,7 +324,7 @@
             } else {
                 currentSelection = null;
                 fittingName && (fittingName.textContent = 'Choose a piece');
-                fittingDescription && (fittingDescription.textContent = 'Select the fit icon on any product to preview it here.');
+                fittingDescription && (fittingDescription.textContent = 'Select the hanger icon on any product to preview it here.');
                 fittingPrice && (fittingPrice.textContent = 'Waiting for your edit');
                 updatePreviewImage(null);
                 root.querySelectorAll('[data-fit-product]').forEach((button) => {
