@@ -29,7 +29,7 @@ class OrderController
         $orderModel = $this->model('order', Order::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
 
-        $query = $orderModel::query()->with(['user']);
+        $query = $orderModel::query()->with(['user', 'items']);
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
 
@@ -59,14 +59,8 @@ class OrderController
             'gross' => $orderItemModel::query()->sum('line_total'),
         ];
 
-        $rows = $orders->getCollection()->map(function ($order) use ($orderItemModel) {
-            $order->admin_item_count = $orderItemModel::query()->where('order_id', $order->getKey())->sum('quantity');
-            $order->admin_primary_item = $orderItemModel::query()->where('order_id', $order->getKey())->first();
+        // The paginator already eager-loads order items, so the table stays query-bounded.
 
-            return $order;
-        });
-
-        $orders->setCollection($rows);
 
         return view('commerce-admin::orders.index', compact('orders', 'stats', 'search', 'status'));
     }
