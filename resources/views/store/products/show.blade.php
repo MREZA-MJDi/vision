@@ -1,61 +1,120 @@
-@extends('store.layout')
+@extends('layouts.store')
 
 @section('title', $product->meta_title ?: $product->name . ' — VISION')
-@section('description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?: $product->description ?: 'Discover the latest VISION edit.'), 155))
+@section('meta-description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?: $product->description ?: 'Discover the latest VISION edit.'), 155))
 
 @section('content')
-    <div class="product-crumb"><a href="{{ route('home') }}">HOME</a><span>/</span><a href="{{ route('products.index') }}">SHOP THE EDIT</a><span>/</span><span>{{ $product->name }}</span></div>
-    <section class="product-detail">
-        <div class="product-detail__gallery">
+@php
+    $defaultVariant = $product->activeVariants->first();
+    $primaryImage = $product->primaryGalleryMedia?->url
+        ?? $defaultVariant?->primaryGalleryMedia?->url;
+    $formatPrice = static fn ($amount) => '$' . number_format((float) $amount, 2);
+@endphp
+
+<main class="store-main commerce-page">
+    <nav class="commerce-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{{ route('storefront.index') }}">HOME</a><span>/</span>
+        <a href="{{ route('products.index') }}">SHOP</a><span>/</span>
+        <span>{{ $product->name }}</span>
+    </nav>
+
+    <section class="store-product-detail">
+        <div class="store-product-detail__gallery">
             @forelse($product->galleryMedia as $media)
-                <div class="product-detail__image"><img src="{{ $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}"></div>
+                <div class="store-product-detail__image">
+                    <img src="{{ $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}">
+                </div>
             @empty
-                <div class="product-detail__image product-detail__image--empty"><span>VISION<br>STUDIO</span></div>
+                @if($primaryImage)
+                    <div class="store-product-detail__image">
+                        <img src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager">
+                    </div>
+                @else
+                    <div class="store-product-detail__image store-product-detail__image--empty"><span>VISION<br>STUDIO</span></div>
+                @endif
             @endforelse
         </div>
-        <div class="product-detail__info">
-            <span class="eyebrow">{{ $product->brand?->name ?? 'VISION STUDIO' }} / COLLECTION 026</span>
+
+        <div class="store-product-detail__info">
+            <p class="store-eyebrow">{{ $product->brand?->name ?? 'VISION STUDIO' }} / THE EDIT</p>
             <h1>{{ $product->name }}</h1>
-            @if($product->short_description)<p class="product-detail__lead">{{ $product->short_description }}</p>@endif
-            @php($defaultVariant = $product->activeVariants->first())
-            <div class="product-detail__price" data-product-price>
+            @if($product->short_description)
+                <p class="store-product-detail__lead">{{ $product->short_description }}</p>
+            @endif
+
+            <div class="store-product-detail__price" data-variant-price>
                 @if($defaultVariant)
-                    @if($defaultVariant->is_on_sale)<del>{{ number_format((float) $defaultVariant->price, 0) }}</del>@endif
-                    <strong>{{ number_format((float) $defaultVariant->effective_price, 0) }} <small>IRR</small></strong>
-                @else
-                    <strong>COMING SOON</strong>
+                    @if($defaultVariant->is_on_sale)<del>{{ $formatPrice($defaultVariant->price) }}</del>@endif
+                    <strong>{{ $formatPrice($defaultVariant->effective_price) }}</strong>
                 @endif
             </div>
-            @if($product->category)<div class="product-detail__category">CATEGORY <span>{{ $product->category->name }}</span></div>@endif
-            @if($product->activeVariants->isNotEmpty())
-                <form class="product-buy" action="#" method="post" data-product-buy>
-                    <label for="variant-select">SELECT SIZE / COLOUR</label>
-                    <select id="variant-select" name="variant" data-variant-select required>
-                        @foreach($product->activeVariants as $variant)
-                            <option value="{{ $variant->id }}" data-price="{{ $variant->effective_price }}" data-original-price="{{ $variant->price }}" data-sale="{{ $variant->is_on_sale ? '1' : '0' }}" data-stock="{{ $variant->stock }}" @selected($loop->first) @disabled($variant->stock < 1)>
-                                {{ implode(' / ', array_filter([$variant->size, $variant->color])) ?: ($variant->sku ?: 'Standard') }}{{ $variant->stock < 1 ? ' — SOLD OUT' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="product-stock" data-product-stock>{{ $defaultVariant->stock > 0 ? 'IN STOCK — READY FOR YOUR EDIT' : 'CURRENTLY UNAVAILABLE' }}</p>
-                    <button type="button" class="button button--dark product-buy__button" data-demo-add-to-bag @disabled(!$defaultVariant || $defaultVariant->stock < 1)>ADD TO BAG <span>↗</span></button>
-                    <p class="product-buy__notice" data-buy-notice role="status">Bag and checkout need to be connected to the existing cart/order workflow before live sales.</p>
-                </form>
-            @else
-                <div class="product-unavailable">This piece is being prepared. Check back soon.</div>
+
+            @if($product->category)
+                <p class="store-product-detail__category">CATEGORY <span>{{ $product->category->name }}</span></p>
             @endif
-            <div class="product-details-accordion">
-                <details open><summary>THE STORY <span>＋</span></summary><div>{{ $product->description ?: $product->short_description ?: 'A considered piece from the VISION selection.' }}</div></details>
-                <details><summary>SHIPPING & RETURNS <span>＋</span></summary><div>Shipping options and return terms should be configured for the store before launch.</div></details>
-                <details><summary>PRODUCT DETAILS <span>＋</span></summary><div>Stock is shown from the selected product variant. Availability can change as inventory is updated.</div></details>
+
+            <form class="store-product-detail__buy" action="{{ route('cart.items.store') }}" method="POST">
+                @csrf
+                @if($product->activeVariants->isNotEmpty())
+                    <label class="commerce-field">Select size / colour
+                        <select name="variant_id" data-variant-select required>
+                            @foreach($product->activeVariants as $variant)
+                                <option
+                                    value="{{ $variant->getKey() }}"
+                                    data-price="{{ $variant->effective_price }}"
+                                    data-original-price="{{ $variant->price }}"
+                                    data-sale="{{ $variant->is_on_sale ? '1' : '0' }}"
+                                    data-stock="{{ $variant->stock }}"
+                                    @selected($variant->getKey() === $defaultVariant?->getKey())
+                                    @disabled((int) $variant->stock < 1)
+                                >
+                                    {{ implode(' / ', array_filter([$variant->size, $variant->color])) ?: ($variant->sku ?: 'Standard') }}
+                                    · {{ $formatPrice($variant->effective_price) }}
+                                    {{ (int) $variant->stock < 1 ? ' — SOLD OUT' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="commerce-field">Quantity
+                        <input type="number" name="quantity" value="1" min="1" max="{{ min(100, max(1, (int) $defaultVariant->stock)) }}" data-variant-quantity required>
+                    </label>
+                    <p class="commerce-stock-note" data-variant-stock>
+                        {{ (int) $defaultVariant->stock > 0 ? ((int) $defaultVariant->stock . ' available') : 'Currently unavailable' }}
+                    </p>
+                    <button class="commerce-button commerce-button--primary commerce-button--wide" type="submit" data-product-add @disabled((int) $defaultVariant->stock < 1)>Add to bag ↗</button>
+                    <p class="commerce-muted">The server rechecks the selected option, price and stock when you add it to your bag and again at checkout.</p>
+                @else
+                    <p class="commerce-alert commerce-alert--error">This piece is not available for purchase right now.</p>
+                @endif
+            </form>
+
+            <div class="store-product-detail__accordions">
+                <details open><summary>The story</summary><div>{{ $product->description ?: $product->short_description ?: 'A considered piece from the VISION selection.' }}</div></details>
+                <details><summary>Shipping & returns</summary><div>Shipping is calculated using the store's configured flat rate. Contact the store for return arrangements.</div></details>
+                <details><summary>Product details</summary><div>Prices and stock shown here are indicative until the order is submitted; final availability is checked server-side.</div></details>
             </div>
-            <a class="text-link product-detail__back" href="{{ route('products.index') }}">← BACK TO THE EDIT</a>
+            <a class="commerce-text-link" href="{{ route('products.index') }}">← Back to the edit</a>
         </div>
     </section>
+
     @if($relatedProducts->isNotEmpty())
-        <section class="section product-section">
-            <div class="section-heading"><div><span class="eyebrow">YOU MAY ALSO LIKE</span><h2>MORE TO <em>LOVE.</em></h2></div><a class="text-link" href="{{ route('products.index') }}">SHOP ALL ↗</a></div>
-            <div class="product-grid">@foreach($relatedProducts as $product)@include('store.products._card', ['product' => $product])@endforeach</div>
+        <section class="commerce-related">
+            <div class="commerce-page-heading"><div><p class="store-eyebrow">YOU MAY ALSO LIKE</p><h2>More to love<span>.</span></h2></div><a class="commerce-text-link" href="{{ route('products.index') }}">Shop all ↗</a></div>
+            <div class="commerce-related-grid">
+                @foreach($relatedProducts as $related)
+                    @php
+                        $relatedVariant = $related->primaryActiveVariant;
+                        $relatedImage = $related->primaryGalleryMedia?->url ?? $relatedVariant?->primaryGalleryMedia?->url;
+                    @endphp
+                    <a class="commerce-related-card" href="{{ route('products.show', ['product' => $related->slug]) }}">
+                        @if($relatedImage)<img src="{{ $relatedImage }}" alt="{{ $related->name }}" loading="lazy">@else<div class="commerce-related-card__empty">V.</div>@endif
+                        <span>{{ $related->brand?->name ?? $related->category?->name ?? 'VISION STUDIO' }}</span>
+                        <strong>{{ $related->name }}</strong>
+                        @if($relatedVariant)<b>{{ $formatPrice($relatedVariant->effective_price) }}</b>@endif
+                    </a>
+                @endforeach
+            </div>
         </section>
     @endif
+</main>
 @endsection
