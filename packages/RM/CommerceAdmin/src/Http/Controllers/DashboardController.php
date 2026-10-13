@@ -56,6 +56,30 @@ class DashboardController
         ));
     }
 
+    public function export()
+    {
+        $orderModel = $this->model('order', Order::class);
+        $series = $this->revenueSeries($orderModel);
+
+        return response()->streamDownload(function () use ($series): void {
+            $stream = fopen('php://output', 'w');
+            fwrite($stream, "\xEF\xBB\xBF");
+            fputcsv($stream, ['Month', 'Paid revenue', 'Orders']);
+
+            foreach ($series as $point) {
+                fputcsv($stream, [
+                    $point['full_label'],
+                    number_format((float) $point['value'], 2, '.', ''),
+                    (int) $point['orders_count'],
+                ]);
+            }
+
+            fclose($stream);
+        }, 'commerce-analytics.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     public function analytics(): View
     {
         $orderModel = $this->model('order', Order::class);
