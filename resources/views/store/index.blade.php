@@ -164,6 +164,7 @@
                             $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
                             $effectivePrice = $variant?->sale_price ?? $variant?->price;
                             $isOnSale = $variant && $variant->sale_price !== null && (float) $variant->sale_price < (float) $variant->price;
+                            $rating = data_get($product->attributes, 'rating');
                         @endphp
                         <article class="product-card" data-product-card>
                             <div class="product-card__visual">
@@ -178,33 +179,44 @@
                                     @endif
                                 </a>
 
-                                <span class="product-card__badge">{{ $isOnSale ? 'SPECIAL PRICE' : ($product->is_featured ? 'EDITOR’S PICK' : ($product->category?->name ?? 'THE EDIT')) }}</span>
-
                                 <button class="product-card__wishlist" type="button" data-wishlist="{{ $product->id }}" aria-pressed="false" aria-label="Save {{ $product->name }}" title="Save to wishlist">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"></path></svg>
                                 </button>
 
-                                <button class="product-card__fit" type="button" data-fit-product
+                                @if(is_numeric($rating))
+                                    <span class="product-card__rating" aria-label="Rating {{ number_format((float) $rating, 1) }} out of 5">
+                                        <span aria-hidden="true">★</span> {{ number_format((float) $rating, 1) }}
+                                    </span>
+                                @endif
+
+                                <button class="product-card__quickfit" type="button" data-fit-product
                                     data-product-id="{{ $product->id }}"
                                     data-product-name="{{ $product->name }}"
                                     data-product-price="{{ $effectivePrice !== null ? $formatPrice($effectivePrice) : 'Price unavailable' }}"
                                     data-product-image="{{ $image ?? '' }}"
                                     data-product-description="{{ $product->short_description ?? '' }}"
-                                    aria-label="Preview {{ $product->name }} in the fitting room">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M5 13l3-3 4 3 4-3 3 3M7 13v7m10-7v7M5 20h14"></path></svg>
-                                    <span>Preview</span>
+                                    aria-label="Move {{ $product->name }} to the fitting room" title="Preview in fitting room">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M4 15l8-5 8 5M6 14v5h12v-5"></path></svg>
+                                </button>
+
+                                <button class="product-card__cart" type="button"
+                                    data-cart-add="{{ $product->id }}"
+                                    data-cart-name="{{ $product->name }}"
+                                    data-cart-price="{{ $effectivePrice !== null ? $formatPrice($effectivePrice) : 'Price unavailable' }}"
+                                    aria-label="Add {{ $product->name }} to bag" title="Add to bag">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2M12 12v4m-2-2h4"></path></svg>
                                 </button>
                             </div>
 
                             <div class="product-card__details">
                                 <div class="product-card__text">
-                                    <p class="product-card__category">{{ $product->brand?->name ?? ($product->category?->name ?? 'VISION SELECT') }}</p>
                                     <h2><a href="#catalog" data-card-preview>{{ $product->name }}</a></h2>
                                 </div>
                                 <div class="product-card__price">
                                     @if($isOnSale)
                                         <strong>{{ $formatPrice($variant->sale_price) }}</strong>
                                         <del>{{ $formatPrice($variant->price) }}</del>
+                                        <span class="product-card__sale-label">Sale</span>
                                     @elseif($effectivePrice !== null)
                                         <strong>{{ $formatPrice($effectivePrice) }}</strong>
                                     @else
@@ -212,9 +224,6 @@
                                     @endif
                                 </div>
                             </div>
-                            @if($product->short_description)
-                                <p class="product-card__description">{{ $product->short_description }}</p>
-                            @endif
                         </article>
                     @endforeach
                 </div>
