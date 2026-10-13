@@ -22,6 +22,23 @@ class Order extends Model
         'returned',
     ];
 
+    /**
+     * Explicit order-state machine shared by admin actions and the UI.
+     *
+     * Terminal states cannot be reopened, which also prevents a second stock
+     * restoration from being triggered by a repeated status update.
+     */
+    public const STATUS_TRANSITIONS = [
+        'pending' => ['confirmed', 'cancelled'],
+        'confirmed' => ['preparing', 'cancelled'],
+        'preparing' => ['shipped', 'cancelled'],
+        'shipped' => ['out_for_delivery', 'returned'],
+        'out_for_delivery' => ['delivered', 'returned'],
+        'delivered' => ['returned'],
+        'cancelled' => [],
+        'returned' => [],
+    ];
+
     public const PAYMENT_STATUSES = [
         'pending',
         'paid',
@@ -38,6 +55,7 @@ class Order extends Model
         'user_id',
         'address_id',
         'order_number',
+        'public_token',
         'customer_name',
         'customer_phone',
         'customer_email',
@@ -121,5 +139,22 @@ class Order extends Model
             self::CANCEL_LIKE_STATUSES,
             true
         );
+    }
+
+    /**
+     * Return valid next states for the current order state.
+     */
+    public function allowedNextStatuses(): array
+    {
+        return self::STATUS_TRANSITIONS[$this->status] ?? [];
+    }
+
+    /**
+     * A same-state update is treated as an idempotent no-op.
+     */
+    public function canTransitionTo(string $nextStatus): bool
+    {
+        return $nextStatus === $this->status
+            || in_array($nextStatus, $this->allowedNextStatuses(), true);
     }
 }

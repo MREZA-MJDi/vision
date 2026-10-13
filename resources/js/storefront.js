@@ -18,7 +18,6 @@
     const fittingClose = root.querySelector('[data-fitting-close]');
     const fittingReopen = root.querySelector('[data-fitting-reopen]');
     const maxPicks = 5;
-    const cartStorageKey = 'vision.storefront.cart.v1';
     const picks = new Map();
     let currentSelection = null;
     let toastTimer = null;
@@ -56,31 +55,51 @@
         if (open) fittingRoom?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function readStoredCart() {
-        try {
-            const value = JSON.parse(window.localStorage.getItem(cartStorageKey) || '[]');
-            return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object' && item.id) : [];
-        } catch {
-            return [];
-        }
-    }
-
-    function saveCart(cart) {
-        try {
-            window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
-            return true;
-        } catch {
-            return false;
-        }
-    }
-
-    function updateCartCount(cart = readStoredCart()) {
-        const count = cart.reduce((sum, item) => sum + Math.max(0, Number(item.qty) || 0), 0);
+    function updateCartCount(count = 0) {
+        const safeCount = Math.max(0, Number(count) || 0);
         root.querySelectorAll('[data-cart-count]').forEach((element) => {
-            element.textContent = String(count);
-            element.setAttribute('aria-label', `${count} item${count === 1 ? '' : 's'} in bag`);
+            element.textContent = String(safeCount);
+            element.setAttribute('aria-label', safeCount + ' item' + (safeCount === 1 ? '' : 's') + ' in bag');
         });
-        return count;
+        return safeCount;
+    }
+
+    async function requestCart(url, method = 'GET', body = null) {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const headers = {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrf
+        };
+        if (body !== null) headers['Content-Type'] = 'application/json';
+
+        const response = await fetch(url, {
+            method,
+            credentials: 'same-origin',
+            headers,
+            body: body === null ? undefined : JSON.stringify(body)
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const validationMessage = payload.errors
+                ? Object.values(payload.errors).flat()[0]
+                : null;
+            throw new Error(validationMessage || payload.message || 'Could not update your bag. Please try again.');
+        }
+
+        return payload;
+    }
+
+    async function syncCartCount() {
+        const url = root.dataset.cartSummaryUrl;
+        if (!url) return;
+        try {
+            const response = await requestCart(url);
+            updateCartCount(response.count);
+        } catch {
+            // Keep the storefront usable even if the count endpoint is temporarily unavailable.
+        }
     }
 
     function updatePreviewImage(product) {
@@ -341,44 +360,93 @@
 
 
     root.querySelectorAll('[data-cart-add]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const id = String(button.dataset.cartAdd || '');
-            if (!id) return;
-
-            const cart = readStoredCart();
-            const existing = cart.find((item) => String(item.id) === id);
-            if (existing) {
-                existing.qty = Math.max(1, Number(existing.qty) || 1) + 1;
-            } else {
-                cart.push({
-                    id,
-                    name: button.dataset.cartName || 'Selected product',
-                    price: button.dataset.cartPrice || 'Price unavailable',
-                    qty: 1
-                });
+        button.addEventListener('click', async () => {
+            const variantId = Number(button.dataset.cartAdd || 0);
+            const addUrl = root.dataset.cartAddUrl;
+            if (!Number.isInteger(variantId) || variantId < 1 || !addUrl) {
+                showToast('This piece is not available to add right now.');
+                return;
             }
 
-            saveCart(cart);
-            const count = updateCartCount(cart);
-            showToast(`Added to your bag · ${count} item${count === 1 ? '' : 's'}`);
+            button.disabled = true;
+            try {
+                const result = await requestCart(addUrl, 'POST', {
+                    variant_id: variantId,
+                    quantity: 1
+                });
+                updateCartCount(result.count);
+                showToast('Added to your bag · ' + result.count + ' item' + (result.count === 1 ? '' : 's'));
+            } catch (error) {
+                showToast(error.message || 'Could not add this piece to your bag.');
+            } finally {
+                button.disabled = false;
+            }
         });
     });
 
     root.querySelector('[data-cart-toggle]')?.addEventListener('click', () => {
-        const cart = readStoredCart();
-        const count = updateCartCount(cart);
-        if (count === 0) {
-            showToast('Your bag is empty.');
-            return;
-        }
-
-        const names = cart.slice(0, 2).map((item) => item.name).join(', ');
-        const more = cart.length > 2 ? ` +${cart.length - 2} more` : '';
-        showToast(`Your bag: ${names}${more}. Checkout is not connected yet.`);
+        const url = root.dataset.cartUrl;
+        if (url) window.location.assign(url);
     });
 
     root.querySelector('[data-store-account]')?.addEventListener('click', () => {
-        showToast('Customer accounts are not available yet.');
+        const url = root.dataset.accountUrl;
+        if (url) window.location.assign(url);
+    });
+
+    root.querySelectorAll('[data-variant-select]').forEach((select) => {
+        const priceDisplay = root.querySelector('[data-variant-price]');
+        const stockDisplay = root.querySelector('[data-variant-stock]');
+        const quantityInput = root.querySelector('[data-variant-quantity]');
+        const addButton = root.querySelector('[data-product-add]');
+
+        const refreshVariant = () => {
+            const option = select.selectedOptions?.[0];
+            if (!option) {
+                if (addButton) addButton.disabled = true;
+                if (stockDisplay) stockDisplay.textContent = 'Currently unavailable';
+                return;
+            }
+
+            const price = Number(option.dataset.price);
+            const originalPrice = Number(option.dataset.originalPrice);
+            const onSale = option.dataset.sale === '1';
+            const stock = Math.max(0, Number(option.dataset.stock) || 0);
+
+            if (priceDisplay && Number.isFinite(price)) {
+                priceDisplay.replaceChildren();
+                if (onSale && Number.isFinite(originalPrice)) {
+                    const del = document.createElement('del');
+                    del.textContent = new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD'
+                    }).format(originalPrice);
+                    priceDisplay.append(del);
+                }
+                const strong = document.createElement('strong');
+                strong.textContent = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(price);
+                priceDisplay.append(strong);
+            }
+
+            if (stockDisplay) {
+                stockDisplay.textContent = stock > 0
+                    ? stock + ' available'
+                    : 'Currently unavailable';
+            }
+            if (quantityInput) {
+                quantityInput.max = String(Math.min(100, Math.max(1, stock)));
+                if (stock > 0 && Number(quantityInput.value) > stock) {
+                    quantityInput.value = String(stock);
+                }
+            }
+            if (addButton) addButton.disabled = stock < 1;
+        };
+
+        select.addEventListener('change', refreshVariant);
+        refreshVariant();
     });
 
     root.querySelector('[data-store-language]')?.addEventListener('click', () => {
@@ -390,7 +458,8 @@
         showToast(compact ? 'Compact product view enabled.' : 'Standard product view enabled.');
     });
 
-    updateCartCount();
+    updateCartCount(0);
+    syncCartCount();
 
     root.querySelector('[data-fitting-reset]')?.addEventListener('click', () => {
         picks.clear();

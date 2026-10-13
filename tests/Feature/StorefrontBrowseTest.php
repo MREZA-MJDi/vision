@@ -17,9 +17,9 @@ class StorefrontBrowseTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('OWN');
-        $response->assertSee('THE');
-        $response->assertSee('MOMENT');
+        $response->assertSee('New Arrivals');
+        $response->assertSee('Fitting room');
+        $response->assertSee('Filters');
     }
 
     public function test_product_catalog_lists_active_products_and_hides_inactive_products(): void

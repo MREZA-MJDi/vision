@@ -4,6 +4,7 @@ namespace Rm\CommerceAdmin\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\InventoryMovement;
 use App\Models\Media;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -79,7 +80,7 @@ class ProductController
                 ->whereColumn('stock', '<=', 'low_stock_threshold'));
         } elseif ($status === 'sale') {
             $query->whereHas('variants', fn ($variants) => $variants
-                ->whereNotNull('sale_price')->whereColumn('sale_price', '<', 'price'));
+                ->whereNotNull('sale_price')->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price'));
         }
 
         $products = $query->orderByDesc('created_at')
@@ -98,7 +99,7 @@ class ProductController
             'low_stock' => $variantModel::query()->where('is_active', true)
                 ->whereColumn('stock', '<=', 'low_stock_threshold')->count(),
             'discounted' => $variantModel::query()->whereNotNull('sale_price')
-                ->whereColumn('sale_price', '<', 'price')->count(),
+                ->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price')->count(),
             'units_sold' => $orderItemModel::query()->sum('quantity'),
         ];
 
@@ -189,6 +190,7 @@ class ProductController
     {
         $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
+        $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $productTable = (new $productModel())->getTable();
         $categoryModel = $this->model('category', Category::class);
         $brandModel = $this->model('brand', Brand::class);
@@ -231,10 +233,30 @@ class ProductController
             }
         }
 
-        DB::transaction(function () use ($validated, $product, $updating, $variantModel): void {
-            $slug = trim((string) ($validated['slug'] ?? '')) ?: Str::slug($validated['name']);
+        DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel): void {
+            $requestedSlug = trim((string) ($validated['slug'] ?? ''));
+            $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
+
             if ($slug === '') {
-                $slug = 'product-' . Str::lower(Str::random(8));
+                $slug = 'product';
+            }
+
+            if ($requestedSlug === '') {
+                $baseSlug = $slug;
+                $suffix = 2;
+                $slugTaken = static function (string $candidate) use ($productModel, $product): bool {
+                    return $productModel::query()
+                        ->where('slug', $candidate)
+                        ->when(
+                            $product->exists,
+                            fn ($query) => $query->where($product->getKeyName(), '<>', $product->getKey())
+                        )
+                        ->exists();
+                };
+
+                while ($slugTaken($slug)) {
+                    $slug = $baseSlug . '-' . $suffix++;
+                }
             }
 
             $product->fill([
@@ -259,10 +281,22 @@ class ProductController
 
             foreach (array_values($validated['variants']) as $index => $input) {
                 $variantId = $input['id'] ?? null;
-                $sku = trim((string) ($input['sku'] ?? '')) ?: null;
+                $sku = trim((string) ($input['sku'] ?? ''));
                 $barcode = trim((string) ($input['barcode'] ?? '')) ?: null;
 
-                if ($sku !== null && in_array($sku, $seenSkus, true)) {
+                // product_variants.sku is required and unique in the database.
+                // When the form leaves it blank, generate a stable-format SKU
+                // instead of attempting an invalid NULL insert.
+                if ($sku === '') {
+                    do {
+                        $sku = 'VIS-' . Str::upper(Str::random(10));
+                    } while (
+                        in_array($sku, $seenSkus, true)
+                        || $variantModel::query()->where('sku', $sku)->exists()
+                    );
+                }
+
+                if (in_array($sku, $seenSkus, true)) {
                     throw ValidationException::withMessages([
                         "variants.$index.sku" => 'Each variant must have a different SKU.',
                     ]);
@@ -272,7 +306,7 @@ class ProductController
                         "variants.$index.barcode" => 'Each variant must have a different barcode.',
                     ]);
                 }
-                if ($sku !== null) {
+                {
                     $exists = $variantModel::query()->where('sku', $sku)
                         ->when($variantId, fn ($q) => $q->where('id', '<>', $variantId))->exists();
                     if ($exists) {
@@ -299,6 +333,8 @@ class ProductController
                     $variant = $product->variants()->make();
                 }
 
+                $previousStock = $variant->exists ? (int) $variant->stock : 0;
+
                 $variant->fill([
                     'sku' => $sku,
                     'barcode' => $barcode,
@@ -314,6 +350,22 @@ class ProductController
                 ]);
                 $variant->save();
                 $keepIds[] = $variant->getKey();
+
+                $stockDelta = (int) $variant->stock - $previousStock;
+                if ($stockDelta !== 0) {
+                    $inventoryModel::query()->create([
+                        'product_variant_id' => $variant->getKey(),
+                        'type' => 'adjustment',
+                        'quantity' => $stockDelta,
+                        'stock_after' => (int) $variant->stock,
+                        'reference_type' => $product->getMorphClass(),
+                        'reference_id' => $product->getKey(),
+                        'note' => $variantId
+                            ? 'Stock adjusted from the product editor.'
+                            : 'Initial stock set from the product editor.',
+                        'created_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+                }
             }
 
             if ($updating) {

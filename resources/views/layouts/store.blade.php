@@ -19,7 +19,11 @@
 <body class="storefront-body">
     <div class="store-atmosphere" aria-hidden="true"></div>
 
-    <div class="store-shell" data-storefront>
+    <div class="store-shell" data-storefront
+         data-cart-url="{{ route('cart.index') }}"
+         data-cart-summary-url="{{ route('cart.summary') }}"
+         data-cart-add-url="{{ route('cart.items.store') }}"
+         data-account-url="{{ route('account.show') }}">
         <header class="store-header">
             <nav class="store-nav" aria-label="Main navigation">
                 <a href="{{ route('storefront.index') }}" class="store-nav__link {{ request()->query->count() === 0 ? 'is-current' : '' }}">Home</a>
@@ -39,12 +43,12 @@
                 </button>
                 <form class="store-search" action="{{ route('storefront.index') }}" method="GET" role="search">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg>
-                    <input type="search" name="q" value="{{ $search }}" placeholder="Search" aria-label="Search products">
-                    @if($sort !== 'newest')<input type="hidden" name="sort" value="{{ $sort }}">@endif
+                    <input type="search" name="q" value="{{ request('q', $search ?? '') }}" placeholder="Search" aria-label="Search products">
+                    @if(($sort ?? request('sort', 'newest')) !== 'newest')<input type="hidden" name="sort" value="{{ $sort ?? request('sort', 'newest') }}">@endif
                     <button type="submit" aria-label="Submit search">↵</button>
                 </form>
 
-                <button class="store-icon-button" type="button" data-store-account aria-label="Customer account" title="Customer account coming soon">
+                <button class="store-icon-button" type="button" data-store-account aria-label="Customer account" title="Customer account">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"></circle><path d="M5.3 20c.5-3.4 2.8-5.3 6.7-5.3s6.2 1.9 6.7 5.3"></path></svg>
                 </button>
                 <button class="store-icon-button store-cart-button" type="button" data-cart-toggle aria-label="Open shopping bag" title="Shopping bag">

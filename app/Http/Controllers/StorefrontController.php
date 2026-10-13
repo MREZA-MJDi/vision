@@ -76,17 +76,18 @@ class StorefrontController extends Controller
         if ($saleOnly) {
             $productsQuery->whereHas('primaryActiveVariant', fn (Builder $variantQuery) => $variantQuery
                 ->whereNotNull('sale_price')
+                ->where('sale_price', '>=', 0)
                 ->whereColumn('sale_price', '<', 'price'));
         }
 
         if ($minPrice !== null || $maxPrice !== null) {
             $productsQuery->whereHas('primaryActiveVariant', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
                 if ($minPrice !== null) {
-                    $variantQuery->whereRaw('COALESCE(sale_price, price) >= ?', [$minPrice]);
+                    $variantQuery->whereRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END >= ?', [$minPrice]);
                 }
 
                 if ($maxPrice !== null) {
-                    $variantQuery->whereRaw('COALESCE(sale_price, price) <= ?', [$maxPrice]);
+                    $variantQuery->whereRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END <= ?', [$maxPrice]);
                 }
             });
         }
@@ -118,4 +119,50 @@ class StorefrontController extends Controller
             'initialImage' => $initialImage,
         ]);
     }
+
+    /**
+     * Render a public product detail page from active catalog records only.
+     */
+    public function show(Product $product): View
+    {
+        abort_unless((bool) $product->is_active, 404);
+
+        $product->load([
+            'category',
+            'brand',
+            'galleryMedia',
+            'primaryGalleryMedia',
+            'activeVariants.primaryGalleryMedia',
+        ]);
+
+        if ($product->activeVariants->isEmpty()) {
+            abort(404);
+        }
+
+        $relatedQuery = Product::query()
+            ->active()
+            ->where('id', '!=', $product->getKey())
+            ->whereHas('activeVariants')
+            ->with([
+                'category',
+                'brand',
+                'primaryGalleryMedia',
+                'primaryActiveVariant.primaryGalleryMedia',
+            ])
+            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
+            ->withCount('approvedReviews');
+
+        if ($product->category_id !== null) {
+            $relatedQuery->where('category_id', $product->category_id);
+        }
+
+        $relatedProducts = $relatedQuery
+            ->orderByDesc('is_featured')
+            ->orderByDesc('created_at')
+            ->limit(4)
+            ->get();
+
+        return view('store.products.show', compact('product', 'relatedProducts'));
+    }
+
 }
