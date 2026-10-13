@@ -9,10 +9,26 @@
     </div>
 
     <section class="ak-stat-grid ak-stat-grid-four">
-        <article class="ak-stat-card"><div class="ak-stat-top"><span class="ak-stat-icon ak-icon-green">$</span><span class="ak-stat-kicker">PAID REVENUE</span></div><div class="ak-stat-value">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$stats['revenue'], 2) }}</div><div class="ak-stat-footer"><span class="ak-stat-note">Across saved orders</span><span class="ak-mini-badge">Live</span></div></article>
-        <article class="ak-stat-card"><div class="ak-stat-top"><span class="ak-stat-icon ak-icon-blue">▤</span><span class="ak-stat-kicker">TOTAL ORDERS</span></div><div class="ak-stat-value">{{ number_format($stats['orders']) }}</div><div class="ak-stat-footer"><span class="ak-stat-note">All order records</span><a class="ak-stat-link" href="{{ route('commerce-admin.orders.index') }}">View</a></div></article>
-        <article class="ak-stat-card"><div class="ak-stat-top"><span class="ak-stat-icon ak-icon-slate">▦</span><span class="ak-stat-kicker">CATALOG ITEMS</span></div><div class="ak-stat-value">{{ number_format($stats['products']) }}</div><div class="ak-stat-footer"><span class="ak-stat-note">{{ number_format($stats['units_sold']) }} units in order items</span><span class="ak-mini-badge">{{ number_format($stats['discounted']) }} discounted variants</span></div></article>
-        <article class="ak-stat-card"><div class="ak-stat-top"><span class="ak-stat-icon ak-icon-red">⚑</span><span class="ak-stat-kicker">LOW STOCK VARIANTS</span></div><div class="ak-stat-value">{{ number_format($stats['low_stock']) }}</div><div class="ak-stat-footer"><span class="ak-stat-note">At or under stock threshold</span><a class="ak-stat-link" href="{{ route('commerce-admin.products.index', ['status'=>'low_stock']) }}">Review</a></div></article>
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-green">$</span><span class="ak-stat-kicker">TOTAL SALES</span></div>
+            <div class="ak-stat-value">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float) $stats['sales'], 2) }}</div>
+            <div class="ak-stat-footer"><span class="ak-stat-note">Paid, non-cancelled order items</span><span class="ak-mini-badge">Live</span></div>
+        </article>
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-blue">▤</span><span class="ak-stat-kicker">NUMBER OF SALES</span></div>
+            <div class="ak-stat-value">{{ number_format((int) $stats['orders']) }}</div>
+            <div class="ak-stat-footer"><span class="ak-stat-note">Orders excluding cancelled / returned</span><a class="ak-stat-link" href="{{ route('commerce-admin.orders.index') }}">View orders ↗</a></div>
+        </article>
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-slate">♙</span><span class="ak-stat-kicker">CUSTOMERS</span></div>
+            <div class="ak-stat-value">{{ number_format((int) $stats['customers']) }}</div>
+            <div class="ak-stat-footer"><span class="ak-stat-note">Registered customer accounts</span><span class="ak-mini-badge">Live</span></div>
+        </article>
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-red">↘</span><span class="ak-stat-kicker">DISCOUNTS</span></div>
+            <div class="ak-stat-value">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float) $stats['discount_total'], 2) }}</div>
+            <div class="ak-stat-footer"><span class="ak-stat-note">Applied to saved non-terminal orders</span><span class="ak-mini-badge">{{ number_format((int) $stats['discounted']) }} sale variants</span></div>
+        </article>
     </section>
 
     <section class="ak-panel ak-product-list-panel">
