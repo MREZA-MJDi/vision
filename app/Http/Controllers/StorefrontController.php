@@ -70,14 +70,15 @@ class StorefrontController extends Controller
             $productsQuery->where('brand_id', $brandId);
         }
 
+        // Keep sale/price filters aligned with the same primary variant shown on each card.
         if ($saleOnly) {
-            $productsQuery->whereHas('activeVariants', fn (Builder $variantQuery) => $variantQuery
+            $productsQuery->whereHas('primaryActiveVariant', fn (Builder $variantQuery) => $variantQuery
                 ->whereNotNull('sale_price')
                 ->whereColumn('sale_price', '<', 'price'));
         }
 
         if ($minPrice !== null || $maxPrice !== null) {
-            $productsQuery->whereHas('activeVariants', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
+            $productsQuery->whereHas('primaryActiveVariant', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
                 if ($minPrice !== null) {
                     $variantQuery->whereRaw('COALESCE(sale_price, price) >= ?', [$minPrice]);
                 }
