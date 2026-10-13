@@ -47,17 +47,15 @@ Route::get('/order-confirmation/{token}', [CustomerCommerceController::class, 'c
 | Customer authentication and order history
 |--------------------------------------------------------------------------
 */
-Route::middleware('guest')->group(function (): void {
-    Route::get('/login', [CustomerAuthController::class, 'create'])->name('login');
-    Route::post('/login', [CustomerAuthController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('login.store');
+Route::get('/login', [CustomerAuthController::class, 'create'])->name('login');
+Route::post('/login', [CustomerAuthController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('login.store');
 
-    Route::get('/register', [CustomerAuthController::class, 'registerForm'])->name('register');
-    Route::post('/register', [CustomerAuthController::class, 'register'])
-        ->middleware('throttle:5,1')
-        ->name('register.store');
-});
+Route::get('/register', [CustomerAuthController::class, 'registerForm'])->name('register');
+Route::post('/register', [CustomerAuthController::class, 'register'])
+    ->middleware('throttle:5,1')
+    ->name('register.store');
 
 Route::post('/logout', [CustomerAuthController::class, 'destroy'])
     ->middleware('auth')
@@ -66,6 +64,10 @@ Route::post('/logout', [CustomerAuthController::class, 'destroy'])
 Route::get('/account', [CustomerAccountController::class, 'show'])
     ->middleware('auth')
     ->name('account.show');
+Route::get('/account/orders/{order}', [CustomerAccountController::class, 'order'])
+    ->middleware('auth')
+    ->whereNumber('order')
+    ->name('account.orders.show');
 
 /*
 |--------------------------------------------------------------------------
