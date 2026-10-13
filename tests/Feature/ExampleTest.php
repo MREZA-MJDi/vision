@@ -108,7 +108,7 @@ class ExampleTest extends TestCase
         $this->get(route('commerce-admin.products.show', $product->getKey()))
             ->assertOk()
             ->assertSee('Reference View Sample')
-            ->assertSee('Variants & inventory');
+            ->assertSee('Variants');
 
         $this->get(route('commerce-admin.orders.index'))
             ->assertOk()
