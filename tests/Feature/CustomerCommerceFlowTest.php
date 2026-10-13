@@ -279,7 +279,7 @@ class CustomerCommerceFlowTest extends TestCase
         $this->assertSame('2.50', $order->tax);
         $this->assertSame('2.00', $order->shipping_cost);
         $this->assertSame('29.50', $order->total);
-        $this->assertSame(1, CartItem::query()->count());
+        $this->assertSame(0, CartItem::query()->count(), 'A successful guest checkout must consume the guest cart.');
         $this->assertSame(1, InventoryMovement::query()->where('type', 'sale')->count());
         $this->assertSame(1, (int) $variant->fresh()->stock);
     }
