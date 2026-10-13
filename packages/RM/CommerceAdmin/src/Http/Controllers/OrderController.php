@@ -10,6 +10,7 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -278,7 +279,15 @@ class OrderController
                         continue;
                     }
 
-                    $variant = $variantModel::query()->whereKey($item->product_variant_id)->lockForUpdate()->first();
+                    $variantQuery = $variantModel::query();
+                    if (in_array(SoftDeletes::class, class_uses_recursive($variantModel), true)) {
+                        // A variant may be archived from the catalog while an
+                        // order still references it. Restoring that order must
+                        // restore stock to the archived SKU as well.
+                        $variantQuery->withTrashed();
+                    }
+
+                    $variant = $variantQuery->whereKey($item->product_variant_id)->lockForUpdate()->first();
                     if (! $variant) {
                         continue;
                     }
