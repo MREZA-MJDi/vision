@@ -8,11 +8,8 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/css/storefront.css',
-                'resources/css/admin.css',
-                'resources/css/admin-responsive.css',
                 'resources/js/app.js',
                 'resources/js/storefront.js',
-                'resources/js/admin.js',
             ],
             refresh: true,
         }),

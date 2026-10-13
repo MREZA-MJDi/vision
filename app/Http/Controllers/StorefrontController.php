@@ -5,92 +5,115 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StorefrontController extends Controller
 {
-    public function home(): View
-    {
-        $featuredProducts = Product::query()
-            ->active()
-            ->featured()
-            ->with(['brand:id,name', 'primaryActiveVariant:id,product_id,price,sale_price,stock', 'primaryGalleryMedia'])
-            ->orderBy('sort_order')
-            ->orderByDesc('id')
-            ->limit(8)
-            ->get();
-
-        $newProducts = Product::query()
-            ->active()
-            ->with(['brand:id,name', 'primaryActiveVariant:id,product_id,price,sale_price,stock', 'primaryGalleryMedia'])
-            ->latest('created_at')
-            ->limit(8)
-            ->get();
-
-        $categories = Category::query()
-            ->active()
-            ->with('coverMedia')
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->limit(6)
-            ->get();
-
-        return view('store.home', compact('featuredProducts', 'newProducts', 'categories'));
-    }
-
     public function index(Request $request): View
     {
-        $sort = in_array($request->query('sort'), ['newest', 'price_asc', 'price_desc'], true)
-            ? $request->query('sort')
-            : 'newest';
-
-        $term = trim((string) $request->query('q', ''));
-        $safeTerm = addcslashes($term, "%_\\\\");
-        $products = Product::query()
+        $categories = Category::query()
             ->active()
-            ->with(['brand:id,name', 'category:id,name', 'primaryActiveVariant:id,product_id,price,sale_price,stock', 'primaryGalleryMedia'])
-            ->when($term !== '', function ($query) use ($safeTerm) {
-                $query->where(fn ($q) => $q
-                    ->where('name', 'like', '%' . $safeTerm . '%')
-                    ->orWhere('short_description', 'like', '%' . $safeTerm . '%'));
-            })
-            ->when($request->filled('category'), fn ($query) => $query->whereHas('category', fn ($category) => $category->where('slug', $request->query('category'))->where('is_active', true)))
-            ->when($request->filled('brand'), fn ($query) => $query->whereHas('brand', fn ($brand) => $brand->where('slug', $request->query('brand'))->where('is_active', true)));
-
-        match ($sort) {
-            'price_asc' => $products->orderByEffectivePrice('asc'),
-            'price_desc' => $products->orderByEffectivePrice('desc'),
-            default => $products->latest('created_at'),
-        };
-
-        $products = $products->paginate(12)->withQueryString();
-        $categories = Category::query()->active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']);
-        $brands = Brand::query()->active()->orderBy('name')->get(['id', 'name', 'slug']);
-
-        return view('store.products.index', compact('products', 'categories', 'brands', 'sort'));
-    }
-
-    public function show(Product $product): View
-    {
-        abort_unless($product->is_active, 404);
-
-        $product->load([
-            'brand:id,name,slug',
-            'category:id,name,slug',
-            'activeVariants:id,product_id,sku,size,color,color_code,price,sale_price,stock',
-            'galleryMedia',
-        ]);
-
-        $relatedProducts = Product::query()
-            ->active()
-            ->where('id', '!=', $product->getKey())
-            ->when($product->category_id, fn ($query) => $query->where('category_id', $product->category_id))
-            ->with(['brand:id,name', 'primaryActiveVariant:id,product_id,price,sale_price,stock', 'primaryGalleryMedia'])
-            ->latest('created_at')
-            ->limit(4)
+            ->withCount([
+                'products as active_products_count' => fn (Builder $query) => $query
+                    ->where('is_active', true)
+                    ->whereHas('activeVariants'),
+            ])
+            ->orderBy('sort_order')
+            ->orderBy('name')
             ->get();
 
-        return view('store.products.show', compact('product', 'relatedProducts'));
+        $brands = Brand::query()
+            ->active()
+            ->withCount([
+                'products as active_products_count' => fn (Builder $query) => $query
+                    ->where('is_active', true)
+                    ->whereHas('activeVariants'),
+            ])
+            ->orderBy('name')
+            ->get();
+
+        $search = is_string($request->input('q')) ? trim($request->input('q')) : '';
+        $categoryId = filter_var($request->input('category_id'), FILTER_VALIDATE_INT) ?: null;
+        $brandId = filter_var($request->input('brand_id'), FILTER_VALIDATE_INT) ?: null;
+        $minPrice = is_numeric($request->input('price_min')) ? max(0, (float) $request->input('price_min')) : null;
+        $maxPrice = is_numeric($request->input('price_max')) ? max(0, (float) $request->input('price_max')) : null;
+        $sort = in_array($request->input('sort'), ['newest', 'featured', 'price_asc', 'price_desc'], true)
+            ? $request->input('sort')
+            : 'newest';
+        $saleOnly = $request->boolean('sale');
+
+        $productsQuery = Product::query()
+            ->active()
+            ->whereHas('activeVariants')
+            ->with([
+                'category',
+                'brand',
+                'primaryGalleryMedia',
+                'primaryActiveVariant.primaryGalleryMedia',
+            ]);
+
+        if ($search !== '') {
+            $productsQuery->where(function (Builder $query) use ($search): void {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('short_description', 'like', '%' . $search . '%')
+                    ->orWhereHas('brand', fn (Builder $brandQuery) => $brandQuery->where('name', 'like', '%' . $search . '%'));
+            });
+        }
+
+        if ($categoryId !== null) {
+            $productsQuery->where('category_id', $categoryId);
+        }
+
+        if ($brandId !== null) {
+            $productsQuery->where('brand_id', $brandId);
+        }
+
+        // Keep sale/price filters aligned with the same primary variant shown on each card.
+        if ($saleOnly) {
+            $productsQuery->whereHas('primaryActiveVariant', fn (Builder $variantQuery) => $variantQuery
+                ->whereNotNull('sale_price')
+                ->whereColumn('sale_price', '<', 'price'));
+        }
+
+        if ($minPrice !== null || $maxPrice !== null) {
+            $productsQuery->whereHas('primaryActiveVariant', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
+                if ($minPrice !== null) {
+                    $variantQuery->whereRaw('COALESCE(sale_price, price) >= ?', [$minPrice]);
+                }
+
+                if ($maxPrice !== null) {
+                    $variantQuery->whereRaw('COALESCE(sale_price, price) <= ?', [$maxPrice]);
+                }
+            });
+        }
+
+        match ($sort) {
+            'featured' => $productsQuery->orderByDesc('is_featured')->orderBy('sort_order')->orderByDesc('id'),
+            'price_asc' => $productsQuery->orderByEffectivePrice('asc'),
+            'price_desc' => $productsQuery->orderByEffectivePrice('desc'),
+            default => $productsQuery->orderByDesc('created_at')->orderByDesc('id'),
+        };
+
+        $products = $productsQuery->paginate(12)->withQueryString();
+        $initialProduct = $products->first();
+        $initialImage = $initialProduct?->primaryGalleryMedia?->url
+            ?? $initialProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
+
+        return view('store.index', [
+            'products' => $products,
+            'categories' => $categories,
+            'brands' => $brands,
+            'search' => $search,
+            'selectedCategoryId' => $categoryId,
+            'selectedBrandId' => $brandId,
+            'minPrice' => $minPrice,
+            'maxPrice' => $maxPrice,
+            'sort' => $sort,
+            'saleOnly' => $saleOnly,
+            'initialProduct' => $initialProduct,
+            'initialImage' => $initialImage,
+        ]);
     }
 }
