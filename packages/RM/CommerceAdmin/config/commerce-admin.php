@@ -13,6 +13,7 @@ return [
         'brand' => App\Models\Brand::class,
         'order' => App\Models\Order::class,
         'order_item' => App\Models\OrderItem::class,
+        'payment' => App\Models\Payment::class,
         'media' => App\Models\Media::class,
         'inventory_movement' => App\Models\InventoryMovement::class,
         'review' => App\Models\ProductReview::class,
