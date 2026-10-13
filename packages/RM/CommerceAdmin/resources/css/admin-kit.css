@@ -479,3 +479,10 @@ body.admin-kit { color: var(--ak-ink); background: var(--ak-page); font-family: 
     .ak-classic-line-chart { height: 160px; }
     .ak-classic-metric { font-size: 24px; }
 }
+
+
+/* Product list rating cells use the actual approved-review aggregates */
+.ak-rating-cell { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ak-rating-cell > span { color: #eab346; font-size: 11px; }
+.ak-rating-cell strong { color: #4b5059; font-size: 9px; font-weight: 600; }
+.ak-rating-cell small { color: #9a9fa8; font-size: 8px; }
