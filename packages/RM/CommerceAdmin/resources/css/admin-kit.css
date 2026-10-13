@@ -404,3 +404,78 @@ body.admin-kit { color: var(--ak-ink); background: var(--ak-page); font-family: 
     .ak-product-reference-gallery .ak-product-hero-image { height: 330px; min-height: 330px; }
     .ak-attribute-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
+
+
+/* Classic dashboard: customer roster, compact KPIs, activity chart and orders */
+.ak-classic-top-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .86fr) minmax(0, .98fr); gap: 11px; margin-bottom: 13px; }
+.ak-classic-top-grid > .ak-panel { min-width: 0; min-height: 213px; padding: 13px; }
+.ak-team-panel .ak-panel-heading { align-items: flex-start; margin-bottom: 8px; }
+.ak-team-row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 0; border-bottom: 1px solid #f0f1f4; }
+.ak-team-row:last-of-type { border-bottom: 0; }
+.ak-team-avatar { width: 27px; height: 27px; flex: 0 0 27px; color: #555b65; background: #f0f1f4; }
+.ak-team-identity { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.ak-team-identity strong { overflow: hidden; color: #3c414a; font-size: 9.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.ak-team-identity small { overflow: hidden; color: #999ea7; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.ak-team-action { flex: 0 0 auto; padding: 4px 7px; border: 1px solid #e8eaf0; border-radius: 5px; color: #606670; font-size: 8px; }
+.ak-team-action:hover { color: #292c33; background: #f6f7f9; }
+.ak-team-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; padding-top: 8px; border-top: 1px solid #f0f1f4; color: #999ea7; font-size: 8px; }
+.ak-team-foot a { color: #626873; }
+.ak-classic-metric { margin-top: 10px; color: #292c33; font-size: 27px; line-height: 1.15; font-weight: 650; letter-spacing: -.8px; overflow-wrap: anywhere; }
+.ak-classic-change { display: flex; align-items: center; gap: 6px; margin-top: 5px; color: #969ba5; font-size: 8px; line-height: 1.45; }
+.ak-live-indicator { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #18a66a; }
+.ak-subscription-bars { display: flex; align-items: flex-end; gap: clamp(4px, .7vw, 8px); height: 77px; margin-top: 13px; padding: 0 1px; }
+.ak-subscription-bar-column { display: flex; align-items: center; justify-content: flex-end; flex: 1; flex-direction: column; gap: 6px; height: 100%; min-width: 0; }
+.ak-subscription-bar-column > span { display: block; width: min(100%, 18px); min-height: 4px; border-radius: 3px 3px 0 0; background: #292c33; }
+.ak-subscription-bar-column:nth-child(3n) > span { background: #8d929b; }
+.ak-subscription-bar-column small { color: #a0a5ae; font-size: 7px; }
+.ak-mini-line-chart { height: 63px; margin-top: 15px; }
+.ak-mini-line-chart svg { display: block; width: 100%; height: 100%; overflow: hidden; }
+.ak-mini-line-chart line { stroke: #eff0f3; stroke-width: 1; }
+.ak-mini-line-chart polyline { fill: none; stroke: #8a8f98; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ak-classic-lower-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(295px, .85fr); align-items: stretch; gap: 12px; }
+.ak-classic-lower-grid > .ak-panel { min-width: 0; padding: 14px; }
+.ak-activity-panel .ak-panel-heading { margin-bottom: 10px; }
+.ak-activity-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 10px; border: 1px solid #eff0f3; border-radius: 7px; background: #fbfbfc; }
+.ak-activity-summary > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ak-activity-summary small { color: #999ea7; font-size: 8px; }
+.ak-activity-summary strong { overflow: hidden; color: #353941; font-size: 12px; font-weight: 650; letter-spacing: -.2px; text-overflow: ellipsis; white-space: nowrap; }
+.ak-classic-line-chart { position: relative; height: 190px; padding-top: 20px; }
+.ak-classic-line-chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ak-classic-line-chart line { stroke: #eff0f3; stroke-width: 1; }
+.ak-classic-line-chart polyline { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.ak-classic-line-chart .ak-line-revenue { stroke: #4f535c; }
+.ak-classic-line-chart .ak-line-orders { stroke: #bfc3ca; stroke-width: 1.7; }
+.ak-line-chart-labels { position: absolute; z-index: 1; top: 0; right: 0; left: 0; display: flex; justify-content: space-between; color: #a2a7b0; font-size: 7.5px; }
+.ak-classic-lower-grid .ak-chart-legend { display: flex; align-items: center; gap: 13px; }
+.ak-classic-lower-grid .ak-chart-legend a { margin-left: auto; color: #6f7580; font-size: 8.5px; }
+.ak-latest-orders-panel .ak-panel-heading { margin-bottom: 5px; }
+.ak-latest-order-row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 10px 0; border-bottom: 1px solid #f0f1f4; }
+.ak-latest-order-row:hover .ak-latest-order-identity strong { color: #1d2026; }
+.ak-latest-order-avatar { display: inline-flex; align-items: center; justify-content: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; color: #555b65; background: #f0f1f4; font-size: 9px; font-weight: 600; }
+.ak-latest-order-identity { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.ak-latest-order-identity strong { overflow: hidden; color: #4c515b; font-size: 9px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.ak-latest-order-identity small { overflow: hidden; color: #999ea7; font-size: 7.8px; text-overflow: ellipsis; white-space: nowrap; }
+.ak-latest-order-total { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 4px; color: #41464f; font-size: 9px; font-weight: 600; }
+.ak-latest-order-total .ak-status-pill { padding: 3px 5px; font-size: 7px; }
+.ak-latest-order-total .ak-status-pill::before { width: 4px; height: 4px; }
+.ak-latest-orders-foot { display: flex; flex-direction: column; gap: 8px; margin-top: 11px; padding-top: 10px; border-top: 1px solid #f0f1f4; color: #8d939d; font-size: 8px; }
+.ak-latest-orders-foot > div { display: flex; align-items: center; gap: 7px; }
+.ak-mini-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #e4ac44; }
+.ak-latest-orders-foot > a { color: #626873; }
+@media (max-width: 1120px) {
+    .ak-classic-top-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ak-total-revenue-panel { grid-column: 1 / -1; }
+    .ak-total-revenue-panel .ak-mini-line-chart { height: 66px; }
+}
+@media (max-width: 820px) {
+    .ak-classic-lower-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+    .ak-classic-top-grid { grid-template-columns: minmax(0, 1fr); }
+    .ak-total-revenue-panel { grid-column: auto; }
+    .ak-classic-top-grid > .ak-panel { min-height: 0; }
+    .ak-activity-summary { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .ak-activity-summary > div { flex-direction: row; align-items: center; justify-content: space-between; }
+    .ak-classic-line-chart { height: 160px; }
+    .ak-classic-metric { font-size: 24px; }
+}
