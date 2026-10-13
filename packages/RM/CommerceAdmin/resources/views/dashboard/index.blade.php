@@ -10,6 +10,9 @@
         $revenuePoints = collect($series)->values()->map(fn ($point, $index) =>
             round(10 + ($index * 340 / max(1, count($series) - 1)), 1).','.round(85 - (((float) $point['value'] / $revenueMax) * 66), 1)
         )->implode(' ');
+        $revenueMiniPoints = collect($series)->values()->map(fn ($point, $index) =>
+            round(3 + ($index * 354 / max(1, count($series) - 1)), 1).','.round(52 - (((float) $point['value'] / $revenueMax) * 42), 1)
+        )->implode(' ');
         $ordersPoints = collect($series)->values()->map(fn ($point, $index) =>
             round(10 + ($index * 340 / max(1, count($series) - 1)), 1).','.round(85 - (((int) $point['orders_count'] / $ordersMax) * 58), 1)
         )->implode(' ');
@@ -75,7 +78,7 @@
             <div class="ak-mini-line-chart" role="img" aria-label="Monthly revenue trend">
                 <svg viewBox="0 0 360 62" preserveAspectRatio="none" aria-hidden="true">
                     <line x1="2" y1="54" x2="358" y2="54"></line>
-                    <polyline points="{{ $revenuePoints }}"></polyline>
+                    <polyline points="{{ $revenueMiniPoints }}"></polyline>
                 </svg>
             </div>
         </article>
