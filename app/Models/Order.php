@@ -55,6 +55,7 @@ class Order extends Model
         'user_id',
         'address_id',
         'order_number',
+        'public_token',
         'customer_name',
         'customer_phone',
         'customer_email',
