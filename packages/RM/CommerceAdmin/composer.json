@@ -10,13 +10,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Rm\\CommerceAdmin\\": "src/"
+            "Rm\CommerceAdmin\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Rm\\CommerceAdmin\\CommerceAdminServiceProvider"
+                "Rm\CommerceAdmin\CommerceAdminServiceProvider"
             ]
         }
     }
