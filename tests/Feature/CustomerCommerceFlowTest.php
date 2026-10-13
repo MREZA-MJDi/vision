@@ -40,6 +40,18 @@ class CustomerCommerceFlowTest extends TestCase
             taxable: true
         );
 
+        // Use a signed-in customer's persistent account cart here. Guest-cart
+        // creation is covered by the cart route itself; this feature test then
+        // exercises the complete checkout transaction against a stable cart
+        // identity across multiple HTTP requests.
+        $buyer = User::query()->create([
+            'name' => 'Checkout Customer',
+            'email' => 'checkout-customer@example.test',
+            'password' => 'customer-password-123',
+            'is_admin' => false,
+        ]);
+        $this->actingAs($buyer);
+
         $this->postJson('/cart/items', [
             'variant_id' => $variant->getKey(),
             'quantity' => 1,
