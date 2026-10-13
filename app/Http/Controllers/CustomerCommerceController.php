@@ -91,7 +91,7 @@ class CustomerCommerceController extends Controller
                 continue;
             }
 
-            $unitCents = (int) round(((float) ($variant->sale_price ?? $variant->price)) * 100);
+            $unitCents = (int) round(((float) $variant->effective_price) * 100);
             $lineCents = $unitCents * max(0, (int) $item->quantity);
             $subtotalCents += $lineCents;
 
