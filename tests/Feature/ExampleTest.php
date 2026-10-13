@@ -49,9 +49,10 @@ class ExampleTest extends TestCase
         $this->actingAs($administrator)
             ->get(route('commerce-admin.dashboard'))
             ->assertOk()
-            ->assertSee('Revenue overview')
-            ->assertSee('Recent orders')
-            ->assertSee('Recently added products');
+            ->assertSee('Customers')
+            ->assertSee('Total Revenue')
+            ->assertSee('Store Activity')
+            ->assertSee('Latest Orders');
     }
 
     public function test_reference_commerce_screens_render_and_remain_connected_to_catalog_and_orders(): void
@@ -66,6 +67,11 @@ class ExampleTest extends TestCase
             ->assertSee('Returning Rate')
             ->assertSee('Sales by Location')
             ->assertSee('Customer Reviews');
+
+        $export = $this->get(route('commerce-admin.analytics.export'));
+        $export->assertOk();
+        $this->assertStringContainsString('text/csv', (string) $export->headers->get('content-type'));
+        $this->assertStringContainsString('commerce-analytics.csv', (string) $export->headers->get('content-disposition'));
 
         $this->get(route('commerce-admin.products.index'))
             ->assertOk()
