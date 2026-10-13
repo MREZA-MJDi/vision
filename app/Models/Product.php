@@ -59,6 +59,13 @@ class Product extends Model
         );
     }
 
+    public function reviews(): HasMany { return $this->hasMany(ProductReview::class); }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->reviews()->where('status', 'approved');
+    }
+
     public function orderItems(): HasMany { return $this->hasMany(OrderItem::class); }
     public function wishlistItems(): HasMany { return $this->hasMany(WishlistItem::class); }
     public function media(): MorphMany { return $this->morphMany(Media::class, 'mediable'); }
