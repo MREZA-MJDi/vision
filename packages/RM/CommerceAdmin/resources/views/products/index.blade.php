@@ -75,7 +75,6 @@
             <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-blue">▤</span><span class="ak-stat-kicker">NUMBER OF SALES</span></div>
             <div class="ak-stat-value">{{ number_format((int) $stats['orders']) }}</div>
             <div class="ak-stat-footer"><span class="ak-stat-note">Orders excluding cancelled / returned</span><a class="ak-stat-link" href="{{ route('commerce-admin.orders.index') }}">View orders ↗</a></div>
-            <div class="ak-stat-progress"><span style="width:{{ min(100, ((int) $stats['orders'] / max(1, (int) $stats['orders'])) * 100) }}%"></span></div>
         </article>
         <article class="ak-stat-card">
             <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-slate">♙</span><span class="ak-stat-kicker">CUSTOMERS</span></div>
