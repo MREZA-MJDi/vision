@@ -110,6 +110,12 @@ class CommerceAdminWorkflowTest extends TestCase
             'created_by' => $admin->getKey(),
         ]);
 
+        $movementCount = InventoryMovement::query()->count();
+
+        // The variant can be archived from the live catalog while an order
+        // still references it. Cancellation must restore its archived SKU.
+        $variant->delete();
+
         $this->actingAs($admin)
             ->patch(route('commerce-admin.orders.status', $order->getKey()), [
                 'status' => 'cancelled',
@@ -117,7 +123,8 @@ class CommerceAdminWorkflowTest extends TestCase
             ->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
         $this->assertSame('cancelled', $order->fresh()->status);
-        $this->assertSame(5, (int) $variant->fresh()->stock);
+        $archivedVariant = ProductVariant::withTrashed()->findOrFail($variant->getKey());
+        $this->assertSame(5, (int) $archivedVariant->stock);
         $this->assertDatabaseHas('inventory_movements', [
             'product_variant_id' => $variant->getKey(),
             'type' => 'adjustment',
@@ -125,21 +132,9 @@ class CommerceAdminWorkflowTest extends TestCase
             'stock_after' => 5,
             'reference_id' => $order->getKey(),
         ]);
-
-        $movementCount = InventoryMovement::query()->count();
-
-        // The variant can be archived from the live catalog after an order
-        // was placed. Cancellation must still restore its stock ledger.
-        $variant->delete();
-
-        $this->patch(route('commerce-admin.orders.status', $order->getKey()), [
-            'status' => 'cancelled',
-        ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
-
-        $archivedVariant = ProductVariant::withTrashed()->findOrFail($variant->getKey());
-        $this->assertSame(5, (int) $archivedVariant->stock);
         $this->assertSame($movementCount + 1, InventoryMovement::query()->count());
 
+        // Repeating a terminal transition must never restore stock twice.
         $this->patch(route('commerce-admin.orders.status', $order->getKey()), [
             'status' => 'cancelled',
         ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
