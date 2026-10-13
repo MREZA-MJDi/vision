@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -142,7 +140,7 @@ class StorefrontController extends Controller
 
         $relatedQuery = Product::query()
             ->active()
-            ->whereKeyNot($product->getKey())
+            ->where('id', '!=', $product->getKey())
             ->whereHas('activeVariants')
             ->with([
                 'category',
