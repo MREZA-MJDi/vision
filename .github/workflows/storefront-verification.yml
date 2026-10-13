@@ -75,5 +75,5 @@ jobs:
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Build storefront and admin assets
+      - name: Build storefront assets
         run: npm run build
