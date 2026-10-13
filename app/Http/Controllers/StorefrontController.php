@@ -76,17 +76,18 @@ class StorefrontController extends Controller
         if ($saleOnly) {
             $productsQuery->whereHas('primaryActiveVariant', fn (Builder $variantQuery) => $variantQuery
                 ->whereNotNull('sale_price')
+                ->where('sale_price', '>=', 0)
                 ->whereColumn('sale_price', '<', 'price'));
         }
 
         if ($minPrice !== null || $maxPrice !== null) {
             $productsQuery->whereHas('primaryActiveVariant', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
                 if ($minPrice !== null) {
-                    $variantQuery->whereRaw('COALESCE(sale_price, price) >= ?', [$minPrice]);
+                    $variantQuery->whereRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END >= ?', [$minPrice]);
                 }
 
                 if ($maxPrice !== null) {
-                    $variantQuery->whereRaw('COALESCE(sale_price, price) <= ?', [$maxPrice]);
+                    $variantQuery->whereRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END <= ?', [$maxPrice]);
                 }
             });
         }
