@@ -218,4 +218,53 @@ class CommerceAdminWorkflowTest extends TestCase
         $this->assertSame('refunded', $payment->fresh()->status);
     }
 
+
+    public function test_admin_can_create_a_product_without_manual_sku_and_stock_is_audited(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Catalog Admin',
+            'email' => 'catalog-admin@example.test',
+            'password' => 'admin-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.products.store'), [
+                'name' => 'Cropped Jacket',
+                'slug' => '',
+                'status' => 'active',
+                'is_taxable' => '1',
+                'variants' => [
+                    [
+                        'sku' => '',
+                        'barcode' => '',
+                        'size' => 'M',
+                        'color' => 'Black',
+                        'color_code' => '#000000',
+                        'price' => '79.50',
+                        'sale_price' => '',
+                        'stock' => '4',
+                        'low_stock_threshold' => '2',
+                        'is_active' => '1',
+                    ],
+                ],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $product = Product::query()->where('name', 'Cropped Jacket')->firstOrFail();
+        $variant = ProductVariant::query()->where('product_id', $product->getKey())->firstOrFail();
+
+        $this->assertSame('cropped-jacket', $product->slug);
+        $this->assertStringStartsWith('VIS-', $variant->sku);
+        $this->assertSame(4, (int) $variant->stock);
+        $this->assertDatabaseHas('inventory_movements', [
+            'product_variant_id' => $variant->getKey(),
+            'type' => 'adjustment',
+            'quantity' => 4,
+            'stock_after' => 4,
+            'reference_id' => $product->getKey(),
+            'note' => 'Initial stock set from the product editor.',
+        ]);
+    }
+
 }
