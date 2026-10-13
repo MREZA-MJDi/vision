@@ -310,25 +310,78 @@ class OrderController
     public function updatePayment(Request $request, int $order): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $model = $orderModel::query()->findOrFail($order);
+        $paymentModel = $this->model('payment', Payment::class);
 
         $validated = $request->validate([
             'payment_status' => ['required', Rule::in(Payment::STATUSES)],
         ]);
 
-        if ($validated['payment_status'] === 'refunded' && $model->payment_status !== 'paid') {
-            throw ValidationException::withMessages([
-                'payment_status' => 'Only a paid order can be marked as refunded.',
-            ]);
-        }
+        DB::transaction(function () use ($orderModel, $paymentModel, $order, $validated): void {
+            $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
+            $next = $validated['payment_status'];
 
-        $model->payment_status = $validated['payment_status'];
-        if ($model->payment_status === 'paid' && ! $model->paid_at) {
-            $model->paid_at = now();
-        }
-        $model->save();
+            if ($next === $model->payment_status) {
+                return;
+            }
+
+            $allowedTransitions = [
+                'pending' => ['paid', 'failed'],
+                'failed' => ['pending', 'paid'],
+                'paid' => ['refunded'],
+                'refunded' => [],
+            ];
+
+            if (! in_array($next, $allowedTransitions[$model->payment_status] ?? [], true)) {
+                throw ValidationException::withMessages([
+                    'payment_status' => 'That payment status change is not allowed from the current payment state.',
+                ]);
+            }
+
+            $paymentQuery = $paymentModel::query()->where('order_id', $model->getKey());
+
+            if ($next === 'refunded') {
+                $paymentRecord = (clone $paymentQuery)
+                    ->where('status', 'paid')
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $paymentRecord) {
+                    throw ValidationException::withMessages([
+                        'payment_status' => 'A successful payment record is required before recording a refund.',
+                    ]);
+                }
+            } else {
+                $paymentRecord = (clone $paymentQuery)
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $paymentRecord) {
+                    $paymentRecord = $paymentModel::query()->create([
+                        'order_id' => $model->getKey(),
+                        'gateway' => 'manual',
+                        'idempotency_key' => 'admin-manual-order-' . $model->getKey(),
+                        'amount' => $model->total,
+                        'status' => $next,
+                    ]);
+                }
+            }
+
+            $paymentRecord->status = $next;
+            if ($next === 'paid' && ! $paymentRecord->paid_at) {
+                $paymentRecord->paid_at = now();
+            }
+            $paymentRecord->save();
+
+            $model->payment_status = $next;
+            if ($next === 'paid' && ! $model->paid_at) {
+                $model->paid_at = now();
+            }
+            $model->save();
+        });
 
         return redirect()->route('commerce-admin.orders.show', $order)
-            ->with('status', 'Payment status updated manually. Gateway reconciliation is separate.');
+            ->with('status', 'Payment status and payment record updated. Gateway reconciliation remains separate.');
     }
 }
