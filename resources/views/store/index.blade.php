@@ -241,11 +241,9 @@
                     <div class="catalog-empty__mark" aria-hidden="true">V.</div>
                     <p class="store-eyebrow">{{ $search !== '' || $selectedCategoryId || $selectedBrandId || $minPrice !== null || $maxPrice !== null || $saleOnly ? 'NOT THIS TIME' : 'THE FIRST PAGE' }}</p>
                     <h2>{{ $search !== '' || $selectedCategoryId || $selectedBrandId || $minPrice !== null || $maxPrice !== null || $saleOnly ? 'No pieces found.' : 'Your edit starts here.' }}</h2>
-                    <p>{{ $search !== '' || $selectedCategoryId || $selectedBrandId || $minPrice !== null || $maxPrice !== null || $saleOnly ? 'Try a different search or reset your filters to see the full collection.' : 'The storefront is ready. Publish an active product with an active variant in the admin to bring the collection to life.' }}</p>
+                    <p>{{ $search !== '' || $selectedCategoryId || $selectedBrandId || $minPrice !== null || $maxPrice !== null || $saleOnly ? 'Try a different search or reset your filters to see the full collection.' : 'The storefront is ready. The catalog has no published products yet.' }}</p>
                     @if($search !== '' || $selectedCategoryId || $selectedBrandId || $minPrice !== null || $maxPrice !== null || $saleOnly)
                         <a class="empty-state-action" href="{{ route('storefront.index') }}">Reset filters <span aria-hidden="true">↗</span></a>
-                    @else
-                        <a class="empty-state-action" href="{{ route('login') }}">Open account <span aria-hidden="true">↗</span></a>
                     @endif
                 </div>
             @endif

@@ -377,6 +377,10 @@
         showToast(`Your bag: ${names}${more}. Checkout is not connected yet.`);
     });
 
+    root.querySelector('[data-store-account]')?.addEventListener('click', () => {
+        showToast('Customer accounts are not available yet.');
+    });
+
     root.querySelector('[data-store-language]')?.addEventListener('click', () => {
         showToast('English is the only storefront language currently enabled.');
     });

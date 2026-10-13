@@ -7,11 +7,8 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/css/admin.css',
-                'resources/css/admin-responsive.css',
                 'resources/css/storefront.css',
                 'resources/js/app.js',
-                'resources/js/admin.js',
                 'resources/js/storefront.js',
             ],
             refresh: true,

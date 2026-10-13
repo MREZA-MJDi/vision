@@ -44,9 +44,9 @@
                     <button type="submit" aria-label="Submit search">↵</button>
                 </form>
 
-                <a class="store-icon-button" href="{{ route('login') }}" aria-label="Account" title="Account">
+                <button class="store-icon-button" type="button" data-store-account aria-label="Customer account" title="Customer account coming soon">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"></circle><path d="M5.3 20c.5-3.4 2.8-5.3 6.7-5.3s6.2 1.9 6.7 5.3"></path></svg>
-                </a>
+                </button>
                 <button class="store-icon-button store-cart-button" type="button" data-cart-toggle aria-label="Open shopping bag" title="Shopping bag">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg>
                     <span class="store-cart-count" data-cart-count>0</span>
@@ -62,7 +62,7 @@
         <footer class="store-footer">
             <a class="store-footer__wordmark" href="{{ route('storefront.index') }}">VISION</a>
             <span>Less noise. Better pieces.</span>
-            <a href="{{ route('login') }}">Account / Admin</a>
+            <span>Curated / Vision edition</span>
         </footer>
 
         <div class="store-toast" data-store-toast role="status" aria-live="polite"></div>

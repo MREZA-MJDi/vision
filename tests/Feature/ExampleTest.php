@@ -25,4 +25,16 @@ class ExampleTest extends TestCase
             ->assertOk()
             ->assertSee('New Arrivals');
     }
+
+    public function test_admin_dashboard_and_login_routes_are_removed(): void
+    {
+        $this->get('/admin')->assertNotFound();
+        $this->get('/admin/products')->assertNotFound();
+        $this->get('/login')->assertNotFound();
+
+        $this->assertFalse(Route::has('admin.dashboard'));
+        $this->assertFalse(Route::has('admin.products.index'));
+        $this->assertFalse(Route::has('login'));
+        $this->assertFalse(Route::has('logout'));
+    }
 }
