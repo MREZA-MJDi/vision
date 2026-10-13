@@ -6,7 +6,8 @@
     @php
         $statusSteps = [
             'pending' => 0, 'confirmed' => 0, 'preparing' => 0,
-            'shipped' => 1, 'delivered' => 2, 'cancelled' => -1, 'returned' => -1,
+            'shipped' => 1, 'out_for_delivery' => 1, 'delivered' => 2,
+            'cancelled' => -1, 'returned' => -1,
         ];
         $step = $statusSteps[$model->status] ?? 0;
     @endphp
@@ -49,7 +50,7 @@
                 @endif
                 <form method="POST" action="{{ route('commerce-admin.orders.status', $model->getKey()) }}" class="ak-inline-status-form">
                     @csrf @method('PATCH')
-                    <label class="ak-inline-field"><span>Update order status</span><select name="status" {{ in_array($model->status, ['cancelled','returned'], true) ? 'disabled' : '' }}>@foreach(\App\Models\Order::STATUSES as $status)<option value="{{ $status }}" @selected($model->status === $status)>{{ \Illuminate\Support\Str::headline($status) }}</option>@endforeach</select></label>
+                    <label class="ak-inline-field"><span>Update order status</span><select name="status" {{ in_array($model->status, ['cancelled','returned'], true) ? 'disabled' : '' }}>@foreach($availableStatuses as $status)<option value="{{ $status }}" @selected($model->status === $status)>{{ \Illuminate\Support\Str::headline($status) }}</option>@endforeach</select></label>
                     <button class="ak-button ak-button-dark ak-button-sm" type="submit" {{ in_array($model->status, ['cancelled','returned'], true) ? 'disabled' : '' }}>Save status</button>
                 </form>
             </section>
@@ -57,7 +58,25 @@
 
         <aside class="ak-form-aside">
             <section class="ak-panel ak-aside-panel"><div class="ak-panel-heading"><div><h2>Order summary</h2><p>Amounts saved to this order record.</p></div></div>
-                <div class="ak-summary-lines"><div><span>Subtotal</span><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->subtotal,2) }}</strong></div><div><span>Discount</span><strong class="{{ (float)$model->discount > 0 ? 'ak-negative-value' : '' }}">−{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->discount,2) }}</strong></div><div><span>Shipping</span><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->shipping_cost,2) }}</strong></div><div class="ak-summary-total"><span>Total</span><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->total,2) }}</strong></div></div>
+                <div class="ak-summary-lines"><div><span>Subtotal</span><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->subtotal,2) }}</strong></div><div><span>Discount</span><strong class="{{ (float)$model->discount > 0 ? 'ak-negative-value' : '' }}">−{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->discount,2) }}</strong></div><div><span>Shipping</span><strong>{{ config('commerce-admin.currency_symbol', '<span>Total</span><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->total,2) }}</strong></div></div>
+                <div class="ak-payment-detail"><span class="ak-payment-icon">▤</span><div><strong>Payment method</strong><small>{{ \Illuminate\Support\Str::headline($model->payment_method ?: 'Not recorded') }}</small></div><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($model->payment_status) }}">{{ \Illuminate\Support\Str::headline($model->payment_status) }}</span></div>
+                @if($model->paid_at)<p class="ak-help-note">Marked paid on {{ $model->paid_at->format('M d, Y H:i') }}</p>@endif
+                <form method="POST" action="{{ route('commerce-admin.orders.payment', $model->getKey()) }}" class="ak-payment-form">@csrf @method('PATCH')<label class="ak-field"><span>Payment status</span><select name="payment_status">@foreach(\App\Models\Payment::STATUSES as $paymentStatus)<option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ \Illuminate\Support\Str::headline($paymentStatus) }}</option>@endforeach</select></label><button class="ak-button ak-button-light ak-button-wide" type="submit">Update payment status</button><small class="ak-help-note">This records a manual status change. It does not call a payment gateway.</small></form>
+            </section>
+            <section class="ak-panel ak-aside-panel"><div class="ak-panel-heading"><div><h2>Order metadata</h2></div></div><div class="ak-detail-list"><span>Order ID<strong>#{{ $model->getKey() }}</strong></span><span>Placed<strong>{{ optional($model->placed_at ?: $model->created_at)->format('M d, Y') }}</strong></span><span>Updated<strong>{{ $model->updated_at?->diffForHumans() ?: '—' }}</strong></span><span>Tracking code<strong>{{ $model->tracking_code ?: 'Not assigned' }}</strong></span></div></section>
+        </aside>
+    </div>
+@endsection
+) }}{{ number_format((float)$model->shipping_cost,2) }}</strong></div><div><span>Tax</span><strong>{{ config('commerce-admin.currency_symbol', '<span>Total</span><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->total,2) }}</strong></div></div>
+                <div class="ak-payment-detail"><span class="ak-payment-icon">▤</span><div><strong>Payment method</strong><small>{{ \Illuminate\Support\Str::headline($model->payment_method ?: 'Not recorded') }}</small></div><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($model->payment_status) }}">{{ \Illuminate\Support\Str::headline($model->payment_status) }}</span></div>
+                @if($model->paid_at)<p class="ak-help-note">Marked paid on {{ $model->paid_at->format('M d, Y H:i') }}</p>@endif
+                <form method="POST" action="{{ route('commerce-admin.orders.payment', $model->getKey()) }}" class="ak-payment-form">@csrf @method('PATCH')<label class="ak-field"><span>Payment status</span><select name="payment_status">@foreach(\App\Models\Payment::STATUSES as $paymentStatus)<option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ \Illuminate\Support\Str::headline($paymentStatus) }}</option>@endforeach</select></label><button class="ak-button ak-button-light ak-button-wide" type="submit">Update payment status</button><small class="ak-help-note">This records a manual status change. It does not call a payment gateway.</small></form>
+            </section>
+            <section class="ak-panel ak-aside-panel"><div class="ak-panel-heading"><div><h2>Order metadata</h2></div></div><div class="ak-detail-list"><span>Order ID<strong>#{{ $model->getKey() }}</strong></span><span>Placed<strong>{{ optional($model->placed_at ?: $model->created_at)->format('M d, Y') }}</strong></span><span>Updated<strong>{{ $model->updated_at?->diffForHumans() ?: '—' }}</strong></span><span>Tracking code<strong>{{ $model->tracking_code ?: 'Not assigned' }}</strong></span></div></section>
+        </aside>
+    </div>
+@endsection
+) }}{{ number_format((float)$model->tax,2) }}</strong></div><div class="ak-summary-total"><span>Total</span><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$model->total,2) }}</strong></div></div>
                 <div class="ak-payment-detail"><span class="ak-payment-icon">▤</span><div><strong>Payment method</strong><small>{{ \Illuminate\Support\Str::headline($model->payment_method ?: 'Not recorded') }}</small></div><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($model->payment_status) }}">{{ \Illuminate\Support\Str::headline($model->payment_status) }}</span></div>
                 @if($model->paid_at)<p class="ak-help-note">Marked paid on {{ $model->paid_at->format('M d, Y H:i') }}</p>@endif
                 <form method="POST" action="{{ route('commerce-admin.orders.payment', $model->getKey()) }}" class="ak-payment-form">@csrf @method('PATCH')<label class="ak-field"><span>Payment status</span><select name="payment_status">@foreach(\App\Models\Payment::STATUSES as $paymentStatus)<option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ \Illuminate\Support\Str::headline($paymentStatus) }}</option>@endforeach</select></label><button class="ak-button ak-button-light ak-button-wide" type="submit">Update payment status</button><small class="ak-help-note">This records a manual status change. It does not call a payment gateway.</small></form>
