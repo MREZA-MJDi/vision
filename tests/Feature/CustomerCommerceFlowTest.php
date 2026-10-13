@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\InventoryMovement;
@@ -11,6 +12,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -223,4 +225,63 @@ class CustomerCommerceFlowTest extends TestCase
 
         return [$product, $variant];
     }
+
+    public function test_guest_can_checkout_from_the_same_session_backed_cart(): void
+    {
+        config([
+            'commerce-admin.tax_rate' => 0.10,
+            'commerce-admin.shipping_flat_rate' => 2.00,
+        ]);
+
+        [, $variant] = $this->createProduct(
+            price: 25.00,
+            salePrice: null,
+            stock: 2,
+            taxable: true
+        );
+
+        $this->postJson('/cart/items', [
+            'variant_id' => $variant->getKey(),
+            'quantity' => 1,
+        ])->assertCreated()->assertJsonPath('count', 1);
+
+        $guestCart = Cart::query()
+            ->whereNull('user_id')
+            ->whereNotNull('session_id')
+            ->orderByDesc('id')
+            ->firstOrFail();
+
+        $payload = [
+            'customer_name' => 'Guest Checkout',
+            'customer_email' => 'guest-checkout@example.test',
+            'customer_phone' => '555-0155',
+            'shipping_address' => '45 Guest Street',
+            'shipping_city' => 'Test City',
+            'shipping_province' => 'Test Province',
+            'postal_code' => '54321',
+            'payment_method' => 'cash_on_delivery',
+        ];
+
+        // The test client does not automatically reuse the encrypted session
+        // cookie returned by a previous independent request. Send the exact
+        // session id produced by the cart request to simulate a returning
+        // same-browser customer.
+        $response = $this->withoutMiddleware(EncryptCookies::class)
+            ->withUnencryptedCookie(config('session.cookie'), $guestCart->session_id)
+            ->post('/checkout', $payload);
+
+        $response->assertSessionHasNoErrors();
+        $order = Order::query()->firstOrFail();
+
+        $response->assertRedirect(route('checkout.complete', ['token' => $order->public_token]));
+        $this->assertNull($order->user_id);
+        $this->assertSame('25.00', $order->subtotal);
+        $this->assertSame('2.50', $order->tax);
+        $this->assertSame('2.00', $order->shipping_cost);
+        $this->assertSame('29.50', $order->total);
+        $this->assertSame(1, CartItem::query()->count());
+        $this->assertSame(1, InventoryMovement::query()->where('type', 'sale')->count());
+        $this->assertSame(1, (int) $variant->fresh()->stock);
+    }
+
 }
