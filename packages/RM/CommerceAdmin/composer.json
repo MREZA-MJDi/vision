@@ -1,0 +1,23 @@
+{
+    "name": "rm/commerce-admin-kit",
+    "description": "Reusable Laravel commerce administration module with database-backed catalog and order workflows.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/contracts": "^12.0",
+        "illuminate/support": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rm\\CommerceAdmin\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rm\\CommerceAdmin\\CommerceAdminServiceProvider"
+            ]
+        }
+    }
+}
