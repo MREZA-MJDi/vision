@@ -8,9 +8,6 @@
     const toast = root.querySelector('[data-store-toast]');
     const fittingImage = root.querySelector('[data-fitting-image]');
     const fittingPlaceholder = root.querySelector('[data-fitting-placeholder]');
-    const fittingName = root.querySelector('[data-fitting-name]');
-    const fittingDescription = root.querySelector('[data-fitting-description]');
-    const fittingPrice = root.querySelector('[data-fitting-price]');
     const fittingLookNumber = root.querySelector('[data-fitting-look-number]');
     const fittingCanvasCount = root.querySelector('[data-fitting-canvas-count]');
     const fittingPicks = root.querySelector('[data-fitting-picks]');
@@ -25,13 +22,6 @@
     const picks = new Map();
     let currentSelection = null;
     let toastTimer = null;
-
-    const initialPick = fittingPicks?.querySelector('[data-fitting-pick]');
-    if (initialPick) {
-        const initial = readProductData(initialPick);
-        picks.set(initial.id, initial);
-        currentSelection = initial;
-    }
 
     function readProductData(element) {
         return {
@@ -131,9 +121,6 @@
         currentSelection = product;
         updatePreviewImage(product);
 
-        if (fittingName) fittingName.textContent = product.name;
-        if (fittingDescription) fittingDescription.textContent = product.description || 'A considered piece from the latest edit.';
-        if (fittingPrice) fittingPrice.textContent = product.price || 'Price unavailable';
         if (fittingLookNumber) fittingLookNumber.textContent = picks.size ? String(picks.size).padStart(2, '0') : '—';
         if (fittingCanvasCount) fittingCanvasCount.textContent = String(picks.size).padStart(2, '0') + ' / 05';
         if (fittingAction) {
@@ -338,9 +325,6 @@
             if (currentSelection) {
                 selectProduct(currentSelection);
             } else {
-                fittingName && (fittingName.textContent = 'Choose a piece');
-                fittingDescription && (fittingDescription.textContent = 'Select the hanger icon on any product to preview it here.');
-                fittingPrice && (fittingPrice.textContent = 'Waiting for your edit');
                 updatePreviewImage(null);
                 root.querySelectorAll('[data-fit-product]').forEach((fitButton) => {
                     fitButton.classList.remove('is-active');
