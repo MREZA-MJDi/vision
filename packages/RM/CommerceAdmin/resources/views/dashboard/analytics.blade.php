@@ -34,7 +34,7 @@
         </div>
         <div class="ak-heading-actions">
             <span class="ak-date-chip">◷ Last 12 months</span>
-            <a class="ak-button ak-button-dark" href="{{ route('commerce-admin.orders.index') }}">View orders <span>↗</span></a>
+            <a class="ak-button ak-button-dark" href="{{ route('commerce-admin.analytics.export') }}">Export CSV <span>↓</span></a>
         </div>
     </div>
 
