@@ -351,7 +351,7 @@ class CustomerCommerceController extends Controller
                     ]);
                 }
 
-                $unitCents = (int) round(((float) ($variant->sale_price ?? $variant->price)) * 100);
+                $unitCents = (int) round(((float) $variant->effective_price) * 100);
                 $lineCents = $unitCents * $quantity;
                 $lineTaxCents = (bool) $product->getAttribute('is_taxable')
                     ? (int) round($lineCents * $taxRate)
