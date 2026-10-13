@@ -128,12 +128,24 @@ class CommerceAdminWorkflowTest extends TestCase
 
         $movementCount = InventoryMovement::query()->count();
 
+        // The variant can be archived from the live catalog after an order
+        // was placed. Cancellation must still restore its stock ledger.
+        $variant->delete();
+
         $this->patch(route('commerce-admin.orders.status', $order->getKey()), [
             'status' => 'cancelled',
         ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
-        $this->assertSame(5, (int) $variant->fresh()->stock);
-        $this->assertSame($movementCount, InventoryMovement::query()->count());
+        $archivedVariant = ProductVariant::withTrashed()->findOrFail($variant->getKey());
+        $this->assertSame(5, (int) $archivedVariant->stock);
+        $this->assertSame($movementCount + 1, InventoryMovement::query()->count());
+
+        $this->patch(route('commerce-admin.orders.status', $order->getKey()), [
+            'status' => 'cancelled',
+        ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
+
+        $this->assertSame(5, (int) ProductVariant::withTrashed()->findOrFail($variant->getKey())->stock);
+        $this->assertSame($movementCount + 1, InventoryMovement::query()->count());
     }
 
     public function test_order_state_machine_rejects_skipping_fulfillment_steps(): void
