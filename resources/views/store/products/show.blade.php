@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $defaultVariant = $product->activeVariants->first();
+    $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
     $primaryImage = $product->primaryGalleryMedia?->url
         ?? $defaultVariant?->primaryGalleryMedia?->url;
     $formatPrice = static fn ($amount) => '$' . number_format((float) $amount, 2);
