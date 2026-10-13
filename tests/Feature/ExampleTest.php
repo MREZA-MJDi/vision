@@ -27,15 +27,15 @@ class ExampleTest extends TestCase
             ->assertSee('New Arrivals');
     }
 
-    public function test_admin_dashboard_and_login_routes_are_removed(): void
+    public function test_admin_kit_routes_exist_and_protect_private_pages(): void
     {
-        $this->get('/admin')->assertNotFound();
-        $this->get('/admin/products')->assertNotFound();
-        $this->get('/login')->assertNotFound();
+        $this->get('/admin')->assertRedirect(route('commerce-admin.login'));
+        $this->get('/admin/products')->assertRedirect(route('commerce-admin.login'));
+        $this->get('/admin/login')->assertOk()->assertSee('Sign in to your store');
 
-        $this->assertFalse(Route::has('admin.dashboard'));
-        $this->assertFalse(Route::has('admin.products.index'));
-        $this->assertFalse(Route::has('login'));
-        $this->assertFalse(Route::has('logout'));
+        $this->assertTrue(Route::has('commerce-admin.dashboard'));
+        $this->assertTrue(Route::has('commerce-admin.products.index'));
+        $this->assertTrue(Route::has('commerce-admin.orders.index'));
+        $this->assertTrue(Route::has('commerce-admin.login'));
     }
 }
