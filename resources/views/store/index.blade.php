@@ -156,7 +156,7 @@
                             $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
                             $effectivePrice = $variant?->sale_price ?? $variant?->price;
                             $isOnSale = $variant && $variant->sale_price !== null && (float) $variant->sale_price < (float) $variant->price;
-                            $rating = data_get($product->attributes, 'rating');
+                            $rating = $product->approved_reviews_avg_rating;
                         @endphp
                         <article class="product-card" data-product-card>
                             <div class="product-card__visual">
