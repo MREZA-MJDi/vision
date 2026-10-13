@@ -1,7 +1,3 @@
-import { initMoneyInputs } from './money-input.js';
-
-initMoneyInputs();
-
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.querySelector('[data-admin-sidebar]');
     const menu = document.querySelector('[data-admin-menu]');
