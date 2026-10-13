@@ -64,12 +64,23 @@ class ProductVariant extends Model
 
     public function getEffectivePriceAttribute(): float
     {
-        return (float) ($this->sale_price ?? $this->price);
+        $price = (float) $this->price;
+        $salePrice = $this->sale_price;
+
+        // Legacy/imported data may contain an invalid sale price. Use the
+        // regular price unless the discount is non-negative and strictly lower.
+        return $salePrice !== null
+            && (float) $salePrice >= 0
+            && (float) $salePrice < $price
+                ? (float) $salePrice
+                : $price;
     }
 
     public function getIsOnSaleAttribute(): bool
     {
-        return $this->sale_price !== null && (float) $this->sale_price < (float) $this->price;
+        return $this->sale_price !== null
+            && (float) $this->sale_price >= 0
+            && (float) $this->sale_price < (float) $this->price;
     }
 
     public function getIsLowStockAttribute(): bool
