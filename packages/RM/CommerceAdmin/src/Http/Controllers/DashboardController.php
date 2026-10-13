@@ -5,6 +5,7 @@ namespace Rm\CommerceAdmin\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\ProductReview;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,6 +59,7 @@ class DashboardController
         $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
         $orderItemModel = $this->model('order_item', \App\Models\OrderItem::class);
+        $reviewModel = $this->model('review', ProductReview::class);
 
         $orders = $orderModel::query();
         $paid = (clone $orders)->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']);
