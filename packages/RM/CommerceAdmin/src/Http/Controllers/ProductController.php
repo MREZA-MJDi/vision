@@ -43,6 +43,7 @@ class ProductController
         $variantModel = $this->model('variant', ProductVariant::class);
         $orderModel = $this->model('order', Order::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
+        $userModel = $this->model('user', User::class);
 
         $query = $productModel::query()
             ->with(['category', 'brand', 'variants', 'galleryMedia'])
@@ -90,7 +91,7 @@ class ProductController
             'orders' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->count(),
             'sales' => $orderItemModel::query()->whereHas('order', fn ($query) => $query
                 ->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']))->sum('line_total'),
-            'customers' => $this->model('user', User::class)::query()->where(config('commerce-admin.admin_flag_column', 'is_admin'), false)->count(),
+            'customers' => $userModel::query()->where(config('commerce-admin.admin_flag_column', 'is_admin'), false)->count(),
             'discount_total' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->sum('discount'),
             'products' => $productModel::query()->count(),
             'low_stock' => $variantModel::query()->where('is_active', true)
