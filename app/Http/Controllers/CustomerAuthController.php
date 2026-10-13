@@ -30,6 +30,12 @@ class CustomerAuthController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if (Auth::check()) {
+            return (bool) Auth::user()->getAttribute('is_admin')
+                ? redirect()->route('commerce-admin.dashboard')
+                : redirect()->route('account.show');
+        }
+
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'max:255'],
@@ -68,6 +74,12 @@ class CustomerAuthController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
+        if (Auth::check()) {
+            return (bool) Auth::user()->getAttribute('is_admin')
+                ? redirect()->route('commerce-admin.dashboard')
+                : redirect()->route('account.show');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
