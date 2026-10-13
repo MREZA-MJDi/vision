@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\\Support\\Facades\\Route;
-use Rm\\CommerceAdmin\\Http\\Controllers\\AuthController;
-use Rm\\CommerceAdmin\\Http\\Controllers\\DashboardController;
-use Rm\\CommerceAdmin\\Http\\Controllers\\OrderController;
-use Rm\\CommerceAdmin\\Http\\Controllers\\ProductController;
-use Rm\\CommerceAdmin\\Http\\Middleware\\EnsureAdmin;
+use Illuminate\Support\Facades\Route;
+use Rm\CommerceAdmin\Http\Controllers\AuthController;
+use Rm\CommerceAdmin\Http\Controllers\DashboardController;
+use Rm\CommerceAdmin\Http\Controllers\OrderController;
+use Rm\CommerceAdmin\Http\Controllers\ProductController;
+use Rm\CommerceAdmin\Http\Middleware\EnsureAdmin;
 
 Route::middleware('web')->prefix('admin')->as('commerce-admin.')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
