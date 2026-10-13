@@ -5,6 +5,7 @@ use Rm\CommerceAdmin\Http\Controllers\AuthController;
 use Rm\CommerceAdmin\Http\Controllers\DashboardController;
 use Rm\CommerceAdmin\Http\Controllers\OrderController;
 use Rm\CommerceAdmin\Http\Controllers\ProductController;
+use Rm\CommerceAdmin\Http\Controllers\ReviewController;
 use Rm\CommerceAdmin\Http\Middleware\EnsureAdmin;
 
 Route::middleware('web')->prefix('admin')->as('commerce-admin.')->group(function (): void {
