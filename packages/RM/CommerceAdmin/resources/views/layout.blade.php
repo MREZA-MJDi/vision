@@ -95,7 +95,7 @@
                 <span class="ak-chevron" aria-hidden="true">⌄</span>
             </div>
             <div class="ak-topbar-right">
-                <a class="ak-topbar-link" href="{{ route('commerce-admin.analytics') }}">Download report <span aria-hidden="true">↗</span></a>
+                <a class="ak-topbar-link" href="{{ route('commerce-admin.analytics.export') }}">Download report <span aria-hidden="true">↗</span></a>
                 <button class="ak-icon-button" type="button" data-help-open aria-label="Open help" title="Help">?</button>
                 <span class="ak-topbar-divider"></span>
                 <span class="ak-avatar" aria-label="Administrator">{{ strtoupper(substr(auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'A', 0, 1)) }}</span>
