@@ -46,10 +46,13 @@ class DashboardController
             ->orderByDesc('created_at')->limit(7)->get();
         $recentProducts = $productModel::query()->with(['category', 'brand', 'variants', 'galleryMedia'])
             ->orderByDesc('created_at')->limit(5)->get();
+        $recentCustomers = $userModel::query()->where($adminFlag, false)
+            ->orderByDesc('created_at')->limit(4)->get();
 
         return view('commerce-admin::dashboard.index', compact(
             'revenue', 'orderCount', 'pendingOrders', 'productsCount', 'activeProducts',
-            'lowStockCount', 'customersCount', 'series', 'recentOrders', 'recentProducts'
+            'lowStockCount', 'customersCount', 'series', 'recentOrders', 'recentProducts',
+            'recentCustomers'
         ));
     }
 
