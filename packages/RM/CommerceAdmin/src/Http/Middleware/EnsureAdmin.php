@@ -1,11 +1,11 @@
 <?php
 
-namespace Rm\\CommerceAdmin\\Http\\Middleware;
+namespace Rm\CommerceAdmin\Http\Middleware;
 
 use Closure;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\Auth;
-use Symfony\\Component\\HttpFoundation\\Response;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAdmin
 {
