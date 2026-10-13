@@ -88,9 +88,22 @@ class DashboardController
 
         $activeProducts = $productModel::query()->where('is_active', true)->count();
 
+        $approvedReviews = $reviewModel::query()->where('status', 'approved');
+        $reviewsCount = (clone $approvedReviews)->count();
+        $reviewAverage = round((float) (clone $approvedReviews)->avg('rating'), 2);
+        $reviewDistribution = (clone $approvedReviews)
+            ->select('rating', DB::raw('COUNT(*) as aggregate'))
+            ->groupBy('rating')
+            ->pluck('aggregate', 'rating')
+            ->all();
+        $pendingReviews = $reviewModel::query()->where('status', 'pending')->count();
+        $recentReviews = $reviewModel::query()->with(['product', 'user'])
+            ->where('status', 'approved')->orderByDesc('created_at')->limit(5)->get();
+
         return view('commerce-admin::dashboard.analytics', compact(
             'revenue', 'allTimeOrders', 'paidCount', 'cancelledCount', 'series',
-            'byCity', 'paymentBreakdown', 'topProducts', 'lowStock', 'activeProducts'
+            'byCity', 'paymentBreakdown', 'topProducts', 'lowStock', 'activeProducts',
+            'reviewsCount', 'reviewAverage', 'reviewDistribution', 'pendingReviews', 'recentReviews'
         ));
     }
 
