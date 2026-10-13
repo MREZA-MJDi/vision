@@ -47,6 +47,8 @@ class StorefrontController extends Controller
         $productsQuery = Product::query()
             ->active()
             ->whereHas('activeVariants')
+            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
+            ->withCount('approvedReviews')
             ->with([
                 'category',
                 'brand',
