@@ -43,8 +43,8 @@
                 </button>
                 <form class="store-search" action="{{ route('storefront.index') }}" method="GET" role="search">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg>
-                    <input type="search" name="q" value="{{ $search }}" placeholder="Search" aria-label="Search products">
-                    @if($sort !== 'newest')<input type="hidden" name="sort" value="{{ $sort }}">@endif
+                    <input type="search" name="q" value="{{ request('q', $search ?? '') }}" placeholder="Search" aria-label="Search products">
+                    @if(($sort ?? request('sort', 'newest')) !== 'newest')<input type="hidden" name="sort" value="{{ $sort ?? request('sort', 'newest') }}">@endif
                     <button type="submit" aria-label="Submit search">↵</button>
                 </form>
 
