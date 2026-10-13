@@ -1034,7 +1034,7 @@ body.storefront-body button { color: inherit; }
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    width: min(100%, 1095px);
+    width: min(100%, 1075px);
     min-height: 36px;
     margin: 8px 0 14px;
 }
@@ -1055,8 +1055,8 @@ body.storefront-body button { color: inherit; }
 .store-titlebar .catalog-sort svg { right: 0; }
 .store-catalog-layout {
     grid-template-columns: minmax(220px, 245px) minmax(0, 1fr);
-    gap: 30px;
-    width: min(100%, 1095px);
+    gap: 48px;
+    width: min(100%, 1075px);
 }
 .store-sidebar { gap: 9px; }
 .filter-panel--heading { padding: 8px 12px; }
