@@ -63,6 +63,7 @@ class CustomerCommerceFlowTest extends TestCase
         ];
 
         $response = $this->post('/checkout', $payload);
+        $response->assertSessionHasNoErrors();
         $order = Order::query()->firstOrFail();
 
         $response->assertRedirect(route('checkout.complete', ['token' => $order->public_token]));
