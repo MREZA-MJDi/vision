@@ -26,12 +26,14 @@ class CategoryDemoSeeder extends Seeder
 
         foreach ($categories as $attributes) {
             $category = Category::withTrashed()->firstOrNew(['slug' => $attributes['slug']]);
-            if ($category->exists && $category->trashed()) {
-                $category->restore();
+
+            // Demo seeders provide initial data only. Never overwrite admin edits
+            // or silently restore a record that an administrator archived.
+            if ($category->exists) {
+                continue;
             }
 
-            $category->fill($attributes + ['is_active' => true]);
-            $category->save();
+            $category->fill($attributes + ['is_active' => true])->save();
         }
 
         $this->command?->info('Demo categories are ready. They remain editable in Commerce Admin.');
