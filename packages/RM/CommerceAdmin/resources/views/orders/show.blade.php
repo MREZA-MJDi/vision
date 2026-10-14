@@ -100,9 +100,9 @@
                     <div class="ak-delivery-steps">
                         <div class="ak-delivery-step is-complete"><span>✓</span><div><strong>ثبت سفارش</strong><small>@jalali($model->placed_at ?: $model->created_at, 'j F Y · H:i')</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 1 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>{{ $model->shipped_at ? \\App\\Support\\JalaliDate::format($model->shipped_at, 'j F Y · H:i') : 'هنوز ارسال نشده' }}</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>@if($model->shipped_at) @jalali($model->shipped_at, 'j F Y · H:i') @else هنوز ارسال نشده @endif</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 2 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>{{ $model->delivered_at ? \\App\\Support\\JalaliDate::format($model->delivered_at, 'j F Y · H:i') : 'در انتظار تحویل' }}</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>@if($model->delivered_at) @jalali($model->delivered_at, 'j F Y · H:i') @else در انتظار تحویل @endif</small></div></div>
                     </div>
                     <form method="POST" action="{{ route('commerce-admin.orders.status', $model->getKey()) }}" class="ak-inline-status-form">
                         @csrf @method('PATCH')
