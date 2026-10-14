@@ -1,26 +1,18 @@
 # RM Commerce Admin Kit
 
-A reusable Laravel 12 / Blade admin presentation kit for commerce projects. The same Persian RTL dashboard, tables, forms, navigation, charts and interaction layer can be reused; each host application keeps its own authorization, persistence, routes and business rules.
+Reusable Laravel 12 / Blade admin UI for commerce projects. It provides Persian RTL screens, tables, forms, navigation, charts, CSS/JavaScript interactions, package defaults and configurable money/date formatters.
 
 ## Package boundary
 
-Included here:
-- shared Blade screens and RTL design system;
-- CSS/JavaScript interactions;
-- package defaults and configurable money/date formatters;
-- asset publishing for Composer consumers.
+**This package owns:** Blade views, UI styles/scripts, configuration defaults, and reusable formatters.
 
-Owned by the host application:
-- admin authentication and authorization middleware;
-- the `commerce-admin.*` named route contract and controller implementations;
-- database schema, Eloquent model relationships, FormRequests and commerce services;
-- payment-provider integrations, inventory rules, order transitions and business-specific policies.
+**The host application owns:** admin authentication and authorization; the `commerce-admin.*` named-route contract and controllers; database schema and Eloquent relationships; FormRequests and persistence; inventory/order rules and payment-provider integration.
 
-The views do not fake saves or store dashboard metrics in browser storage. They submit normal Laravel forms; host controllers must validate requests and persist through Eloquent/database transactions. Dashboard metrics must query host application records.
+This separation is deliberate: the same dashboard UI can be reused across store projects while each project wires it to its own models and services. Views submit ordinary Laravel forms; the host must validate and persist through its backend. Dashboard metrics must come from host database queries, not browser storage or hardcoded demo arrays.
 
-## Install from this monorepo checkout
+## Installation from the current monorepo checkout
 
-This package currently lives inside the VISION repository, not at a standalone Git repository root. Composer VCS repositories cannot install a subdirectory of that repository directly. For development while both projects are checked out locally, add a Composer path repository pointing to the package directory:
+This package is currently nested inside the VISION repository. Composer VCS repositories cannot install a subdirectory of a repository as an independent package. For local development while both projects are checked out, configure a Composer path repository in the consumer app:
 
 ```json
 {
@@ -34,7 +26,7 @@ This package currently lives inside the VISION repository, not at a standalone G
 }
 ```
 
-Then run:
+Then:
 
 ```bash
 composer require rm/commerce-admin-kit:*
@@ -42,14 +34,14 @@ php artisan vendor:publish --tag=commerce-admin-config
 php artisan vendor:publish --tag=commerce-admin-assets
 ```
 
-For independent installation with `composer require` from GitHub on another machine/server, the package still needs to be split into its own repository (with this `composer.json` at repository root) or published to a Composer registry. Do not treat the whole VISION application repository as this package.
+For direct `composer require` from GitHub on a separate machine/server, the package still must be extracted to its own repository (with this `composer.json` at repository root) or published to a Composer registry. The current nested directory alone is not a standalone Git VCS install target.
 
 ## Assets
 
-The installed-package default uses published files at `public/vendor/commerce-admin`. Run the asset publish command after install/update. In a monorepo development checkout, set `COMMERCE_ADMIN_ASSET_MODE=vite` and include the package CSS/JS paths in the host Vite inputs (as the VISION app does).
+Composer consumers default to published assets under `public/vendor/commerce-admin`. Re-publish after package updates. In this VISION monorepo, set `COMMERCE_ADMIN_ASSET_MODE=vite`; Vite already includes the package CSS/JS entries.
 
 ## Host integration contract
 
-The host must define the named `commerce-admin.*` routes used by these views and return the expected records/collections from its own controllers. The current VISION routes are the reference implementation. Configure `models`, `admin_flag_column`, `currency_symbol`, `formatters`, `items_per_page` and media directories in `config/commerce-admin.php` for the host schema.
+The host must define the named `commerce-admin.*` routes used by the views and provide the records/collections each screen expects. Configure `models`, `admin_flag_column`, `currency_symbol`, `formatters`, pagination, and media directory settings in `config/commerce-admin.php`.
 
-Models need the relationships required by their screens. For example, products use variants/gallery media/category/brand/approved-review relationships; categories with cover uploads need a polymorphic `media()` relationship and `coverMedia()` relation. Keep project-specific validation and transaction semantics in host FormRequests/controllers/services rather than client-side success handlers.
+Product screens rely on relationships such as variants/gallery media/category/brand/approved reviews. Category covers require a polymorphic `media()` relationship and a `coverMedia()` relationship. Keep authorization, business-specific validation, database transactions and payment workflows in the host application.
