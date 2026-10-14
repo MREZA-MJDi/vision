@@ -127,8 +127,8 @@ class PublicStorefrontPhaseOneTest extends TestCase
     {
         $this->seed(CommerceDemoSeeder::class);
 
-        $category = \\App\\Models\\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
-        $brand = \\App\\Models\\Brand::query()->where('slug', 'vision-demo')->firstOrFail();
+        $category = \App\Models\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
+        $brand = \App\Models\Brand::query()->where('slug', 'vision-demo')->firstOrFail();
         $queryCount = 0;
 
         DB::listen(function () use (&$queryCount): void {
@@ -140,7 +140,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
         $smallHomepageQueries = $queryCount - $beforeSmallCatalog;
 
         for ($index = 1; $index <= 15; $index++) {
-            $product = \\App\\Models\\Product::query()->create([
+            $product = \App\Models\Product::query()->create([
                 'category_id' => $category->getKey(),
                 'brand_id' => $brand->getKey(),
                 'name' => 'Homepage n-plus-one audit product ' . $index,
@@ -153,7 +153,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
                 'sort_order' => $index + 100,
             ]);
 
-            \\App\\Models\\ProductVariant::query()->create([
+            \App\Models\ProductVariant::query()->create([
                 'product_id' => $product->getKey(),
                 'sku' => 'HOME-N1-AUDIT-' . $index,
                 'size' => 'M',
