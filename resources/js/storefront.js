@@ -443,7 +443,7 @@
             }
 
             // Selected-variant media takes priority. If it has no image, use
-            // only the product gallery fallback; never borrow another variant's image.
+            // only the product gallery fallback; never another variant's image.
             const imageUrl = option.dataset.image
                 || mainStage?.dataset.baseImage
                 || mainImage?.dataset.fallbackSrc
