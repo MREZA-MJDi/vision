@@ -36,6 +36,7 @@
                 @if($primaryImage)
                     <div class="store-product-detail__image">
                         <img data-product-main-image data-fallback-src="{{ $product->primaryGalleryMedia?->url ?? '' }}" src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager">
+                        <div class="store-product-detail__image--empty" data-product-image-placeholder hidden><span>VISION<br>STUDIO</span></div>
                     </div>
                 @else
                     <div class="store-product-detail__image">
@@ -74,7 +75,7 @@
                                     value="{{ $variant->getKey() }}"
                                     data-price="{{ $variant->effective_price }}"
                                     data-original-price="{{ $variant->price }}"
-                                    data-image="{{ $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url ?? $defaultVariant?->primaryGalleryMedia?->url ?? '' }}"
+                                    data-image="{{ $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url ?? '' }}"
                                     data-sale="{{ $variant->is_on_sale ? '1' : '0' }}"
                                     data-stock="{{ $variant->stock }}"
                                     data-color="{{ trim((string) $variant->color) }}"
