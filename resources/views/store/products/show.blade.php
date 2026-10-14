@@ -10,6 +10,12 @@
     $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
     $primaryImage = $defaultVariant?->primaryGalleryMedia?->url
         ?? $product->primaryGalleryMedia?->url;
+    $variantColors = $product->activeVariants
+        ->filter(fn ($variant) => trim((string) $variant->color) !== '')
+        ->groupBy(fn ($variant) => mb_strtolower(trim((string) $variant->color)))
+        ->map(fn ($variants) => $variants->first(fn ($variant) => (int) $variant->stock > 0) ?? $variants->first())
+        ->values();
+    $selectedColor = mb_strtolower(trim((string) $defaultVariant?->color));
     $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
 @endphp
 
@@ -71,6 +77,8 @@
                                     data-image="{{ $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url ?? $defaultVariant?->primaryGalleryMedia?->url ?? '' }}"
                                     data-sale="{{ $variant->is_on_sale ? '1' : '0' }}"
                                     data-stock="{{ $variant->stock }}"
+                                    data-color="{{ trim((string) $variant->color) }}"
+                                    data-size="{{ trim((string) $variant->size) }}"
                                     @selected($variant->getKey() === $defaultVariant?->getKey())
                                     @disabled((int) $variant->stock < 1)
                                 >
@@ -81,6 +89,27 @@
                             @endforeach
                         </select>
                     </label>
+                    @if($variantColors->isNotEmpty())
+                        <div class="store-variant-colors" data-variant-colors>
+                            <span class="store-variant-colors__label">رنگ</span>
+                            <div class="store-variant-colors__options" role="group" aria-label="انتخاب رنگ">
+                                @foreach($variantColors as $colorVariant)
+                                    @php $isSelectedColor = mb_strtolower(trim((string) $colorVariant->color)) === $selectedColor; @endphp
+                                    <button
+                                        type="button"
+                                        class="store-variant-color {{ $isSelectedColor ? 'is-selected' : '' }}"
+                                        data-variant-color-pick="{{ $colorVariant->color }}"
+                                        aria-pressed="{{ $isSelectedColor ? 'true' : 'false' }}"
+                                        title="{{ $colorVariant->color }}"
+                                        @disabled((int) $colorVariant->stock < 1)
+                                    >
+                                        <span class="store-variant-color__swatch" style="--variant-color: {{ $colorVariant->color_code ?: '#888888' }}" aria-hidden="true"></span>
+                                        <span>{{ $colorVariant->color }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                     <label class="commerce-field">Quantity
                         <input type="number" name="quantity" value="1" min="1" max="{{ min(100, max(1, (int) $defaultVariant->stock)) }}" data-variant-quantity required>
                     </label>
