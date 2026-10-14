@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Database\Seeders\CommerceDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PublicStorefrontPhaseOneTest extends TestCase
@@ -40,6 +41,77 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('مرتب‌سازی')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
             ->assertSee('تومان');
+    }
+
+    public function test_product_detail_uses_the_real_variant_selector_and_persian_metadata(): void
+    {
+        $this->seed(CommerceDemoSeeder::class);
+
+        $this->get('/products/demo-essential-cotton-tee')
+            ->assertOk()
+            ->assertSee('lang="fa" dir="rtl"', false)
+            ->assertSee('data-variant-select', false)
+            ->assertSee('data-variant-color-pick', false)
+            ->assertSee('افزودن به سبد خرید')
+            ->assertSee('محصولات منتخب')
+            ->assertSee('قهوه‌ای')
+            ->assertSee('1,090,000 تومان');
+    }
+
+    public function test_shop_query_count_does_not_grow_linearly_with_catalog_card_count(): void
+    {
+        $this->seed(CommerceDemoSeeder::class);
+
+        $category = \App\Models\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
+        $brand = \App\Models\Brand::query()->where('slug', 'vision-demo')->firstOrFail();
+        $queryCount = 0;
+
+        DB::listen(function () use (&$queryCount): void {
+            $queryCount++;
+        });
+
+        $beforeSmallCatalog = $queryCount;
+        $this->get('/shop')->assertOk();
+        $smallCatalogQueries = $queryCount - $beforeSmallCatalog;
+
+        for ($index = 1; $index <= 15; $index++) {
+            $product = \App\Models\Product::query()->create([
+                'category_id' => $category->getKey(),
+                'brand_id' => $brand->getKey(),
+                'name' => 'N-plus-one audit product ' . $index,
+                'slug' => 'n-plus-one-audit-product-' . $index,
+                'short_description' => 'Catalog eager-load regression test',
+                'is_active' => true,
+                'is_featured' => false,
+                'is_hero' => false,
+                'is_taxable' => false,
+                'sort_order' => $index + 100,
+            ]);
+
+            \App\Models\ProductVariant::query()->create([
+                'product_id' => $product->getKey(),
+                'sku' => 'N1-AUDIT-' . $index,
+                'size' => 'M',
+                'color' => 'مشکی',
+                'color_code' => '#17191C',
+                'price' => 100000,
+                'sale_price' => null,
+                'stock' => 5,
+                'low_stock_threshold' => 1,
+                'is_active' => true,
+                'sort_order' => 0,
+            ]);
+        }
+
+        $beforeLargeCatalog = $queryCount;
+        $this->get('/shop')->assertOk();
+        $largeCatalogQueries = $queryCount - $beforeLargeCatalog;
+
+        $this->assertLessThanOrEqual(
+            $smallCatalogQueries + 3,
+            $largeCatalogQueries,
+            'Shop query count should remain bounded as more products are rendered; a growing difference may indicate N+1 queries.'
+        );
     }
 
     public function test_sale_and_price_filters_use_the_displayed_active_variant_when_all_variants_are_sold_out(): void
