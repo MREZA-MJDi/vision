@@ -192,7 +192,11 @@ class ProductController
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $validated = $request->validated();
 
-        DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel): void {
+        $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
+        $storedImagePaths = [];
+
+        try {
+            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, &$storedImagePaths): void {
             $requestedSlug = trim((string) ($validated['slug'] ?? ''));
             $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
 
@@ -325,28 +329,40 @@ class ProductController
                     $variant->delete();
                 });
             }
-        });
 
-        if ($request->hasFile('images')) {
-            $mediaDisk = config('commerce-admin.media_disk', 'public');
-            foreach ($request->file('images', []) as $image) {
-                $path = $image->store(
-                    trim(config('commerce-admin.media_directory', 'products'), '/') . '/' . $product->getKey(),
-                    $mediaDisk
-                );
+            if ($request->hasFile('images')) {
+                $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
+                    . '/' . $product->getKey();
+                $sortOrder = $product->galleryMedia()->count();
 
-                $product->media()->create([
-                    'collection' => 'gallery',
-                    'disk' => $mediaDisk,
-                    'path' => $path,
-                    'original_name' => $image->getClientOriginalName(),
-                    'mime_type' => $image->getMimeType(),
-                    'size' => $image->getSize(),
-                    'alt_text' => $product->name,
-                    'sort_order' => $product->galleryMedia()->count(),
-                    'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
-                ]);
+                foreach ($request->file('images', []) as $offset => $image) {
+                    $path = $image->store($directory, $mediaDisk);
+
+                    if (! is_string($path) || $path === '') {
+                        throw new \\RuntimeException('ذخیره‌سازی تصویر محصول انجام نشد.');
+                    }
+
+                    $storedImagePaths[] = $path;
+                    $product->media()->create([
+                        'collection' => 'gallery',
+                        'disk' => $mediaDisk,
+                        'path' => $path,
+                        'original_name' => $image->getClientOriginalName(),
+                        'mime_type' => $image->getMimeType(),
+                        'size' => $image->getSize(),
+                        'alt_text' => $product->name,
+                        'sort_order' => $sortOrder + $offset,
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+                }
             }
+            }, 1);
+        } catch (\\Throwable $exception) {
+            foreach ($storedImagePaths as $path) {
+                Storage::disk($mediaDisk)->delete($path);
+            }
+
+            throw $exception;
         }
 
         return redirect()->route('commerce-admin.products.show', $product->getKey())
