@@ -12,7 +12,8 @@
         $ordersPoints = collect($series)->values()->map(fn ($point, $index) =>
             round(12 + ($index * 336 / max(1, count($series) - 1)), 1).','.round(148 - (((int) $point['orders_count'] / $maxOrders) * 105) - 7, 1)
         )->implode(' ');
-        $paymentTotal = max(1, (int) $paymentBreakdown->sum('aggregate'));
+        $paymentCount = (int) $paymentBreakdown->sum('aggregate');
+        $paymentTotal = max(1, $paymentCount);
         $palette = ['paid' => '#202228', 'pending' => '#9da2ab', 'failed' => '#d86b71', 'refunded' => '#d9dce2'];
         $offset = 0;
         $segments = [];
@@ -110,7 +111,7 @@
             </div>
             <div class="ak-source-chart">
                 <div class="ak-donut" style="background:conic-gradient({{ implode(', ', $segments) ?: '#edf0f4 0% 100%' }})">
-                    <div><strong>{{ number_format((int) $allTimeOrders) }}</strong><small>سفارش‌ها</small></div>
+                    <div><strong>{{ number_format($paymentCount) }}</strong><small>پرداخت‌ها</small></div>
                 </div>
                 <div class="ak-donut-legend">
                     @forelse ($paymentBreakdown as $row)
