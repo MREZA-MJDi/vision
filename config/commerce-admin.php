@@ -3,7 +3,7 @@
 return [
     /*
     | Model adapters let other Laravel applications reuse the module without
-    | changing the UI. See docs/commerce-admin-kit.md for the model contract.
+    | changing the UI. Controllers and routes stay in the application; packages/RM/CommerceAdmin contains only presentation resources.
     */
     'models' => [
         'user' => App\Models\User::class,
