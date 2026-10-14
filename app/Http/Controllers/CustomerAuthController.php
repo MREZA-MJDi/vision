@@ -47,7 +47,7 @@ class CustomerAuthController extends Controller
 
         if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
             throw ValidationException::withMessages([
-                'email' => 'These credentials could not be verified. Please wait before trying again.',
+                'email' => 'اطلاعات ورود تأیید نشد. لطفاً کمی بعد دوباره تلاش کن.',
             ]);
         }
 
@@ -61,7 +61,7 @@ class CustomerAuthController extends Controller
             RateLimiter::hit($key, $decaySeconds);
 
             throw ValidationException::withMessages([
-                'email' => 'These credentials could not be verified.',
+                'email' => 'اطلاعات ورود صحیح نیست.',
             ]);
         }
 
@@ -119,7 +119,7 @@ class CustomerAuthController extends Controller
         $this->mergeGuestCart((int) $user->getKey(), $sessionId);
 
         return $redirector->afterCustomerRegistration($request)
-            ->with('status', 'Your account is ready.');
+            ->with('status', 'حساب کاربری شما آماده است.');
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -129,7 +129,7 @@ class CustomerAuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('storefront.index')
-            ->with('status', 'You have been signed out.');
+            ->with('status', 'با موفقیت از حساب خارج شدی.');
     }
 
     private function mergeGuestCart(int $userId, string $sessionId): void
