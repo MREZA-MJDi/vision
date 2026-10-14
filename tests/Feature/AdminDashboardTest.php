@@ -102,7 +102,7 @@ class AdminDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('درآمد پرداخت‌شده')
             ->assertSee('آخرین سفارش‌ها')
-            ->assertSee('45.00');
+            ->assertSee('45 تومان');
 
         $this->assertCount(1, $groupedSeriesQueries, 'The 12-month chart should use one grouped aggregation query.');
         $this->assertDatabaseHas('product_variants', [
@@ -123,7 +123,7 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($admin)
             ->get(route('commerce-admin.dashboard'))
             ->assertOk()
-            ->assertSee('$0.00')
+            ->assertSee('0 تومان')
             ->assertSee('هنوز سفارشی ثبت نشده است.');
 
         $this->get(route('commerce-admin.analytics'))
