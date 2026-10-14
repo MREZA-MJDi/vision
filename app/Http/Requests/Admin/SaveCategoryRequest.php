@@ -23,6 +23,9 @@ class SaveCategoryRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($table, 'slug')->ignore($id)],
             'parent_id' => ['nullable', 'integer', Rule::exists($table, 'id')->whereNull('deleted_at')],
             'description' => ['nullable', 'string', 'max:5000'],
+            'cover_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'cover_alt' => ['nullable', 'string', 'max:255'],
+            'remove_cover' => ['nullable', 'boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -67,6 +70,10 @@ class SaveCategoryRequest extends FormRequest
             'name.required' => 'نام دسته‌بندی الزامی است.',
             'slug.unique' => 'این شناسهٔ آدرس قبلاً استفاده شده است.',
             'parent_id.exists' => 'دسته‌بندی والد انتخاب‌شده معتبر نیست.',
+            'cover_image.image' => 'فایل انتخاب‌شده باید تصویر معتبر باشد.',
+            'cover_image.mimes' => 'فرمت تصویر باید JPG، PNG یا WebP باشد.',
+            'cover_image.max' => 'حجم تصویر دسته‌بندی نباید بیشتر از ۴ مگابایت باشد.',
+            'cover_alt.max' => 'متن جایگزین تصویر نباید بیشتر از ۲۵۵ نویسه باشد.',
             'status.in' => 'وضعیت انتخاب‌شده معتبر نیست.',
         ];
     }

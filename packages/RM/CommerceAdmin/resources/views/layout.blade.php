@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') · {{ config('commerce-admin.store_name', config('app.name', 'VISION')) }}</title>
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @vite(['packages/RM/CommerceAdmin/resources/css/admin-kit.css', 'packages/RM/CommerceAdmin/resources/js/admin-kit.js'])
+    @if (config('commerce-admin.asset_mode', 'published') === 'vite')
+        @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+            @vite(['packages/RM/CommerceAdmin/resources/css/admin-kit.css', 'packages/RM/CommerceAdmin/resources/js/admin-kit.js'])
+        @endif
+    @else
+        <link rel="stylesheet" href="{{ asset('vendor/commerce-admin/admin-kit.css') }}">
+        <script src="{{ asset('vendor/commerce-admin/admin-kit.js') }}" defer></script>
     @endif
     @stack('head')
 </head>

@@ -6,7 +6,7 @@
     <div class="ak-page-heading">
         <div><div class="ak-breadcrumb"><a href="{{ route($routePrefix . '.index') }}">{{ $taxonomyPlural ?? ($taxonomyTitle . 'ها') }}</a> <span>/</span> {{ $editing ? 'ویرایش' : 'ایجاد' }}</div><h1>{{ $editing ? 'ویرایش ' . $taxonomyTitle : 'افزودن ' . $taxonomyTitle }}</h1><p>اطلاعات کاتالوگ را ذخیره کنید؛ آدرس یکتا در صورت خالی‌بودن به‌صورت خودکار ساخته می‌شود.</p></div>
     </div>
-    <form method="POST" action="{{ $editing ? route($routePrefix . '.update', $record->getKey()) : route($routePrefix . '.store') }}" class="ak-form-layout">
+    <form method="POST" enctype="multipart/form-data" action="{{ $editing ? route($routePrefix . '.update', $record->getKey()) : route($routePrefix . '.store') }}" class="ak-form-layout">
         @csrf
         @if($editing) @method('PUT') @endif
         <section class="ak-panel ak-form-panel">
@@ -22,6 +22,34 @@
                 <label class="ak-field ak-field-full"><span>توضیحات</span><textarea rows="4" name="description">{{ old('description', $record->description) }}</textarea></label>
             </div>
         </section>
+        @if($showParent)
+            <section class="ak-panel ak-form-panel">
+                <div class="ak-panel-heading"><div><h2>تصویر دسته‌بندی</h2><p>تصویر انتخاب‌شده در صفحهٔ اصلی فروشگاه نیز نمایش داده می‌شود.</p></div></div>
+                <div class="ak-category-cover-upload">
+                    <img data-category-cover-preview
+                         @if($record->coverMedia?->url) src="{{ $record->coverMedia->url }}" @else hidden @endif
+                         alt="{{ $record->coverMedia?->alt_text ?: $record->name }}"
+                         @if($record->coverMedia?->url) data-existing-src="{{ $record->coverMedia->url }}" @endif>
+                    <label class="ak-field">
+                        <span>انتخاب تصویر (JPG، PNG یا WebP)</span>
+                        <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" data-category-cover-input>
+                        <small>حداکثر ۴ مگابایت. پس از ذخیره، تصویر روی دیسک عمومی و رکورد رسانه در دیتابیس ثبت می‌شود.</small>
+                        <small data-category-cover-filename aria-live="polite"></small>
+                    </label>
+                    <label class="ak-field">
+                        <span>متن جایگزین تصویر</span>
+                        <input type="text" name="cover_alt" maxlength="255" value="{{ old('cover_alt', $record->coverMedia?->alt_text) }}" placeholder="{{ $record->name ?: 'توضیح کوتاه تصویر' }}">
+                    </label>
+                    @if($record->coverMedia?->url)
+                        <label class="ak-check-card">
+                            <input type="checkbox" name="remove_cover" value="1" data-remove-category-cover @checked(old('remove_cover'))>
+                            <span><strong>حذف تصویر فعلی</strong><small>فایل ذخیره‌شده و رکورد رسانهٔ همین دسته‌بندی حذف می‌شود.</small></span>
+                        </label>
+                    @endif
+                </div>
+            </section>
+        @endif
+
         <section class="ak-panel ak-form-panel">
             <div class="ak-panel-heading"><div><h2>اطلاعات سئو</h2><p>اختیاری؛ برای نمایش و جست‌وجوی بهتر</p></div></div>
             <div class="ak-form-grid">

@@ -34,11 +34,20 @@
             <div class="ak-empty-state"><strong>موردی پیدا نشد</strong><p>برای این فیلتر رکوردی وجود ندارد. می‌توانید {{ $taxonomyTitle }} جدید اضافه کنید.</p></div>
         @else
             <div class="ak-table-scroll"><table class="ak-table">
-                <thead><tr><th>نام</th><th>شناسهٔ آدرس</th>@if($showParent)<th>والد</th><th>زیر‌دسته</th>@endif<th>محصول‌ها</th><th>وضعیت</th><th>آخرین تغییر</th><th>عملیات</th></tr></thead>
+                <thead><tr><th>نام</th>@if($showParent)<th>تصویر</th>@endif<th>شناسهٔ آدرس</th>@if($showParent)<th>والد</th><th>زیر‌دسته</th>@endif<th>محصول‌ها</th><th>وضعیت</th><th>آخرین تغییر</th><th>عملیات</th></tr></thead>
                 <tbody>
                 @foreach($items as $item)
                     <tr>
                         <td><strong class="ak-table-primary">{{ $item->name }}</strong></td>
+                        @if($showParent)
+                            <td>
+                                @if($item->coverMedia?->url)
+                                    <img class="ak-category-cover-thumb" src="{{ $item->coverMedia->url }}" alt="{{ $item->coverMedia->alt_text ?: $item->name }}" loading="lazy">
+                                @else
+                                    <span class="ak-muted">بدون تصویر</span>
+                                @endif
+                            </td>
+                        @endif
                         <td><span class="ak-mono">{{ $item->slug }}</span></td>
                         @if($showParent)
                             <td>{{ $item->parent?->name ?: 'دستهٔ اصلی' }}</td>
@@ -46,7 +55,7 @@
                         @endif
                         <td>{{ number_format((int) $item->products_count) }}</td>
                         <td><span class="ak-status-pill {{ $item->is_active ? 'status-active' : 'status-inactive' }}">{{ $item->is_active ? 'فعال' : 'غیرفعال' }}</span></td>
-                        <td>@jalali($item->updated_at, 'j F Y')</td>
+                        <td>@commerceDate($item->updated_at, 'j F Y')</td>
                         <td><div class="ak-toolbar">
                             <a class="ak-button ak-button-light ak-button-sm" href="{{ route($routePrefix . '.edit', $item->getKey()) }}">ویرایش</a>
                             <form method="POST" action="{{ route($routePrefix . '.destroy', $item->getKey()) }}" data-confirm="حذف یا غیرفعال‌کردن این رکورد انجام شود؟">@csrf @method('DELETE')<button class="ak-button ak-button-light ak-button-sm" type="submit">حذف</button></form>

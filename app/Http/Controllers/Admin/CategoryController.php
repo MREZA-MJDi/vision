@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Category;
+use App\Services\MediaService;
 use App\Support\SeoDefaults;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\Admin\SaveCategoryRequest;
@@ -23,7 +24,7 @@ class CategoryController
         $model = $this->model();
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
-        $query = $model::query()->with('parent')->withCount(['products', 'children']);
+        $query = $model::query()->with(['parent', 'coverMedia'])->withCount(['products', 'children']);
 
         if ($search !== '') {
             $query->where(fn ($q) => $q->where('name', 'like', '%' . $search . '%')
@@ -68,13 +69,13 @@ class CategoryController
         return $this->formView(new $model(), false);
     }
 
-    public function store(SaveCategoryRequest $request): RedirectResponse
+    public function store(SaveCategoryRequest $request, MediaService $mediaService): RedirectResponse
     {
         $model = $this->model();
         $record = new $model();
         $data = $request->validated();
 
-        DB::transaction(function () use ($record, $data, $model): void {
+        DB::transaction(function () use ($record, $data, $model, $request, $mediaService): void {
             $record->fill([
                 'name' => $data['name'],
                 'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name']),
@@ -86,6 +87,7 @@ class CategoryController
                 'sort_order' => (int) ($data['sort_order'] ?? 0),
             ]);
             $record->save();
+            $this->persistCover($record, $request, $data, $mediaService);
         });
 
         return redirect()->route('commerce-admin.categories.index')
@@ -100,13 +102,13 @@ class CategoryController
         return $this->formView($record, true);
     }
 
-    public function update(SaveCategoryRequest $request, int $category): RedirectResponse
+    public function update(SaveCategoryRequest $request, int $category, MediaService $mediaService): RedirectResponse
     {
         $model = $this->model();
         $record = $model::query()->findOrFail($category);
         $data = $request->validated();
 
-        DB::transaction(function () use ($record, $data, $model): void {
+        DB::transaction(function () use ($record, $data, $model, $request, $mediaService): void {
             $record->fill([
                 'name' => $data['name'],
                 'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name'], $record->getKey(), $record->slug),
@@ -118,6 +120,7 @@ class CategoryController
                 'sort_order' => (int) ($data['sort_order'] ?? 0),
             ]);
             $record->save();
+            $this->persistCover($record, $request, $data, $mediaService);
         });
 
         return redirect()->route('commerce-admin.categories.index')
@@ -160,6 +163,27 @@ class CategoryController
             'parents' => $parents,
             'showParent' => true,
         ]);
+    }
+
+    private function persistCover(object $record, SaveCategoryRequest $request, array $data, MediaService $mediaService): void
+    {
+        if ($request->hasFile('cover_image')) {
+            $altText = trim((string) ($data['cover_alt'] ?? ''));
+
+            $mediaService->replace(
+                $record,
+                'cover',
+                $request->file('cover_image'),
+                (string) config('commerce-admin.category_media_directory', 'categories'),
+                $altText !== '' ? $altText : (string) $data['name']
+            );
+
+            return;
+        }
+
+        if ((bool) ($data['remove_cover'] ?? false)) {
+            $mediaService->removeCollection($record, 'cover');
+        }
     }
 
     private function resolveSlug(string $model, string $requestedSlug, string $name, ?int $ignoreId = null, ?string $currentSlug = null): string
