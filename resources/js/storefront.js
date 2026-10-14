@@ -1,4 +1,219 @@
 (() => {
+    function initTiamirIntro(intro) {
+        const storageKey = 'tiamir_intro_seen';
+        const hasSeenCookie = document.cookie.split(';').some((cookie) => cookie.trim() === storageKey + '=1');
+        let hasSeenSession = false;
+
+        try {
+            hasSeenSession = window.sessionStorage.getItem(storageKey) === '1';
+        } catch {
+            // Storage may be disabled; the cookie and in-memory flow still work.
+        }
+
+        const isReturning = hasSeenCookie || hasSeenSession;
+        const firstDuration = Math.max(1000, Number(intro.dataset.firstDuration) || 5000);
+        const returnDuration = Math.max(1000, Number(intro.dataset.returnDuration) || 2500);
+        const duration = isReturning ? returnDuration : firstDuration;
+        const exitDuration = 220;
+        const shell = document.querySelector('.store-shell');
+        const canvas = intro.querySelector('[data-tiamir-static]');
+        const mainLogo = intro.querySelector('[data-tiamir-logo]');
+        const fallback = intro.querySelector('[data-tiamir-fallback]');
+        const ghostLogos = intro.querySelectorAll('.tiamir-intro__logo--ghost');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        let finishTimer = null;
+        let fadeTimer = null;
+        let frameId = null;
+        let finishDeadline = 0;
+        let remaining = Math.max(0, duration - exitDuration);
+        let lastFrame = 0;
+        let canvasContext = null;
+        let imageData = null;
+        let canvasWidth = 0;
+        let canvasHeight = 0;
+        let finished = false;
+        let lastTapAt = 0;
+
+        intro.style.setProperty('--tiamir-duration', duration + 'ms');
+        intro.classList.add('is-visible');
+        if (isReturning) intro.classList.add('is-returning');
+        if (reducedMotion) intro.classList.add('is-reduced-motion');
+        document.body.classList.add('tiamir-intro-active');
+
+        if (shell) shell.inert = true;
+
+        function revealFallback() {
+            if (mainLogo) mainLogo.hidden = true;
+            ghostLogos.forEach((logo) => { logo.hidden = true; });
+            if (fallback) fallback.hidden = false;
+        }
+
+        if (mainLogo) {
+            mainLogo.addEventListener('error', revealFallback, { once: true });
+            if (mainLogo.complete && mainLogo.naturalWidth === 0) revealFallback();
+        }
+
+        if (reducedMotion) {
+            window.requestAnimationFrame(() => intro.classList.add('is-revealing'));
+        }
+
+        function prepareCanvas() {
+            if (!canvas || reducedMotion) return false;
+            if (!canvasContext) {
+                canvasContext = canvas.getContext('2d', { alpha: false, desynchronized: true });
+                if (!canvasContext) return false;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const resolution = Math.min(window.devicePixelRatio || 1, 1.25) * 0.42;
+            const width = Math.max(1, Math.floor(rect.width * resolution));
+            const height = Math.max(1, Math.floor(rect.height * resolution));
+
+            if (width !== canvasWidth || height !== canvasHeight) {
+                canvasWidth = width;
+                canvasHeight = height;
+                canvas.width = width;
+                canvas.height = height;
+                imageData = canvasContext.createImageData(width, height);
+            }
+
+            return Boolean(imageData);
+        }
+
+        function drawStatic(timestamp) {
+            frameId = null;
+            if (finished || document.hidden || reducedMotion || !canvas) return;
+
+            if (timestamp - lastFrame < 40) {
+                frameId = window.requestAnimationFrame(drawStatic);
+                return;
+            }
+
+            if (!prepareCanvas()) return;
+
+            lastFrame = timestamp;
+            const pixels = imageData.data;
+            for (let index = 0; index < pixels.length; index += 4) {
+                const shade = Math.floor(Math.random() * 256);
+                pixels[index] = shade;
+                pixels[index + 1] = shade;
+                pixels[index + 2] = shade;
+                pixels[index + 3] = 255;
+            }
+            canvasContext.putImageData(imageData, 0, 0);
+            frameId = window.requestAnimationFrame(drawStatic);
+        }
+
+        function startStatic() {
+            if (!finished && !reducedMotion && !document.hidden && frameId === null && canvas) {
+                frameId = window.requestAnimationFrame(drawStatic);
+            }
+        }
+
+        function stopStatic() {
+            if (frameId !== null) window.cancelAnimationFrame(frameId);
+            frameId = null;
+        }
+
+        function scheduleFinish(milliseconds) {
+            if (finishTimer !== null) window.clearTimeout(finishTimer);
+            remaining = Math.max(0, milliseconds);
+            finishDeadline = performance.now() + remaining;
+            finishTimer = window.setTimeout(() => {
+                finishTimer = null;
+                remaining = 0;
+                finishIntro(true);
+            }, remaining);
+        }
+
+        function markSeen() {
+            try {
+                window.sessionStorage.setItem(storageKey, '1');
+            } catch {
+                // The persistent cookie below remains the preferred fallback.
+            }
+
+            const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+            document.cookie = storageKey + '=1; Max-Age=31536000; Path=/; SameSite=Lax' + secure;
+        }
+
+        function finishIntro(naturalCompletion) {
+            if (finished || (!isReturning && !naturalCompletion)) return;
+
+            finished = true;
+            markSeen();
+
+            if (finishTimer !== null) window.clearTimeout(finishTimer);
+            finishTimer = null;
+            stopStatic();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('keydown', handleKeyDown);
+
+            intro.classList.add('is-exiting');
+
+            fadeTimer = window.setTimeout(() => {
+                intro.remove();
+                document.body.classList.remove('tiamir-intro-active');
+                if (shell) shell.inert = false;
+                if (fadeTimer !== null) window.clearTimeout(fadeTimer);
+                fadeTimer = null;
+            }, exitDuration);
+        }
+
+        function handleVisibilityChange() {
+            if (finished) return;
+
+            if (document.hidden) {
+                if (finishTimer !== null) {
+                    window.clearTimeout(finishTimer);
+                    finishTimer = null;
+                    remaining = Math.max(0, finishDeadline - performance.now());
+                }
+                stopStatic();
+                return;
+            }
+
+            scheduleFinish(remaining);
+            startStatic();
+        }
+
+        function handleKeyDown(event) {
+            // A first-time visitor sees the full identity sequence; repeat
+            // visitors may dismiss it with Escape or Enter.
+            if (isReturning && (event.key === 'Escape' || event.key === 'Enter')) {
+                finishIntro(false);
+            }
+        }
+
+        if (isReturning) {
+            intro.addEventListener('dblclick', () => finishIntro(false));
+            intro.addEventListener('touchend', () => {
+                const now = Date.now();
+                if (now - lastTapAt < 360) {
+                    lastTapAt = 0;
+                    finishIntro(false);
+                } else {
+                    lastTapAt = now;
+                }
+            }, { passive: true });
+            document.addEventListener('keydown', handleKeyDown);
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('resize', () => {
+            if (!finished && !reducedMotion) prepareCanvas();
+        }, { passive: true });
+
+        if (!document.hidden) {
+            scheduleFinish(remaining);
+            startStatic();
+        }
+    }
+
+    const intro = document.querySelector('[data-tiamir-intro]');
+    if (intro) initTiamirIntro(intro);
+
     const root = document.querySelector('[data-storefront]');
     if (!root) return;
 
