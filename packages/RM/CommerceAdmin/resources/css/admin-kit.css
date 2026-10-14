@@ -539,3 +539,20 @@ html[dir="rtl"] .ak-team-foot{direction:rtl}html[dir="rtl"] .ak-team-foot a{marg
 
 /* Product variant-specific image picker and live preview. */
 .ak-variant-image-field{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fbfcfd}.ak-variant-image-preview{display:block;width:84px;height:84px;flex:0 0 84px;object-fit:cover;border-radius:6px;background:#f0f2f5}.ak-variant-image-preview[hidden]{display:none}.ak-variant-image-field .ak-field{flex:1;min-width:0} .ak-variant-image-field small{display:block;margin-top:4px;color:#828995;font-size:10px;line-height:1.6}.ak-variant-remove-image{display:flex;align-items:center;gap:7px;margin-top:8px;color:#a13f46;font-size:11px;cursor:pointer}.ak-variant-remove-image input{accent-color:#c84b55}@media(max-width:640px){.ak-variant-image-field{align-items:flex-start;flex-direction:column}.ak-variant-image-preview{width:96px;height:96px;flex-basis:96px}}
+
+/* Real per-variant photo preview in product detail tables. */
+.ak-variant-table-thumb {
+    display: block;
+    width: 52px;
+    height: 64px;
+    object-fit: contain;
+    padding: 3px;
+    border: 1px solid var(--ak-border, #e7e5e4);
+    border-radius: 8px;
+    background: var(--ak-surface-muted, #f8fafc);
+}
+.ak-variant-table-empty {
+    color: var(--ak-text-muted, #78716c);
+    font-size: 11px;
+    white-space: nowrap;
+}

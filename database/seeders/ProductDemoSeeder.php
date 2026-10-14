@@ -9,7 +9,6 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ProductDemoSeeder extends Seeder
 {
@@ -37,9 +36,9 @@ class ProductDemoSeeder extends Seeder
                 'is_featured' => true,
                 'sort_order' => 10,
                 'variants' => [
-                    ['sku' => 'VISION-DEMO-TEE-COFFEE', 'color' => 'قهوه‌ای', 'color_code' => '#805B43', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 12, 'threshold' => 3, 'image' => 'tee-coffee.svg'],
-                    ['sku' => 'VISION-DEMO-TEE-WHITE', 'color' => 'سفید', 'color_code' => '#F4F0E6', 'size' => 'M', 'price' => 1190000, 'sale_price' => 1090000, 'stock' => 8, 'threshold' => 3, 'image' => 'tee-white.svg'],
-                    ['sku' => 'VISION-DEMO-TEE-BLACK', 'color' => 'مشکی', 'color_code' => '#17191C', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 15, 'threshold' => 4, 'image' => 'tee-black.svg'],
+                    ['sku' => 'VISION-DEMO-TEE-COFFEE', 'color' => 'قهوه‌ای', 'color_code' => '#805B43', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 12, 'threshold' => 3, 'image_url' => 'https://images.unsplash.com/photo-1565292849963-a50ad3c5ddd5?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tee-coffee-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/woman-wearing-brown-t-shirt-NdTH6-ykBW4', 'image_credit' => 'Felix Uresti'],
+                    ['sku' => 'VISION-DEMO-TEE-WHITE', 'color' => 'سفید', 'color_code' => '#F4F0E6', 'size' => 'M', 'price' => 1190000, 'sale_price' => 1090000, 'stock' => 8, 'threshold' => 3, 'image_url' => 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tee-white-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/white-crew-neck-t-shirt-acn5ERAeSb4', 'image_credit' => 'Haryo Setyadi'],
+                    ['sku' => 'VISION-DEMO-TEE-BLACK', 'color' => 'مشکی', 'color_code' => '#17191C', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 15, 'threshold' => 4, 'image_url' => 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tee-black-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/black-crew-neck-t-shirt-Wr0TpKqf26s', 'image_credit' => 'Faith & Yarn'],
                 ],
             ],
             [
@@ -51,8 +50,8 @@ class ProductDemoSeeder extends Seeder
                 'is_featured' => false,
                 'sort_order' => 20,
                 'variants' => [
-                    ['sku' => 'VISION-DEMO-TOTE-TAN', 'color' => 'شتری', 'color_code' => '#BA9166', 'size' => 'Standard', 'price' => 1450000, 'sale_price' => null, 'stock' => 6, 'threshold' => 2, 'image' => 'tote-tan.svg'],
-                    ['sku' => 'VISION-DEMO-TOTE-BLACK', 'color' => 'مشکی', 'color_code' => '#25282B', 'size' => 'Standard', 'price' => 1490000, 'sale_price' => null, 'stock' => 4, 'threshold' => 2, 'image' => 'tote-black.svg'],
+                    ['sku' => 'VISION-DEMO-TOTE-TAN', 'color' => 'شتری', 'color_code' => '#BA9166', 'size' => 'Standard', 'price' => 1450000, 'sale_price' => null, 'stock' => 6, 'threshold' => 2, 'image_url' => 'https://images.unsplash.com/photo-1535981444082-2a5dc0548ef3?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tote-tan-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/brown-tote-bag-on-white-surface--zBSu3rYjNs', 'image_credit' => 'Mel Poole'],
+                    ['sku' => 'VISION-DEMO-TOTE-BLACK', 'color' => 'مشکی', 'color_code' => '#25282B', 'size' => 'Standard', 'price' => 1490000, 'sale_price' => null, 'stock' => 4, 'threshold' => 2, 'image_url' => 'https://images.unsplash.com/photo-1546938576-04917ec516ee?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tote-black-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/black-tote-bag-9aZC_v4mLwE', 'image_credit' => 'SJ (@uxsj_ph)'],
                 ],
             ],
         ];
@@ -95,7 +94,13 @@ class ProductDemoSeeder extends Seeder
                             continue;
                         }
 
-                        // Keep price, stock, color, state and image deletions made in Admin.
+                        // Replace only the old illustrations shipped by this demo seeder. A blank gallery means an admin intentionally removed the photo, and uploaded admin photos are never overwritten.
+                        $legacyDemoImage = $variant->galleryMedia()
+                            ->where('path', 'like', 'demo-products/%')
+                            ->first();
+                        if ($legacyDemoImage) {
+                            $legacyDemoImage->update($this->demoImageAttributes($product, $variantDefinition));
+                        }
                         continue;
                     }
 
@@ -113,34 +118,43 @@ class ProductDemoSeeder extends Seeder
                         'sort_order' => $sortOrder,
                     ])->save();
 
-                    $relativePath = 'demo-products/' . $variantDefinition['image'];
-                    // The sample artwork is version-controlled under storage/app/public.
-                    // Never create a media row pointing at an asset missing from disk.
-                    if (! Storage::disk('public')->exists($relativePath)) {
-                        $this->command?->warn("Demo image [{$relativePath}] is missing; skipped attaching it to {$variant->sku}.");
-                        continue;
-                    }
-
-                    $media = Media::query()->firstOrCreate([
+                    Media::query()->firstOrCreate([
                         'disk' => 'public',
-                        'path' => $relativePath,
-                    ], [
+                        'path' => $variantDefinition['image_url'],
+                    ], array_merge([
                         'mediable_type' => $variant->getMorphClass(),
                         'mediable_id' => $variant->getKey(),
                         'collection' => 'gallery',
-                        'original_name' => $variantDefinition['image'],
-                        'mime_type' => 'image/svg+xml',
-                        'size' => Storage::disk('public')->size($relativePath),
-                        'width' => 640,
-                        'height' => 800,
-                        'alt_text' => $product->name . ' — ' . $variantDefinition['color'],
                         'sort_order' => 0,
                         'uploaded_by' => null,
-                    ]);
+                    ], $this->demoImageAttributes($product, $variantDefinition)));
                 }
             }
         });
 
-        $this->command?->info('Demo products, their variants and variant-specific images are ready.');
+        $this->command?->info('Demo products, their variants and real photo-backed variant media are ready.');
+    }
+
+    /**
+     * Real, freely usable Unsplash demo photos. Admin-uploaded files are not
+     * stored in this external-photo shape and remain untouched by reseeding.
+     */
+    private function demoImageAttributes(Product $product, array $definition): array
+    {
+        return [
+            'path' => $definition['image_url'],
+            'original_name' => $definition['image_name'],
+            'mime_type' => 'image/jpeg',
+            'size' => null,
+            'width' => null,
+            'height' => null,
+            'alt_text' => $product->name . ' — ' . $definition['color'],
+            'metadata' => array_filter([
+                'source' => 'Unsplash',
+                'source_url' => $definition['image_source'],
+                'creator' => $definition['image_credit'] ?? null,
+                'license' => 'Unsplash License',
+            ], static fn ($value) => $value !== null),
+        ];
     }
 }

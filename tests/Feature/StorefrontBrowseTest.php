@@ -31,6 +31,49 @@ class StorefrontBrowseTest extends TestCase
             ->assertSee('data-fitting-room', false);
     }
 
+    public function test_shop_card_preview_and_product_detail_use_real_variant_media(): void
+    {
+        $product = Product::query()->create([
+            'name' => 'Photo-backed Shop Product',
+            'slug' => 'photo-backed-shop-product',
+            'short_description' => 'Variant-specific image preview.',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'PHOTO-BACKED-SHOP-001',
+            'size' => 'M',
+            'color' => 'Black',
+            'price' => 129000,
+            'stock' => 4,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+        $photoUrl = 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a';
+        $variant->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => $photoUrl,
+            'original_name' => 'black-tee.jpg',
+            'mime_type' => 'image/jpeg',
+            'alt_text' => 'Photo-backed Shop Product — Black',
+            'sort_order' => 0,
+        ]);
+
+        $this->get('/shop')
+            ->assertOk()
+            ->assertSee('src="' . $photoUrl . '"', false)
+            ->assertSee('data-product-image="' . $photoUrl . '"', false)
+            ->assertSee('data-card-preview', false)
+            ->assertSee('data-fit-product', false)
+            ->assertSee(route('products.show', ['product' => $product->slug]), false);
+
+        $this->get(route('products.show', ['product' => $product->slug]))
+            ->assertOk()
+            ->assertSee('src="' . $photoUrl . '"', false)
+            ->assertSee('data-image="' . $photoUrl . '"', false);
+    }
+
     public function test_product_catalog_lists_active_products_and_hides_inactive_products(): void
     {
         $category = Category::create([
