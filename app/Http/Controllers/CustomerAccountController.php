@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\Auth\AuthenticatedUserRedirector;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class CustomerAccountController extends Controller
 {
-    public function show(Request $request): View|RedirectResponse
+    public function show(Request $request, AuthenticatedUserRedirector $redirector): View|RedirectResponse
     {
         $customer = $request->user();
 
-        if ((bool) $customer->getAttribute('is_admin')) {
+        if ($redirector->hasAdminAccess($customer)) {
             return redirect()->route('commerce-admin.dashboard');
         }
 
@@ -27,11 +28,11 @@ class CustomerAccountController extends Controller
         return view('store.account', compact('customer', 'orders'));
     }
 
-    public function order(Request $request, int $order): View|RedirectResponse
+    public function order(Request $request, int $order, AuthenticatedUserRedirector $redirector): View|RedirectResponse
     {
         $customer = $request->user();
 
-        if ((bool) $customer->getAttribute('is_admin')) {
+        if ($redirector->hasAdminAccess($customer)) {
             return redirect()->route('commerce-admin.dashboard');
         }
 
