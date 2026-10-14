@@ -529,3 +529,15 @@ html[dir="rtl"] .ak-team-foot{direction:rtl}html[dir="rtl"] .ak-team-foot a{marg
 .ak-crop-dialog-actions>div{display:flex;gap:8px}
 .ak-crop-dialog button:disabled{opacity:.55;cursor:wait}
 @media(max-width:600px){.ak-crop-dialog{padding:13px}.ak-crop-controls{grid-template-columns:minmax(0,1fr)}.ak-crop-dialog-actions{align-items:stretch;flex-direction:column}.ak-crop-dialog-actions>div{display:grid;grid-template-columns:1fr 1fr}.ak-crop-dialog-actions>.ak-button{width:100%}}
+
+
+/* Product variant-specific image uploader */
+.ak-variant-media-block{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px;margin-bottom:12px;border:1px solid #eef0f3;border-radius:8px;background:#fafbfc}
+.ak-variant-upload-trigger{position:relative;cursor:pointer}
+.ak-variant-media-block>small{color:#8e949d;font-size:9px;line-height:1.7}
+.ak-variant-existing-images{width:100%;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));margin-top:0}
+.ak-variant-existing-images .ak-image-tile img{height:64px}
+.ak-variant-media-block .ak-new-image-preview{justify-content:flex-start;width:100%;padding-top:0}
+.ak-new-image-tile.is-preview-error{opacity:.65}
+.ak-new-image-tile.is-preview-error img{object-fit:contain}
+@media(max-width:640px){.ak-variant-media-block{padding:8px}.ak-variant-upload-trigger{max-width:100%;white-space:normal}}
