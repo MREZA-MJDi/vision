@@ -33,7 +33,7 @@ class StoreAdminOrderRequest extends FormRequest
             'shipping_address' => ['required', 'string', 'max:2000'],
             'shipping_province' => ['nullable', 'string', 'max:100'],
             'shipping_city' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:30'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
             'payment_method' => ['required', Rule::in(['cash_on_delivery', 'bank_transfer', 'manual'])],
             'shipping_cost' => ['required', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1', 'max:50'],

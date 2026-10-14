@@ -1782,7 +1782,7 @@ body.storefront-body button { color: inherit; }
 .store-product-attributes dd{margin:0;color:inherit;font-size:.9rem;text-align:end;overflow-wrap:anywhere}
 
 
-/* Variant color swatches: selection is synchronized with the live variant picker. */
+/* Accessible variant color swatches, synchronized with the real variant selector. */
 .store-variant-colors{display:flex;flex-direction:column;gap:10px;margin:12px 0}
 .store-variant-colors__label{font-size:.88rem;color:var(--store-muted,#777)}
 .store-variant-colors__options{display:flex;align-items:center;flex-wrap:wrap;gap:8px}

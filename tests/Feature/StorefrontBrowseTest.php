@@ -61,6 +61,40 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('Hidden Sample');
     }
 
+    public function test_catalog_quick_add_uses_an_in_stock_variant_when_the_first_variant_is_sold_out(): void
+    {
+        $product = Product::query()->create([
+            'name' => 'Mixed Stock Product',
+            'slug' => 'mixed-stock-product',
+            'is_active' => true,
+        ]);
+
+        $soldOut = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'MIXED-STOCK-BLACK',
+            'color' => 'Black',
+            'price' => 100,
+            'stock' => 0,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $available = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'MIXED-STOCK-WHITE',
+            'color' => 'White',
+            'price' => 120,
+            'stock' => 4,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->get('/products')
+            ->assertOk()
+            ->assertSee('data-cart-add="' . $available->getKey() . '"', false)
+            ->assertDontSee('data-cart-add="' . $soldOut->getKey() . '"', false);
+    }
+
     public function test_product_detail_shows_variant_and_returns_404_for_inactive_product(): void
     {
         $category = Category::create([

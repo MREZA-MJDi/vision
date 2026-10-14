@@ -332,10 +332,15 @@ class ProductController
                     ]);
                 }
 
-                // Each variant owns its primary image. Keep the DB replacement atomic and
-                // remove old files only after the transaction commits successfully.
-                $variantImage = $request->file("variants.{$index}.image");
-                if ($variantImage) {
+                // A variant can retain a single primary upload from the editor or accept
+                // a small gallery from API/import clients. Replacing media is transactional;
+                // old physical files are removed only after the database commit succeeds.
+                $variantImages = array_values(array_filter(array_merge(
+                    [$request->file("variants.{$index}.image")],
+                    (array) $request->file("variants.{$index}.images", [])
+                )));
+
+                if ($variantImages !== []) {
                     foreach ($variant->galleryMedia()->get() as $existingAsset) {
                         if ($existingAsset->path && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
                             $obsoleteImagePaths[] = [$existingAsset->disk ?: $mediaDisk, $existingAsset->path];
@@ -345,23 +350,26 @@ class ProductController
 
                     $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
                         . '/' . $product->getKey() . '/variants/' . $variant->getKey();
-                    $path = $variantImage->store($directory, $mediaDisk);
-                    if (! is_string($path) || $path === '') {
-                        throw new \RuntimeException('ذخیره‌سازی تصویر تنوع انجام نشد.');
-                    }
 
-                    $storedImagePaths[] = $path;
-                    $variant->media()->create([
-                        'collection' => 'gallery',
-                        'disk' => $mediaDisk,
-                        'path' => $path,
-                        'original_name' => $variantImage->getClientOriginalName(),
-                        'mime_type' => $variantImage->getMimeType(),
-                        'size' => $variantImage->getSize(),
-                        'alt_text' => trim($product->name . ($variant->color ? ' - ' . $variant->color : '')),
-                        'sort_order' => 0,
-                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
-                    ]);
+                    foreach ($variantImages as $imageOffset => $variantImage) {
+                        $path = $variantImage->store($directory, $mediaDisk);
+                        if (! is_string($path) || $path === '') {
+                            throw new \RuntimeException('ذخیره‌سازی تصویر تنوع انجام نشد.');
+                        }
+
+                        $storedImagePaths[] = $path;
+                        $variant->media()->create([
+                            'collection' => 'gallery',
+                            'disk' => $mediaDisk,
+                            'path' => $path,
+                            'original_name' => $variantImage->getClientOriginalName(),
+                            'mime_type' => $variantImage->getMimeType(),
+                            'size' => $variantImage->getSize(),
+                            'alt_text' => trim($product->name . ($variant->color ? ' - ' . $variant->color : '')),
+                            'sort_order' => $imageOffset,
+                            'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                        ]);
+                    }
                 }
             }
 

@@ -60,6 +60,21 @@ class Product extends Model
         );
     }
 
+    /**
+     * The preferred variant for quick-add/catalog actions. When at least one
+     * active variant is in stock, choose the first stocked option; otherwise
+     * allow the catalog to fall back to the active (sold-out) variant.
+     */
+    public function primaryAvailableVariant(): HasOne
+    {
+        return $this->hasOne(ProductVariant::class)->ofMany(
+            ['sort_order' => 'min', 'id' => 'min'],
+            fn ($query) => $query
+                ->where('is_active', true)
+                ->where('stock', '>', 0)
+        );
+    }
+
     public function reviews(): HasMany { return $this->hasMany(ProductReview::class); }
 
     public function approvedReviews(): HasMany
@@ -112,6 +127,7 @@ class Product extends Model
             ->selectRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END')
             ->whereColumn('product_id', 'products.id')
             ->where('is_active', true)
+            ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->limit(1);

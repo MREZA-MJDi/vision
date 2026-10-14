@@ -67,18 +67,20 @@
                 <tbody>
                 @foreach($products as $item)
                     @php
-                        $variant = $item->variants->firstWhere('is_active', true) ?: $item->variants->first();
-                        $asset = $item->galleryMedia->first();
+                        $variant = $item->variants->first(fn ($row) => $row->is_active && (int) $row->stock > 0)
+                            ?: $item->variants->firstWhere('is_active', true)
+                            ?: $item->variants->first();
+                        $asset = $item->galleryMedia->first() ?: $item->variants->firstWhere('is_active', true)?->primaryGalleryMedia;
                         $stock = (int) $item->variants->where('is_active', true)->sum('stock');
                         $isLow = $item->variants->contains(fn($row) => $row->is_active && $row->stock <= $row->low_stock_threshold);
-                        $onSale = $item->variants->contains(fn($row) => $row->sale_price !== null && $row->sale_price < $row->price);
+                        $onSale = (bool) ($variant?->is_on_sale ?? false);
                     @endphp
                     <tr>
                         <td><input type="checkbox" form="bulkArchiveForm" name="product_ids[]" value="{{ $item->getKey() }}" aria-label="انتخاب {{ $item->name }}" data-row-select></td>
                         <td><div class="ak-product-cell">@if($asset?->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $item->name }}">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<div><a class="ak-table-primary" href="{{ route('commerce-admin.products.show', $item->getKey()) }}">{{ $item->name }}</a><small>SKU {{ $variant?->sku ?: '—' }}</small></div></div></td>
                         <td data-column="category">{{ $item->category?->name ?: 'بدون دسته‌بندی' }}</td>
                         
-                        <td data-column="price"><div class="ak-price-cell"><strong>@money(($variant?->sale_price ?? $variant?->price ?? 0))</strong>@if($onSale)<small class="ak-old-price">@money(($variant?->price ?? 0))</small>@endif</div></td>
+                        <td data-column="price"><div class="ak-price-cell"><strong>@money(($variant?->effective_price ?? $variant?->price ?? 0))</strong>@if($onSale)<small class="ak-old-price">@money(($variant?->price ?? 0))</small>@endif</div></td>
                         <td data-column="stock"><span class="ak-stock-indicator {{ $stock <= 0 ? 'is-out' : ($isLow ? 'is-low' : 'is-ok') }}"><i></i>{{ number_format($stock) }}</span></td>
                         <td data-column="rating"><div class="ak-rating-cell"><span aria-hidden="true">★</span><strong>{{ number_format((float) ($item->approved_reviews_avg_rating ?? 0), 1) }}</strong><small>({{ number_format((int) $item->approved_reviews_count) }})</small></div></td>
                         <td data-column="status"><span class="ak-status-pill {{ $item->is_active ? 'status-active' : 'status-draft' }}">{{ $item->is_active ? 'فعال' : 'پیش‌نویس' }}</span></td>
@@ -87,7 +89,7 @@
                 @endforeach
                 </tbody>
             </table></div>
-            <div class="ak-pagination-wrap"><span>Showing {{ $products->firstItem() }}–{{ $products->lastItem() }} of {{ $products->total() }} products</span>{{ $products->links('commerce-admin::partials.pagination') }}</div>
+            <div class="ak-pagination-wrap"><span>نمایش {{ $products->firstItem() }} تا {{ $products->lastItem() }} از {{ $products->total() }} محصول</span>{{ $products->links('commerce-admin::partials.pagination') }}</div>
         @endif
     </section>
 @endsection

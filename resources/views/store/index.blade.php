@@ -11,7 +11,7 @@
 <main class="store-main">
     @if($heroProduct)
         @php
-            $heroVariant = $heroProduct->primaryActiveVariant;
+            $heroVariant = $heroProduct->primaryAvailableVariant ?? $heroProduct->primaryActiveVariant;
             $heroImage = $heroProduct->primaryGalleryMedia?->url
                 ?? $heroVariant?->primaryGalleryMedia?->url;
         @endphp
@@ -178,7 +178,7 @@
                 <div class="product-grid" data-product-grid>
                     @foreach($products as $product)
                         @php
-                            $variant = $product->primaryActiveVariant;
+                            $variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant;
                             $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
                             $effectivePrice = $variant?->effective_price ?? $variant?->price;
                             $isOnSale = $variant?->is_on_sale ?? false;

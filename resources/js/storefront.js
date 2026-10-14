@@ -402,6 +402,9 @@
         const stockDisplay = root.querySelector('[data-variant-stock]');
         const imageDisplay = root.querySelector('[data-product-main-image]');
         const imagePlaceholder = root.querySelector('[data-product-image-placeholder]');
+        const mainStage = root.querySelector('[data-product-main-stage]');
+        const colorButtons = Array.from(root.querySelectorAll('[data-variant-color-pick]'));
+        const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
         const quantityInput = root.querySelector('[data-variant-quantity]');
         const addButton = root.querySelector('[data-product-add]');
 
@@ -418,10 +421,13 @@
             const onSale = option.dataset.sale === '1';
             const stock = Math.max(0, Number(option.dataset.stock) || 0);
 
-            const imageUrl = option.dataset.image || imageDisplay?.dataset.fallbackSrc || '';
+            // Use the selected variant image first. If it is missing, show only
+            // the shared product gallery fallback, never another variant's photo.
+            const imageUrl = option.dataset.image || mainStage?.dataset.baseImage || imageDisplay?.dataset.fallbackSrc || '';
             if (imageDisplay) {
                 if (imageUrl) {
                     imageDisplay.src = imageUrl;
+                    imageDisplay.alt = option.dataset.imageAlt || 'Product image';
                     imageDisplay.hidden = false;
                     if (imagePlaceholder) imagePlaceholder.hidden = true;
                 } else {
@@ -430,6 +436,12 @@
                     if (imagePlaceholder) imagePlaceholder.hidden = false;
                 }
             }
+            const selectedColor = normalizeColor(option.dataset.color);
+            colorButtons.forEach((button) => {
+                const selected = selectedColor !== '' && normalizeColor(button.dataset.variantColorPick) === selectedColor;
+                button.classList.toggle('is-selected', selected);
+                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            });
 
             if (priceDisplay && Number.isFinite(price)) {
                 priceDisplay.replaceChildren();
@@ -457,35 +469,21 @@
             if (addButton) addButton.disabled = stock < 1;
         };
 
-        const colorButtons = $('[data-variant-color-pick]', select.closest('.store-product-detail__info') || root);
-        const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
-        const syncColorButtons = () => {
-            const selectedColor = normalizeColor(select.selectedOptions?.[0]?.dataset.color);
-            colorButtons.forEach((button) => {
-                const isSelected = normalizeColor(button.dataset.variantColorPick) === selectedColor;
-                button.classList.toggle('is-selected', isSelected);
-                button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-            });
-        };
-
         colorButtons.forEach((button) => button.addEventListener('click', () => {
             const requestedColor = normalizeColor(button.dataset.variantColorPick);
-            const matches = Array.from(select.options).filter((option) =>
+            const options = Array.from(select.options).filter((option) =>
                 normalizeColor(option.dataset.color) === requestedColor
             );
-            const selectedSize = select.selectedOptions?.[0]?.dataset.size || '';
-            const candidate = matches.find((option) => !option.disabled && option.dataset.size === selectedSize)
-                || matches.find((option) => !option.disabled);
+            const currentSize = normalizeColor(select.selectedOptions?.[0]?.dataset.size);
+            const nextOption = options.find((option) => !option.disabled && normalizeColor(option.dataset.size) === currentSize)
+                || options.find((option) => !option.disabled);
 
-            if (!candidate) return;
-            select.value = candidate.value;
+            if (!nextOption) return;
+            select.value = nextOption.value;
             select.dispatchEvent(new Event('change', { bubbles: true }));
         }));
 
-        select.addEventListener('change', () => {
-            refreshVariant();
-            syncColorButtons();
-        });
+        select.addEventListener('change', refreshVariant);
         refreshVariant();
         syncColorButtons();
     });

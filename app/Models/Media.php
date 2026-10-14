@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Storage;
 
 class Media extends Model
 {
@@ -42,6 +43,6 @@ class Media extends Model
             return $this->path;
         }
 
-        return asset('storage/' . ltrim($this->path, '/'));
+        return Storage::disk($this->disk ?: 'public')->url($this->path);
     }
 }

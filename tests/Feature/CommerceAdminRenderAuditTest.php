@@ -227,6 +227,99 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->assertStringContainsString($blackMedia->url, $html);
     }
 
+    public function test_variant_image_can_be_removed_and_the_stored_file_is_deleted(): void
+    {
+        Storage::fake('public');
+        $admin = $this->makeAdmin();
+        $product = Product::query()->create([
+            'name' => 'Variant Image Removal Product',
+            'slug' => 'variant-image-removal-product',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'VARIANT-REMOVE-001',
+            'color' => 'Blue',
+            'price' => 1000,
+            'stock' => 5,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+        $path = 'products/' . $product->getKey() . '/variants/' . $variant->getKey() . '/blue.png';
+        Storage::disk('public')->put($path, 'stored-image-bytes');
+        $media = $variant->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => $path,
+            'original_name' => 'blue.png',
+            'mime_type' => 'image/png',
+            'size' => 18,
+            'alt_text' => 'Variant Image Removal Product - Blue',
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('commerce-admin.products.update', $product->getKey()), [
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'status' => 'active',
+                'variants' => [[
+                    'id' => $variant->getKey(),
+                    'sku' => $variant->sku,
+                    'color' => $variant->color,
+                    'price' => '1000',
+                    'sale_price' => '',
+                    'stock' => '5',
+                    'low_stock_threshold' => '1',
+                    'is_active' => '1',
+                    'remove_image' => '1',
+                ]],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('commerce-admin.products.show', $product->getKey()));
+
+        $this->assertDatabaseMissing('media', ['id' => $media->getKey()]);
+        Storage::disk('public')->assertMissing($path);
+        $this->assertNull($variant->primaryGalleryMedia()->first());
+    }
+
+    public function test_product_store_rejects_soft_deleted_category_and_brand_ids(): void
+    {
+        $admin = $this->makeAdmin();
+        $category = Category::query()->create([
+            'name' => 'Archived Category',
+            'slug' => 'archived-category',
+            'is_active' => true,
+        ]);
+        $brand = Brand::query()->create([
+            'name' => 'Archived Brand',
+            'slug' => 'archived-brand',
+            'is_active' => true,
+        ]);
+        $category->delete();
+        $brand->delete();
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.products.create'))
+            ->post(route('commerce-admin.products.store'), [
+                'name' => 'Invalid Taxonomy Product',
+                'status' => 'active',
+                'category_id' => $category->getKey(),
+                'brand_id' => $brand->getKey(),
+                'variants' => [[
+                    'sku' => 'INVALID-TAXONOMY-001',
+                    'price' => '1000',
+                    'stock' => '1',
+                    'low_stock_threshold' => '0',
+                    'is_active' => '1',
+                ]],
+            ])
+            ->assertRedirect(route('commerce-admin.products.create'))
+            ->assertSessionHasErrors(['category_id', 'brand_id']);
+
+        $this->assertDatabaseMissing('products', ['slug' => 'invalid-taxonomy-product']);
+    }
+
     public function test_form_requests_reject_invalid_product_order_inventory_and_login_input(): void
     {
         $admin = $this->makeAdmin();
