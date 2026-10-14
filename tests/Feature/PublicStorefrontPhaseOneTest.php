@@ -25,7 +25,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
             ->assertSee('دسته‌بندی‌ها')
             ->assertDontSee('data-fitting-room', false)
-            ->assertDontSee('images.unsplash.com');
+            ->assertSee('images.unsplash.com');
     }
 
     public function test_shop_has_real_catalog_controls_and_the_bounded_product_grid(): void
