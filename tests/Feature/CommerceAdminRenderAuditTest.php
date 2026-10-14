@@ -355,6 +355,7 @@ class CommerceAdminRenderAuditTest extends TestCase
                 'order_number' => sprintf('VS-QUERY-%04d', $number),
                 'customer_name' => $customer->name,
                 'customer_email' => $customer->email,
+                'customer_phone' => '555-0199',
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'payment_method' => 'cash_on_delivery',
@@ -412,7 +413,7 @@ class CommerceAdminRenderAuditTest extends TestCase
                 'items' => ['not-an-item-row'],
             ])
             ->assertRedirect(route('commerce-admin.orders.create'))
-            ->assertSessionHasErrors('items');
+            ->assertSessionHasErrors('items.0.variant_id');
 
         $this->get(route('commerce-admin.orders.create'))->assertOk();
     }
