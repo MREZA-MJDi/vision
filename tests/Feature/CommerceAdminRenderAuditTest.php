@@ -174,7 +174,7 @@ class CommerceAdminRenderAuditTest extends TestCase
                         'stock' => '4',
                         'low_stock_threshold' => '1',
                         'is_active' => '1',
-                        'image' => UploadedFile::fake()->image('black.png', 600, 600),
+                        'image' => UploadedFile::fake()->createWithContent('black.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', true)),
                     ],
                     [
                         'sku' => 'VARIANT-IMAGE-WHITE',
@@ -184,7 +184,7 @@ class CommerceAdminRenderAuditTest extends TestCase
                         'stock' => '3',
                         'low_stock_threshold' => '1',
                         'is_active' => '1',
-                        'image' => UploadedFile::fake()->image('white.png', 600, 600),
+                        'image' => UploadedFile::fake()->createWithContent('white.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', true)),
                     ],
                 ],
             ])
