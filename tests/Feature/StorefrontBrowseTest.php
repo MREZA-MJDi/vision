@@ -18,7 +18,9 @@ class StorefrontBrowseTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('lang="fa" dir="rtl"', false);
-        $response->assertSee('استایل خودت را');
+        $response->assertSee('home-hero__frame', false);
+        $response->assertSee('انتخاب دقیق‌تر. شلوغی کمتر.');
+        $response->assertSee('home-benefits', false);
         $response->assertDontSee('data-fitting-room', false);
     }
 
