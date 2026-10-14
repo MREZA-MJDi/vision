@@ -55,6 +55,7 @@ Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
         Route::put('/products/{product}', [ProductController::class, 'update'])->whereNumber('product')->name('products.update');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->whereNumber('product')->name('products.destroy');
         Route::delete('/products/{product}/media/{media}', [ProductController::class, 'deleteMedia'])->whereNumber('product')->whereNumber('media')->name('products.media.destroy');
+        Route::delete('/products/{product}/variants/{variant}/media/{media}', [ProductController::class, 'deleteVariantMedia'])->whereNumber('product')->whereNumber('variant')->whereNumber('media')->name('products.variants.media.destroy');
 
         Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
         Route::patch('/reviews/{review}/status', [ReviewController::class, 'updateStatus'])->whereNumber('review')->name('reviews.status');
