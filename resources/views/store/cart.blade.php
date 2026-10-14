@@ -1,17 +1,17 @@
 @extends('layouts.store')
 
-@section('title', 'Your Bag — VISION')
-@section('meta-description', 'Review your selected VISION pieces and continue to secure checkout.')
+@section('title', 'سبد خرید — VISION')
+@section('meta-description', 'محصولات انتخاب‌شدهٔ خود را بررسی و برای ثبت سفارش ادامه دهید.')
 
 @section('content')
 <main class="store-main commerce-page">
     <div class="commerce-page-heading">
         <div>
-            <p class="store-eyebrow">YOUR SELECTION</p>
-            <h1>Your bag<span>.</span></h1>
-            <p>Prices and stock are rechecked by the server before the order is placed.</p>
+            <p class="store-eyebrow">انتخاب شما</p>
+            <h1>سبد خرید<span>.</span></h1>
+            <p>قیمت و موجودی کالاها پیش از ثبت نهایی سفارش، دوباره در سرور بررسی می‌شوند.</p>
         </div>
-        <a class="commerce-text-link" href="{{ route('products.index') }}">Continue shopping ↗</a>
+        <a class="commerce-text-link" href="{{ route('products.index') }}">ادامهٔ خرید ↗</a>
     </div>
 
     @if(session('status'))
@@ -27,14 +27,14 @@
     @if($items->isEmpty())
         <section class="commerce-empty">
             <span class="commerce-empty__mark">V.</span>
-            <h2>Nothing in your bag yet.</h2>
-            <p>Explore the edit and add a piece when something feels right.</p>
-            <a class="commerce-button commerce-button--primary" href="{{ route('products.index') }}">Explore the edit ↗</a>
+            <h2>سبد خرید شما خالی است.</h2>
+            <p>محصولات فروشگاه را ببین و گزینه‌های موردعلاقه‌ات را به سبد اضافه کن.</p>
+            <a class="commerce-button commerce-button--primary" href="{{ route('products.index') }}">مشاهدهٔ محصولات ↗</a>
         </section>
     @else
         <div class="commerce-layout">
-            <section class="commerce-panel commerce-cart-items" aria-label="Items in your bag">
-                <div class="commerce-panel-heading"><h2>Selected pieces</h2><span>{{ $summary['itemCount'] }} {{ $summary['itemCount'] === 1 ? 'item' : 'items' }}</span></div>
+            <section class="commerce-panel commerce-cart-items" aria-label="کالاهای سبد خرید">
+                <div class="commerce-panel-heading"><h2>کالاهای انتخاب‌شده</h2><span>{{ number_format($summary['itemCount']) }} کالا</span></div>
 
                 @foreach($items as $item)
                     @php
@@ -44,35 +44,35 @@
                     @endphp
                     <article class="commerce-cart-row">
                         @if($image)
-                            <img class="commerce-cart-row__image" src="{{ $image }}" alt="{{ $product?->name ?? 'Product image' }}" loading="lazy">
+                            <img class="commerce-cart-row__image" src="{{ $image }}" alt="{{ $product?->name ?? 'تصویر محصول' }}" loading="lazy">
                         @else
                             <div class="commerce-cart-row__image commerce-cart-row__image--empty" aria-hidden="true">V.</div>
                         @endif
                         <div class="commerce-cart-row__details">
                             <div class="commerce-cart-row__title">
                                 <div>
-                                    <h3>{{ $product?->name ?? 'Unavailable product' }}</h3>
-                                    <p>{{ $variant?->display_name ?? 'This variant is no longer available' }}</p>
+                                    <h3>{{ $product?->name ?? 'محصول ناموجود' }}</h3>
+                                    <p>{{ $variant?->display_name ?? 'این وریانت دیگر در دسترس نیست' }}</p>
                                 </div>
                                 <strong>@money($item->display_line_total)</strong>
                             </div>
                             @if(!$item->checkout_available)
-                                <p class="commerce-inline-error">This item is unavailable or the requested quantity exceeds current stock. Remove it or update the quantity.</p>
+                                <p class="commerce-inline-error">این کالا ناموجود است یا تعداد انتخاب‌شده از موجودی بیشتر است. کالا را حذف کن یا تعداد را تغییر بده.</p>
                             @else
-                                <p class="commerce-muted">@money($item->display_unit_price) each · {{ (int) $variant->stock }} available</p>
+                                <p class="commerce-muted">هر عدد @money($item->display_unit_price) · موجودی: {{ number_format((int) $variant->stock) }} عدد</p>
                             @endif
                             <div class="commerce-cart-row__actions">
                                 @if($variant && $product)
                                     <form method="POST" action="{{ route('cart.items.update', $item->getKey()) }}" class="commerce-quantity-form">
                                         @csrf @method('PATCH')
-                                        <label for="cart-quantity-{{ $item->getKey() }}">Qty</label>
+                                        <label for="cart-quantity-{{ $item->getKey() }}">تعداد</label>
                                         <input id="cart-quantity-{{ $item->getKey() }}" type="number" name="quantity" min="1" max="100" value="{{ old('quantity', $item->quantity) }}" required>
-                                        <button class="commerce-button commerce-button--quiet" type="submit">Update</button>
+                                        <button class="commerce-button commerce-button--quiet" type="submit">بروزرسانی</button>
                                     </form>
                                 @endif
                                 <form method="POST" action="{{ route('cart.items.destroy', $item->getKey()) }}">
                                     @csrf @method('DELETE')
-                                    <button class="commerce-text-button" type="submit">Remove</button>
+                                    <button class="commerce-text-button" type="submit">حذف</button>
                                 </form>
                             </div>
                         </div>
@@ -81,19 +81,19 @@
             </section>
 
             <aside class="commerce-panel commerce-summary">
-                <div class="commerce-panel-heading"><h2>Order summary</h2><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span></div>
+                <div class="commerce-panel-heading"><h2>خلاصهٔ سفارش</h2><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span></div>
                 <div class="commerce-summary__lines">
-                    <div><span>Subtotal</span><strong>@money($summary['subtotal'])</strong></div>
-                    <div><span>Tax</span><strong>@money($summary['tax'])</strong></div>
-                    <div><span>Shipping</span><strong>@money($summary['shipping'])</strong></div>
-                    <div class="commerce-summary__total"><span>Total</span><strong>@money($summary['total'])</strong></div>
+                    <div><span>جمع کالاها</span><strong>@money($summary['subtotal'])</strong></div>
+                    <div><span>مالیات</span><strong>@money($summary['tax'])</strong></div>
+                    <div><span>هزینهٔ ارسال</span><strong>@money($summary['shipping'])</strong></div>
+                    <div class="commerce-summary__total"><span>مبلغ نهایی</span><strong>@money($summary['total'])</strong></div>
                 </div>
                 @if($summary['allAvailable'])
-                    <a class="commerce-button commerce-button--primary commerce-button--wide" href="{{ route('checkout.index') }}">Continue to checkout ↗</a>
+                    <a class="commerce-button commerce-button--primary commerce-button--wide" href="{{ route('checkout.index') }}">ادامه برای ثبت سفارش ↗</a>
                 @else
-                    <button class="commerce-button commerce-button--disabled commerce-button--wide" type="button" disabled>Resolve unavailable items</button>
+                    <button class="commerce-button commerce-button--disabled commerce-button--wide" type="button" disabled>ابتدا کالاهای ناموجود را اصلاح کن</button>
                 @endif
-                <p class="commerce-muted">Final prices, taxes and available quantities are verified again when you place your order.</p>
+                <p class="commerce-muted">قیمت نهایی، مالیات و موجودی هنگام ثبت سفارش دوباره بررسی می‌شوند.</p>
             </aside>
         </div>
     @endif
