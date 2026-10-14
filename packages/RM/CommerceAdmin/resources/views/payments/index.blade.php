@@ -11,7 +11,7 @@
 <section class="ak-panel ak-table-panel"><div class="ak-panel-heading"><div><h2>تراکنش‌ها <span class="ak-count-chip">{{ number_format($payments->total()) }}</span></h2><p>مجموع پرداخت‌های موفق: {{ config('commerce-admin.currency_symbol','$') }}{{ number_format((float)$stats['paid_total'],2) }}</p></div></div>
 <form class="ak-filter-bar is-visible" method="GET" action="{{ route('commerce-admin.payments.index') }}">
 <label class="ak-inline-field"><span>جست‌وجو</span><input type="search" name="q" value="{{ $search }}" placeholder="شماره سفارش، مشتری یا شناسه تراکنش"></label>
-<label class="ak-inline-field"><span>وضعیت</span><select name="status"><option value="all" @selected($status==='all')>همه</option>@foreach($paymentStatuses as $paymentStatus)<option value="{{ $paymentStatus }}" @selected($status===$paymentStatus)>{{ \Illuminate\Support\Str::headline($paymentStatus) }}</option>@endforeach</select></label>
+<label class="ak-inline-field"><span>وضعیت</span><select name="status"><option value="all" @selected($status==='all')>همه</option>@foreach($paymentStatuses as $paymentStatus)<option value="{{ $paymentStatus }}" @selected($status===$paymentStatus)>{{ config('commerce-admin.status_labels.' . $paymentStatus, \Illuminate\Support\Str::headline($paymentStatus)) }}</option>@endforeach</select></label>
 <div class="ak-filter-actions"><button class="ak-button ak-button-dark ak-button-sm" type="submit">اعمال</button><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.payments.index') }}">پاک‌کردن</a></div>
 </form>
 @if($payments->isEmpty())<div class="ak-empty-state"><strong>تراکنشی پیدا نشد</strong><p>پس از ثبت سفارش‌ها، پرداخت‌های واقعی اینجا نمایش داده می‌شوند.</p></div>
