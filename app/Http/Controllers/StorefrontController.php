@@ -162,6 +162,7 @@ class StorefrontController extends Controller
                 'category',
                 'brand',
                 'primaryGalleryMedia',
+                'primaryAvailableVariant.primaryGalleryMedia',
                 'primaryActiveVariant.primaryGalleryMedia',
             ])
             ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
