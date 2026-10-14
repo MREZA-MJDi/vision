@@ -110,7 +110,7 @@
                             <span>Update order status</span>
                             <select name="status">
                                 @foreach($availableStatuses as $status)
-                                    <option value="{{ $status }}" @selected($model->status === $status)>{{ \Illuminate\Support\Str::headline($status) }}</option>
+                                    <option value="{{ $status }}" @selected($model->status === $status)>{{ \Illuminate\Support\config('commerce-admin.status_labels.' . $status, \\Illuminate\\Support\\Str::headline($status)) }}</option>
                                 @endforeach
                             </select>
                         </label>
@@ -142,7 +142,7 @@
                         <span>وضعیت پرداخت</span>
                         <select name="payment_status">
                             @foreach($availablePaymentStatuses as $paymentStatus)
-                                <option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ \Illuminate\Support\Str::headline($paymentStatus) }}</option>
+                                <option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ \Illuminate\Support\config('commerce-admin.status_labels.' . $paymentStatus, \\Illuminate\\Support\\Str::headline($paymentStatus)) }}</option>
                             @endforeach
                         </select>
                     </label>
