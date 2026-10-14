@@ -164,6 +164,7 @@ class CommerceAdminWorkflowTest extends TestCase
         $order = Order::query()->create([
             'order_number' => 'VS-DELIVERY-MILESTONE-0001',
             'customer_name' => 'Delivery Test Buyer',
+            'customer_phone' => '555-0140',
             'shipping_address' => '4 Test Road',
             'status' => 'shipped',
             'payment_status' => 'pending',
