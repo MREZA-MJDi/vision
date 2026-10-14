@@ -1,7 +1,7 @@
 @extends('layouts.store')
 
 @section('title', $product->meta_title ?: $product->name . ' — VISION')
-@section('description', \App\Support\SeoDefaults::description($product->name, $product->meta_description, [$product->short_description, $product->description]))
+@section('meta-description', \App\Support\SeoDefaults::description($product->name, $product->meta_description, [$product->short_description, $product->description]))
 
 @section('canonical', route('products.show', ['product' => $product->slug]))
 
@@ -21,8 +21,8 @@
 
 <main class="store-main commerce-page">
     <nav class="commerce-breadcrumbs" aria-label="Breadcrumb">
-        <a href="{{ route('storefront.index') }}">HOME</a><span>/</span>
-        <a href="{{ route('products.index') }}">SHOP</a><span>/</span>
+        <a href="{{ route('storefront.index') }}">خانه</a><span>/</span>
+        <a href="{{ route('shop.index') }}">فروشگاه</a><span>/</span>
         <span>{{ $product->name }}</span>
     </nav>
 
@@ -49,7 +49,7 @@
         </div>
 
         <div class="store-product-detail__info">
-            <p class="store-eyebrow">{{ $product->brand?->name ?? 'VISION STUDIO' }} / THE EDIT</p>
+            <p class="store-eyebrow">{{ $product->brand?->name ?? 'VISION STUDIO' }} / محصولات منتخب</p>
             <h1>{{ $product->name }}</h1>
             @if($product->short_description)
                 <p class="store-product-detail__lead">{{ $product->short_description }}</p>
@@ -63,13 +63,13 @@
             </div>
 
             @if($product->category)
-                <p class="store-product-detail__category">CATEGORY <span>{{ $product->category->name }}</span></p>
+                <p class="store-product-detail__category">دسته‌بندی <span>{{ $product->category->name }}</span></p>
             @endif
 
             <form class="store-product-detail__buy" action="{{ route('cart.items.store') }}" method="POST">
                 @csrf
                 @if($product->activeVariants->isNotEmpty())
-                    <label class="commerce-field">Select size / colour
+                    <label class="commerce-field">انتخاب سایز و رنگ
                         <select name="variant_id" data-variant-select required>
                             @foreach($product->activeVariants as $variant)
                                 <option
@@ -87,7 +87,7 @@
                                 >
                                     {{ implode(' / ', array_filter([$variant->size, $variant->color])) ?: ($variant->sku ?: 'Standard') }}
                                     · {{ $formatPrice($variant->effective_price) }}
-                                    {{ (int) $variant->stock < 1 ? ' — SOLD OUT' : '' }}
+                                    {{ (int) $variant->stock < 1 ? ' — ناموجود' : '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -115,22 +115,22 @@
                             </div>
                         </div>
                     @endif
-                    <label class="commerce-field">Quantity
+                    <label class="commerce-field">تعداد
                         <input type="number" name="quantity" value="1" min="1" max="{{ min(100, max(1, (int) $defaultVariant->stock)) }}" data-variant-quantity required>
                     </label>
                     <p class="commerce-stock-note" data-variant-stock>
-                        {{ (int) $defaultVariant->stock > 0 ? ((int) $defaultVariant->stock . ' available') : 'Currently unavailable' }}
+                        {{ (int) $defaultVariant->stock > 0 ? ((int) $defaultVariant->stock . ' عدد موجود') : 'فعلاً موجود نیست' }}
                     </p>
-                    <button class="commerce-button commerce-button--primary commerce-button--wide" type="submit" data-product-add @disabled((int) $defaultVariant->stock < 1)>Add to bag ↗</button>
-                    <p class="commerce-muted">The server rechecks the selected option, price and stock when you add it to your bag and again at checkout.</p>
+                    <button class="commerce-button commerce-button--primary commerce-button--wide" type="submit" data-product-add @disabled((int) $defaultVariant->stock < 1)>افزودن به سبد خرید ↗</button>
+                    <p class="commerce-muted">قیمت، گزینهٔ انتخاب‌شده و موجودی هنگام افزودن به سبد و ثبت سفارش، در سرور دوباره بررسی می‌شوند.</p>
                 @else
-                    <p class="commerce-alert commerce-alert--error">This piece is not available for purchase right now.</p>
+                    <p class="commerce-alert commerce-alert--error">این محصول در حال حاضر برای خرید در دسترس نیست.</p>
                 @endif
             </form>
 
             <div class="store-product-detail__accordions">
-                <details open><summary>توضیحات محصول</summary><div>{{ $product->description ?: $product->short_description ?: 'A considered piece from the VISION selection.' }}</div></details>
-                <details><summary>Shipping & returns</summary><div>Shipping is calculated using the store's configured flat rate. Contact the store for return arrangements.</div></details>
+                <details open><summary>توضیحات محصول</summary><div>{{ $product->description ?: $product->short_description ?: 'محصولی از مجموعهٔ منتخب VISION.' }}</div></details>
+                <details><summary>ارسال و بازگشت کالا</summary><div>هزینهٔ ارسال بر اساس نرخ ثبت‌شده در تنظیمات فروشگاه محاسبه می‌شود. برای هماهنگی بازگشت کالا با فروشگاه تماس بگیرید.</div></details>
                 <details>
                     <summary>مشخصات محصول</summary>
                     <div>قیمت و موجودی نهایی هنگام ثبت سفارش دوباره در سرور بررسی می‌شوند.</div>
@@ -145,13 +145,13 @@
                     @endif
                 </details>
             </div>
-            <a class="commerce-text-link" href="{{ route('products.index') }}">← Back to the edit</a>
+            <a class="commerce-text-link" href="{{ route('shop.index') }}">بازگشت به فروشگاه ←</a>
         </div>
     </section>
 
     @if($relatedProducts->isNotEmpty())
         <section class="commerce-related">
-            <div class="commerce-page-heading"><div><p class="store-eyebrow">YOU MAY ALSO LIKE</p><h2>More to love<span>.</span></h2></div><a class="commerce-text-link" href="{{ route('products.index') }}">Shop all ↗</a></div>
+            <div class="commerce-page-heading"><div><p class="store-eyebrow">پیشنهادهای دیگر</p><h2>شاید این‌ها را هم بپسندی<span>.</span></h2></div><a class="commerce-text-link" href="{{ route('shop.index') }}">مشاهدهٔ همه ↗</a></div>
             <div class="commerce-related-grid">
                 @foreach($relatedProducts as $related)
                     @php
