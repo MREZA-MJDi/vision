@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,66 +21,47 @@
 
         <label class="ak-search-side">
             <span aria-hidden="true">⌕</span>
-            <input type="search" placeholder="Search..." aria-label="Search admin pages" data-nav-search>
+            <input type="search" placeholder="جست‌وجو..." aria-label="جست‌وجوی صفحات مدیریت" data-nav-search>
             <kbd>⌘ K</kbd>
         </label>
 
-        <nav class="ak-nav" aria-label="Primary navigation">
-            <div class="ak-nav-caption">Dashboard</div>
-            <a class="ak-nav-link {{ request()->routeIs('commerce-admin.dashboard') ? 'is-active' : '' }}" href="{{ route('commerce-admin.dashboard') }}">
-                <span class="ak-nav-icon" aria-hidden="true">▦</span><span>Classic Dashboard</span>
-            </a>
-
-            <button class="ak-nav-group is-open"
-                    type="button" data-nav-toggle
-                    aria-expanded="true">
-                <span class="ak-nav-icon" aria-hidden="true">▤</span><span>E-Commerce</span><span class="ak-nav-caret" aria-hidden="true">⌄</span>
-            </button>
-            <div class="ak-nav-submenu" data-nav-submenu>
-                <a class="{{ request()->routeIs('commerce-admin.analytics') && request()->query('panel') !== 'payments' ? 'is-active' : '' }}" href="{{ route('commerce-admin.analytics') }}">Dashboard</a>
-                <a class="{{ request()->routeIs('commerce-admin.products.index') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.index') }}">Product List</a>
-                <a class="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? url()->current() : route('commerce-admin.products.index') }}">Product Detail</a>
-                <a class="{{ request()->routeIs('commerce-admin.products.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.create') }}">Add Product</a>
-                <a class="{{ request()->routeIs('commerce-admin.orders.index','commerce-admin.orders.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index') }}">Order List</a>
-                <a class="{{ request()->routeIs('commerce-admin.orders.show') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.orders.show') ? url()->current() : route('commerce-admin.orders.index') }}">Order Detail</a>
-                <a class="{{ request()->routeIs('commerce-admin.reviews.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.reviews.index') }}">Customer Reviews</a>
-            </div>
-
-            <a class="ak-nav-link {{ request()->routeIs('commerce-admin.analytics') && request()->query('panel') === 'payments' ? 'is-active' : '' }}" href="{{ route('commerce-admin.analytics', ['panel' => 'payments']) }}">
-                <span class="ak-nav-icon" aria-hidden="true">◷</span><span>Payment Dashboard</span>
-            </a>
-            <button class="ak-nav-link ak-nav-disabled" type="button" disabled title="Hotel management is not part of the commerce module">
-                <span class="ak-nav-icon" aria-hidden="true">⌂</span><span>Hotel Dashboard</span>
-            </button>
-            <button class="ak-nav-link ak-nav-disabled" type="button" disabled title="Project management is not part of the commerce module">
-                <span class="ak-nav-icon" aria-hidden="true">▤</span><span>Project Management</span>
-            </button>
-            <button class="ak-nav-link ak-nav-disabled" type="button" disabled title="Real estate management is not part of the commerce module">
-                <span class="ak-nav-icon" aria-hidden="true">⌂</span><span>Real Estate</span>
-            </button>
-
-            <div class="ak-nav-caption ak-nav-caption-apps">All Apps</div>
-            <button class="ak-nav-link ak-nav-disabled" type="button" disabled><span class="ak-nav-icon" aria-hidden="true">✳</span><span>AI Chat</span></button>
-            <button class="ak-nav-link ak-nav-disabled" type="button" disabled><span class="ak-nav-icon" aria-hidden="true">✣</span><span>AI Chat v2</span></button>
-            <button class="ak-nav-link ak-nav-disabled" type="button" disabled><span class="ak-nav-icon" aria-hidden="true">▧</span><span>Image Generator</span></button>
-        </nav>
+        <nav class="ak-nav" aria-label="ناوبری اصلی">
+<div class="ak-nav-caption">داشبورد</div>
+<a class="ak-nav-link {{ request()->routeIs('commerce-admin.dashboard') ? 'is-active' : '' }}" href="{{ route('commerce-admin.dashboard') }}"><span class="ak-nav-icon" aria-hidden="true">▦</span><span>داشبورد اصلی</span></a>
+<button class="ak-nav-group {{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.categories.*','commerce-admin.brands.*') ? 'is-open' : '' }}" type="button" data-nav-toggle aria-expanded="{{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.categories.*','commerce-admin.brands.*') ? 'true' : 'false' }}"><span class="ak-nav-icon" aria-hidden="true">▤</span><span>فروشگاه</span><span class="ak-nav-caret" aria-hidden="true">⌄</span></button>
+<div class="ak-nav-submenu" data-nav-submenu>
+<a class="{{ request()->routeIs('commerce-admin.analytics') ? 'is-active' : '' }}" href="{{ route('commerce-admin.analytics') }}">گزارش فروشگاه</a>
+<a class="{{ request()->routeIs('commerce-admin.products.index') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.index') }}">فهرست محصولات</a>
+<a class="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? url()->current() : route('commerce-admin.products.index') }}">جزئیات محصول</a>
+<a class="{{ request()->routeIs('commerce-admin.products.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.create') }}">افزودن محصول</a>
+<a class="{{ request()->routeIs('commerce-admin.categories.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.categories.index') }}">دسته‌بندی‌ها</a>
+<a class="{{ request()->routeIs('commerce-admin.brands.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.brands.index') }}">برندها</a>
+<a class="{{ request()->routeIs('commerce-admin.orders.index','commerce-admin.orders.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index') }}">فهرست سفارش‌ها</a>
+<a class="{{ request()->routeIs('commerce-admin.orders.show') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.orders.show') ? url()->current() : route('commerce-admin.orders.index') }}">جزئیات سفارش</a>
+</div>
+<div class="ak-nav-caption">مدیریت عملیات</div>
+<a class="ak-nav-link {{ request()->routeIs('commerce-admin.payments.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.payments.index') }}"><span class="ak-nav-icon" aria-hidden="true">◷</span><span>پرداخت‌ها</span></a>
+<a class="ak-nav-link {{ request()->routeIs('commerce-admin.inventory.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.inventory.index') }}"><span class="ak-nav-icon" aria-hidden="true">▣</span><span>انبار و موجودی</span></a>
+<a class="ak-nav-link {{ request()->routeIs('commerce-admin.customers.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.customers.index') }}"><span class="ak-nav-icon" aria-hidden="true">♙</span><span>مشتری‌ها</span></a>
+<a class="ak-nav-link {{ request()->routeIs('commerce-admin.reviews.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.reviews.index') }}"><span class="ak-nav-icon" aria-hidden="true">★</span><span>نظرات مشتریان</span></a>
+</nav>
 
         <div class="ak-sidebar-bottom">
             <div class="ak-plan-card">
                 <div class="ak-plan-icon" aria-hidden="true">✦</div>
-                <strong>Get the template</strong>
-                <p>Your catalog, customers, inventory and orders are connected to the store database.</p>
-                <a href="{{ route('commerce-admin.analytics') }}">Explore analytics <span aria-hidden="true">↗</span></a>
+                <strong>گزارش‌های فروشگاه</strong>
+                <p>محصولات، سفارش‌ها، مشتری‌ها و موجودی از دیتابیس واقعی خوانده می‌شوند.</p>
+                <a href="{{ route('commerce-admin.analytics') }}">مشاهده گزارش‌ها <span aria-hidden="true">↗</span></a>
             </div>
             <div class="ak-sidebar-footer">
                 <span class="ak-avatar ak-avatar-sm">{{ strtoupper(substr(auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'A', 0, 1)) }}</span>
                 <span class="ak-footer-user">
                     <strong>{{ auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'Administrator' }}</strong>
-                    <small>Administrator</small>
+                    <small>مدیر فروشگاه</small>
                 </span>
                 <form method="POST" action="{{ route('commerce-admin.logout') }}">
                     @csrf
-                    <button class="ak-icon-button" type="submit" title="Sign out" aria-label="Sign out">⇥</button>
+                    <button class="ak-icon-button" type="submit" title="خروج" aria-label="خروج">⇥</button>
                 </form>
             </div>
         </div>
@@ -88,17 +69,17 @@
 
     <div class="ak-main-wrap">
         <header class="ak-topbar">
-            <button class="ak-icon-button ak-mobile-menu" type="button" aria-label="Open navigation" data-sidebar-open>☰</button>
+            <button class="ak-icon-button ak-mobile-menu" type="button" aria-label="بازکردن منو" data-sidebar-open>☰</button>
             <div class="ak-store-switch">
                 <span class="ak-live-dot" aria-hidden="true"></span>
                 <span>{{ config('commerce-admin.store_name', config('app.name', 'VISION')) }}</span>
                 <span class="ak-chevron" aria-hidden="true">⌄</span>
             </div>
             <div class="ak-topbar-right">
-                <a class="ak-topbar-link" href="{{ route('commerce-admin.analytics.export') }}">Download report <span aria-hidden="true">↗</span></a>
+                <a class="ak-topbar-link" href="{{ route('commerce-admin.analytics.export') }}">دریافت گزارش <span aria-hidden="true">↗</span></a>
                 <button class="ak-icon-button" type="button" data-help-open aria-label="Open help" title="Help">?</button>
                 <span class="ak-topbar-divider"></span>
-                <span class="ak-avatar" aria-label="Administrator">{{ strtoupper(substr(auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'A', 0, 1)) }}</span>
+                <span class="ak-avatar" aria-label="مدیر فروشگاه">{{ strtoupper(substr(auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'A', 0, 1)) }}</span>
             </div>
         </header>
 
@@ -106,12 +87,12 @@
             @if (session('status'))
                 <div class="ak-flash ak-flash-success" role="status">
                     <span aria-hidden="true">✓</span>{{ session('status') }}
-                    <button type="button" data-dismiss-flash aria-label="Dismiss">×</button>
+                    <button type="button" data-dismiss-flash aria-label="بستن">×</button>
                 </div>
             @endif
             @if ($errors->any())
                 <div class="ak-flash ak-flash-error" role="alert">
-                    <strong>Please review the form.</strong>
+                    <strong>لطفاً خطاهای فرم را بررسی کنید.</strong>
                     <ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
                     <button type="button" data-dismiss-flash aria-label="Dismiss">×</button>
                 </div>
@@ -123,9 +104,9 @@
 <div class="ak-sidebar-scrim" data-sidebar-close></div>
 <div class="ak-help-popover" data-help-panel hidden>
     <button type="button" class="ak-icon-button" data-help-close aria-label="Close help">×</button>
-    <strong>Commerce Admin Kit</strong>
-    <p>Catalog, inventory, order workflows and reporting are rendered from the configured Laravel models. Payment gateway processing is not enabled by this module.</p>
-    <a href="{{ route('commerce-admin.analytics') }}">Open store analytics →</a>
+    <strong>پنل مدیریت فروشگاه</strong>
+    <p>محصولات، موجودی، گردش سفارش و گزارش‌ها از مدل‌های Laravel خوانده می‌شوند. اتصال درگاه پرداخت مستقل از این پنل است.</p>
+    <a href="{{ route('commerce-admin.analytics') }}">مشاهده گزارش فروشگاه →</a>
 </div>
 @stack('scripts')
 </body>
