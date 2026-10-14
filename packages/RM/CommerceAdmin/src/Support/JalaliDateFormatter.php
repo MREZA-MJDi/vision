@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Support;
+namespace Rm\CommerceAdmin\Support;
 
 use DateTimeImmutable;
 use DateTimeInterface;
 use Throwable;
 
-final class JalaliDateFormatter
+final class JalaliDateFormatterFormatter
 {
     private const MONTHS = [
         1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد', 4 => 'تیر',
