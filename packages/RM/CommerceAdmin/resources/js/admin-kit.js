@@ -277,7 +277,7 @@
         if (images.length !== files.length) window.alert('فقط فایل‌های تصویری پذیرفته می‌شوند.');
         if (images.some((file) => file.size > 16 * 1024 * 1024)) {
             window.alert('حجم فایل اصلی هر تصویر نباید بیشتر از ۱۶ مگابایت باشد.');
-            if (imageInput) imageInput.value = '';
+            if (activeImageInput) activeImageInput.value = '';
             return;
         }
         cropQueue = images;
