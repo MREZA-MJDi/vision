@@ -485,6 +485,7 @@
 
         select.addEventListener('change', refreshVariant);
         refreshVariant();
+        syncColorButtons();
     });
 
     root.querySelector('[data-store-language]')?.addEventListener('click', () => {

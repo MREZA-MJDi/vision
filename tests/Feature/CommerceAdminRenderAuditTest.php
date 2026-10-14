@@ -186,6 +186,15 @@ class CommerceAdminRenderAuditTest extends TestCase
                         'is_active' => '1',
                         'image' => UploadedFile::fake()->createWithContent('white.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', true)),
                     ],
+                    [
+                        'sku' => 'VARIANT-IMAGE-RED',
+                        'color' => 'قرمز',
+                        'color_code' => '#ff0000',
+                        'price' => '155,000',
+                        'stock' => '2',
+                        'low_stock_threshold' => '1',
+                        'is_active' => '1',
+                    ],
                 ],
             ])
             ->assertSessionHasNoErrors();
@@ -193,7 +202,7 @@ class CommerceAdminRenderAuditTest extends TestCase
         $product = Product::query()->where('slug', 'variant-image-test-product')->firstOrFail();
         $variants = $product->variants()->orderBy('sort_order')->get();
 
-        $this->assertCount(2, $variants);
+        $this->assertCount(3, $variants);
         $blackMedia = $variants[0]->primaryGalleryMedia()->firstOrFail();
         $whiteMedia = $variants[1]->primaryGalleryMedia()->firstOrFail();
 
@@ -207,6 +216,12 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertSee('data-product-main-image', false)
             ->assertSee('data-image="' . e($blackMedia->url) . '"', false)
             ->assertSee('data-image="' . e($whiteMedia->url) . '"', false)
+            ->assertSee('data-variant-color-pick="مشکی"', false)
+            ->assertSee('data-variant-color-pick="سفید"', false)
+            ->assertSee('data-variant-color-pick="قرمز"', false)
+            ->assertSee('data-color="قرمز"', false)
+            ->assertSee('data-image=""', false)
+            ->assertSee('data-product-image-placeholder', false)
             ->getContent();
 
         $this->assertStringContainsString($blackMedia->url, $html);
@@ -344,6 +359,21 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertSessionHasErrors('variants.0.sale_price');
 
         $this->assertDatabaseMissing('products', ['name' => 'Invalid Sale Product']);
+
+        $this->post(route('commerce-admin.products.store'), [
+            'name' => 'Invalid Variant Color Code',
+            'status' => 'active',
+            'variants' => [[
+                'sku' => 'INVALID-COLOR-CODE-001',
+                'color' => 'Black',
+                'color_code' => '#000000;display:none',
+                'price' => '10.00',
+                'stock' => '1',
+                'low_stock_threshold' => '1',
+                'is_active' => '1',
+            ]],
+        ])->assertSessionHasErrors('variants.0.color_code');
+        $this->assertDatabaseMissing('products', ['name' => 'Invalid Variant Color Code']);
 
         $this->post(route('commerce-admin.orders.store'), [
             'customer_name' => 'Invalid Order',

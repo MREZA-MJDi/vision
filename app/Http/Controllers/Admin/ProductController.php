@@ -135,7 +135,7 @@ class ProductController
         $productModel = $this->model('product', Product::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
         $model = $productModel::query()
-            ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->with(['category', 'brand', 'variants.primaryGalleryMedia', 'galleryMedia', 'primaryGalleryMedia'])
             ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
             ->withCount('approvedReviews')
             ->findOrFail($product);
@@ -159,7 +159,7 @@ class ProductController
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()
-            ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->with(['category', 'brand', 'variants.galleryMedia', 'variants.primaryGalleryMedia', 'galleryMedia', 'primaryGalleryMedia'])
             ->findOrFail($product);
 
         $variants = $model->variants->values();
