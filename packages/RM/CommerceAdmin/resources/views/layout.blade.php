@@ -59,7 +59,7 @@
                     <strong>{{ auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'Administrator' }}</strong>
                     <small>مدیر فروشگاه</small>
                 </span>
-                <form method="POST" action="{{ route('commerce-admin.logout') }}">
+                <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button class="ak-icon-button" type="submit" title="خروج" aria-label="خروج">⇥</button>
                 </form>
