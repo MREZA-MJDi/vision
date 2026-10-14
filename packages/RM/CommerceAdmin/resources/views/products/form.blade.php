@@ -169,9 +169,9 @@
         @foreach($product->galleryMedia as $asset)
             <form id="delete-product-media-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.media.destroy', [$product->getKey(), $asset->getKey()]) }}" data-confirm="این تصویر از محصول حذف شود؟">@csrf @method('DELETE')</form>
         @endforeach
-        @foreach($product->variants as $existingVariant)
-            @foreach($existingVariant->galleryMedia as $asset)
-                <form id="delete-variant-media-{{ $existingVariant->getKey() }}-{{ $product->getKey() }}-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.variants.media.destroy', [$product->getKey(), $existingVariant->getKey(), $asset->getKey()]) }}" data-confirm="تصویر اختصاصی این تنوع حذف شود؟">@csrf @method('DELETE')</form>
+        @foreach($product->variants as $variant)
+            @foreach($variant->galleryMedia as $asset)
+                <form id="delete-variant-media-{{ $variant->getKey() }}-{{ $product->getKey() }}-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.variants.media.destroy', [$product->getKey(), $variant->getKey(), $asset->getKey()]) }}" data-confirm="تصویر اختصاصی این تنوع حذف شود؟">@csrf @method('DELETE')</form>
             @endforeach
         @endforeach
     @endif
