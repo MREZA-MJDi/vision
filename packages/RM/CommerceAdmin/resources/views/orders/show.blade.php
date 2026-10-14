@@ -133,7 +133,7 @@
                 <div class="ak-payment-detail">
                     <span class="ak-payment-icon" aria-hidden="true">▤</span>
                     <div><strong>روش پرداخت</strong><small>{{ str($model->payment_method ?: 'ثبت نشده')->headline() }}</small></div>
-                    <span class="ak-status-pill status-{{ str($model->payment_status)->slug() }}">{{ config('commerce-admin.status_labels.' . $model->payment_status, config('commerce-admin.status_labels.' . $model->payment_status, Illuminate\Support\Str::headline($model->payment_status))) }}</span>
+                    <span class="ak-status-pill status-{{ str($model->payment_status)->slug() }}">{{ config('commerce-admin.status_labels.' . $model->payment_status, config('commerce-admin.status_labels.' . $model->payment_status, str($model->payment_status)->headline())) }}</span>
                 </div>
                 @if($model->paid_at)<p class="ak-help-note">تاریخ پرداخت {{ \\App\\Support\\JalaliDate::format($model->paid_at, 'j F Y H:i') }}</p>@endif
                 <form method="POST" action="{{ route('commerce-admin.orders.payment', $model->getKey()) }}" class="ak-payment-form">
