@@ -362,8 +362,7 @@ class ProductController
                         'sort_order' => 0,
                         'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                     ]);
-                }
- elseif ($request->boolean("variants.{$index}.remove_image")) {
+                } elseif ($request->boolean("variants.{$index}.remove_image")) {
                     // Explicitly remove the variant image and fall back to the product gallery.
                     foreach ($variant->galleryMedia()->get() as $existingAsset) {
                         if ($existingAsset->path && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
