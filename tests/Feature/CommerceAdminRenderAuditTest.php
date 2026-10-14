@@ -356,6 +356,8 @@ class CommerceAdminRenderAuditTest extends TestCase
                 'customer_name' => $customer->name,
                 'customer_email' => $customer->email,
                 'customer_phone' => '555-0199',
+                'shipping_address' => '1 Query Test Road',
+                'shipping_city' => 'Baku',
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'payment_method' => 'cash_on_delivery',
