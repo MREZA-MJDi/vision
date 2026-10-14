@@ -88,19 +88,22 @@
                 <span aria-hidden="true">◉</span> پیش‌نمایش استایل <span aria-hidden="true">↗</span>
             </button>
 
-            <section class="filter-panel filter-panel--details" aria-label="Product filters">
+            <section class="filter-panel filter-panel--details" aria-label="فیلترهای محصولات">
                 <form class="filter-search" action="{{ route('shop.index') }}" method="GET">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg>
                     <input type="search" name="q" value="{{ $search }}" placeholder="جست‌وجو در محصولات..." aria-label="جست‌وجو در محصولات">
-                    @if($sort !== 'newest')<input type="hidden" name="sort" value="{{ $sort }}">@endif
-                    @if($saleOnly)<input type="hidden" name="sale" value="1">@endif
+                    @foreach(request()->query() as $key => $value)
+                        @if($key !== 'q' && $key !== 'page' && is_scalar($value))
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
+                    @endforeach
                     <button type="submit" aria-label="جست‌وجو">↵</button>
                 </form>
 
                 <div class="filter-group">
                     <div class="filter-group__heading"><h3>دسته‌بندی</h3><span>{{ $categories->count() }}</span></div>
                     <div class="filter-options">
-                        <a href="{{ route('storefront.index', array_merge(request()->query(), ['category_id' => null])) }}" class="filter-option {{ !$selectedCategoryId ? 'is-selected' : '' }}">
+                        <a href="{{ route('shop.index', array_merge(request()->query(), ['category_id' => null])) }}" class="filter-option {{ !$selectedCategoryId ? 'is-selected' : '' }}">
                             <span class="filter-option__label"><span class="filter-radio"></span>همهٔ محصولات</span>
                             <span class="filter-option__count">{{ $products->total() }}</span>
                         </a>
@@ -181,7 +184,7 @@
                                 </button>
 
                                 @if(is_numeric($rating))
-                                    <span class="product-card__rating" aria-label="Rating {{ number_format((float) $rating, 1) }} out of 5">
+                                    <span class="product-card__rating" aria-label="امتیاز {{ number_format((float) $rating, 1) }} از ۵">
                                         <span aria-hidden="true">★</span> {{ number_format((float) $rating, 1) }}
                                     </span>
                                 @endif
