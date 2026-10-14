@@ -5,8 +5,8 @@
 @section('content')
     @php
         $heroAsset = $model->galleryMedia->first();
-        $primaryتنوع = $model->variants->firstWhere('is_active', true) ?: $model->variants->first();
-        $price = $primaryتنوع?->sale_price ?? $primaryتنوع?->price ?? 0;
+        $primaryVariant = $model->variants->firstWhere('is_active', true) ?: $model->variants->first();
+        $price = $primaryVariant?->sale_price ?? $primaryVariant?->price ?? 0;
         $colors = $model->variants->pluck('color')->filter()->unique()->values();
         $sizes = $model->variants->pluck('size')->filter()->unique()->values();
         $currency = config('commerce-admin.currency_symbol', '$');
@@ -16,7 +16,7 @@
         <div>
             <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">محصول List</a> <span>/</span> جزئیات محصول</div>
             <h1>{{ $model->name }}</h1>
-            <p>{{ $model->brand?->name ?: 'بدون برند' }} · تاریخ انتشار {{ $model->created_at?->format('M d, Y') ?: 'date unavailable' }} · شناسه SKU {{ $primaryتنوع?->sku ?: 'not assigned' }}</p>
+            <p>{{ $model->brand?->name ?: 'بدون برند' }} · تاریخ انتشار {{ $model->created_at?->format('M d, Y') ?: 'تاریخ ثبت نشده' }} · شناسه SKU {{ $primaryVariant?->sku ?: 'تخصیص داده نشده' }}</p>
         </div>
         <div class="ak-heading-actions">
             <a class="ak-button ak-button-light" href="{{ route('commerce-admin.products.edit', $model->getKey()) }}">✎ ویرایش</a>
@@ -59,7 +59,7 @@
                 <article class="ak-product-inline-stat">
                     <span>قیمت</span>
                     <strong>{{ $currency }}{{ number_format((float) $price, 2) }}</strong>
-                    <small>{{ $primaryتنوع?->is_on_sale ? 'قیمت فروش ویژه' : 'قیمت پایه' }}</small>
+                    <small>{{ $primaryVariant?->is_on_sale ? 'قیمت فروش ویژه' : 'قیمت پایه' }}</small>
                 </article>
                 <article class="ak-product-inline-stat">
                     <span>تعداد سفارش</span>
@@ -83,7 +83,7 @@
                 <p class="ak-description-copy">{{ $model->description ?: ($model->short_description ?: 'No description has been saved for this product yet.') }}</p>
                 <div class="ak-product-detail-divider"></div>
                 <div class="ak-attribute-grid">
-                    <div><small>دسته‌بندی</small><strong>{{ $model->category?->name ?: 'Uncategorized' }}</strong></div>
+                    <div><small>دسته‌بندی</small><strong>{{ $model->category?->name ?: 'بدون دسته‌بندی' }}</strong></div>
                     <div><small>برند</small><strong>{{ $model->brand?->name ?: 'بدون برند' }}</strong></div>
                     <div><small>وضعیت محصول</small><strong>{{ $model->is_active ? 'فعال' : 'پیش‌نویس' }}</strong></div>
                     <div><small>Tax</small><strong>{{ $model->is_taxable ? 'Taxable' : 'Not taxable' }}</strong></div>
@@ -94,8 +94,8 @@
                         <div class="ak-color-swatches">
                             @foreach($colors as $color)
                                 @php
-                                    $colorتنوع = $model->variants->firstWhere('color', $color);
-                                    $colorHex = $colorتنوع?->color_code ?: '#d9dce2';
+                                    $colorVariant = $model->variants->firstWhere('color', $color);
+                                    $colorHex = $colorVariant?->color_code ?: '#d9dce2';
                                 @endphp
                                 <span class="ak-color-swatch" title="{{ $color }}" style="--product-color: {{ $colorHex }}"></span>
                             @endforeach

@@ -1,10 +1,10 @@
 @extends('commerce-admin::layout')
 
-@section('title', $product ? 'Edit product' : 'افزودن محصول')
+@section('title', $product ? 'ویرایش محصول' : 'افزودن محصول')
 
 @section('content')
     <div class="ak-page-heading">
-        <div><div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">محصولات</a> <span>/</span> {{ $product ? 'Edit product' : 'افزودن محصول' }}</div><h1>{{ $product ? 'Edit product' : 'افزودن محصول' }}</h1><p>Product data, variant pricing and inventory are saved directly to the store database.</p></div>
+        <div><div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">محصولات</a> <span>/</span> {{ $product ? 'ویرایش محصول' : 'افزودن محصول' }}</div><h1>{{ $product ? 'ویرایش محصول' : 'افزودن محصول' }}</h1><p>Product data, variant pricing and inventory are saved directly to the store database.</p></div>
         <div class="ak-heading-actions"><a class="ak-button ak-button-light" href="{{ route('commerce-admin.products.index') }}">انصراف</a><button class="ak-button ak-button-dark" type="submit" form="productForm">ذخیرهٔ محصول <span>✓</span></button></div>
     </div>
 
@@ -41,8 +41,8 @@
                 <section class="ak-panel ak-form-panel">
                     <div class="ak-panel-heading"><div><h2>تنوع‌ها و موجودی</h2><p>هر تنوع شناسه SKU، بارکد، قیمت و موجودی مستقل دارد.</p></div><button class="ak-button ak-button-light ak-button-sm" type="button" data-add-variant>＋ افزودن تنوع</button></div>
                     <div class="ak-variant-list" data-variant-list>
-                        @php $formتنوعs = old('variants', $variants); @endphp
-                        @foreach($formتنوعs as $index => $variant)
+                        @php $formVariants = old('variants', $variants); @endphp
+                        @foreach($formVariants as $index => $variant)
                             <div class="ak-variant-card" data-variant-row>
                                 <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>{{ $loop->iteration }}</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="Remove variant" {{ $loop->first ? 'disabled' : '' }}>×</button></div>
                                 @if(data_get($variant, 'id'))<input type="hidden" name="variants[{{ $index }}][id]" value="{{ data_get($variant, 'id') }}">@endif

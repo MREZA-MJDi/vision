@@ -47,8 +47,8 @@
                     </div>
                 </div>
                 <div class="ak-two-column-info">
-                    <div><small>نشانی ارسال</small><strong>{{ $model->shipping_address ?: 'No address saved' }}</strong><span>{{ collect([$model->shipping_city, $model->shipping_province, $model->postal_code])->filter()->implode(', ') }}</span></div>
-                    <div><small>حساب مشتری</small><strong>{{ $model->user?->name ?: ($model->user_id ? 'Linked account' : 'Guest order') }}</strong><span>{{ $model->user?->email ?: 'No linked account' }}</span></div>
+                    <div><small>نشانی ارسال</small><strong>{{ $model->shipping_address ?: 'نشانی ثبت نشده است' }}</strong><span>{{ collect([$model->shipping_city, $model->shipping_province, $model->postal_code])->filter()->implode(', ') }}</span></div>
+                    <div><small>حساب مشتری</small><strong>{{ $model->user?->name ?: ($model->user_id ? 'حساب متصل' : 'سفارش مهمان') }}</strong><span>{{ $model->user?->email ?: 'No linked account' }}</span></div>
                 </div>
                 @if($model->customer_note)
                     <div class="ak-help-note"><strong>یادداشت مشتری</strong><p>{{ $model->customer_note }}</p></div>
@@ -101,16 +101,16 @@
                     <div class="ak-delivery-steps">
                         <div class="ak-delivery-step is-complete"><span>✓</span><div><strong>ثبت سفارش</strong><small>{{ optional($model->placed_at ?: $model->created_at)->format('M d, Y · H:i') }}</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 1 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>{{ $model->shipped_at?->format('M d, Y · H:i') ?: 'Not shipped yet' }}</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>{{ $model->shipped_at?->format('M d, Y · H:i') ?: 'هنوز ارسال نشده' }}</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 2 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>{{ $model->delivered_at?->format('M d, Y · H:i') ?: 'Awaiting delivery' }}</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>{{ $model->delivered_at?->format('M d, Y · H:i') ?: 'در انتظار تحویل' }}</small></div></div>
                     </div>
                     <form method="POST" action="{{ route('commerce-admin.orders.status', $model->getKey()) }}" class="ak-inline-status-form">
                         @csrf @method('PATCH')
                         <label class="ak-inline-field">
                             <span>Update order status</span>
                             <select name="status">
-                                @foreach($availableوضعیتes as $status)
+                                @foreach($availableStatuses as $status)
                                     <option value="{{ $status }}" @selected($model->status === $status)>{{ \Illuminate\Support\Str::headline($status) }}</option>
                                 @endforeach
                             </select>
@@ -133,7 +133,7 @@
                 </div>
                 <div class="ak-payment-detail">
                     <span class="ak-payment-icon" aria-hidden="true">▤</span>
-                    <div><strong>روش پرداخت</strong><small>{{ \Illuminate\Support\Str::headline($model->payment_method ?: 'Not recorded') }}</small></div>
+                    <div><strong>روش پرداخت</strong><small>{{ \Illuminate\Support\Str::headline($model->payment_method ?: 'ثبت نشده') }}</small></div>
                     <span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($model->payment_status) }}">{{ config('commerce-admin.status_labels.' . $model->payment_status, config('commerce-admin.status_labels.' . $model->payment_status, \Illuminate\Support\Str::headline($model->payment_status))) }}</span>
                 </div>
                 @if($model->paid_at)<p class="ak-help-note">تاریخ پرداخت {{ $model->paid_at->format('M d, Y H:i') }}</p>@endif
@@ -142,8 +142,8 @@
                     <label class="ak-field">
                         <span>وضعیت پرداخت</span>
                         <select name="payment_status">
-                            @foreach($availablePaymentوضعیتes as $paymentوضعیت)
-                                <option value="{{ $paymentوضعیت }}" @selected($model->payment_status === $paymentوضعیت)>{{ \Illuminate\Support\Str::headline($paymentوضعیت) }}</option>
+                            @foreach($availablePaymentStatuses as $paymentStatus)
+                                <option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ \Illuminate\Support\Str::headline($paymentStatus) }}</option>
                             @endforeach
                         </select>
                     </label>
@@ -166,7 +166,7 @@
                     <span>سفارش ID<strong>#{{ $model->getKey() }}</strong></span>
                     <span>ثبت شده<strong>{{ optional($model->placed_at ?: $model->created_at)->format('M d, Y') }}</strong></span>
                     <span>به‌روزرسانی<strong>{{ $model->updated_at?->diffForHumans() ?: '—' }}</strong></span>
-                    <span>کد رهگیری<strong>{{ $model->tracking_code ?: 'Not assigned' }}</strong></span>
+                    <span>کد رهگیری<strong>{{ $model->tracking_code ?: 'تخصیص داده نشده' }}</strong></span>
                 </div>
             </section>
         </aside>
