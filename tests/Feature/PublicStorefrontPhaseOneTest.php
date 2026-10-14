@@ -69,10 +69,57 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('property="og:image"', false)
             ->assertSee('data-variant-select', false)
             ->assertSee('data-variant-color-pick', false)
+            ->assertSee('data-variant-preview-open', false)
+            ->assertSee('data-variant-preview-modal', false)
+            ->assertSee('data-variant-preview-image', false)
             ->assertSee('افزودن به سبد خرید')
             ->assertSee('محصولات منتخب')
             ->assertSee('قهوه‌ای')
             ->assertSee('1,090,000 تومان');
+    }
+
+    public function test_product_detail_variant_media_queries_remain_bounded_as_variant_count_grows(): void
+    {
+        $this->seed(CommerceDemoSeeder::class);
+
+        $product = Product::query()
+            ->where('slug', 'demo-essential-cotton-tee')
+            ->firstOrFail();
+
+        $queryCount = 0;
+        DB::listen(function () use (&$queryCount): void {
+            $queryCount++;
+        });
+
+        $beforeSmallCatalog = $queryCount;
+        $this->get('/products/demo-essential-cotton-tee')->assertOk();
+        $smallProductQueries = $queryCount - $beforeSmallCatalog;
+
+        for ($index = 1; $index <= 15; $index++) {
+            ProductVariant::query()->create([
+                'product_id' => $product->getKey(),
+                'sku' => 'DETAIL-N1-' . $product->getKey() . '-' . $index,
+                'size' => 'L' . $index,
+                'color' => 'رنگ آزمایشی ' . $index,
+                'color_code' => '#777777',
+                'price' => 120000,
+                'sale_price' => null,
+                'stock' => 5,
+                'low_stock_threshold' => 1,
+                'is_active' => true,
+                'sort_order' => $index + 100,
+            ]);
+        }
+
+        $beforeLargeCatalog = $queryCount;
+        $this->get('/products/demo-essential-cotton-tee')->assertOk();
+        $largeProductQueries = $queryCount - $beforeLargeCatalog;
+
+        $this->assertLessThanOrEqual(
+            $smallProductQueries + 3,
+            $largeProductQueries,
+            'Product detail query count should stay bounded as variant count grows; eager loading variant media prevents N+1 queries.'
+        );
     }
 
     public function test_shop_query_count_does_not_grow_linearly_with_catalog_card_count(): void
