@@ -161,7 +161,7 @@ class CustomerCommerceController extends Controller
 
             if (! $variant->is_active || ! $variant->product || ! $variant->product->is_active) {
                 throw ValidationException::withMessages([
-                    'variant_id' => 'This product option is no longer available.',
+                    'variant_id' => 'این گزینهٔ محصول دیگر در دسترس نیست.',
                 ]);
             }
 
@@ -174,7 +174,7 @@ class CustomerCommerceController extends Controller
             $nextQuantity = (int) ($existing?->quantity ?? 0) + $quantity;
             if ((int) $variant->stock < $nextQuantity) {
                 throw ValidationException::withMessages([
-                    'quantity' => 'Only ' . (int) $variant->stock . ' unit(s) are currently available.',
+                    'quantity' => 'در حال حاضر فقط ' . number_format((int) $variant->stock) . ' عدد موجود است.',
                 ]);
             }
 
@@ -194,12 +194,12 @@ class CustomerCommerceController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'Added to your bag.',
+                'message' => 'کالا به سبد خرید اضافه شد.',
                 'count' => $count,
             ], 201);
         }
 
-        return redirect()->route('cart.index')->with('status', 'Added to your bag.');
+        return redirect()->route('cart.index')->with('status', 'کالا به سبد خرید اضافه شد.');
     }
 
     public function updateItem(Request $request, int $item): RedirectResponse|\Illuminate\Http\JsonResponse
@@ -226,14 +226,14 @@ class CustomerCommerceController extends Controller
 
             if (! $variant || ! $variant->is_active || ! $variant->product || ! $variant->product->is_active) {
                 throw ValidationException::withMessages([
-                    'quantity' => 'This item is no longer available. Remove it from your bag.',
+                    'quantity' => 'این کالا دیگر در دسترس نیست. آن را از سبد خرید حذف کن.',
                 ]);
             }
 
             $quantity = (int) $validated['quantity'];
             if ((int) $variant->stock < $quantity) {
                 throw ValidationException::withMessages([
-                    'quantity' => 'Only ' . (int) $variant->stock . ' unit(s) are currently available.',
+                    'quantity' => 'در حال حاضر فقط ' . number_format((int) $variant->stock) . ' عدد موجود است.',
                 ]);
             }
 
@@ -243,12 +243,12 @@ class CustomerCommerceController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'Bag updated.',
+                'message' => 'سبد خرید به‌روزرسانی شد.',
                 'count' => (int) $cart->items()->sum('quantity'),
             ]);
         }
 
-        return redirect()->route('cart.index')->with('status', 'Bag updated.');
+        return redirect()->route('cart.index')->with('status', 'سبد خرید به‌روزرسانی شد.');
     }
 
     public function destroyItem(Request $request, int $item): RedirectResponse|\Illuminate\Http\JsonResponse
@@ -263,12 +263,12 @@ class CustomerCommerceController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'Item removed.',
+                'message' => 'کالا حذف شد.',
                 'count' => (int) $cart->items()->sum('quantity'),
             ]);
         }
 
-        return redirect()->route('cart.index')->with('status', 'Item removed from your bag.');
+        return redirect()->route('cart.index')->with('status', 'کالا از سبد خرید حذف شد.');
     }
 
     public function checkout(): View|RedirectResponse
@@ -277,7 +277,7 @@ class CustomerCommerceController extends Controller
         $items = $this->loadCartItems($cart);
 
         if ($items->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Your bag is empty.');
+            return redirect()->route('cart.index')->with('error', 'سبد خرید شما خالی است.');
         }
 
         $summary = $this->presentCart($items);
@@ -316,7 +316,7 @@ class CustomerCommerceController extends Controller
 
             if ($cartItems->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'cart' => 'Your bag is empty. Add a product before checking out.',
+                    'cart' => 'سبد خرید خالی است. پیش از ثبت سفارش، یک کالا اضافه کن.',
                 ]);
             }
 
@@ -341,13 +341,13 @@ class CustomerCommerceController extends Controller
 
                 if (! $variant || ! $product || ! $variant->is_active || ! $product->is_active) {
                     throw ValidationException::withMessages([
-                        'cart' => 'One or more products are no longer available. Update your bag and try again.',
+                        'cart' => 'یک یا چند کالا دیگر در دسترس نیستند. سبد خرید را اصلاح کن و دوباره تلاش کن.',
                     ]);
                 }
 
                 if ($quantity < 1 || (int) $variant->stock < $quantity) {
                     throw ValidationException::withMessages([
-                        'cart' => $product->name . ' no longer has enough stock for your requested quantity.',
+                        'cart' => $product->name . ' موجودی کافی برای تعداد درخواستی ندارد.',
                     ]);
                 }
 
@@ -449,7 +449,7 @@ class CustomerCommerceController extends Controller
 
         return redirect()
             ->route('checkout.complete', ['token' => $order->public_token])
-            ->with('status', 'Your order has been placed.');
+            ->with('status', 'سفارش شما با موفقیت ثبت شد.');
     }
 
     public function complete(string $token): View
