@@ -3357,3 +3357,14 @@ body.storefront-body.tiamir-intro-active {
         transition-duration: .01ms !important;
     }
 }
+
+
+/* Do not start time-based effects while the intro is still hidden awaiting JS. */
+.tiamir-intro:not(.is-visible) .tiamir-intro__grain,
+.tiamir-intro:not(.is-visible) .tiamir-intro__scan-beam,
+.tiamir-intro:not(.is-visible) .tiamir-intro__logo--main,
+.tiamir-intro:not(.is-visible) .tiamir-intro__logo--ghost,
+.tiamir-intro:not(.is-visible) .tiamir-intro__fallback,
+.tiamir-intro:not(.is-visible) .tiamir-intro__signature {
+    animation: none !important;
+}
