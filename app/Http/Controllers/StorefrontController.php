@@ -57,6 +57,10 @@ class StorefrontController extends Controller
                 ->first();
         }
 
+        // The hero picker uses real active variants and each variant's own
+        // photo. This is a single bounded eager load for the highlighted product.
+        $heroProduct?->loadMissing(['activeVariants.primaryGalleryMedia']);
+
         $featuredProducts = $this->catalogProducts()
             ->when($heroProduct, fn (Builder $query) => $query->where('id', '!=', $heroProduct->getKey()))
             ->orderByDesc('is_featured')

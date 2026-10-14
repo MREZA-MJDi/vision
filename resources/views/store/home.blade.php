@@ -9,55 +9,183 @@
     $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
     $heroVariant = $heroProduct?->primaryAvailableVariant ?? $heroProduct?->primaryActiveVariant;
     $heroImage = $heroVariant?->primaryGalleryMedia?->url ?? $heroProduct?->primaryGalleryMedia?->url;
+    $heroVariants = $heroProduct?->activeVariants ?? collect();
+    $heroColors = $heroVariants
+        ->filter(fn ($variant) => filled($variant->color))
+        ->unique(fn ($variant) => mb_strtolower(trim((string) $variant->color)))
+        ->take(4)
+        ->values();
+    $heroSizes = $heroVariants
+        ->filter(fn ($variant) => filled($variant->size))
+        ->unique(fn ($variant) => mb_strtolower(trim((string) $variant->size)))
+        ->take(4)
+        ->values();
+    $heroChoiceMode = $heroColors->count() > 1 ? 'color' : 'size';
+    $heroVariantChoices = $heroChoiceMode === 'color'
+        ? $heroColors
+        : ($heroSizes->isNotEmpty() ? $heroSizes : $heroColors);
     $brandStoryVariant = $brandStoryProduct?->primaryAvailableVariant ?? $brandStoryProduct?->primaryActiveVariant;
     $brandStoryImage = $brandStoryVariant?->primaryGalleryMedia?->url ?? $brandStoryProduct?->primaryGalleryMedia?->url;
 @endphp
 
 <main class="store-main store-home">
     {{-- The split-color editorial hero follows the supplied visual reference. --}}
-    <section class="home-hero" aria-labelledby="home-hero-title">
+    <section class="home-hero" aria-labelledby="home-hero-title" data-home-hero>
         <div class="home-hero__frame">
-            <div class="home-hero__frame-brand" aria-hidden="true">
-                <strong>VISION</strong>
-                <small>EVERYDAY OBJECTS</small>
+            <div class="home-hero__frame-brand">
+                <a href="{{ route('storefront.index') }}" aria-label="صفحهٔ اصلی VISION">
+                    <strong>VISION</strong>
+                    <small>EVERYDAY OBJECTS</small>
+                </a>
             </div>
 
-            @if($heroProduct && $heroImage)
-                <div class="home-hero__image-stage">
-                    <img src="{{ $heroImage }}" alt="" fetchpriority="high" decoding="async">
-                </div>
-            @else
-                <div class="home-hero__image-missing">
-                    <span>تصویر واقعی محصول منتخب ثبت نشده است.</span>
-                </div>
-            @endif
+            <nav class="home-hero__nav" aria-label="دسترسی سریع">
+                @if($heroProduct)
+                    <a class="home-hero__nav-link home-hero__nav-link--current"
+                       href="{{ route('products.show', ['product' => $heroProduct->slug]) }}">محصول ویژه</a>
+                @endif
+                <a class="home-hero__nav-link" href="{{ route('shop.index') }}">همهٔ محصولات</a>
+                <a class="home-hero__nav-link" href="#home-brand-story">داستان ما</a>
+                <a class="home-hero__nav-link" href="#home-benefits">مزایا</a>
+            </nav>
 
-            <div class="home-hero__shade" aria-hidden="true"></div>
+            <div class="home-hero__top-actions">
+                <a class="home-hero__icon-button" href="{{ route('account.show') }}" aria-label="حساب کاربری" title="حساب کاربری">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"></circle><path d="M5.3 20c.5-3.4 2.8-5.3 6.7-5.3s6.2 1.9 6.7 5.3"></path></svg>
+                </a>
+                <a class="home-hero__icon-button home-hero__cart" href="{{ route('cart.index') }}" aria-label="مشاهدهٔ سبد خرید" title="سبد خرید">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg>
+                    <span data-cart-count>0</span>
+                </a>
+            </div>
 
-            <div class="home-hero__center">
-                <p class="home-hero__eyebrow">فروشگاه رسمی VISION</p>
-                <h1 id="home-hero-title">VISION</h1>
-                <p class="home-hero__tagline">انتخاب دقیق‌تر. شلوغی کمتر.</p>
+            <div class="home-hero__copy">
+                <div class="home-hero__slider-controls" aria-label="تغییر گزینهٔ محصول">
+                    <button type="button" data-home-hero-prev aria-label="گزینهٔ قبلی">‹</button>
+                    <button type="button" data-home-hero-next aria-label="گزینهٔ بعدی">›</button>
+                </div>
+                <p class="home-hero__eyebrow">مجموعهٔ منتخب VISION</p>
+                <h1 id="home-hero-title" class="home-hero__title">متفاوت باش،<br>بدون تلاش اضافه</h1>
+                <p class="home-hero__description">انتخاب‌هایی برای هر روز؛ طراحی دقیق، جزئیات حساب‌شده و پوشاکی هماهنگ با سبک تو.</p>
+                @if($heroProduct)
+                    <a class="home-hero__cta" href="{{ route('products.show', ['product' => $heroProduct->slug]) }}">
+                        <span>این محصول را ببین</span><span aria-hidden="true">↗</span>
+                    </a>
+                @else
+                    <a class="home-hero__cta" href="{{ route('shop.index') }}">
+                        <span>رفتن به فروشگاه</span><span aria-hidden="true">↗</span>
+                    </a>
+                @endif
             </div>
 
             @if($heroProduct)
-                <a class="home-hero__product-link"
-                   href="{{ route('products.show', ['product' => $heroProduct->slug]) }}"
-                   aria-label="مشاهدهٔ محصول منتخب {{ $heroProduct->name }}">
-                    <small>محصول منتخب</small>
-                    <strong>{{ $heroProduct->name }}</strong>
-                    @if($heroVariant)
-                        <span>{{ $formatPrice($heroVariant->effective_price) }}</span>
+                <div class="home-hero__image-stage"
+                     data-home-hero-stage
+                     data-base-image="{{ $heroProduct->primaryGalleryMedia?->url ?? '' }}">
+                    <img data-home-hero-image
+                         src="{{ $heroImage ?? '' }}"
+                         alt="{{ $heroProduct->name }}"
+                         fetchpriority="high"
+                         decoding="async"
+                         @if(!$heroImage) hidden @endif>
+                    <div class="home-hero__image-missing" data-home-hero-image-missing @if($heroImage) hidden @endif>
+                        <span>برای این محصول هنوز تصویر واقعی ثبت نشده است.</span>
+                    </div>
+                </div>
+            @else
+                <div class="home-hero__image-missing home-hero__image-missing--empty">
+                    <span>برای نمایش محصول ویژه، ابتدا یک محصول فعال انتخاب کن.</span>
+                </div>
+            @endif
+
+            <div class="home-hero__image-caption" aria-live="polite">
+                <span>انتخاب VISION</span>
+                <strong data-home-hero-caption>{{ $heroVariant?->color ?: ($heroVariant?->size ?: ($heroProduct?->name ?? 'کالکشن جدید')) }}</strong>
+            </div>
+
+            @if($heroProduct)
+                <aside class="home-hero__price-panel" aria-label="قیمت و گزینه‌های محصول">
+                    <span class="home-hero__price-label">قیمت محصول</span>
+                    <strong class="home-hero__price" data-home-hero-price>{{ $heroVariant ? $formatPrice($heroVariant->effective_price) : 'قیمت نامشخص' }}</strong>
+                    <del class="home-hero__original-price"
+                         data-home-hero-original
+                         @if(!($heroVariant?->is_on_sale ?? false)) hidden @endif>{{ $heroVariant && $heroVariant->is_on_sale ? $formatPrice($heroVariant->price) : '' }}</del>
+                    <span class="home-hero__stock" data-home-hero-stock>
+                        @if($heroVariant && (int) $heroVariant->stock > 0)
+                            {{ number_format((int) $heroVariant->stock) }} عدد موجود
+                        @else
+                            فعلاً ناموجود
+                        @endif
+                    </span>
+
+                    @if($heroVariantChoices->isNotEmpty())
+                        <div class="home-hero__variant-picker">
+                            <span class="home-hero__variant-label">{{ $heroChoiceMode === 'color' ? 'رنگت را انتخاب کن' : 'سایز موجود' }}</span>
+                            <div class="home-hero__variants" role="group" aria-label="{{ $heroChoiceMode === 'color' ? 'انتخاب رنگ محصول' : 'انتخاب سایز محصول' }}">
+                                @foreach($heroVariantChoices as $variant)
+                                    @php
+                                        $choiceText = $heroChoiceMode === 'color' ? $variant->color : $variant->size;
+                                        $currentChoice = $heroVariant
+                                            ? ($heroChoiceMode === 'color' ? $heroVariant->color : $heroVariant->size)
+                                            : null;
+                                        $isCurrentChoice = $currentChoice !== null
+                                            && mb_strtolower(trim((string) $currentChoice)) === mb_strtolower(trim((string) $choiceText));
+                                        $variantImage = $variant->primaryGalleryMedia?->url ?? $heroProduct->primaryGalleryMedia?->url;
+                                        $safeSwatch = preg_match('/^#[0-9a-fA-F]{3,8}$/', (string) $variant->color_code)
+                                            ? $variant->color_code
+                                            : '#7f5135';
+                                    @endphp
+                                    <button type="button"
+                                            class="home-hero__variant{{ $isCurrentChoice ? ' is-selected' : '' }}"
+                                            data-home-hero-variant
+                                            data-variant-id="{{ $variant->getKey() }}"
+                                            data-choice-value="{{ $choiceText }}"
+                                            data-choice-label="{{ $choiceText ?: $variant->display_name }}"
+                                            data-price="{{ $variant->effective_price }}"
+                                            data-original-price="{{ $variant->price }}"
+                                            data-sale="{{ $variant->is_on_sale ? '1' : '0' }}"
+                                            data-stock="{{ (int) $variant->stock }}"
+                                            data-image="{{ $variantImage ?? '' }}"
+                                            data-image-alt="{{ $heroProduct->name }} — {{ $choiceText }}"
+                                            style="--home-hero-swatch: {{ $safeSwatch }}"
+                                            aria-label="{{ $heroChoiceMode === 'color' ? 'انتخاب رنگ ' : 'انتخاب سایز ' }}{{ $choiceText }}"
+                                            title="{{ $choiceText }}"
+                                            aria-pressed="{{ $isCurrentChoice ? 'true' : 'false' }}">
+                                        @if($heroChoiceMode === 'color')
+                                            <span class="home-hero__variant-dot" aria-hidden="true"></span>
+                                            <span class="home-hero__variant-initial" aria-hidden="true">{{ mb_substr((string) $choiceText, 0, 1) }}</span>
+                                        @else
+                                            <span class="home-hero__variant-size">{{ $choiceText }}</span>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
                     @endif
+                </aside>
+
+                <a class="home-hero__mini-product"
+                   href="{{ route('products.show', ['product' => $heroProduct->slug]) }}"
+                   aria-label="مشاهدهٔ {{ $heroProduct->name }}"
+                   data-home-hero-thumbnail-link
+                   @if(!$heroImage) hidden @endif>
+                    <img src="{{ $heroImage ?? '' }}"
+                         alt=""
+                         loading="lazy"
+                         decoding="async"
+                         data-home-hero-thumbnail
+                         @if(!$heroImage) hidden @endif>
                 </a>
             @endif
 
+            <div class="home-hero__social" aria-hidden="true">
+                <span>◎</span><span>f</span><span>𝕏</span><span>◇</span>
+            </div>
+
             <div class="home-hero__bottom">
-                <a class="home-hero__side-link" href="#home-featured">محصولات منتخب</a>
-                <a class="home-hero__circle" href="#home-featured" aria-label="رفتن به محصولات منتخب">
-                    <span aria-hidden="true">↓</span>
-                </a>
-                <a class="home-hero__side-link" href="{{ route('shop.index') }}">ورود به فروشگاه</a>
+                <a href="#home-categories">دسته‌بندی‌ها</a>
+                <span aria-hidden="true">—</span>
+                <a href="#home-featured">انتخاب‌های ویژه</a>
             </div>
         </div>
     </section>

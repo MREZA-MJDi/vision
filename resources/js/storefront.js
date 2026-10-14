@@ -547,6 +547,86 @@
     });
 
 
+    // The homepage hero is data-backed: switching a color/size updates
+    // the real variant image, price, stock and thumbnail without another request.
+    const heroChoices = Array.from(root.querySelectorAll('[data-home-hero-variant]'));
+    if (heroChoices.length) {
+        const heroImage = root.querySelector('[data-home-hero-image]');
+        const heroImageMissing = root.querySelector('[data-home-hero-image-missing]');
+        const heroStage = root.querySelector('[data-home-hero-stage]');
+        const heroPrice = root.querySelector('[data-home-hero-price]');
+        const heroOriginalPrice = root.querySelector('[data-home-hero-original]');
+        const heroStock = root.querySelector('[data-home-hero-stock]');
+        const heroCaption = root.querySelector('[data-home-hero-caption]');
+        const heroThumbnail = root.querySelector('[data-home-hero-thumbnail]');
+        const heroThumbnailLink = root.querySelector('[data-home-hero-thumbnail-link]');
+        const heroPrev = root.querySelector('[data-home-hero-prev]');
+        const heroNext = root.querySelector('[data-home-hero-next]');
+        let activeHeroIndex = Math.max(0, heroChoices.findIndex((choice) => choice.getAttribute('aria-pressed') === 'true'));
+
+        const selectHeroChoice = (index) => {
+            activeHeroIndex = (index + heroChoices.length) % heroChoices.length;
+            const choice = heroChoices[activeHeroIndex];
+            const price = Number(choice.dataset.price || 0);
+            const originalPrice = Number(choice.dataset.originalPrice || 0);
+            const stock = Math.max(0, Number(choice.dataset.stock || 0));
+            const imageUrl = choice.dataset.image || heroStage?.dataset.baseImage || '';
+
+            heroChoices.forEach((item, itemIndex) => {
+                const selected = itemIndex === activeHeroIndex;
+                item.classList.toggle('is-selected', selected);
+                item.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            });
+
+            if (heroPrice) heroPrice.textContent = formatMoney(price);
+            if (heroOriginalPrice) {
+                const onSale = choice.dataset.sale === '1' && originalPrice > price;
+                heroOriginalPrice.hidden = !onSale;
+                heroOriginalPrice.textContent = onSale ? formatMoney(originalPrice) : '';
+            }
+            if (heroStock) {
+                heroStock.textContent = stock > 0
+                    ? stock.toLocaleString('fa-IR') + ' عدد موجود'
+                    : 'فعلاً ناموجود';
+            }
+            if (heroCaption) heroCaption.textContent = choice.dataset.choiceLabel || choice.dataset.choiceValue || 'محصول منتخب';
+
+            if (heroImage) {
+                if (imageUrl) {
+                    if (heroImage.getAttribute('src') !== imageUrl) heroImage.src = imageUrl;
+                    heroImage.alt = choice.dataset.imageAlt || 'تصویر محصول منتخب';
+                    heroImage.hidden = false;
+                } else {
+                    heroImage.removeAttribute('src');
+                    heroImage.hidden = true;
+                }
+            }
+            if (heroImageMissing) heroImageMissing.hidden = Boolean(imageUrl);
+            if (heroThumbnail) {
+                if (imageUrl) {
+                    if (heroThumbnail.getAttribute('src') !== imageUrl) heroThumbnail.src = imageUrl;
+                    heroThumbnail.hidden = false;
+                } else {
+                    heroThumbnail.removeAttribute('src');
+                    heroThumbnail.hidden = true;
+                }
+            }
+            if (heroThumbnailLink) heroThumbnailLink.hidden = !imageUrl;
+        };
+
+        const updateHeroArrows = () => {
+            const disabled = heroChoices.length < 2;
+            if (heroPrev) heroPrev.disabled = disabled;
+            if (heroNext) heroNext.disabled = disabled;
+        };
+
+        heroChoices.forEach((choice, index) => choice.addEventListener('click', () => selectHeroChoice(index)));
+        heroPrev?.addEventListener('click', () => selectHeroChoice(activeHeroIndex - 1));
+        heroNext?.addEventListener('click', () => selectHeroChoice(activeHeroIndex + 1));
+        updateHeroArrows();
+        selectHeroChoice(activeHeroIndex);
+    }
+
     updateCartCount(0);
     syncCartCount();
 
