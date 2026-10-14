@@ -8,9 +8,10 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Services\OrderService;
+use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -244,165 +245,49 @@ class OrderController
         ));
     }
 
-    public function updateStatus(Request $request, int $order): RedirectResponse
+    public function updateStatus(Request $request, int $order, OrderService $orderService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $itemModel = $this->model('order_item', OrderItem::class);
-        $variantModel = $this->model('variant', ProductVariant::class);
-        $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
-
         $validated = $request->validate([
             'status' => ['required', Rule::in(Order::STATUSES)],
         ]);
 
-        DB::transaction(function () use ($order, $validated, $orderModel, $itemModel, $variantModel, $inventoryModel): void {
-            $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
-            $next = $validated['status'];
-            $terminal = ['cancelled', 'returned'];
-            $allowedTransitions = Order::STATUS_TRANSITIONS;
+        $record = $orderModel::query()->findOrFail($order);
+        if (! $record instanceof Order) {
+            throw ValidationException::withMessages([
+                'status' => 'The configured order model must extend the application Order model to use the shared order workflow.',
+            ]);
+        }
 
-            if ($next !== $model->status && ! in_array($next, $allowedTransitions[$model->status] ?? [], true)) {
-                throw ValidationException::withMessages([
-                    'status' => 'That status change is not allowed from the current order state.',
-                ]);
-            }
-
-            $wasTerminal = in_array($model->status, $terminal, true);
-            $willBeTerminal = in_array($next, $terminal, true);
-
-            if (! $wasTerminal && $willBeTerminal) {
-                $actorId = Auth::guard(config('commerce-admin.guard', 'web'))->id();
-                $items = $itemModel::query()->where('order_id', $model->getKey())->get();
-
-                foreach ($items as $item) {
-                    if (! $item->product_variant_id) {
-                        continue;
-                    }
-
-                    $variantQuery = $variantModel::query();
-                    if (in_array(SoftDeletes::class, class_uses_recursive($variantModel), true)) {
-                        // A variant may be archived from the catalog while an
-                        // order still references it. Restoring that order must
-                        // restore stock to the archived SKU as well.
-                        $variantQuery->withTrashed();
-                    }
-
-                    $variant = $variantQuery->whereKey($item->product_variant_id)->lockForUpdate()->first();
-                    if (! $variant) {
-                        continue;
-                    }
-
-                    $variant->stock = (int) $variant->stock + (int) $item->quantity;
-                    $variant->save();
-
-                    $inventoryModel::query()->create([
-                        'product_variant_id' => $variant->getKey(),
-                        'type' => $next === 'returned' ? 'return' : 'adjustment',
-                        'quantity' => (int) $item->quantity,
-                        'stock_after' => (int) $variant->stock,
-                        'reference_type' => $model->getMorphClass(),
-                        'reference_id' => $model->getKey(),
-                        'note' => 'Stock restored after order ' . $next . ' (' . $model->order_number . ')',
-                        'created_by' => $actorId,
-                    ]);
-                }
-            }
-
-            $model->status = $next;
-            if (in_array($next, ['shipped', 'out_for_delivery', 'delivered'], true) && ! $model->shipped_at) {
-                $model->shipped_at = now();
-            }
-            if ($next === 'out_for_delivery' && ! $model->out_for_delivery_at) {
-                $model->out_for_delivery_at = now();
-            }
-            if ($next === 'delivered' && ! $model->delivered_at) {
-                $model->delivered_at = now();
-            }
-            if ($next === 'cancelled' && ! $model->cancelled_at) {
-                $model->cancelled_at = now();
-            }
-            $model->save();
-        });
+        $orderService->updateStatus(
+            $record,
+            $validated['status'],
+            (string) $record->payment_status,
+            $record->customer_note,
+            $record->tracking_code
+        );
 
         return redirect()->route('commerce-admin.orders.show', $order)
-            ->with('status', 'Order status updated.');
+            ->with('status', 'وضعیت سفارش ذخیره شد.');
     }
 
-    public function updatePayment(Request $request, int $order): RedirectResponse
+    public function updatePayment(Request $request, int $order, PaymentService $paymentService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $paymentModel = $this->model('payment', Payment::class);
-
         $validated = $request->validate([
             'payment_status' => ['required', Rule::in(Payment::STATUSES)],
         ]);
 
-        DB::transaction(function () use ($orderModel, $paymentModel, $order, $validated): void {
-            $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
-            $next = $validated['payment_status'];
+        $record = $orderModel::query()->findOrFail($order);
+        if (! $record instanceof Order) {
+            throw ValidationException::withMessages([
+                'payment_status' => 'The configured order model must extend the application Order model to use shared payment accounting.',
+            ]);
+        }
 
-            if ($next === $model->payment_status) {
-                return;
-            }
-
-            $allowedTransitions = [
-                'pending' => ['paid', 'failed'],
-                'failed' => ['pending', 'paid'],
-                'paid' => ['refunded'],
-                'refunded' => [],
-            ];
-
-            if (! in_array($next, $allowedTransitions[$model->payment_status] ?? [], true)) {
-                throw ValidationException::withMessages([
-                    'payment_status' => 'That payment status change is not allowed from the current payment state.',
-                ]);
-            }
-
-            $paymentQuery = $paymentModel::query()->where('order_id', $model->getKey());
-
-            if ($next === 'refunded') {
-                $paymentRecord = (clone $paymentQuery)
-                    ->where('status', 'paid')
-                    ->orderByDesc('id')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $paymentRecord) {
-                    throw ValidationException::withMessages([
-                        'payment_status' => 'A successful payment record is required before recording a refund.',
-                    ]);
-                }
-            } else {
-                $paymentRecord = (clone $paymentQuery)
-                    ->orderByDesc('id')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $paymentRecord) {
-                    $paymentRecord = $paymentModel::query()->create([
-                        'order_id' => $model->getKey(),
-                        'gateway' => 'manual',
-                        'idempotency_key' => 'admin-manual-order-' . $model->getKey(),
-                        'amount' => $model->total,
-                        'status' => $next,
-                    ]);
-                }
-            }
-
-            $paymentRecord->status = $next;
-            if ($next === 'paid' && ! $paymentRecord->paid_at) {
-                $paymentRecord->paid_at = now();
-            }
-            $paymentRecord->save();
-
-            $model->payment_status = $next;
-            if ($next === 'paid' && ! $model->paid_at) {
-                $model->paid_at = now();
-            }
-            $model->save();
-        });
+        $paymentService->matchStatus($record, $validated['payment_status']);
 
         return redirect()->route('commerce-admin.orders.show', $order)
-            ->with('status', 'Payment status and payment record updated. Gateway reconciliation remains separate.');
+            ->with('status', 'وضعیت پرداخت و سوابق مالی از مسیر سرویس مشترک به‌روزرسانی شد.');
     }
 }
