@@ -19,6 +19,8 @@ return [
         'review' => App\Models\ProductReview::class,
     ],
     'admin_flag_column' => 'is_admin',
+    // Source checkout uses Vite. Composer installs default to published vendor assets.
+    'asset_mode' => env('COMMERCE_ADMIN_ASSET_MODE', 'vite'),
     // Storefront and admin share Laravel's default authentication guard.
     'login_throttle_attempts' => 5,
     'login_throttle_seconds' => 60,
