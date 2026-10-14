@@ -51,7 +51,7 @@
                 @endforeach
                 </tbody>
             </table></div>
-            <div class="ak-pagination-wrap"><span>Showing {{ $orders->firstItem() }}–{{ $orders->lastItem() }} of {{ $orders->total() }} orders</span>{{ $orders->links('commerce-admin::partials.pagination') }}</div>
+            <div class="ak-pagination-wrap"><span>نمایش {{ $orders->firstItem() }} تا {{ $orders->lastItem() }} از {{ $orders->total() }} سفارش</span>{{ $orders->links('commerce-admin::partials.pagination') }}</div>
         @endif
     </section>
 @endsection
