@@ -5,7 +5,7 @@
             @if (is_string($element))<span class="is-disabled">{{ $element }}</span>@endif
             @if (is_array($element))
                 @foreach ($element as $page => $url)
-                    @if ($page == $paginator->currentPage())<span class="is-current" aria-current="page">{{ $page }}</span>@else<a href="{{ $url }}" aria-label="Go to page {{ $page }}">{{ $page }}</a>@endif
+                    @if ($page == $paginator->currentPage())<span class="is-current" aria-current="page">{{ $page }}</span>@else<a href="{{ $url }}" aria-label="رفتن به صفحه {{ $page }}">{{ $page }}</a>@endif
                 @endforeach
             @endif
         @endforeach
