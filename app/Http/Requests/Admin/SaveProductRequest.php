@@ -71,7 +71,6 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock' => ['required', 'integer', 'min:0'],
             'variants.*.low_stock_threshold' => ['required', 'integer', 'min:0'],
             'variants.*.is_active' => ['required', 'boolean'],
-            'variants.*.remove_image' => ['sometimes', 'boolean'],
             'variants.*.image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'variants.*.images' => ['sometimes', 'array', 'max:4'],
             'variants.*.images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
