@@ -10,7 +10,7 @@
     $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
     $primaryImage = $defaultVariant?->primaryGalleryMedia?->url
         ?? $product->primaryGalleryMedia?->url;
-    $formatPrice = static fn ($amount) => \\App\\Support\\Money::format($amount);
+    $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
 @endphp
 
 <main class="store-main commerce-page">
