@@ -1,5 +1,5 @@
 (() => {
-    function initTiamirIntro(intro) {
+    function initTiamirIntro(intro, replayButton) {
         const storageKey = 'tiamir_intro_seen';
         const hasSeenCookie = document.cookie.split(';').some((cookie) => cookie.trim() === storageKey + '=1');
         let hasSeenSession = false;
@@ -7,43 +7,45 @@
         try {
             hasSeenSession = window.sessionStorage.getItem(storageKey) === '1';
         } catch {
-            // Storage may be disabled; the cookie and in-memory flow still work.
+            // A blocked browser store must not prevent the intro from running.
         }
 
-        const isReturning = hasSeenCookie || hasSeenSession;
-        const firstDuration = Math.max(1000, Number(intro.dataset.firstDuration) || 5000);
+        const returningVisitor = hasSeenCookie || hasSeenSession;
+        const firstDuration = Math.max(1000, Number(intro.dataset.firstDuration) || 5600);
         const returnDuration = Math.max(1000, Number(intro.dataset.returnDuration) || 2500);
-        const duration = isReturning ? returnDuration : firstDuration;
         const exitDuration = 220;
         const shell = document.querySelector('.store-shell');
         const canvas = intro.querySelector('[data-tiamir-static]');
         const mainLogo = intro.querySelector('[data-tiamir-logo]');
         const fallback = intro.querySelector('[data-tiamir-fallback]');
         const ghostLogos = intro.querySelectorAll('.tiamir-intro__logo--ghost');
+        const identity = intro.querySelector('.tiamir-intro__identity');
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const replayButton = document.querySelector('[data-tiamir-replay]');
 
         let finishTimer = null;
         let fadeTimer = null;
-        let frameId = null;
+        let noiseTimer = null;
+        let pointerTimer = null;
         let finishDeadline = 0;
-        let remaining = Math.max(0, duration - exitDuration);
-        let lastFrame = 0;
+        let remaining = 0;
+        let lastTapAt = 0;
         let canvasContext = null;
-        let imageData = null;
         let canvasWidth = 0;
         let canvasHeight = 0;
+        let active = false;
         let finished = false;
-        let lastTapAt = 0;
+        let canDismiss = returningVisitor;
 
-        if (replayButton) replayButton.hidden = true;
-        intro.style.setProperty('--tiamir-duration', duration + 'ms');
-        intro.classList.add('is-visible');
-        if (isReturning) intro.classList.add('is-returning');
-        if (reducedMotion) intro.classList.add('is-reduced-motion');
-        document.body.classList.add('tiamir-intro-active');
+        function markSeen() {
+            try {
+                window.sessionStorage.setItem(storageKey, '1');
+            } catch {
+                // Cookie and in-memory behavior remain available if storage is blocked.
+            }
 
-        if (shell) shell.inert = true;
+            const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+            document.cookie = storageKey + '=1; Max-Age=31536000; Path=/; SameSite=Lax' + secure;
+        }
 
         function revealFallback() {
             if (mainLogo) mainLogo.hidden = true;
@@ -52,72 +54,75 @@
         }
 
         if (mainLogo) {
-            mainLogo.addEventListener('error', revealFallback, { once: true });
+            mainLogo.addEventListener('error', revealFallback);
+            mainLogo.addEventListener('load', () => {
+                if (fallback) fallback.hidden = true;
+                ghostLogos.forEach((logo) => { logo.hidden = false; });
+                mainLogo.hidden = false;
+            });
             if (mainLogo.complete && mainLogo.naturalWidth === 0) revealFallback();
-        }
-
-        if (reducedMotion) {
-            window.requestAnimationFrame(() => intro.classList.add('is-revealing'));
         }
 
         function prepareCanvas() {
             if (!canvas || reducedMotion) return false;
+
             if (!canvasContext) {
-                canvasContext = canvas.getContext('2d', { alpha: false, desynchronized: true });
+                canvasContext = canvas.getContext('2d', { alpha: true, desynchronized: true });
                 if (!canvasContext) return false;
             }
 
             const rect = canvas.getBoundingClientRect();
-            // Render the noise at a low internal resolution; the CSS layer scales it up.
-            const resolution = Math.min(window.devicePixelRatio || 1, 1.0) * 0.24;
-            const width = Math.max(1, Math.floor(rect.width * resolution));
-            const height = Math.max(1, Math.floor(rect.height * resolution));
+            // Deliberately low resolution: the signal grain is texture, not full-screen HD video.
+            const scale = Math.min(window.devicePixelRatio || 1, 1.1) * 0.24;
+            const width = Math.max(1, Math.floor(rect.width * scale));
+            const height = Math.max(1, Math.floor(rect.height * scale));
 
             if (width !== canvasWidth || height !== canvasHeight) {
                 canvasWidth = width;
                 canvasHeight = height;
                 canvas.width = width;
                 canvas.height = height;
-                imageData = canvasContext.createImageData(width, height);
             }
 
-            return Boolean(imageData);
+            return true;
         }
 
-        function drawStatic(timestamp) {
-            frameId = null;
-            if (finished || document.hidden || reducedMotion || !canvas) return;
+        function drawStatic() {
+            if (!active || document.hidden || reducedMotion || !canvas || !prepareCanvas()) return;
 
-            if (timestamp - lastFrame < 80) {
-                frameId = window.requestAnimationFrame(drawStatic);
-                return;
+            const width = canvas.width;
+            const height = canvas.height;
+            canvasContext.clearRect(0, 0, width, height);
+
+            // Sparse short bands are cheaper than regenerating every pixel on every frame.
+            const bands = Math.min(24, Math.max(10, Math.ceil(width / 24)));
+            for (let index = 0; index < bands; index += 1) {
+                if (Math.random() < 0.3) continue;
+                const shade = Math.floor(145 + Math.random() * 110);
+                const alpha = 0.035 + Math.random() * 0.11;
+                const bandWidth = Math.max(2, Math.floor(width * (0.025 + Math.random() * 0.22)));
+                const y = Math.floor(Math.random() * height);
+                const x = Math.floor(Math.random() * Math.max(1, width - bandWidth));
+                canvasContext.fillStyle = 'rgba(' + shade + ',' + shade + ',' + shade + ',' + alpha + ')';
+                canvasContext.fillRect(x, y, bandWidth, Math.random() > 0.82 ? 2 : 1);
             }
 
-            if (!prepareCanvas()) return;
-
-            lastFrame = timestamp;
-            const pixels = imageData.data;
-            for (let index = 0; index < pixels.length; index += 4) {
-                // Keep the signal texture sparse instead of filling every pixel with white noise.
-                const shade = Math.random() < 0.14 ? (140 + Math.floor(Math.random() * 116)) : 0;
-                pixels[index] = shade;
-                pixels[index + 1] = shade;
-                pixels[index + 2] = shade;
-                pixels[index + 3] = 255;
+            if (Math.random() > 0.975) {
+                canvasContext.fillStyle = 'rgba(255,255,255,0.12)';
+                canvasContext.fillRect(0, Math.floor(Math.random() * height), width, 1);
             }
-            canvasContext.putImageData(imageData, 0, 0);
-            frameId = window.requestAnimationFrame(drawStatic);
         }
 
         function startStatic() {
-            if (!finished && !reducedMotion && !document.hidden && frameId === null && canvas) {
-                frameId = window.requestAnimationFrame(drawStatic);
-            }
+            if (!active || document.hidden || reducedMotion || noiseTimer !== null || !canvas) return;
+            if (!prepareCanvas()) return;
+            drawStatic();
+            noiseTimer = window.setInterval(drawStatic, 80);
         }
 
         function stopStatic() {
-            if (frameId !== null) window.cancelAnimationFrame(frameId);
-            frameId = null;
+            if (noiseTimer !== null) window.clearInterval(noiseTimer);
+            noiseTimer = null;
         }
 
         function scheduleFinish(milliseconds) {
@@ -131,46 +136,67 @@
             }, remaining);
         }
 
-        function markSeen() {
-            try {
-                window.sessionStorage.setItem(storageKey, '1');
-            } catch {
-                // The persistent cookie below remains the preferred fallback.
-            }
-
-            const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-            document.cookie = storageKey + '=1; Max-Age=31536000; Path=/; SameSite=Lax' + secure;
-        }
-
         function finishIntro(naturalCompletion) {
-            if (finished || (!isReturning && !naturalCompletion)) return;
+            if (!active || finished || (!canDismiss && !naturalCompletion)) return;
 
             finished = true;
+            active = false;
             markSeen();
 
             if (finishTimer !== null) window.clearTimeout(finishTimer);
             finishTimer = null;
             stopStatic();
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            document.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('resize', handleResize);
-
+            if (pointerTimer !== null) window.clearTimeout(pointerTimer);
+            pointerTimer = null;
+            intro.classList.remove('has-signal-hit');
             intro.classList.add('is-exiting');
 
             fadeTimer = window.setTimeout(() => {
-                // Keep the intro node mounted so Replay can restart it without a page reload.
-                intro.classList.remove('is-visible');
+                intro.classList.remove('is-visible', 'is-exiting', 'is-revealing', 'is-returning');
                 document.body.classList.remove('tiamir-intro-active');
                 if (shell) shell.inert = false;
                 if (replayButton) replayButton.hidden = false;
-                if (fadeTimer !== null) window.clearTimeout(fadeTimer);
                 fadeTimer = null;
             }, exitDuration);
         }
 
-        function handleVisibilityChange() {
-            if (finished) return;
+        function runIntro(duration, allowDismiss) {
+            if (finishTimer !== null) window.clearTimeout(finishTimer);
+            if (fadeTimer !== null) window.clearTimeout(fadeTimer);
+            finishTimer = null;
+            fadeTimer = null;
+            stopStatic();
 
+            active = true;
+            finished = false;
+            canDismiss = Boolean(allowDismiss);
+            remaining = Math.max(0, duration - exitDuration);
+
+            if (replayButton) replayButton.hidden = true;
+            intro.classList.remove('is-visible', 'is-exiting', 'is-revealing', 'is-returning', 'has-signal-hit');
+            intro.style.setProperty('--tiamir-duration', duration + 'ms');
+            void intro.offsetWidth;
+            intro.classList.add('is-visible');
+            if (canDismiss) intro.classList.add('is-returning');
+            document.body.classList.add('tiamir-intro-active');
+            if (shell) shell.inert = true;
+
+            if (reducedMotion) {
+                window.requestAnimationFrame(() => intro.classList.add('is-revealing'));
+            }
+
+            startStatic();
+            if (document.hidden) {
+                if (finishTimer !== null) window.clearTimeout(finishTimer);
+                finishTimer = null;
+                finishDeadline = 0;
+            } else {
+                scheduleFinish(remaining);
+            }
+        }
+
+        function handleVisibilityChange() {
+            if (!active) return;
             if (document.hidden) {
                 if (finishTimer !== null) {
                     window.clearTimeout(finishTimer);
@@ -186,77 +212,50 @@
         }
 
         function handleKeyDown(event) {
-            // A first-time visitor sees the full identity sequence; repeat
-            // visitors may dismiss it with Escape or Enter.
-            if (isReturning && (event.key === 'Escape' || event.key === 'Enter')) {
+            if (!active || !canDismiss || event.repeat) return;
+            if (event.key === 'Escape' || event.key === 'Enter') finishIntro(false);
+        }
+
+        function handlePointerMove(event) {
+            if (!active || reducedMotion || !identity) return;
+            const x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+            const y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+            identity.style.transform = 'translate3d(' + (x * 2).toFixed(1) + 'px,' + (y * 1.2).toFixed(1) + 'px,0)';
+            intro.classList.add('has-signal-hit');
+            if (pointerTimer !== null) window.clearTimeout(pointerTimer);
+            pointerTimer = window.setTimeout(() => {
+                intro.classList.remove('has-signal-hit');
+                pointerTimer = null;
+            }, 220);
+        }
+
+        intro.addEventListener('dblclick', () => {
+            if (active && canDismiss) finishIntro(false);
+        });
+        intro.addEventListener('touchend', () => {
+            if (!active || !canDismiss) return;
+            const now = Date.now();
+            if (now - lastTapAt < 360) {
+                lastTapAt = 0;
                 finishIntro(false);
+            } else {
+                lastTapAt = now;
             }
-        }
+        }, { passive: true });
 
-        function replayIntro() {
-            if (fadeTimer !== null) window.clearTimeout(fadeTimer);
-            fadeTimer = null;
-            if (finishTimer !== null) window.clearTimeout(finishTimer);
-            finishTimer = null;
-            stopStatic();
-
-            finished = false;
-            remaining = Math.max(0, firstDuration - exitDuration);
-            lastFrame = 0;
-            intro.classList.remove('is-visible', 'is-exiting', 'is-revealing');
-            intro.style.setProperty('--tiamir-duration', firstDuration + 'ms');
-
-            // The hidden-state CSS disables animations; flush that state before restarting them.
-            void intro.offsetWidth;
-            intro.classList.add('is-visible');
-            document.body.classList.add('tiamir-intro-active');
-            if (shell) shell.inert = true;
-            if (replayButton) replayButton.hidden = true;
-
-            if (reducedMotion) {
-                window.requestAnimationFrame(() => intro.classList.add('is-revealing'));
-            }
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-            window.addEventListener('resize', handleResize, { passive: true });
-            if (isReturning) document.addEventListener('keydown', handleKeyDown);
-
-            if (!document.hidden) {
-                scheduleFinish(remaining);
-                startStatic();
-            }
-        }
-
-        replayButton?.addEventListener('click', replayIntro);
-
-        function handleResize() {
-            if (!finished && !reducedMotion) prepareCanvas();
-        }
-
-        if (isReturning) {
-            intro.addEventListener('dblclick', () => finishIntro(false));
-            intro.addEventListener('touchend', () => {
-                const now = Date.now();
-                if (now - lastTapAt < 360) {
-                    lastTapAt = 0;
-                    finishIntro(false);
-                } else {
-                    lastTapAt = now;
-                }
-            }, { passive: true });
-            document.addEventListener('keydown', handleKeyDown);
-        }
-
+        replayButton?.addEventListener('click', () => runIntro(firstDuration, true));
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('resize', handleResize, { passive: true });
+        document.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('pointermove', handlePointerMove, { passive: true });
+        window.addEventListener('resize', () => {
+            if (active && !reducedMotion) prepareCanvas();
+        }, { passive: true });
 
-        if (!document.hidden) {
-            scheduleFinish(remaining);
-            startStatic();
-        }
+        runIntro(returningVisitor ? returnDuration : firstDuration, returningVisitor);
     }
 
     const intro = document.querySelector('[data-tiamir-intro]');
-    if (intro) initTiamirIntro(intro);
+    if (intro) initTiamirIntro(intro, document.querySelector('[data-tiamir-replay]'));
 
     const root = document.querySelector('[data-storefront]');
     if (!root) return;
@@ -278,11 +277,19 @@
     const fittingPreview = root.querySelector('[data-fitting-preview]');
     const fittingRoom = root.querySelector('[data-fitting-room]');
     const fittingClose = root.querySelector('[data-fitting-close]');
+    const fittingExpand = root.querySelector('[data-fitting-expand]');
     const fittingReopen = root.querySelector('[data-fitting-reopen]');
+    const fittingSelectedName = root.querySelector('[data-fitting-selected-name]');
+    const fittingSelectedDescription = root.querySelector('[data-fitting-selected-description]');
+    const fittingSelectedPrice = root.querySelector('[data-fitting-selected-price]');
+    const fittingLocationMarker = fittingRoom ? document.createComment('fitting-room-location') : null;
+    if (fittingRoom && fittingLocationMarker) fittingRoom.parentNode?.insertBefore(fittingLocationMarker, fittingRoom);
     const maxPicks = 5;
     const picks = new Map();
     let currentSelection = null;
     let toastTimer = null;
+    let fittingTransitionTimer = null;
+    let fittingReturnFocus = null;
 
     function readProductData(element) {
         return {
@@ -311,10 +318,72 @@
         document.documentElement.style.overflow = open ? 'hidden' : '';
     }
 
-    function setFittingRoomOpen(open) {
-        if (fittingRoom) fittingRoom.hidden = !open;
+    function restoreFittingRoomLocation() {
+        if (fittingRoom && fittingLocationMarker?.parentNode) {
+            fittingLocationMarker.parentNode.insertBefore(fittingRoom, fittingLocationMarker.nextSibling);
+        }
+    }
+
+    function setFittingRoomOpen(open, expand = false) {
+        if (!fittingRoom) return;
+
+        if (fittingTransitionTimer !== null) {
+            window.clearTimeout(fittingTransitionTimer);
+            fittingTransitionTimer = null;
+        }
+
+        if (open && expand) {
+            if (!fittingRoom.classList.contains('is-expanded')) {
+                fittingReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                // Portal the existing panel out of the transformed mobile filter drawer.
+                // This preserves one source of truth and lets fixed positioning cover the viewport.
+                document.body.append(fittingRoom);
+                fittingRoom.hidden = false;
+                if (fittingReopen) fittingReopen.hidden = true;
+                if (window.matchMedia('(max-width: 720px)').matches) setFiltersOpen(false);
+                window.requestAnimationFrame(() => {
+                    fittingRoom.classList.remove('is-collapsing');
+                    fittingRoom.classList.add('is-expanded');
+                    document.body.classList.add('fitting-room-expanded');
+                    document.documentElement.style.overflow = 'hidden';
+                    fittingExpand?.setAttribute('aria-expanded', 'true');
+                    fittingExpand?.setAttribute('aria-label', 'بازگرداندن اتاق پرو به ستون فروشگاه');
+                    fittingClose?.focus({ preventScroll: true });
+                });
+            }
+            return;
+        }
+
+        if (fittingRoom.classList.contains('is-expanded')) {
+            document.body.classList.remove('fitting-room-expanded');
+            document.documentElement.style.overflow = sidebar?.classList.contains('is-open') ? 'hidden' : '';
+            fittingExpand?.setAttribute('aria-expanded', 'false');
+            fittingExpand?.setAttribute('aria-label', 'بزرگ‌نمایی اتاق پرو');
+            fittingRoom.classList.remove('is-expanded');
+            fittingRoom.classList.add('is-collapsing');
+
+            if (open && window.matchMedia('(max-width: 720px)').matches) setFiltersOpen(true);
+
+            fittingTransitionTimer = window.setTimeout(() => {
+                fittingRoom.classList.remove('is-collapsing');
+                restoreFittingRoomLocation();
+                fittingRoom.hidden = !open;
+                if (fittingReopen) fittingReopen.hidden = open;
+                fittingTransitionTimer = null;
+
+                if (open) {
+                    fittingRoom.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    fittingReturnFocus?.focus?.({ preventScroll: true });
+                    fittingReturnFocus = null;
+                }
+            }, 220);
+            return;
+        }
+
+        fittingRoom.hidden = !open;
         if (fittingReopen) fittingReopen.hidden = open;
-        if (open) fittingRoom?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (open) fittingRoom.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function updateCartCount(count = 0) {
@@ -364,6 +433,12 @@
         }
     }
 
+    function updateFittingCopy(product) {
+        if (fittingSelectedName) fittingSelectedName.textContent = product?.name || 'هنوز محصولی انتخاب نشده است';
+        if (fittingSelectedDescription) fittingSelectedDescription.textContent = product?.description || 'تصویر و مشخصات بر اساس دادهٔ واقعی محصول نمایش داده می‌شود.';
+        if (fittingSelectedPrice) fittingSelectedPrice.textContent = product?.price || '—';
+    }
+
     function updatePreviewImage(product) {
         if (!fittingImage || !fittingPlaceholder) return;
 
@@ -401,6 +476,7 @@
         if (!product || !product.id) return;
         currentSelection = product;
         updatePreviewImage(product);
+        updateFittingCopy(product);
 
         if (fittingLookNumber) fittingLookNumber.textContent = picks.size ? String(picks.size).padStart(2, '0') : '—';
         if (fittingCanvasCount) fittingCanvasCount.textContent = String(picks.size).padStart(2, '0') + ' / 05';
@@ -493,20 +569,30 @@
         setFittingRoomOpen(false);
         if (window.matchMedia('(max-width: 720px)').matches) setFiltersOpen(false);
     });
+    fittingExpand?.addEventListener('click', () => {
+        const expanded = fittingRoom?.classList.contains('is-expanded');
+        setFittingRoomOpen(true, !expanded);
+    });
     fittingReopen?.addEventListener('click', () => setFittingRoomOpen(true));
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             setFiltersOpen(false);
+            if (fittingRoom?.classList.contains('is-expanded')) setFittingRoomOpen(false);
         }
     });
+
+    document.addEventListener('click', (event) => {
+        if (!document.body.classList.contains('fitting-room-expanded')) return;
+        if (event.target === document.body || event.target === document.documentElement) {
+            setFittingRoomOpen(false);
+        }
+    }, true);
 
     root.querySelectorAll('[data-fit-product]').forEach((button) => {
         button.setAttribute('aria-pressed', 'false');
         button.addEventListener('click', () => {
             const product = readProductData(button);
-            const isMobile = window.matchMedia('(max-width: 720px)').matches;
-            if (isMobile) setFiltersOpen(true);
-            setFittingRoomOpen(true);
+            setFittingRoomOpen(true, true);
 
             if (!picks.has(product.id)) {
                 if (picks.size >= maxPicks) {
@@ -585,6 +671,7 @@
 
     fittingAction?.addEventListener('click', () => {
         if (!currentSelection) return;
+        setFittingRoomOpen(false);
         if (window.matchMedia('(max-width: 720px)').matches) {
             setFiltersOpen(false);
         }
@@ -610,6 +697,7 @@
                 selectProduct(currentSelection);
             } else {
                 updatePreviewImage(null);
+                updateFittingCopy(null);
                 root.querySelectorAll('[data-fit-product]').forEach((fitButton) => {
                     fitButton.classList.remove('is-active');
                     fitButton.setAttribute('aria-pressed', 'false');
@@ -1004,6 +1092,7 @@
         picks.clear();
         currentSelection = null;
         updatePreviewImage(null);
+        updateFittingCopy(null);
         root.querySelectorAll('[data-fit-product]').forEach((button) => {
             button.classList.remove('is-active');
             button.setAttribute('aria-pressed', 'false');
