@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\ProductVariant;
+use App\Support\NumericInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,6 +12,13 @@ class StoreAdminOrderRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('shipping_cost')) {
+            $this->merge(['shipping_cost' => NumericInput::normalize($this->input('shipping_cost'))]);
+        }
     }
 
     public function rules(): array

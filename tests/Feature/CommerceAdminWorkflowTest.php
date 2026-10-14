@@ -266,7 +266,7 @@ class CommerceAdminWorkflowTest extends TestCase
                         'size' => 'M',
                         'color' => 'Black',
                         'color_code' => '#000000',
-                        'price' => '79.50',
+                        'price' => '۷۹,۵۰۰',
                         'sale_price' => '',
                         'stock' => '4',
                         'low_stock_threshold' => '2',
@@ -281,6 +281,9 @@ class CommerceAdminWorkflowTest extends TestCase
 
         $this->assertSame('cropped-jacket', $product->slug);
         $this->assertStringStartsWith('VIS-', $variant->sku);
+        $this->assertEquals(79500, (float) $variant->price);
+        $this->assertSame('Cropped Jacket', $product->meta_title);
+        $this->assertStringContainsString('Cropped Jacket', (string) $product->meta_description);
         $this->assertSame(4, (int) $variant->stock);
         $this->assertDatabaseHas('inventory_movements', [
             'product_variant_id' => $variant->getKey(),

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Category;
+use App\Support\SeoDefaults;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\Admin\SaveCategoryRequest;
 use Illuminate\Http\Request;
@@ -79,8 +80,8 @@ class CategoryController
                 'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name']),
                 'parent_id' => $data['parent_id'] ?? null,
                 'description' => $data['description'] ?? null,
-                'meta_title' => $data['meta_title'] ?? null,
-                'meta_description' => $data['meta_description'] ?? null,
+                'meta_title' => SeoDefaults::title((string) $data['name'], $data['meta_title'] ?? null),
+                'meta_description' => SeoDefaults::description((string) $data['name'], $data['meta_description'] ?? null, $data['description'] ?? null),
                 'is_active' => ($data['status'] ?? 'active') === 'active',
                 'sort_order' => (int) ($data['sort_order'] ?? 0),
             ]);
@@ -111,8 +112,8 @@ class CategoryController
                 'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name'], $record->getKey(), $record->slug),
                 'parent_id' => $data['parent_id'] ?? null,
                 'description' => $data['description'] ?? null,
-                'meta_title' => $data['meta_title'] ?? null,
-                'meta_description' => $data['meta_description'] ?? null,
+                'meta_title' => SeoDefaults::title((string) $data['name'], $data['meta_title'] ?? null),
+                'meta_description' => SeoDefaults::description((string) $data['name'], $data['meta_description'] ?? null, $data['description'] ?? null),
                 'is_active' => ($data['status'] ?? 'active') === 'active',
                 'sort_order' => (int) ($data['sort_order'] ?? 0),
             ]);

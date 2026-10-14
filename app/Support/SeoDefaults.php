@@ -13,12 +13,18 @@ final class SeoDefaults
         return Str::limit($title !== '' ? $title : trim($name), 60, '');
     }
 
-    public static function description(string $name, ?string $provided, ?string $fallback = null): string
+    public static function description(string $name, ?string $provided, string|array|null $fallback = null): string
     {
         $description = trim(strip_tags((string) $provided));
 
         if ($description === '') {
-            $description = trim(strip_tags((string) $fallback));
+            foreach (is_array($fallback) ? $fallback : [$fallback] as $candidate) {
+                $candidate = trim(strip_tags((string) $candidate));
+                if ($candidate !== '') {
+                    $description = $candidate;
+                    break;
+                }
+            }
         }
 
         if ($description === '') {

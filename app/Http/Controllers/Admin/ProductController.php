@@ -11,6 +11,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\SeoDefaults;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\Admin\BulkArchiveProductsRequest;
 use App\Http\Requests\Admin\SaveProductRequest;
@@ -223,8 +224,11 @@ class ProductController
                 'brand_id' => $validated['brand_id'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
-                'meta_title' => $validated['meta_title'] ?? null,
-                'meta_description' => $validated['meta_description'] ?? null,
+                'meta_title' => SeoDefaults::title((string) $validated['name'], $validated['meta_title'] ?? null),
+                'meta_description' => SeoDefaults::description((string) $validated['name'], $validated['meta_description'] ?? null, [
+                    $validated['short_description'] ?? null,
+                    $validated['description'] ?? null,
+                ]),
                 'is_active' => ($validated['status'] ?? 'draft') === 'active',
                 'is_featured' => (bool) ($validated['is_featured'] ?? false),
                 'is_hero' => (bool) ($validated['is_hero'] ?? false),

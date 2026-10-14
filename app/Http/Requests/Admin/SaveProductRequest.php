@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\NumericInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,6 +14,25 @@ class SaveProductRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $variants = (array) $this->input('variants', []);
+
+        foreach ($variants as $index => $variant) {
+            if (! is_array($variant)) {
+                continue;
+            }
+
+            foreach (['price', 'sale_price'] as $field) {
+                if (array_key_exists($field, $variant)) {
+                    $variants[$index][$field] = NumericInput::normalize($variant[$field]);
+                }
+            }
+        }
+
+        $this->merge(['variants' => $variants]);
     }
 
     public function rules(): array
