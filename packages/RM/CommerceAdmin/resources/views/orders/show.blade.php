@@ -22,7 +22,7 @@
         <div>
             <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.orders.index') }}">سفارش‌ها</a> <span>/</span> جزئیات سفارش</div>
             <h1>سفارش #{{ $model->order_number }}</h1>
-            <p>تاریخ ثبت {{ optional($model->placed_at ?: $model->created_at)->format('M d, Y \a\t H:i') }}</p>
+            <p>تاریخ ثبت @jalali($model->placed_at ?: $model->created_at, 'j F Y · H:i')</p>
         </div>
         <div class="ak-heading-actions">
             <a class="ak-button ak-button-light" href="{{ route('commerce-admin.orders.index') }}">← همهٔ سفارش‌ها</a>

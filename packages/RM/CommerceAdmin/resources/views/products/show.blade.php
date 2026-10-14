@@ -130,7 +130,7 @@
                                             <span>{{ $variant->display_name ?: collect([$variant->color, $variant->size])->filter()->implode(' / ') ?: 'Default variant' }}</span>
                                         </div>
                                     </td>
-                                    <td><span class="ak-mono">{{ $variant->sku ?: '—' }}</span><small class="ak-table-subtext">{{ $variant->barcode ?: 'No barcode' }}</small></td>
+                                    <td><span class="ak-mono">{{ $variant->sku ?: '—' }}</span></td>
                                     <td><strong>@money(($variant->sale_price ?? $variant->price ?? 0))</strong></td>
                                     <td>{{ number_format((int) $variant->stock) }}</td>
                                     <td><span class="ak-status-pill {{ $variant->is_active ? 'status-active' : 'status-draft' }}">{{ $variant->is_active ? 'فعال' : 'غیرفعال' }}</span></td>
