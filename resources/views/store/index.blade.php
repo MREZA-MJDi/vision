@@ -48,7 +48,10 @@
                         <h2 id="fitting-room-title">اتاق استایل<span class="fitting-room__period">.</span></h2>
                         <p class="fitting-room__instruction">یک محصول را انتخاب کن تا پیش‌نمایش آن را ببینی.</p>
                     </div>
-                    <button class="fitting-room__close" type="button" data-fitting-close aria-label="بستن پیش‌نمایش" title="بستن پیش‌نمایش">×</button>
+                    <div class="fitting-room__header-actions">
+                        <button class="fitting-room__expand" type="button" data-fitting-expand aria-label="بزرگ‌نمایی اتاق پرو" title="بزرگ‌نمایی پیش‌نمایش" aria-expanded="false">↗</button>
+                        <button class="fitting-room__close" type="button" data-fitting-close aria-label="بستن پیش‌نمایش" title="بستن پیش‌نمایش">×</button>
+                    </div>
                 </div>
 
                 <div class="fitting-preview" data-fitting-preview>
@@ -61,6 +64,13 @@
                         </div>
                     </div>
                     <div class="fitting-preview__footer"><span>پیش‌نمایش شما</span><span data-fitting-canvas-count>00 / 05</span></div>
+                </div>
+
+                <div class="fitting-room__copy" data-fitting-copy aria-live="polite">
+                    <p class="fitting-room__selected-label">محصول انتخاب‌شده</p>
+                    <h3 data-fitting-selected-name>هنوز محصولی انتخاب نشده است</h3>
+                    <p data-fitting-selected-description>با انتخاب محصول، تصویر و مشخصات آن اینجا نمایش داده می‌شود.</p>
+                    <div class="fitting-room__price" data-fitting-selected-price>—</div>
                 </div>
 
                 <div class="fitting-picks">
