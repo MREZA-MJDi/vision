@@ -1,7 +1,8 @@
 @extends('layouts.store')
 
 @section('title', 'VISION — محصولات فروشگاه')
-@section('meta-description', 'Explore the latest VISION pieces, refine the edit, and preview your shortlist in the fitting room.')
+@section('meta-description', 'محصولات فروشگاه VISION را بر اساس دسته‌بندی، برند، قیمت و موجودی بررسی کنید.')
+@section('canonical', route('shop.index'))
 
 @section('content')
 @php
@@ -104,7 +105,7 @@
                             <span class="filter-option__count">{{ $products->total() }}</span>
                         </a>
                         @foreach($categories as $category)
-                            <a href="{{ request()->fullUrlWithQuery(['category_id' => $category->id]) }}" class="filter-option {{ (int) $selectedCategoryId === $category->id ? 'is-selected' : '' }}">
+                            <a href="{{ request()->fullUrlWithQuery(['category_id' => (int) $selectedCategoryId === $category->id ? null : $category->id]) }}" class="filter-option {{ (int) $selectedCategoryId === $category->id ? 'is-selected' : '' }}">
                                 <span class="filter-option__label"><span class="filter-radio"></span>{{ $category->name }}</span>
                                 <span class="filter-option__count">{{ $category->active_products_count }}</span>
                             </a>
@@ -116,8 +117,12 @@
                     <div class="filter-group">
                         <div class="filter-group__heading"><h3>برند</h3><span>{{ $brands->count() }}</span></div>
                         <div class="filter-options">
+                            <a href="{{ request()->fullUrlWithQuery(['brand_id' => null]) }}" class="filter-option {{ !$selectedBrandId ? 'is-selected' : '' }}">
+                                <span class="filter-option__label"><span class="filter-checkbox"></span>همهٔ برندها</span>
+                                <span class="filter-option__count">{{ $brands->sum('active_products_count') }}</span>
+                            </a>
                             @foreach($brands as $brand)
-                                <a href="{{ request()->fullUrlWithQuery(['brand_id' => $brand->id]) }}" class="filter-option {{ (int) $selectedBrandId === $brand->id ? 'is-selected' : '' }}">
+                                <a href="{{ request()->fullUrlWithQuery(['brand_id' => (int) $selectedBrandId === $brand->id ? null : $brand->id]) }}" class="filter-option {{ (int) $selectedBrandId === $brand->id ? 'is-selected' : '' }}">
                                     <span class="filter-option__label"><span class="filter-checkbox"></span>{{ $brand->name }}</span>
                                     <span class="filter-option__count">{{ $brand->active_products_count }}</span>
                                 </a>
