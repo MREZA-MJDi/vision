@@ -254,6 +254,21 @@ class CommerceAdminRenderAuditTest extends TestCase
 
         $this->assertDatabaseMissing('products', ['name' => 'Invalid Sale Product']);
 
+        $this->post(route('commerce-admin.products.store'), [
+            'name' => 'Invalid Variant Color Code',
+            'status' => 'active',
+            'variants' => [[
+                'sku' => 'INVALID-COLOR-CODE-001',
+                'color' => 'Black',
+                'color_code' => '#000000;display:none',
+                'price' => '10.00',
+                'stock' => '1',
+                'low_stock_threshold' => '1',
+                'is_active' => '1',
+            ]],
+        ])->assertSessionHasErrors('variants.0.color_code');
+        $this->assertDatabaseMissing('products', ['name' => 'Invalid Variant Color Code']);
+
         $this->post(route('commerce-admin.orders.store'), [
             'customer_name' => 'Invalid Order',
             'payment_method' => 'cash_on_delivery',
