@@ -4,8 +4,8 @@
 
 @section('content')
     <div class="ak-page-heading">
-        <div><div class="ak-breadcrumb">E-Commerce <span>/</span> Customer reviews</div><h1>Customer reviews</h1><p>نظرات ارسال‌شده را بررسی کنید. فقط نظرات تأییدشده در امتیاز محصول و فروشگاه محاسبه می‌شوند.</p></div>
-        <div class="ak-heading-actions"><span class="ak-date-chip">★ {{ number_format((float)$stats['average'], 2) }} average approved rating</span></div>
+        <div><div class="ak-breadcrumb">E-Commerce <span>/</span> نظرات مشتریان</div><h1>نظرات مشتریان</h1><p>نظرات ارسال‌شده را بررسی کنید. فقط نظرات تأییدشده در امتیاز محصول و فروشگاه محاسبه می‌شوند.</p></div>
+        <div class="ak-heading-actions"><span class="ak-date-chip">★ {{ number_format((float)$stats['average'], 2) }} میانگین امتیاز نظرات تأییدشده</span></div>
     </div>
 
     <section class="ak-stat-grid ak-stat-grid-three">
@@ -16,7 +16,7 @@
 
     <section class="ak-panel ak-table-panel">
         <div class="ak-panel-heading ak-panel-heading-wrap">
-            <div><h2>فهرست نظرات <span class="ak-count-chip">{{ $reviews->total() }}</span></h2><p>Real review rows from the database; no demo ratings are injected.</p></div>
+            <div><h2>فهرست نظرات <span class="ak-count-chip">{{ $reviews->total() }}</span></h2><p>نظرات واقعی دیتابیس؛ هیچ امتیاز نمایشی اضافه نمی‌شود.</p></div>
             <div class="ak-toolbar"><button class="ak-button ak-button-light ak-button-sm" type="button" data-toggle-filters>⚙ فیلترها</button><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.analytics') }}">گزارش تحلیلی ↗</a></div>
         </div>
 
@@ -41,18 +41,18 @@
                 <tbody>
                 @foreach($reviews as $review)
                     <tr>
-                        <td><div class="ak-customer-cell"><span class="ak-avatar ak-avatar-tiny">{{ strtoupper(substr($review->reviewer_name ?: $review->user?->name ?: 'G', 0, 1)) }}</span><span><strong>{{ $review->reviewer_name ?: $review->user?->name ?: 'Guest reviewer' }}</strong><small>{{ $review->reviewer_email ?: $review->user?->email ?: 'No email saved' }}</small></span></div></td>
-                        <td><a class="ak-table-primary" href="{{ $review->product ? route('commerce-admin.products.show', $review->product->getKey()) : '#' }}">{{ $review->product?->name ?: 'Deleted product' }}</a></td>
+                        <td><div class="ak-customer-cell"><span class="ak-avatar ak-avatar-tiny">{{ strtoupper(substr($review->reviewer_name ?: $review->user?->name ?: 'G', 0, 1)) }}</span><span><strong>{{ $review->reviewer_name ?: $review->user?->name ?: 'نظر‌دهندهٔ مهمان' }}</strong><small>{{ $review->reviewer_email ?: $review->user?->email ?: 'ایمیل ثبت نشده' }}</small></span></div></td>
+                        <td><a class="ak-table-primary" href="{{ $review->product ? route('commerce-admin.products.show', $review->product->getKey()) : '#' }}">{{ $review->product?->name ?: 'محصول حذف‌شده' }}</a></td>
                         <td><span class="ak-rating-stars" aria-label="{{ $review->rating }} out of 5">{{ str_repeat('★', max(0,min(5,(int)$review->rating))) }}<small>{{ $review->rating }}/5</small></span></td>
-                        <td class="ak-review-text"><strong>{{ $review->title ?: 'Customer review' }}</strong><p>{{ \Illuminate\Support\Str::limit($review->body ?: 'No written comment.', 130) }}</p></td>
+                        <td class="ak-review-text"><strong>{{ $review->title ?: 'Customer review' }}</strong><p>{{ \Illuminate\Support\Str::limit($review->body ?: 'نظر متنی ثبت نشده است.', 130) }}</p></td>
                         <td>{{ $review->created_at?->format('M d, Y') ?: '—' }}</td>
-                        <td><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($review->status) }}">{{ config('commerce-admin.status_labels.' . $review->status, \Illuminate\Support\Str::headline($review->status)) }}</span></td>
-                        <td><form method="POST" action="{{ route('commerce-admin.reviews.status', [$review->getKey(), 'status'=>$status]) }}" class="ak-review-moderation">@csrf @method('PATCH')<select name="status" aria-label="نظر status">@foreach($reviewStatuses as $reviewStatus)<option value="{{ $reviewStatus }}" @selected($review->status === $reviewStatus)>{{ \Illuminate\Support\Str::headline($reviewStatus) }}</option>@endforeach</select><button class="ak-button ak-button-dark ak-button-sm" type="submit">ذخیره</button></form></td>
+                        <td><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($review->status) }}">{{ config('commerce-admin.status_labels.' . $review->status, config('commerce-admin.status_labels.' . $review->status, \Illuminate\Support\Str::headline($review->status))) }}</span></td>
+                        <td><form method="POST" action="{{ route('commerce-admin.reviews.status', [$review->getKey(), 'status'=>$status]) }}" class="ak-review-moderation">@csrf @method('PATCH')<select name="status" aria-label="نظر status">@foreach($reviewوضعیتes as $reviewوضعیت)<option value="{{ $reviewوضعیت }}" @selected($review->status === $reviewوضعیت)>{{ \Illuminate\Support\Str::headline($reviewوضعیت) }}</option>@endforeach</select><button class="ak-button ak-button-dark ak-button-sm" type="submit">ذخیره</button></form></td>
                     </tr>
                 @endforeach
                 </tbody>
             </table></div>
-            <div class="ak-pagination-wrap"><span>Showing {{ $reviews->firstItem() }}–{{ $reviews->lastItem() }} of {{ $reviews->total() }} reviews</span>{{ $reviews->links('commerce-admin::partials.pagination') }}</div>
+            <div class="ak-pagination-wrap"><span>نمایش {{ $reviews->firstItem() }}–{{ $reviews->lastItem() }} of {{ $reviews->total() }} reviews</span>{{ $reviews->links('commerce-admin::partials.pagination') }}</div>
         @endif
     </section>
 @endsection
