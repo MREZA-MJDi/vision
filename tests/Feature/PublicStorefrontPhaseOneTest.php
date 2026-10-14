@@ -24,7 +24,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('VISION — فروشگاه پوشاک')
             ->assertSee('property="og:site_name"', false)
             ->assertSee('data-tiamir-intro', false)
-            ->assertSee('data-tiamir-replay', false)
+            ->assertDontSee('data-tiamir-replay', false)
             ->assertSee('data-tiamir-hint', false)
             ->assertSee('data-first-duration="3200"', false)
             ->assertSee('data-return-duration="1900"', false)
