@@ -28,8 +28,8 @@
 
     <div class="ak-page-heading">
         <div>
-            <div class="ak-breadcrumb">داشبورد <span>/</span> {{ request('panel') === 'payments' ? 'Payment Dashboard' : 'E-Commerce' }}</div>
-            <h1>{{ request('panel') === 'payments' ? 'Payment Dashboard' : 'E-Commerce Dashboard' }}</h1>
+            <div class="ak-breadcrumb">داشبورد <span>/</span> {{ request('panel') === 'payments' ? 'داشبورد پرداخت' : 'فروشگاه' }}</div>
+            <h1>{{ request('panel') === 'payments' ? 'داشبورد پرداخت' : 'داشبورد فروشگاه' }}</h1>
             <p>نمای زندهٔ درآمد، مشتریان بازگشتی، پرداخت‌ها و نظرات محصولات.</p>
         </div>
         <div class="ak-heading-actions">
@@ -150,13 +150,13 @@
     <section class="ak-content-grid ak-content-grid-main ak-analytics-details">
         <article class="ak-panel">
             <div class="ak-panel-heading"><div><h2>محصولات پرفروش</h2><p>محصولات پرفروش بر اساس تعداد فروش</p></div><a class="ak-text-link" href="{{ route('commerce-admin.products.index') }}">فهرست محصولات ↗</a></div>
-            @if ($topProducts->isEmpty())
+            @if ($topمحصولات->isEmpty())
                 <div class="ak-compact-empty">پس از ثبت سفارش دارای قلم کالا، آمار فروش محصولات نمایش داده می‌شود.</div>
             @else
                 <div class="ak-table-scroll"><table class="ak-table">
                     <thead><tr><th>محصول</th><th>تعداد فروش</th><th>مجموع فروش</th></tr></thead>
                     <tbody>
-                    @foreach ($topProducts as $item)
+                    @foreach ($topمحصولات as $item)
                         <tr><td class="ak-table-primary">{{ $item->product_name }}</td><td>{{ number_format((int) $item->units_sold) }}</td><td>{{ $currency }}{{ number_format((float) $item->gross_sales, 2) }}</td></tr>
                     @endforeach
                     </tbody>
@@ -166,7 +166,7 @@
 
         <article class="ak-panel">
             <div class="ak-panel-heading"><div><h2>پایش موجودی</h2><p>تنوع‌های فعال با موجودی کمتر از حد هشدار یا برابر آن</p></div><a class="ak-text-link" href="{{ route('commerce-admin.products.index', ['status' => 'low_stock']) }}">بررسی موجودی ↗</a></div>
-            @forelse ($lowStock as $variant)
+            @forelse ($lowموجودی as $variant)
                 <div class="ak-stock-row">
                     <div><strong>{{ $variant->product?->name ?: 'Product variant' }}</strong><small>{{ $variant->sku ?: 'No SKU' }}</small></div>
                     <span class="{{ (int) $variant->stock <= 0 ? 'is-out' : 'is-low' }}">{{ number_format((int) $variant->stock) }} left</span>
