@@ -115,7 +115,7 @@ class CustomerCommerceFlowTest extends TestCase
         $this->get(route('checkout.complete', ['token' => $order->public_token]))
             ->assertOk()
             ->assertSee($order->order_number)
-            ->assertSee('16.00');
+            ->assertSee('16 تومان');
 
         // A duplicate form submission cannot create another order after the
         // cart has been consumed, nor can it reserve the same stock twice.
