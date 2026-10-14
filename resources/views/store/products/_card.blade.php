@@ -1,6 +1,6 @@
 @php
     $variant = $product->primaryActiveVariant;
-    $image = $product->primaryGalleryMedia?->url;
+    $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
     $price = $variant?->effective_price;
     $isSale = $variant?->is_on_sale;
 @endphp
@@ -19,8 +19,8 @@
         <div><span>{{ $product->brand?->name ?? $product->category?->name ?? 'VISION STUDIO' }}</span><h3><a href="{{ route('products.show', ['product' => $product->slug]) }}">{{ $product->name }}</a></h3></div>
         <div class="product-price">
             @if($price !== null)
-                @if($isSale)<del>{{ number_format((float) $variant->price, 0) }}</del>@endif
-                <strong>{{ number_format((float) $price, 0) }} <small>IRR</small></strong>
+                @if($isSale)<del>@money($variant->price)</del>@endif
+                <strong>@money($price)</strong>
             @else
                 <strong>DISCOVER</strong>
             @endif
