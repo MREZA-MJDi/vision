@@ -17,9 +17,15 @@ class ProductDemoSeeder extends Seeder
     {
         $this->call([CategoryDemoSeeder::class, BrandDemoSeeder::class]);
 
-        $apparel = Category::query()->where('slug', 'demo-apparel')->firstOrFail();
-        $accessories = Category::query()->where('slug', 'demo-accessories')->firstOrFail();
-        $brand = Brand::query()->where('slug', 'vision-demo')->firstOrFail();
+        $apparel = Category::query()->where('slug', 'demo-apparel')->first();
+        $accessories = Category::query()->where('slug', 'demo-accessories')->first();
+        $brand = Brand::query()->where('slug', 'vision-demo')->first();
+
+        if (! $apparel || ! $accessories || ! $brand) {
+            $this->command?->warn('Demo products were skipped because a demo category or brand is archived or unavailable. Existing records were left unchanged.');
+
+            return;
+        }
 
         $products = [
             [
@@ -54,30 +60,43 @@ class ProductDemoSeeder extends Seeder
         DB::transaction(function () use ($products, $brand): void {
             foreach ($products as $definition) {
                 $product = Product::withTrashed()->firstOrNew(['slug' => $definition['slug']]);
-                if ($product->exists && $product->trashed()) {
-                    $product->restore();
+                if ($product->exists) {
+                    // Respect both administrator edits and soft-deletes. Seeding is
+                    // an initializer, not a reset button for catalog data.
+                    if ($product->trashed()) {
+                        continue;
+                    }
+                } else {
+                    $product->fill([
+                        'name' => $definition['name'],
+                        'slug' => $definition['slug'],
+                        'category_id' => $definition['category_id'],
+                        'brand_id' => $brand->getKey(),
+                        'short_description' => $definition['short_description'],
+                        'description' => $definition['description'],
+                        'meta_title' => $definition['name'] . ' | VISION',
+                        'meta_description' => $definition['short_description'],
+                        'is_active' => true,
+                        'is_featured' => $definition['is_featured'],
+                        'is_hero' => false,
+                        'is_taxable' => false,
+                        'sort_order' => $definition['sort_order'],
+                    ])->save();
                 }
-
-                $product->fill([
-                    'name' => $definition['name'],
-                    'slug' => $definition['slug'],
-                    'category_id' => $definition['category_id'],
-                    'brand_id' => $brand->getKey(),
-                    'short_description' => $definition['short_description'],
-                    'description' => $definition['description'],
-                    'meta_title' => $definition['name'] . ' | VISION',
-                    'meta_description' => $definition['short_description'],
-                    'is_active' => true,
-                    'is_featured' => $definition['is_featured'],
-                    'is_hero' => false,
-                    'is_taxable' => false,
-                    'sort_order' => $definition['sort_order'],
-                ])->save();
 
                 foreach ($definition['variants'] as $sortOrder => $variantDefinition) {
                     $variant = ProductVariant::withTrashed()->firstOrNew(['sku' => $variantDefinition['sku']]);
-                    if ($variant->exists && $variant->trashed()) {
-                        $variant->restore();
+                    if ($variant->exists) {
+                        if ($variant->trashed()) {
+                            continue;
+                        }
+                        if ((int) $variant->product_id !== (int) $product->getKey()) {
+                            $this->command?->warn("Demo SKU [{$variant->sku}] belongs to another product; it was left unchanged.");
+                            continue;
+                        }
+
+                        // Keep price, stock, color, state and image deletions made in Admin.
+                        continue;
                     }
 
                     $variant->fill([
@@ -102,16 +121,13 @@ class ProductDemoSeeder extends Seeder
                         continue;
                     }
 
-                    $media = Media::query()->firstOrNew([
+                    $media = Media::query()->firstOrCreate([
                         'disk' => 'public',
                         'path' => $relativePath,
-                    ]);
-                    $media->fill([
+                    ], [
                         'mediable_type' => $variant->getMorphClass(),
                         'mediable_id' => $variant->getKey(),
                         'collection' => 'gallery',
-                        'disk' => 'public',
-                        'path' => $relativePath,
                         'original_name' => $variantDefinition['image'],
                         'mime_type' => 'image/svg+xml',
                         'size' => Storage::disk('public')->size($relativePath),
@@ -120,7 +136,7 @@ class ProductDemoSeeder extends Seeder
                         'alt_text' => $product->name . ' — ' . $variantDefinition['color'],
                         'sort_order' => 0,
                         'uploaded_by' => null,
-                    ])->save();
+                    ]);
                 }
             }
         });
