@@ -4,12 +4,30 @@
 
 @section('content')
     @php
-        $heroAsset = $model->galleryMedia->first();
         $primaryVariant = $model->variants->firstWhere('is_active', true) ?: $model->variants->first();
         $price = $primaryVariant?->sale_price ?? $primaryVariant?->price ?? 0;
         $colors = $model->variants->pluck('color')->filter()->unique()->values();
         $sizes = $model->variants->pluck('size')->filter()->unique()->values();
         $attributes = collect($model->attributes ?? [])->filter(fn ($value) => is_scalar($value) && trim((string) $value) !== '');
+
+        $primaryImageVariant = $model->variants->first(
+            fn ($variant) => $variant->is_active && (int) $variant->stock > 0 && $variant->primaryGalleryMedia?->url
+        ) ?: $model->variants->first(
+            fn ($variant) => $variant->is_active && $variant->primaryGalleryMedia?->url
+        ) ?: $model->variants->first(fn ($variant) => $variant->primaryGalleryMedia?->url);
+
+        // The detail gallery includes both product-level assets and per-variant
+        // assets, so products with no generic photo still render real imagery.
+        $variantImageAssets = $model->variants
+            ->map(fn ($variant) => $variant->primaryGalleryMedia)
+            ->filter(fn ($asset) => $asset && $asset->url)
+            ->values();
+        $galleryAssets = $model->galleryMedia
+            ->concat($variantImageAssets)
+            ->filter(fn ($asset) => $asset && $asset->url)
+            ->unique('id')
+            ->values();
+        $heroAsset = $model->galleryMedia->first() ?: $primaryImageVariant?->primaryGalleryMedia ?: $galleryAssets->first();
     @endphp
 
     <div class="ak-page-heading">
@@ -37,19 +55,17 @@
                     <span class="ak-product-large-placeholder" aria-label="تصویر محصول موجود نیست">▦<small>تصویری برای محصول بارگذاری نشده است</small></span>
                 @endif
             </div>
-            @if($model->galleryMedia->count() > 1)
+            @if($galleryAssets->count() > 1)
                 <div class="ak-gallery-thumbnails">
-                    @foreach($model->galleryMedia as $asset)
-                        @if($asset->url)
-                            <button type="button" class="ak-gallery-thumb {{ $loop->first ? 'is-active' : '' }}" data-gallery-image="{{ $asset->url }}" data-gallery-alt="{{ $asset->alt_text ?: $model->name }}" aria-label="Show image {{ $loop->iteration }}">
-                                <img src="{{ $asset->url }}" alt="">
-                            </button>
-                        @endif
+                    @foreach($galleryAssets as $asset)
+                        <button type="button" class="ak-gallery-thumb {{ $heroAsset && (int) $heroAsset->getKey() === (int) $asset->getKey() ? 'is-active' : '' }}" data-gallery-image="{{ $asset->url }}" data-gallery-alt="{{ $asset->alt_text ?: $model->name }}" aria-label="نمایش تصویر {{ $loop->iteration }}">
+                            <img src="{{ $asset->url }}" alt="" loading="lazy" decoding="async">
+                        </button>
                     @endforeach
                 </div>
             @endif
             <div class="ak-gallery-caption">
-                <span>{{ $model->galleryMedia->count() }} product images</span>
+                <span>{{ $galleryAssets->count() }} تصویر محصول و تنوع</span>
                 <span class="ak-status-pill {{ $model->is_active ? 'status-active' : 'status-draft' }}">{{ $model->is_active ? 'فعال' : 'پیش‌نویس' }}</span>
             </div>
         </section>
@@ -129,7 +145,7 @@
                 @else
                     <div class="ak-table-scroll">
                         <table class="ak-table">
-                            <thead><tr><th>تنوع</th><th>شناسهٔ SKU</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
+                            <thead><tr><th>تنوع</th><th>تصویر تنوع</th><th>شناسهٔ SKU</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
                             <tbody>
                             @foreach($model->variants as $variant)
                                 <tr>
@@ -138,6 +154,13 @@
                                             @if($variant->color_code)<span class="ak-variant-color-dot" style="--product-color: {{ $variant->color_code }}"></span>@endif
                                             <span>{{ $variant->display_name ?: collect([$variant->color, $variant->size])->filter()->implode(' / ') ?: 'Default variant' }}</span>
                                         </div>
+                                    </td>
+                                    <td>
+                                        @if($variant->primaryGalleryMedia?->url)
+                                            <img class="ak-variant-table-thumb" src="{{ $variant->primaryGalleryMedia->url }}" alt="{{ $variant->primaryGalleryMedia->alt_text ?: $model->name . ' — ' . $variant->color }}" loading="lazy" decoding="async">
+                                        @else
+                                            <span class="ak-variant-table-empty">بدون تصویر</span>
+                                        @endif
                                     </td>
                                     <td><span class="ak-mono">{{ $variant->sku ?: '—' }}</span></td>
                                     <td><strong>@money(($variant->sale_price ?? $variant->price ?? 0))</strong></td>
