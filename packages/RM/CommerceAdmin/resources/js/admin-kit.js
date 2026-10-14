@@ -140,23 +140,25 @@
     let cropIndex = 0;
     let cropObjectUrl = null;
     let cropRect = null;
-    let previewUrls = [];
+    const previewUrlsByBox = new WeakMap();
 
-    const revokePreviewUrls = () => {
-        previewUrls.forEach((url) => URL.revokeObjectURL(url));
-        previewUrls = [];
+    const revokePreviewUrls = (box = activePreviewBox) => {
+        if (!box) return;
+        (previewUrlsByBox.get(box) || []).forEach((url) => URL.revokeObjectURL(url));
+        previewUrlsByBox.delete(box);
     };
     const selectImageTarget = (input) => {
         activeImageInput = input || imageInput;
         activePreviewBox = activeImageInput?.matches('[data-variant-image-input]')
             ? activeImageInput.closest('[data-variant-row]')?.querySelector('[data-variant-image-preview]')
             : previewBox;
-        revokePreviewUrls();
     };
     const renderImages = (files) => {
         if (!activePreviewBox) return;
-        revokePreviewUrls();
-        activePreviewBox.replaceChildren();
+        const box = activePreviewBox;
+        revokePreviewUrls(box);
+        box.replaceChildren();
+        const localUrls = [];
         const isVariantUpload = activeImageInput?.matches('[data-variant-image-input]');
         const limit = isVariantUpload ? 4 : 8;
         Array.from(files || []).slice(0, limit).forEach((file) => {
@@ -167,7 +169,7 @@
             image.alt = file.name;
             image.loading = 'lazy';
             image.src = URL.createObjectURL(file);
-            previewUrls.push(image.src);
+            localUrls.push(image.src);
             image.addEventListener('error', () => {
                 image.alt = 'پیش‌نمایش این تصویر در مرورگر ممکن نیست';
                 tile.classList.add('is-preview-error');
@@ -175,8 +177,9 @@
             const name = document.createElement('small');
             name.textContent = file.name;
             tile.append(image, name);
-            activePreviewBox.appendChild(tile);
+            box.appendChild(tile);
         });
+        previewUrlsByBox.set(box, localUrls);
     };
     const currentCropRatio = () => {
         if (cropRatio?.value === '1:1') return 1;
