@@ -65,7 +65,7 @@ class SaveProductRequest extends FormRequest
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.size' => ['nullable', 'string', 'max:50'],
             'variants.*.color' => ['nullable', 'string', 'max:80'],
-            'variants.*.color_code' => ['nullable', 'string', 'max:20'],
+            'variants.*.color_code' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'variants.*.price' => ['required', 'numeric', 'min:0'],
             'variants.*.sale_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.stock' => ['required', 'integer', 'min:0'],
@@ -130,6 +130,7 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock.min' => 'موجودی نمی‌تواند منفی باشد.',
             'images.*.image' => 'فایل انتخاب‌شده باید تصویر باشد.',
             'images.*.max' => 'اندازهٔ هر تصویر حداکثر ۴ مگابایت است.',
+            'variants.*.color_code.regex' => 'کد رنگ باید مقدار HEX معتبر مانند #000000 باشد.',
             'variants.*.image.image' => 'تصویر تنوع باید یک فایل تصویری معتبر باشد.',
             'variants.*.image.max' => 'اندازهٔ تصویر هر تنوع حداکثر ۴ مگابایت است.',
         ];
