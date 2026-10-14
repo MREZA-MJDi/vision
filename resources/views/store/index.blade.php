@@ -59,7 +59,7 @@
                             <path d="M70 57c-11 6-19 17-22 34l-9 48 19 5 10-39 2 48-8 60h22l6-50 6 50h22l-8-60 2-48 10 39 19-5-9-48c-3-17-11-28-22-34l-13-5H83z"></path>
                             <path d="M78 56 90 76l12-20M70 59l20 17 20-17M70 111l20 24 20-24" class="fitting-model__detail"></path>
                         </svg>
-                        <img class="fitting-preview__image" alt="Selected piece preview" data-fitting-image hidden>
+                        <img class="fitting-preview__image" alt="پیش‌نمایش محصول انتخاب‌شده" data-fitting-image hidden>
                         <div class="fitting-preview__placeholder" data-fitting-placeholder>
                             <span class="fitting-preview__placeholder-mark">V</span>
                             <span>برای شروع، یک محصول<br>انتخاب کن</span>
