@@ -1,5 +1,5 @@
 @php
-    $variant = $product->primaryActiveVariant;
+    $variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant;
     $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
     $price = $variant?->effective_price;
     $isSale = $variant?->is_on_sale;
