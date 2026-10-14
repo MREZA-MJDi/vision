@@ -41,7 +41,7 @@
         <article class="ak-panel ak-analytics-revenue-panel">
             <div class="ak-panel-heading">
                 <div><h2>درآمد کل</h2><p>مجموع سفارش‌های پرداخت‌شده به تفکیک ماه</p></div>
-                <span class="ak-period-label">{{ config('commerce-admin.currency', 'USD') }}</span>
+                <span class="ak-period-label">{{ config('commerce-admin.currency_symbol', 'تومان') }}</span>
             </div>
             <div class="ak-analytics-main-value">
                 <strong>@money($revenue)</strong>
