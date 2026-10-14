@@ -164,7 +164,7 @@
                 <div class="ak-detail-list">
                     <span>سفارش ID<strong>#{{ $model->getKey() }}</strong></span>
                     <span>ثبت شده<strong>@jalali($model->placed_at ?: $model->created_at, 'j F Y')</strong></span>
-                    <span>به‌روزرسانی<strong>{{ $model->updated_at?->diffForHumans() ?: '—' }}</strong></span>
+                    <span>به‌روزرسانی<strong>{{ $model->updated_at?->locale('fa')->diffForHumans() ?: '—' }}</strong></span>
                     <span>کد رهگیری<strong>{{ $model->tracking_code ?: 'تخصیص داده نشده' }}</strong></span>
                 </div>
             </section>

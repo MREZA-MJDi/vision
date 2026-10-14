@@ -10,7 +10,7 @@
 
     <section class="ak-stat-grid ak-stat-grid-four">
         <article class="ak-stat-card">
-            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-green">$</span><span class="ak-stat-kicker">مجموع فروش</span></div>
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-green">ت</span><span class="ak-stat-kicker">مجموع فروش</span></div>
             <div class="ak-stat-value">@money($stats['sales'])</div>
             <div class="ak-stat-footer"><span class="ak-stat-note">اقلام سفارش‌های پرداخت‌شده و لغونشده</span><span class="ak-mini-badge">به‌روز</span></div>
         </article>
@@ -27,7 +27,7 @@
         <article class="ak-stat-card">
             <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-red">↘</span><span class="ak-stat-kicker">تخفیف‌ها</span></div>
             <div class="ak-stat-value">@money($stats['discount_total'])</div>
-            <div class="ak-stat-footer"><span class="ak-stat-note">تخفیف اعمال‌شده در سفارش‌های نهایی‌نشده</span><span class="ak-mini-badge">{{ number_format((int) $stats['discounted']) }} تنوع تخفیف‌دار</span></div>
+            <div class="ak-stat-footer"><span class="ak-stat-note">تخفیف سفارش‌های پرداخت‌شده، به‌جز لغو یا مرجوعی</span><span class="ak-mini-badge">{{ number_format((int) $stats['discounted']) }} تنوع تخفیف‌دار</span></div>
         </article>
     </section>
 
@@ -41,7 +41,7 @@
             </div>
         </div>
         <form class="ak-filter-bar {{ $status !== 'all' || $categoryId || $search !== '' ? 'is-visible' : '' }}" method="GET" action="{{ route('commerce-admin.products.index') }}" data-filter-panel>
-            <label class="ak-inline-field"><span>جست‌وجو</span><input type="search" name="q" value="{{ $search }}" placeholder="نام محصول، SKU یا بارکد"></label>
+            <label class="ak-inline-field"><span>جست‌وجو</span><input type="search" name="q" value="{{ $search }}" placeholder="نام محصول یا شناسهٔ SKU"></label>
             <label class="ak-inline-field"><span>دسته‌بندی</span><select name="category_id"><option value="">همهٔ دسته‌بندی‌ها</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected((string)$categoryId === (string)$category->id)>{{ $category->name }}</option>@endforeach</select></label>
             <label class="ak-inline-field"><span>وضعیت</span><select name="status"><option value="all" @selected($status === 'all')>همهٔ محصولات</option><option value="active" @selected($status === 'active')>فعال</option><option value="draft" @selected(in_array($status, ['draft','inactive'], true))>پیش‌نویس / غیرفعال</option><option value="sale" @selected($status === 'sale')>تخفیف‌دار</option><option value="low_stock" @selected($status === 'low_stock')>موجودی کم</option></select></label>
             <div class="ak-filter-actions"><button class="ak-button ak-button-dark ak-button-sm" type="submit">اعمال فیلترها</button><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.products.index') }}">پاک‌کردن</a></div>
