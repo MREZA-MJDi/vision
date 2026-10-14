@@ -77,8 +77,22 @@ class StorefrontController extends Controller
         $search = is_string($request->input('q')) ? mb_substr(trim($request->input('q')), 0, 120) : '';
         $categoryId = filter_var($request->input('category_id'), FILTER_VALIDATE_INT) ?: null;
         $brandId = filter_var($request->input('brand_id'), FILTER_VALIDATE_INT) ?: null;
-        $minPrice = is_numeric($request->input('price_min')) ? max(0, (float) $request->input('price_min')) : null;
-        $maxPrice = is_numeric($request->input('price_max')) ? max(0, (float) $request->input('price_max')) : null;
+        $minPriceInput = $request->input('price_min');
+        $maxPriceInput = $request->input('price_max');
+        $minPrice = is_scalar($minPriceInput)
+            ? filter_var($minPriceInput, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])
+            : false;
+        $maxPrice = is_scalar($maxPriceInput)
+            ? filter_var($maxPriceInput, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])
+            : false;
+        $minPrice = $minPrice === false ? null : $minPrice;
+        $maxPrice = $maxPrice === false ? null : $maxPrice;
+
+        // The inputs represent whole currency units. If the range is inverted,
+        // normalize it instead of returning a confusing empty result set.
+        if ($minPrice !== null && $maxPrice !== null && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
         $sort = in_array($request->input('sort'), ['newest', 'featured', 'price_asc', 'price_desc'], true)
             ? $request->input('sort')
             : 'newest';
