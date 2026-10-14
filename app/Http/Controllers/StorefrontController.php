@@ -53,6 +53,7 @@ class StorefrontController extends Controller
                 'category',
                 'brand',
                 'primaryGalleryMedia',
+                'primaryAvailableVariant.primaryGalleryMedia',
                 'primaryActiveVariant.primaryGalleryMedia',
             ]);
 
@@ -74,14 +75,14 @@ class StorefrontController extends Controller
 
         // Keep sale/price filters aligned with the same primary variant shown on each card.
         if ($saleOnly) {
-            $productsQuery->whereHas('primaryActiveVariant', fn (Builder $variantQuery) => $variantQuery
+            $productsQuery->whereHas('primaryAvailableVariant', fn (Builder $variantQuery) => $variantQuery
                 ->whereNotNull('sale_price')
                 ->where('sale_price', '>=', 0)
                 ->whereColumn('sale_price', '<', 'price'));
         }
 
         if ($minPrice !== null || $maxPrice !== null) {
-            $productsQuery->whereHas('primaryActiveVariant', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
+            $productsQuery->whereHas('primaryAvailableVariant', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
                 if ($minPrice !== null) {
                     $variantQuery->whereRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END >= ?', [$minPrice]);
                 }
@@ -102,6 +103,7 @@ class StorefrontController extends Controller
         $products = $productsQuery->paginate(12)->withQueryString();
         $initialProduct = $products->first();
         $initialImage = $initialProduct?->primaryGalleryMedia?->url
+            ?? $initialProduct?->primaryAvailableVariant?->primaryGalleryMedia?->url
             ?? $initialProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
 
         $heroProduct = null;
@@ -110,7 +112,7 @@ class StorefrontController extends Controller
                 ->active()
                 ->where('is_hero', true)
                 ->whereHas('activeVariants')
-                ->with(['category', 'brand', 'primaryGalleryMedia', 'primaryActiveVariant.primaryGalleryMedia'])
+                ->with(['category', 'brand', 'primaryGalleryMedia', 'primaryAvailableVariant.primaryGalleryMedia', 'primaryActiveVariant.primaryGalleryMedia'])
                 ->orderByDesc('updated_at')
                 ->orderByDesc('id')
                 ->first();
