@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductReview;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Database\Events\QueryExecuted;
@@ -146,6 +147,86 @@ class AdminDashboardTest extends TestCase
             'product_id' => $product->getKey(),
             'stock' => 1,
         ]);
+    }
+
+    public function test_analytics_optimized_aggregates_keep_returning_customer_and_review_metrics_correct(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Analytics Admin',
+            'email' => 'analytics-admin@example.test',
+            'password' => 'admin-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $customer = User::query()->create([
+            'name' => 'Repeat Customer',
+            'email' => 'repeat-customer@example.test',
+            'password' => 'customer-password-123',
+        ]);
+
+        $orders = [
+            ['number' => 'ANALYTICS-USER-01', 'user_id' => $customer->getKey(), 'email' => $customer->email],
+            ['number' => 'ANALYTICS-USER-02', 'user_id' => $customer->getKey(), 'email' => $customer->email],
+            ['number' => 'ANALYTICS-GUEST-01', 'user_id' => null, 'email' => 'Repeat@Example.test'],
+            ['number' => 'ANALYTICS-GUEST-02', 'user_id' => null, 'email' => 'repeat@example.test'],
+            ['number' => 'ANALYTICS-GUEST-03', 'user_id' => null, 'email' => 'single@example.test'],
+        ];
+
+        foreach ($orders as $orderData) {
+            Order::query()->create([
+                'user_id' => $orderData['user_id'],
+                'order_number' => $orderData['number'],
+                'customer_name' => $orderData['user_id'] ? $customer->name : 'Guest Customer',
+                'customer_phone' => '555-0101',
+                'customer_email' => $orderData['email'],
+                'shipping_address' => 'Analytics test address',
+                'status' => 'delivered',
+                'payment_status' => 'paid',
+                'payment_method' => 'manual',
+                'subtotal' => 10,
+                'discount' => 0,
+                'shipping_cost' => 0,
+                'tax' => 0,
+                'total' => 10,
+                'placed_at' => now(),
+            ]);
+        }
+
+        $product = Product::query()->create([
+            'name' => 'Analytics Review Product',
+            'slug' => 'analytics-review-product',
+            'is_active' => true,
+        ]);
+
+        ProductReview::query()->create([
+            'product_id' => $product->getKey(),
+            'reviewer_name' => 'Reviewer One',
+            'reviewer_email' => 'reviewer-one@example.test',
+            'rating' => 5,
+            'status' => 'approved',
+        ]);
+        ProductReview::query()->create([
+            'product_id' => $product->getKey(),
+            'reviewer_name' => 'Reviewer Two',
+            'reviewer_email' => 'reviewer-two@example.test',
+            'rating' => 3,
+            'status' => 'approved',
+        ]);
+        ProductReview::query()->create([
+            'product_id' => $product->getKey(),
+            'reviewer_name' => 'Reviewer Pending',
+            'reviewer_email' => 'reviewer-pending@example.test',
+            'rating' => 2,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.analytics'))
+            ->assertOk()
+            ->assertSee('66.7%')
+            ->assertSee('4.0')
+            ->assertSee('2 نظر تأییدشده')
+            ->assertSee('1 نظر در انتظار بررسی');
     }
 
     public function test_dashboard_and_analytics_render_empty_states_without_fabricated_metrics(): void
