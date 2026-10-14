@@ -24,7 +24,7 @@
                 @endif
             </div>
             <div class="home-hero__meta">
-                <span><strong>{{ number_format($categories->count()) }}</strong> دسته‌بندی فعال</span>
+                <span><strong>{{ number_format($categories->count()) }}</strong> دسته‌بندی منتخب</span>
                 <span><strong>{{ number_format($featuredProducts->count() + ($heroProduct ? 1 : 0)) }}</strong> محصول قابل مشاهده</span>
             </div>
         </div>
@@ -49,7 +49,7 @@
                     @endif
                 </div>
             @else
-                <div class="home-hero__placeholder" aria-hidden="true"><span>V.</span><small>VISION / SELECTED</small></div>
+                <div class="home-hero__placeholder" aria-hidden="true"><span>V.</span><small>مجموعهٔ منتخب VISION</small></div>
                 <div class="home-hero__product-label"><span><small>کالکشن VISION</small><strong>انتخاب‌های تازه در راه‌اند</strong></span></div>
             @endif
         </div>
@@ -126,7 +126,7 @@
     </section>
 
     <section class="home-shop-cta" aria-labelledby="home-shop-cta-title">
-        <div><p class="store-eyebrow">VISION / COLLECTION</p><h2 id="home-shop-cta-title">انتخاب بعدی‌ات را پیدا کن.</h2><p>محصولات را بر اساس دسته‌بندی، برند، قیمت و موجودی بررسی کن.</p></div>
+        <div><p class="store-eyebrow">مجموعهٔ VISION</p><h2 id="home-shop-cta-title">انتخاب بعدی‌ات را پیدا کن.</h2><p>محصولات را بر اساس دسته‌بندی، برند، قیمت و موجودی بررسی کن.</p></div>
         <a href="{{ route('shop.index') }}">شروع خرید <span aria-hidden="true">←</span></a>
     </section>
 </main>
