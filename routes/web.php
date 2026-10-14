@@ -69,12 +69,4 @@ Route::get('/account/orders/{order}', [CustomerAccountController::class, 'order'
     ->whereNumber('order')
     ->name('account.orders.show');
 
-/*
-|--------------------------------------------------------------------------
-| Reusable Commerce Admin Kit
-|--------------------------------------------------------------------------
-|
-| The package service provider registers /admin routes behind its own
-| administrator middleware. Do not duplicate or bypass those routes here.
-|
-*/
+require __DIR__ . '/commerce-admin.php';
