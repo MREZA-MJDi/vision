@@ -97,6 +97,9 @@
                                     @if($variantImage)
                                         <label class="ak-variant-remove-image"><input type="checkbox" name="variants[{{ $index }}][remove_image]" value="1" data-remove-variant-image><span>حذف تصویر اختصاصی و استفاده از تصویر اصلی محصول</span></label>
                                     @endif
+                                    @if($variantImage && data_get($variant, 'id'))
+                                        <button class="ak-button ak-button-light ak-button-sm" type="submit" form="delete-variant-media-{{ data_get($variant, 'id') }}-{{ $product?->getKey() }}" aria-label="حذف تصویر اختصاصی">حذف تصویر</button>
+                                    @endif
                                 </div>
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>
@@ -165,6 +168,11 @@
     @if($product)
         @foreach($product->galleryMedia as $asset)
             <form id="delete-product-media-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.media.destroy', [$product->getKey(), $asset->getKey()]) }}" data-confirm="این تصویر از محصول حذف شود؟">@csrf @method('DELETE')</form>
+        @endforeach
+        @foreach($product->variants as $existingVariant)
+            @foreach($existingVariant->galleryMedia as $asset)
+                <form id="delete-variant-media-{{ $existingVariant->getKey() }}-{{ $product->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.variants.media.destroy', [$product->getKey(), $existingVariant->getKey(), $asset->getKey()]) }}" data-confirm="تصویر اختصاصی این تنوع حذف شود؟">@csrf @method('DELETE')</form>
+            @endforeach
         @endforeach
     @endif
 @endsection
