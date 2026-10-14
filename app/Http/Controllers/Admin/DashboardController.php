@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
-use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -95,7 +94,6 @@ class DashboardController
     public function analytics(): View
     {
         $orderModel = $this->model('order', Order::class);
-        $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
         $paymentModel = $this->model('payment', Payment::class);
@@ -104,9 +102,7 @@ class DashboardController
         $orders = $orderModel::query();
         $paid = (clone $orders)->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']);
         $revenue = (clone $paid)->sum('total');
-        $allTimeOrders = (clone $orders)->count();
         $paidCount = (clone $paid)->count();
-        $cancelledCount = (clone $orders)->whereIn('status', ['cancelled', 'returned'])->count();
         $series = $this->revenueSeries($orderModel);
 
         $byCity = $orderModel::query()
@@ -133,8 +129,6 @@ class DashboardController
             ->where('is_active', true)->whereColumn('stock', '<=', 'low_stock_threshold')
             ->orderBy('stock')->limit(8)->get();
 
-        $activeProducts = $productModel::query()->where('is_active', true)->count();
-
         $approvedReviews = $reviewModel::query()->where('status', 'approved');
         $reviewsCount = (clone $approvedReviews)->count();
         $reviewAverage = round((float) (clone $approvedReviews)->avg('rating'), 2);
@@ -144,9 +138,6 @@ class DashboardController
             ->pluck('aggregate', 'rating')
             ->all();
         $pendingReviews = $reviewModel::query()->where('status', 'pending')->count();
-        $recentReviews = $reviewModel::query()->with(['product', 'user'])
-            ->where('status', 'approved')->orderByDesc('created_at')->limit(5)->get();
-
         $identifiedCustomers = (clone $paid)->whereNotNull('user_id')->distinct()->count('user_id')
             + (clone $paid)->whereNull('user_id')->whereNotNull('customer_email')
                 ->where('customer_email', '<>', '')->distinct()->count('customer_email');
@@ -165,20 +156,16 @@ class DashboardController
 
         return view('commerce-admin::dashboard.analytics', compact(
             'revenue',
-            'allTimeOrders',
             'paidCount',
-            'cancelledCount',
             'series',
             'byCity',
             'paymentBreakdown',
             'topProducts',
             'lowStock',
-            'activeProducts',
             'reviewsCount',
             'reviewAverage',
             'reviewDistribution',
             'pendingReviews',
-            'recentReviews',
             'identifiedCustomers',
             'returningRate'
         ));
