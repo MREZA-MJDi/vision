@@ -22,8 +22,8 @@ return [
     // Storefront and admin share Laravel's default authentication guard.
     'login_throttle_attempts' => 5,
     'login_throttle_seconds' => 60,
-    'currency' => env('COMMERCE_ADMIN_CURRENCY', 'USD'),
-    'currency_symbol' => env('COMMERCE_ADMIN_CURRENCY_SYMBOL', '$'),
+    'currency' => env('COMMERCE_ADMIN_CURRENCY', 'IRR'),
+    'currency_symbol' => env('COMMERCE_ADMIN_CURRENCY_SYMBOL', 'تومان'),
     // Fractional rate: set COMMERCE_ADMIN_TAX_RATE=0.08 for 8%; no tax is assumed by default.
     'tax_rate' => (float) env('COMMERCE_ADMIN_TAX_RATE', 0),
     // Flat shipping amount; checkout ignores client-supplied shipping prices.
