@@ -473,7 +473,12 @@ class ProductController
             $asset = $variant->media()->whereKey($media)->firstOrFail();
         }
 
-        if ($asset->path && ! preg_match('/^https?:\/\//i', $asset->path)) {
+        $normalizedPath = ltrim((string) $asset->path, '/');
+        $isVersionedDemoAsset = str_starts_with($normalizedPath, 'demo-products/');
+
+        // Demo artwork is version-controlled seed input. Remove its database
+        // attachment, but keep the file so a future opt-in seed can restore it.
+        if ($asset->path && ! $isVersionedDemoAsset && ! preg_match('/^https?:\/\//i', $asset->path)) {
             Storage::disk($asset->disk ?: config('commerce-admin.media_disk', 'public'))->delete($asset->path);
         }
 
