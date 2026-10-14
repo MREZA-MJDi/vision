@@ -54,9 +54,9 @@
                 <a href="{{ route('commerce-admin.analytics') }}">مشاهده گزارش‌ها <span aria-hidden="true">↗</span></a>
             </div>
             <div class="ak-sidebar-footer">
-                <span class="ak-avatar ak-avatar-sm">{{ strtoupper(substr(auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'A', 0, 1)) }}</span>
+                <span class="ak-avatar ak-avatar-sm">{{ strtoupper(substr(auth()->user()?->name ?? 'A', 0, 1)) }}</span>
                 <span class="ak-footer-user">
-                    <strong>{{ auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'Administrator' }}</strong>
+                    <strong>{{ auth()->user()?->name ?? 'Administrator' }}</strong>
                     <small>مدیر فروشگاه</small>
                 </span>
                 <form method="POST" action="{{ route('logout') }}">
@@ -79,7 +79,7 @@
                 <a class="ak-topbar-link" href="{{ route('commerce-admin.analytics.export') }}">دریافت گزارش <span aria-hidden="true">↗</span></a>
                 <button class="ak-icon-button" type="button" data-help-open aria-label="Open help" title="Help">?</button>
                 <span class="ak-topbar-divider"></span>
-                <span class="ak-avatar" aria-label="مدیر فروشگاه">{{ strtoupper(substr(auth(config('commerce-admin.guard', 'web'))->user()?->name ?? 'A', 0, 1)) }}</span>
+                <span class="ak-avatar" aria-label="مدیر فروشگاه">{{ strtoupper(substr(auth()->user()?->name ?? 'A', 0, 1)) }}</span>
             </div>
         </header>
 
