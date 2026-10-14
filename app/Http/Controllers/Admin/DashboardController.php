@@ -101,8 +101,11 @@ class DashboardController
 
         $orders = $orderModel::query();
         $paid = (clone $orders)->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']);
-        $revenue = (clone $paid)->sum('total');
-        $paidCount = (clone $paid)->count();
+        $paidMetrics = (clone $paid)
+            ->selectRaw('COUNT(*) as paid_count, COALESCE(SUM(total), 0) as paid_revenue')
+            ->first();
+        $revenue = (float) ($paidMetrics?->paid_revenue ?? 0);
+        $paidCount = (int) ($paidMetrics?->paid_count ?? 0);
         $series = $this->revenueSeries($orderModel);
 
         $byCity = $orderModel::query()
@@ -129,29 +132,51 @@ class DashboardController
             ->where('is_active', true)->whereColumn('stock', '<=', 'low_stock_threshold')
             ->orderBy('stock')->limit(8)->get();
 
-        $approvedReviews = $reviewModel::query()->where('status', 'approved');
-        $reviewsCount = (clone $approvedReviews)->count();
-        $reviewAverage = round((float) (clone $approvedReviews)->avg('rating'), 2);
-        $reviewDistribution = (clone $approvedReviews)
-            ->select('rating', DB::raw('COUNT(*) as aggregate'))
-            ->groupBy('rating')
-            ->pluck('aggregate', 'rating')
-            ->all();
-        $pendingReviews = $reviewModel::query()->where('status', 'pending')->count();
-        $identifiedCustomers = (clone $paid)->whereNotNull('user_id')->distinct()->count('user_id')
-            + (clone $paid)->whereNull('user_id')->whereNotNull('customer_email')
-                ->where('customer_email', '<>', '')->distinct()->count('customer_email');
+        // One grouped read supplies the approved distribution, weighted average and pending count.
+        $reviewStats = $reviewModel::query()
+            ->select('status', 'rating')
+            ->selectRaw('COUNT(*) as aggregate')
+            ->whereIn('status', ['approved', 'pending'])
+            ->groupBy('status', 'rating')
+            ->get();
 
-        $repeatUserCustomers = (clone $paid)->whereNotNull('user_id')
-            ->select('user_id')->groupBy('user_id')->havingRaw('COUNT(*) > 1')
-            ->getQuery()->getCountForPagination();
-        $repeatEmailCustomers = (clone $paid)->whereNull('user_id')
-            ->whereNotNull('customer_email')->where('customer_email', '<>', '')
-            ->selectRaw('LOWER(customer_email) as normalized_email')
-            ->groupByRaw('LOWER(customer_email)')->havingRaw('COUNT(*) > 1')
-            ->getQuery()->getCountForPagination();
+        $reviewDistribution = $reviewStats
+            ->where('status', 'approved')
+            ->mapWithKeys(static fn ($row) => [(int) $row->rating => (int) $row->aggregate])
+            ->all();
+        $reviewsCount = array_sum($reviewDistribution);
+        $weightedRating = collect($reviewDistribution)
+            ->sum(static fn ($count, $rating) => (int) $count * (int) $rating);
+        $reviewAverage = $reviewsCount > 0
+            ? round($weightedRating / $reviewsCount, 2)
+            : 0.0;
+        $pendingReviews = (int) $reviewStats->where('status', 'pending')->sum('aggregate');
+
+        // Count distinct registered customers and guest emails from grouped source sets.
+        // This avoids running separate DISTINCT and HAVING count scans against paid orders.
+        $registeredCustomerOrders = (clone $paid)
+            ->whereNotNull('user_id')
+            ->selectRaw('user_id as customer_identity, COUNT(*) as order_count')
+            ->groupBy('user_id');
+        $guestCustomerOrders = (clone $paid)
+            ->whereNull('user_id')
+            ->whereNotNull('customer_email')
+            ->where('customer_email', '<>', '')
+            ->selectRaw('LOWER(customer_email) as customer_identity, COUNT(*) as order_count')
+            ->groupByRaw('LOWER(customer_email)');
+
+        $customerMetrics = DB::query()
+            ->fromSub($registeredCustomerOrders->unionAll($guestCustomerOrders), 'customer_order_counts')
+            ->selectRaw(
+                'COUNT(*) as identified_customers,
+                COALESCE(SUM(CASE WHEN order_count > 1 THEN 1 ELSE 0 END), 0) as repeat_customers'
+            )
+            ->first();
+
+        $identifiedCustomers = (int) ($customerMetrics?->identified_customers ?? 0);
+        $repeatCustomers = (int) ($customerMetrics?->repeat_customers ?? 0);
         $returningRate = $identifiedCustomers > 0
-            ? round((($repeatUserCustomers + $repeatEmailCustomers) / $identifiedCustomers) * 100, 1)
+            ? round(($repeatCustomers / $identifiedCustomers) * 100, 1)
             : 0;
 
         return view('commerce-admin::dashboard.analytics', compact(
