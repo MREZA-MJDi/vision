@@ -91,9 +91,13 @@ class AdminDashboardTest extends TestCase
         ]);
 
         $groupedSeriesQueries = [];
-        DB::listen(function (QueryExecuted $query) use (&$groupedSeriesQueries): void {
+        $dashboardMetricQueries = [];
+        DB::listen(function (QueryExecuted $query) use (&$groupedSeriesQueries, &$dashboardMetricQueries): void {
             if (str_contains($query->sql, 'month_bucket')) {
                 $groupedSeriesQueries[] = $query->sql;
+            }
+            if (str_contains($query->sql, 'pending_orders') && str_contains($query->sql, 'paid_revenue')) {
+                $dashboardMetricQueries[] = $query->sql;
             }
         });
 
@@ -105,6 +109,7 @@ class AdminDashboardTest extends TestCase
             ->assertSee('45 تومان');
 
         $this->assertCount(1, $groupedSeriesQueries, 'The 12-month chart should use one grouped aggregation query.');
+        $this->assertCount(1, $dashboardMetricQueries, 'The order dashboard KPIs should share one aggregation query.');
         $this->assertDatabaseHas('product_variants', [
             'product_id' => $product->getKey(),
             'stock' => 1,

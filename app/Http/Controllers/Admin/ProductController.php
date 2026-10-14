@@ -332,22 +332,33 @@ class ProductController
                     ]);
                 }
 
-                // A variant can retain a single primary upload from the editor or accept
-                // a small gallery from API/import clients. Replacing media is transactional;
-                // old physical files are removed only after the database commit succeeds.
+                // Support both the editor's single-image input and gallery uploads.
+                // Handle each upload exactly once to avoid deleting the newly stored file
+                // when the queued old-image cleanup runs after the transaction commits.
                 $variantImages = array_values(array_filter(array_merge(
                     [$request->file("variants.{$index}.image")],
                     (array) $request->file("variants.{$index}.images", [])
                 )));
+                $removeVariantImage = (bool) ($input['remove_image'] ?? false);
 
-                if ($variantImages !== []) {
+                if ($variantImages !== [] || $removeVariantImage) {
+                    // Delete old media rows inside the transaction; physical files are
+                    // removed only after commit so rollback never destroys live images.
                     foreach ($variant->galleryMedia()->get() as $existingAsset) {
-                        if ($existingAsset->path && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
+                        $normalizedPath = ltrim((string) $existingAsset->path, '/');
+                        $isVersionedDemoAsset = str_starts_with($normalizedPath, 'demo-products/');
+
+                        if ($existingAsset->path
+                            && ! $isVersionedDemoAsset
+                            && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
                             $obsoleteImagePaths[] = [$existingAsset->disk ?: $mediaDisk, $existingAsset->path];
                         }
+
                         $existingAsset->delete();
                     }
+                }
 
+                if ($variantImages !== []) {
                     $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
                         . '/' . $product->getKey() . '/variants/' . $variant->getKey();
 
@@ -371,6 +382,7 @@ class ProductController
                         ]);
                     }
                 }
+
             }
 
             if ($updating) {

@@ -19,7 +19,7 @@ Wishlist hearts are currently device-local. They are not synced across browsers 
 
 - \`/admin/login\` and \`/admin\` — protected by the configured administrator flag.
 - Persian RTL administration using the local IRANYekanX font, with four live dashboard KPIs and a 12-month grouped sales/order chart.
-- Paginated product CRUD with variants, SKU/barcode validation, media uploads, taxable flag, and inventory audit trail.
+- Paginated product CRUD with variants, SKU validation, product and per-variant image uploads/cropping, grouped local-currency prices, taxable flag, and inventory audit trail.
 - Category and brand management with unique slugs and safe deactivation when products still reference a record.
 - Order list/detail, manually-created orders, state transitions, cancellation/return stock restoration, and shared payment/accounting services.
 - Standalone customer, payment and inventory ledger screens, plus review moderation and analytics.
@@ -32,20 +32,37 @@ php artisan commerce-admin:make-admin admin@example.com
 
 The command changes only the configured administrator flag on an existing user by default. To create a new administrator deliberately, run `php artisan commerce-admin:make-admin admin@example.com --create`; it requests the name and a confirmed password interactively. No account is created without `--create`.
 
-An optional `AdminSeeder` can bootstrap the first admin from environment values; it skips when credentials are blank and never resets an existing user's password. No demo products or customers are seeded. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
+An optional `AdminSeeder` can bootstrap the first admin from environment values; it skips when credentials are blank and never resets an existing user's password. Demo data is never included in the normal `DatabaseSeeder`. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
 
 ## Configuration
 
 The sample environment file exposes:
 
 \`\`\`dotenv
-COMMERCE_ADMIN_CURRENCY=USD
-COMMERCE_ADMIN_CURRENCY_SYMBOL="$"
+COMMERCE_ADMIN_CURRENCY=IRR
+COMMERCE_ADMIN_CURRENCY_SYMBOL="تومان"
 COMMERCE_ADMIN_TAX_RATE=0
 COMMERCE_ADMIN_SHIPPING_FLAT_RATE=0
 \`\`\`
 
 Tax rate is fractional: \`0.08\` means 8%. Shipping is a fixed per-order amount. Both default to zero until explicitly configured. Product taxability is controlled by each product's \`is_taxable\` flag.
+
+Displayed product and variant prices use thousands separators and the configured currency symbol. The product form accepts grouped Persian/Arabic or Latin digits, normalizes them before validation, and stores numeric values without commas. Variant images are saved against each variant's own media relation; selecting a color on the product page swaps its image, price, and stock together.
+
+### Optional demo catalog seeders
+
+The demo seeders create normal editable database records and version-controlled SVG product images under `storage/app/public/demo-products`. They include separate category, brand, product/variant, and inventory seeders. Run them only in a development or staging database:
+
+```bash
+php artisan db:seed --class=CategoryDemoSeeder
+php artisan db:seed --class=BrandDemoSeeder
+php artisan db:seed --class=ProductDemoSeeder
+php artisan db:seed --class=InventoryDemoSeeder
+# Or run all dependent demo data at once:
+php artisan db:seed --class=CommerceDemoSeeder
+```
+
+The commands are idempotent and do not delete unrelated records. Demo categories, products, variants and images can be edited or archived through Commerce Admin. Inventory is adjusted through the Inventory screen; its movement ledger is intentionally retained as audit history.
 
 ## Local setup
 

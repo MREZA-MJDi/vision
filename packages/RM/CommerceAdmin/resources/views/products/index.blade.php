@@ -77,7 +77,7 @@
                     @endphp
                     <tr>
                         <td><input type="checkbox" form="bulkArchiveForm" name="product_ids[]" value="{{ $item->getKey() }}" aria-label="انتخاب {{ $item->name }}" data-row-select></td>
-                        <td><div class="ak-product-cell">@if($asset?->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $item->name }}">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<div><a class="ak-table-primary" href="{{ route('commerce-admin.products.show', $item->getKey()) }}">{{ $item->name }}</a><small>SKU {{ $variant?->sku ?: '—' }}</small></div></div></td>
+                        <td><div class="ak-product-cell">@if($asset?->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $item->name }}" loading="lazy" decoding="async">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<div><a class="ak-table-primary" href="{{ route('commerce-admin.products.show', $item->getKey()) }}">{{ $item->name }}</a><small>SKU {{ $variant?->sku ?: '—' }}</small></div></div></td>
                         <td data-column="category">{{ $item->category?->name ?: 'بدون دسته‌بندی' }}</td>
                         
                         <td data-column="price"><div class="ak-price-cell"><strong>@money(($variant?->effective_price ?? $variant?->price ?? 0))</strong>@if($onSale)<small class="ak-old-price">@money(($variant?->price ?? 0))</small>@endif</div></td>
