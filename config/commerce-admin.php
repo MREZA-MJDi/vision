@@ -46,6 +46,12 @@ return [
         'inactive' => 'غیرفعال',
         'draft' => 'پیش‌نویس',
     ],
+    'movement_labels' => [
+        'sale' => 'فروش',
+        'return' => 'مرجوعی',
+        'adjustment' => 'اصلاح موجودی',
+        'purchase' => 'خرید',
+    ],
     'items_per_page' => 10,
     'media_disk' => env('COMMERCE_ADMIN_MEDIA_DISK', 'public'),
     'media_directory' => 'products',
