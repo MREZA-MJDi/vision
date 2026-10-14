@@ -3230,25 +3230,27 @@ body.storefront-body.tiamir-intro-active {
     right: 18px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 34px;
-    padding: 7px 11px;
-    border: 1px solid rgb(255 255 255 / 15%);
+    gap: 6px;
+    min-height: 28px;
+    padding: 5px 8px;
+    border: 1px solid rgb(255 255 255 / 11%);
     border-radius: 999px;
-    background: rgb(10 9 12 / 72%);
-    color: rgb(255 255 255 / 62%);
-    font: 600 9px/1 'Space Grotesk', 'Vazirmatn', sans-serif;
-    letter-spacing: .12em;
+    background: rgb(10 9 12 / 52%);
+    color: rgb(255 255 255 / 48%);
+    font: 500 8px/1 'Space Grotesk', 'Vazirmatn', sans-serif;
+    letter-spacing: .08em;
+    opacity: .72;
     cursor: pointer;
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
-    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease, opacity 160ms ease;
 }
 .tiamir-intro__replay:hover,
 .tiamir-intro__replay:focus-visible {
     color: #fff;
-    border-color: rgb(255 255 255 / 38%);
-    background: rgb(24 22 27 / 92%);
+    border-color: rgb(255 255 255 / 30%);
+    background: rgb(24 22 27 / 76%);
+    opacity: 1;
 }
 .tiamir-intro__replay:focus-visible { outline: 2px solid var(--store-orange-hot); outline-offset: 3px; }
 .tiamir-intro__replay[hidden] { display: none !important; }
@@ -3398,9 +3400,9 @@ body.storefront-body.tiamir-intro-active {
 }
 
 @keyframes tiamir-signature-resolve {
-    0%, 69% { opacity: 0; transform: translateX(-50%) translateY(7px); filter: blur(3px); }
-    78% { opacity: .72; transform: translateX(-50%) translateY(0); filter: blur(0); }
-    84%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); filter: blur(0); }
+    0%, 38% { opacity: 0; transform: translateX(-50%) translateY(5px); filter: blur(2px); }
+    50% { opacity: .72; transform: translateX(-50%) translateY(0); filter: blur(0); }
+    60%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); filter: blur(0); }
 }
 
 @keyframes tiamir-signal-flash {
@@ -3418,9 +3420,13 @@ body.storefront-body.tiamir-intro-active {
 
 @keyframes tiamir-control-in { to { opacity: 1; } }
 
-/* The campaign hero uses a readable, touch-friendly composition on phones. */
-/* Phone layout: a clear product image, one compact detail panel, and a single CTA row. */
-@media (max-width: 600px) {
+/* The campaign hero uses a readable, touch-friendly composition on phones and narrow tablets. */
+/* Keep product, price and CTA in a dedicated responsive layout instead of squeezing desktop columns. */
+@media (max-width: 720px) {
+    body.storefront-home-body {
+        overflow-x: clip;
+    }
+
     body.storefront-home-body .store-shell {
         width: 100%;
         min-height: 0;
@@ -3436,8 +3442,11 @@ body.storefront-body.tiamir-intro-active {
     }
 
     body.storefront-home-body .home-hero__frame {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
         height: min(82svh, 710px);
-        min-height: 620px;
+        min-height: min(620px, calc(100svh - 20px));
         overflow: hidden;
         border-radius: 22px;
     }
@@ -3621,6 +3630,7 @@ body.storefront-body.tiamir-intro-active {
     body.storefront-home-body .home-hero__variant-initial { font-size: 8px; }
 
     body.storefront-home-body .home-hero__copy {
+        min-width: 0;
         top: auto;
         right: 12px;
         bottom: 14px;
@@ -3671,8 +3681,8 @@ body.storefront-body.tiamir-intro-active {
 
 @media (max-width: 380px) {
     body.storefront-home-body .home-hero__frame {
-        height: 650px;
-        min-height: 650px;
+        height: min(650px, calc(100svh - 20px));
+        min-height: min(650px, calc(100svh - 20px));
     }
 
     body.storefront-home-body .home-hero__nav-link {
@@ -3704,7 +3714,7 @@ body.storefront-body.tiamir-intro-active {
     .tiamir-intro__logo-wrap { width: min(420px, 82vw); min-height: 90px; }
     .tiamir-intro__signature { bottom: calc(30px + env(safe-area-inset-bottom, 0px)); font-size: 9px; letter-spacing: .16em; }
     .tiamir-intro__hint { top: 16px; left: 13px; font-size: 7px; }
-    .tiamir-intro__replay { top: 10px; right: 10px; min-height: 32px; padding: 7px 9px; }
+    .tiamir-intro__replay { top: 8px; right: 8px; min-height: 26px; padding: 5px 7px; font-size: 7px; }
 }
 
 @media (orientation: landscape) and (max-height: 480px) {
