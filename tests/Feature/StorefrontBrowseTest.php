@@ -49,7 +49,7 @@ class StorefrontBrowseTest extends TestCase
             'low_stock_threshold' => 1,
             'is_active' => true,
         ]);
-        $photoUrl = 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990';
+        $photoUrl = 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a';
         $variant->media()->create([
             'collection' => 'gallery',
             'disk' => 'public',
