@@ -36,9 +36,9 @@ class ProductDemoSeeder extends Seeder
                 'is_featured' => true,
                 'sort_order' => 10,
                 'variants' => [
-                    ['sku' => 'VISION-DEMO-TEE-COFFEE', 'color' => 'قهوه‌ای', 'color_code' => '#805B43', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 12, 'threshold' => 3, 'image_url' => 'https://images.unsplash.com/photo-1565292849963-a50ad3c5ddd5?auto=format&fit=max&w=1200&q=85', 'image_name' => 'tee-coffee-unsplash.jpg', 'image_source' => 'https://unsplash.com/s/photos/brown-t-shirt'],
-                    ['sku' => 'VISION-DEMO-TEE-WHITE', 'color' => 'سفید', 'color_code' => '#F4F0E6', 'size' => 'M', 'price' => 1190000, 'sale_price' => 1090000, 'stock' => 8, 'threshold' => 3, 'image_url' => 'https://images.unsplash.com/photo-1618677603286-0ec56cb6e1b5?auto=format&fit=max&w=1200&q=85', 'image_name' => 'tee-white-unsplash.jpg', 'image_source' => 'https://unsplash.com/s/photos/white-t-shirt'],
-                    ['sku' => 'VISION-DEMO-TEE-BLACK', 'color' => 'مشکی', 'color_code' => '#17191C', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 15, 'threshold' => 4, 'image_url' => 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=max&w=1200&q=85', 'image_name' => 'tee-black-unsplash.jpg', 'image_source' => 'https://unsplash.com/s/photos/black-t-shirt'],
+                    ['sku' => 'VISION-DEMO-TEE-COFFEE', 'color' => 'قهوه‌ای', 'color_code' => '#805B43', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 12, 'threshold' => 3, 'image_url' => 'https://images.unsplash.com/photo-1565292849963-a50ad3c5ddd5?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tee-coffee-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/woman-wearing-brown-t-shirt-NdTH6-ykBW4', 'image_credit' => 'Felix Uresti'],
+                    ['sku' => 'VISION-DEMO-TEE-WHITE', 'color' => 'سفید', 'color_code' => '#F4F0E6', 'size' => 'M', 'price' => 1190000, 'sale_price' => 1090000, 'stock' => 8, 'threshold' => 3, 'image_url' => 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tee-white-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/white-crew-neck-t-shirt-acn5ERAeSb4', 'image_credit' => 'Haryo Setyadi'],
+                    ['sku' => 'VISION-DEMO-TEE-BLACK', 'color' => 'مشکی', 'color_code' => '#17191C', 'size' => 'M', 'price' => 1290000, 'sale_price' => null, 'stock' => 15, 'threshold' => 4, 'image_url' => 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tee-black-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/black-crew-neck-t-shirt-Wr0TpKqf26s', 'image_credit' => 'Faith & Yarn'],
                 ],
             ],
             [
@@ -50,8 +50,8 @@ class ProductDemoSeeder extends Seeder
                 'is_featured' => false,
                 'sort_order' => 20,
                 'variants' => [
-                    ['sku' => 'VISION-DEMO-TOTE-TAN', 'color' => 'شتری', 'color_code' => '#BA9166', 'size' => 'Standard', 'price' => 1450000, 'sale_price' => null, 'stock' => 6, 'threshold' => 2, 'image_url' => 'https://images.unsplash.com/photo-1535981444082-2a5dc0548ef3?auto=format&fit=max&w=1200&q=85', 'image_name' => 'tote-tan-unsplash.jpg', 'image_source' => 'https://unsplash.com/s/photos/brown-tote-bag'],
-                    ['sku' => 'VISION-DEMO-TOTE-BLACK', 'color' => 'مشکی', 'color_code' => '#25282B', 'size' => 'Standard', 'price' => 1490000, 'sale_price' => null, 'stock' => 4, 'threshold' => 2, 'image_url' => 'https://images.unsplash.com/photo-1546938576-04917ec516ee?auto=format&fit=max&w=1200&q=85', 'image_name' => 'tote-black-unsplash.jpg', 'image_source' => 'https://unsplash.com/s/photos/black-tote-bag'],
+                    ['sku' => 'VISION-DEMO-TOTE-TAN', 'color' => 'شتری', 'color_code' => '#BA9166', 'size' => 'Standard', 'price' => 1450000, 'sale_price' => null, 'stock' => 6, 'threshold' => 2, 'image_url' => 'https://images.unsplash.com/photo-1535981444082-2a5dc0548ef3?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tote-tan-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/brown-tote-bag-on-white-surface--zBSu3rYjNs', 'image_credit' => 'Mel Poole'],
+                    ['sku' => 'VISION-DEMO-TOTE-BLACK', 'color' => 'مشکی', 'color_code' => '#25282B', 'size' => 'Standard', 'price' => 1490000, 'sale_price' => null, 'stock' => 4, 'threshold' => 2, 'image_url' => 'https://images.unsplash.com/photo-1546938576-04917ec516ee?auto=format&fit=crop&fm=jpg&q=85&w=1200', 'image_name' => 'tote-black-unsplash.jpg', 'image_source' => 'https://unsplash.com/photos/black-tote-bag-9aZC_v4mLwE', 'image_credit' => 'SJ (@uxsj_ph)'],
                 ],
             ],
         ];
@@ -149,11 +149,12 @@ class ProductDemoSeeder extends Seeder
             'width' => null,
             'height' => null,
             'alt_text' => $product->name . ' — ' . $definition['color'],
-            'metadata' => [
+            'metadata' => array_filter([
                 'source' => 'Unsplash',
                 'source_url' => $definition['image_source'],
+                'creator' => $definition['image_credit'] ?? null,
                 'license' => 'Unsplash License',
-            ],
+            ], static fn ($value) => $value !== null),
         ];
     }
 }
