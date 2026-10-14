@@ -38,7 +38,7 @@
                             <td>{{ (int) $order->items_count }}</td>
                             <td><span class="commerce-status">{{ \Illuminate\Support\Str::headline($order->status) }}</span></td>
                             <td>{{ \Illuminate\Support\Str::headline($order->payment_status) }}</td>
-                            <td><strong>{{ '$' }}{{ number_format((float) $order->total, 2) }}</strong></td>
+                            <td><strong>@money($order->total)</strong></td>
                             <td><a class="commerce-text-link" href="{{ route('account.orders.show', $order->getKey()) }}">Details ↗</a></td>
                         </tr>
                     @endforeach
