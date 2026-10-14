@@ -1,5 +1,5 @@
 (() => {
-    function initTiamirIntro(intro, replayButton) {
+    function initTiamirIntro(intro) {
         const storageKey = 'tiamir_intro_seen';
         const hasSeenCookie = document.cookie.split(';').some((cookie) => cookie.trim() === storageKey + '=1');
         let hasSeenSession = false;
@@ -155,7 +155,6 @@
                 intro.classList.remove('is-visible', 'is-exiting', 'is-revealing', 'is-returning');
                 document.body.classList.remove('tiamir-intro-active');
                 if (shell) shell.inert = false;
-                if (replayButton) replayButton.hidden = false;
                 fadeTimer = null;
             }, exitDuration);
         }
@@ -172,7 +171,6 @@
             canDismiss = Boolean(allowDismiss);
             remaining = Math.max(0, duration - exitDuration);
 
-            if (replayButton) replayButton.hidden = true;
             intro.classList.remove('is-visible', 'is-exiting', 'is-revealing', 'is-returning', 'has-signal-hit');
             intro.style.setProperty('--tiamir-duration', duration + 'ms');
             void intro.offsetWidth;
@@ -243,7 +241,6 @@
             }
         }, { passive: true });
 
-        replayButton?.addEventListener('click', () => runIntro(firstDuration, true));
         document.addEventListener('visibilitychange', handleVisibilityChange);
         document.addEventListener('keydown', handleKeyDown);
         window.addEventListener('pointermove', handlePointerMove, { passive: true });
@@ -255,7 +252,7 @@
     }
 
     const intro = document.querySelector('[data-tiamir-intro]');
-    if (intro) initTiamirIntro(intro, document.querySelector('[data-tiamir-replay]'));
+    if (intro) initTiamirIntro(intro);
 
     const root = document.querySelector('[data-storefront]');
     if (!root) return;
