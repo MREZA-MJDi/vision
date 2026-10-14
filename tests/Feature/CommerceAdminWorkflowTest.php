@@ -257,6 +257,7 @@ class CommerceAdminWorkflowTest extends TestCase
             ->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
         $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertSame('cash_on_delivery', $order->fresh()->payment_method);
         $this->assertNotNull($order->fresh()->paid_at);
 
         $payment = Payment::query()->where('order_id', $order->getKey())->firstOrFail();
@@ -269,6 +270,7 @@ class CommerceAdminWorkflowTest extends TestCase
         ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
         $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame('cash_on_delivery', $order->fresh()->payment_method);
         $this->assertSame('refunded', $payment->fresh()->status);
     }
 
