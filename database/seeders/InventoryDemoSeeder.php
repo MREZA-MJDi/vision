@@ -33,6 +33,12 @@ class InventoryDemoSeeder extends Seeder
                 'note' => $note,
             ]);
 
+            // A ledger entry is historical evidence. Never rewrite it when an
+            // administrator has since adjusted the current variant stock.
+            if ($movement->exists) {
+                continue;
+            }
+
             $movement->fill([
                 'quantity' => (int) $variant->stock,
                 'stock_after' => (int) $variant->stock,
