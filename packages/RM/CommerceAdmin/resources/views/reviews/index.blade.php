@@ -45,7 +45,7 @@
                         <td><a class="ak-table-primary" href="{{ $review->product ? route('commerce-admin.products.show', $review->product->getKey()) : '#' }}">{{ $review->product?->name ?: 'محصول حذف‌شده' }}</a></td>
                         <td><span class="ak-rating-stars" aria-label="{{ $review->rating }} out of 5">{{ str_repeat('★', max(0,min(5,(int)$review->rating))) }}<small>{{ $review->rating }}/5</small></span></td>
                         <td class="ak-review-text"><strong>{{ $review->title ?: 'نظر مشتری' }}</strong><p>{{ \Illuminate\Support\Str::limit($review->body ?: 'نظر متنی ثبت نشده است.', 130) }}</p></td>
-                        <td>@jalali($review->created_at, 'j F Y')</td>
+                        <td>@commerceDate($review->created_at, 'j F Y')</td>
                         <td><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($review->status) }}">{{ config('commerce-admin.status_labels.' . $review->status, config('commerce-admin.status_labels.' . $review->status, \Illuminate\Support\Str::headline($review->status))) }}</span></td>
                         <td><form method="POST" action="{{ route('commerce-admin.reviews.status', [$review->getKey(), 'status'=>$status]) }}" class="ak-review-moderation">@csrf @method('PATCH')<select name="status" aria-label="نظر status">@foreach($reviewStatuses as $reviewStatus)<option value="{{ $reviewStatus }}" @selected($review->status === $reviewStatus)>{{ \Illuminate\Support\Str::headline($reviewStatus) }}</option>@endforeach</select><button class="ak-button ak-button-dark ak-button-sm" type="submit">ذخیره</button></form></td>
                     </tr>
