@@ -21,76 +21,44 @@
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
 
-    // Preview and remove variant-owned media independently of the product gallery crop flow.
+    // Variant image removal is handled separately; all variant uploads use
+    // the same crop-and-preview pipeline as the main product gallery.
     document.addEventListener('change', (event) => {
         const input = event.target;
+        if (!input.matches?.('[data-remove-variant-image]')) return;
 
-        if (input.matches?.('[data-variant-image-input]')) {
-            const row = input.closest('[data-variant-row]');
-            const preview = row?.querySelector('[data-variant-image-preview]');
-            const removeCheckbox = row?.querySelector('[data-remove-variant-image]');
-            if (!preview) return;
+        const row = input.closest('[data-variant-row]');
+        const preview = row?.querySelector('[data-variant-image-preview]');
+        const imageInput = row?.querySelector('[data-variant-image-input]');
+        if (!preview) return;
 
-            if (preview.dataset.objectUrl) {
-                URL.revokeObjectURL(preview.dataset.objectUrl);
-                delete preview.dataset.objectUrl;
-            }
+        if (preview.dataset.objectUrl) {
+            URL.revokeObjectURL(preview.dataset.objectUrl);
+            delete preview.dataset.objectUrl;
+        }
 
-            const file = input.files?.[0];
-            if (file && file.type.startsWith('image/')) {
-                if (removeCheckbox) removeCheckbox.checked = false;
-                const url = URL.createObjectURL(file);
-                preview.src = url;
-                preview.dataset.objectUrl = url;
-                preview.hidden = false;
-                return;
-            }
-
-            const existing = preview.dataset.existingSrc || '';
-            if (existing) {
-                preview.src = existing;
-                preview.hidden = false;
-            } else {
-                preview.removeAttribute('src');
-                preview.hidden = true;
-            }
+        if (input.checked) {
+            preview.removeAttribute('src');
+            preview.hidden = true;
             return;
         }
 
-        if (input.matches?.('[data-remove-variant-image]')) {
-            const row = input.closest('[data-variant-row]');
-            const preview = row?.querySelector('[data-variant-image-preview]');
-            const imageInput = row?.querySelector('[data-variant-image-input]');
-            if (!preview) return;
+        const file = imageInput?.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            const url = URL.createObjectURL(file);
+            preview.src = url;
+            preview.dataset.objectUrl = url;
+            preview.hidden = false;
+            return;
+        }
 
-            if (preview.dataset.objectUrl) {
-                URL.revokeObjectURL(preview.dataset.objectUrl);
-                delete preview.dataset.objectUrl;
-            }
-
-            if (input.checked) {
-                preview.removeAttribute('src');
-                preview.hidden = true;
-                return;
-            }
-
-            const file = imageInput?.files?.[0];
-            if (file && file.type.startsWith('image/')) {
-                const url = URL.createObjectURL(file);
-                preview.src = url;
-                preview.dataset.objectUrl = url;
-                preview.hidden = false;
-                return;
-            }
-
-            const existing = preview.dataset.existingSrc || '';
-            if (existing) {
-                preview.src = existing;
-                preview.hidden = false;
-            } else {
-                preview.removeAttribute('src');
-                preview.hidden = true;
-            }
+        const existing = preview.dataset.existingSrc || '';
+        if (existing) {
+            preview.src = existing;
+            preview.hidden = false;
+        } else {
+            preview.removeAttribute('src');
+            preview.hidden = true;
         }
     });
     $$('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });
@@ -226,13 +194,45 @@
     };
     const renderImages = (files) => {
         if (!activePreviewBox) return;
+
         const box = activePreviewBox;
+        const isVariantUpload = activeImageInput?.matches('[data-variant-image-input]');
+
+        // A variant preview is a single <img>, not a gallery container. Update
+        // its src directly instead of trying to append gallery tiles inside it.
+        if (isVariantUpload) {
+            revokePreviewUrls(box);
+            if (box.dataset.objectUrl) {
+                URL.revokeObjectURL(box.dataset.objectUrl);
+                delete box.dataset.objectUrl;
+            }
+
+            const file = Array.from(files || []).find((candidate) => candidate.type?.startsWith('image/'));
+            const removeCheckbox = activeImageInput.closest('[data-variant-row]')?.querySelector('[data-remove-variant-image]');
+            if (file) {
+                const url = URL.createObjectURL(file);
+                box.src = url;
+                box.dataset.objectUrl = url;
+                box.hidden = false;
+                if (removeCheckbox) removeCheckbox.checked = false;
+            } else {
+                const existing = box.dataset.existingSrc || '';
+                if (existing) {
+                    box.src = existing;
+                    box.hidden = false;
+                } else {
+                    box.removeAttribute('src');
+                    box.hidden = true;
+                }
+            }
+            return;
+        }
+
+        // The product gallery uses a container with one thumbnail tile per file.
         revokePreviewUrls(box);
         box.replaceChildren();
         const localUrls = [];
-        const isVariantUpload = activeImageInput?.matches('[data-variant-image-input]');
-        const limit = isVariantUpload ? 4 : 8;
-        Array.from(files || []).slice(0, limit).forEach((file) => {
+        Array.from(files || []).slice(0, 8).forEach((file) => {
             if (!file.type?.startsWith('image/')) return;
             const tile = document.createElement('div');
             tile.className = 'ak-new-image-tile';
@@ -349,6 +349,7 @@
         if (images.some((file) => file.size > 16 * 1024 * 1024)) {
             window.alert('حجم فایل اصلی هر تصویر نباید بیشتر از ۱۶ مگابایت باشد.');
             if (activeImageInput) activeImageInput.value = '';
+            renderImages([]);
             return;
         }
         cropQueue = images;
