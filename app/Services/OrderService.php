@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class OrderService
 {
@@ -51,20 +52,18 @@ final class OrderService
 
             $isCancellationLike = in_array($newStatus, Order::CANCEL_LIKE_STATUSES, true);
 
-            abort_if(
-                $isCancellationLike
-                    && $oldPaymentStatus === 'paid'
-                    && $paymentStatus !== 'refunded',
-                422,
-                'برای لغو یا مرجوعی سفارش پرداخت‌شده، ابتدا بازپرداخت را ثبت کنید.'
-            );
+            if ($isCancellationLike && $oldPaymentStatus === 'paid' && $paymentStatus !== 'refunded') {
+                throw ValidationException::withMessages([
+                    'status' => 'برای لغو یا مرجوعی سفارش پرداخت‌شده، ابتدا بازپرداخت را ثبت کنید.',
+                ]);
+            }
 
-            abort_if(
-                $paymentStatus === 'refunded'
-                    && (! $isCancellationLike || ! in_array($oldPaymentStatus, ['paid', 'refunded'], true)),
-                422,
-                'بازپرداخت فقط برای سفارش پرداخت‌شدهٔ در حال لغو یا مرجوعی مجاز است.'
-            );
+            if ($paymentStatus === 'refunded'
+                && (! $isCancellationLike || ! in_array($oldPaymentStatus, ['paid', 'refunded'], true))) {
+                throw ValidationException::withMessages([
+                    'payment_status' => 'بازپرداخت فقط برای سفارش پرداخت‌شدهٔ در حال لغو یا مرجوعی مجاز است.',
+                ]);
+            }
 
             $wasCancelledLike = in_array(
                 $oldStatus,
@@ -207,10 +206,10 @@ final class OrderService
             default => [],
         };
 
-        abort_unless(
-            in_array($to, $allowed, true),
-            422,
-            'تغییر وضعیت سفارش از وضعیت فعلی مجاز نیست.'
-        );
+        if (! in_array($to, $allowed, true)) {
+            throw ValidationException::withMessages([
+                'status' => 'تغییر وضعیت سفارش از وضعیت فعلی مجاز نیست.',
+            ]);
+        }
     }
 }
