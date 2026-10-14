@@ -33,7 +33,7 @@ class ExampleTest extends TestCase
     {
         $this->get('/admin')->assertRedirect(route('commerce-admin.login'));
         $this->get('/admin/products')->assertRedirect(route('commerce-admin.login'));
-        $this->get('/admin/login')->assertOk()->assertSee('Sign in to your store');
+        $this->get('/admin/login')->assertOk()->assertSee('ورود به پنل فروشگاه');
 
         $this->assertTrue(Route::has('commerce-admin.dashboard'));
         $this->assertTrue(Route::has('commerce-admin.products.index'));

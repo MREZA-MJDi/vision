@@ -25,8 +25,8 @@
         <section class="ak-panel ak-form-panel">
             <div class="ak-panel-heading"><div><h2>اطلاعات سئو</h2><p>اختیاری؛ برای نمایش و جست‌وجوی بهتر</p></div></div>
             <div class="ak-form-grid">
-                <label class="ak-field"><span>عنوان متا</span><input name="meta_title" maxlength="255" value="{{ old('meta_title', $record->meta_title) }}"></label>
-                <label class="ak-field"><span>توضیح متا</span><textarea rows="3" name="meta_description" maxlength="500">{{ old('meta_description', $record->meta_description) }}</textarea></label>
+                <label class="ak-field"><span>عنوان متا</span><input name="meta_title" maxlength="255" value="{{ old('meta_title', $record->meta_title) }}" placeholder="{{ $record->meta_title ?: $record->name }}"></label>
+                <label class="ak-field"><span>توضیح متا</span><textarea rows="3" name="meta_description" maxlength="500" placeholder="{{ $record->meta_description ?: $record->description ?: 'توضیح کوتاه و دقیق برای نتایج جست‌وجو' }}">{{ old('meta_description', $record->meta_description) }}</textarea></label>
             </div>
         </section>
         <div class="ak-heading-actions"><button class="ak-button ak-button-dark" type="submit">ذخیره</button><a class="ak-button ak-button-light" href="{{ route($routePrefix . '.index') }}">انصراف</a></div>

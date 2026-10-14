@@ -32,9 +32,9 @@
 
                 <section class="ak-panel ak-form-panel">
                     <div class="ak-panel-heading"><div><h2>تصاویر محصول</h2><p>حداکثر ۸ تصویر JPG، PNG یا WebP با حجم حداکثر ۴ مگابایت برای هر تصویر بارگذاری کنید.</p></div><label class="ak-button ak-button-light ak-button-sm ak-upload-trigger">＋ افزودن تصویر<input type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple hidden data-image-input></label></div>
-                    <div class="ak-image-upload-zone" data-image-drop><span class="ak-upload-symbol">⇧</span><strong>تصاویر را اینجا رها کنید یا <button type="button" data-browse-images>فایل‌ها را انتخاب کنید</button></strong><small>تصاویر با دیسک ذخیره‌سازی تنظیم‌شدهٔ Laravel ذخیره می‌شوند.</small><div class="ak-new-image-preview" data-image-preview></div></div>
+                    <div class="ak-image-upload-zone" data-image-drop><span class="ak-upload-symbol">⇧</span><strong>تصاویر را اینجا رها کنید یا <button type="button" data-browse-images>فایل‌ها را انتخاب کنید</button></strong><small>تصاویر با دیسک ذخیره‌سازی تنظیم‌شدهٔ Laravel ذخیره می‌شوند.</small><div class="ak-new-image-preview" data-image-preview></div><small>پیش از ذخیره، هر تصویر را می‌توان برش داد؛ فایل نهایی حداکثر ۴ مگابایت خواهد بود.</small></div>
                     @if($product && $product->galleryMedia->isNotEmpty())
-                        <div class="ak-existing-images"><span class="ak-section-label">Uploaded files ({{ $product->galleryMedia->count() }})</span><div class="ak-image-grid">@foreach($product->galleryMedia as $asset)<div class="ak-image-tile">@if($asset->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $product->name }}">@endif<form method="POST" action="{{ route('commerce-admin.products.media.destroy', [$product->getKey(), $asset->getKey()]) }}" data-confirm="Remove this image from the product?">@csrf @method('DELETE')<button type="submit" aria-label="Remove image">×</button></form><small>{{ $asset->original_name ?: 'Product image' }}</small></div>@endforeach</div></div>
+                        <div class="ak-existing-images"><span class="ak-section-label">Uploaded files ({{ $product->galleryMedia->count() }})</span><div class="ak-image-grid">@foreach($product->galleryMedia as $asset)<div class="ak-image-tile">@if($asset->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $product->name }}">@endif<button type="submit" form="delete-product-media-{{ $asset->getKey() }}" aria-label="حذف تصویر">×</button><small>{{ $asset->original_name ?: 'Product image' }}</small></div>@endforeach</div></div>
                     @endif
                 </section>
 
@@ -48,12 +48,11 @@
                                 @if(data_get($variant, 'id'))<input type="hidden" name="variants[{{ $index }}][id]" value="{{ data_get($variant, 'id') }}">@endif
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>
-                                    <label class="ak-field"><span>بارکد</span><input name="variants[{{ $index }}][barcode]" value="{{ old('variants.'.$index.'.barcode', data_get($variant, 'barcode')) }}" maxlength="100" placeholder="Scan or enter barcode"></label>
                                     <label class="ak-field"><span>اندازه / گزینه</span><input name="variants[{{ $index }}][size]" value="{{ old('variants.'.$index.'.size', data_get($variant, 'size')) }}" maxlength="50" placeholder="M / 256 GB"></label>
                                     <label class="ak-field"><span>Color</span><input name="variants[{{ $index }}][color]" value="{{ old('variants.'.$index.'.color', data_get($variant, 'color')) }}" maxlength="80" placeholder="Black"></label>
                                     <label class="ak-field"><span>کد رنگ</span><div class="ak-color-code"><input type="color" name="variants[{{ $index }}][color_code]" value="{{ old('variants.'.$index.'.color_code', data_get($variant, 'color_code') ?: '#171717') }}" aria-label="کد رنگ"><input type="text" value="{{ old('variants.'.$index.'.color_code', data_get($variant, 'color_code') ?: '#171717') }}" maxlength="20" data-color-mirror></div></label>
-                                    <label class="ak-field"><span>قیمت <b>*</b></span><input type="number" step="0.01" min="0" name="variants[{{ $index }}][price]" value="{{ old('variants.'.$index.'.price', data_get($variant, 'price')) }}" required placeholder="0.00"></label>
-                                    <label class="ak-field"><span>قیمت با تخفیف</span><input type="number" step="0.01" min="0" name="variants[{{ $index }}][sale_price]" value="{{ old('variants.'.$index.'.sale_price', data_get($variant, 'sale_price')) }}" placeholder="Optional"></label>
+                                    <label class="ak-field"><span>قیمت <b>*</b></span><input type="text" inputmode="numeric" data-money-input name="variants[{{ $index }}][price]" value="{{ old('variants.'.$index.'.price', data_get($variant, 'price')) }}" required placeholder="مثلاً ۱۲۵,۰۰۰"></label>
+                                    <label class="ak-field"><span>قیمت با تخفیف</span><input type="text" inputmode="numeric" data-money-input name="variants[{{ $index }}][sale_price]" value="{{ old('variants.'.$index.'.sale_price', data_get($variant, 'sale_price')) }}" placeholder="اختیاری"></label>
                                     <label class="ak-field"><span>موجودی قابل فروش <b>*</b></span><input type="number" min="0" step="1" name="variants[{{ $index }}][stock]" value="{{ old('variants.'.$index.'.stock', data_get($variant, 'stock', 0)) }}" required></label>
                                     <label class="ak-field"><span>حد هشدار موجودی <b>*</b></span><input type="number" min="0" step="1" name="variants[{{ $index }}][low_stock_threshold]" value="{{ old('variants.'.$index.'.low_stock_threshold', data_get($variant, 'low_stock_threshold', 5)) }}" required></label>
                                     <label class="ak-field"><span>وضعیت تنوع</span><select name="variants[{{ $index }}][is_active]"><option value="1" @selected((string)old('variants.'.$index.'.is_active', (int)data_get($variant, 'is_active', true)) === '1')>فعال</option><option value="0" @selected((string)old('variants.'.$index.'.is_active', (int)data_get($variant, 'is_active', true)) === '0')>غیرفعال</option></select></label>
@@ -66,12 +65,11 @@
                             <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>__NUMBER__</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="Remove variant">×</button></div>
                             <div class="ak-variant-grid">
                                 <label class="ak-field"><span>SKU</span><input name="variants[__INDEX__][sku]" maxlength="100" placeholder="SKU-001"></label>
-                                <label class="ak-field"><span>بارکد</span><input name="variants[__INDEX__][barcode]" maxlength="100" placeholder="Scan or enter barcode"></label>
                                 <label class="ak-field"><span>اندازه / گزینه</span><input name="variants[__INDEX__][size]" maxlength="50" placeholder="M / 256 GB"></label>
                                 <label class="ak-field"><span>Color</span><input name="variants[__INDEX__][color]" maxlength="80" placeholder="Black"></label>
                                 <label class="ak-field"><span>کد رنگ</span><div class="ak-color-code"><input type="color" name="variants[__INDEX__][color_code]" value="#171717" aria-label="کد رنگ"><input type="text" value="#171717" maxlength="20" data-color-mirror></div></label>
-                                <label class="ak-field"><span>قیمت <b>*</b></span><input type="number" step="0.01" min="0" name="variants[__INDEX__][price]" required placeholder="0.00"></label>
-                                <label class="ak-field"><span>قیمت با تخفیف</span><input type="number" step="0.01" min="0" name="variants[__INDEX__][sale_price]" placeholder="Optional"></label>
+                                <label class="ak-field"><span>قیمت <b>*</b></span><input type="text" inputmode="numeric" data-money-input name="variants[__INDEX__][price]" required placeholder="0.00"></label>
+                                <label class="ak-field"><span>قیمت با تخفیف</span><input type="text" inputmode="numeric" data-money-input name="variants[__INDEX__][sale_price]" placeholder="Optional"></label>
                                 <label class="ak-field"><span>موجودی قابل فروش <b>*</b></span><input type="number" min="0" step="1" name="variants[__INDEX__][stock]" value="0" required></label>
                                 <label class="ak-field"><span>حد هشدار موجودی <b>*</b></span><input type="number" min="0" step="1" name="variants[__INDEX__][low_stock_threshold]" value="5" required></label>
                                 <label class="ak-field"><span>وضعیت تنوع</span><select name="variants[__INDEX__][is_active]"><option value="1" selected>فعال</option><option value="0">غیرفعال</option></select></label>
@@ -83,10 +81,34 @@
 
             <aside class="ak-form-aside">
                 <section class="ak-panel ak-aside-panel"><div class="ak-panel-heading"><div><h2>انتشار</h2><p>نمایش محصول در فروشگاه را کنترل کنید.</p></div></div><label class="ak-field"><span>وضعیت کاتالوگ</span><select name="status" form="productForm" required><option value="active" @selected(old('status', $product?->is_active ? 'active' : 'draft') === 'active')>فعال</option><option value="draft" @selected(old('status', $product?->is_active ? 'active' : 'draft') === 'draft')>پیش‌نویس</option></select></label><div class="ak-info-box"><span>i</span><p>غیرفعال products stay in your database, but they should not appear in customer-facing product listings.</p></div></section>
-                <section class="ak-panel ak-aside-panel"><div class="ak-panel-heading"><div><h2>تنظیمات جست‌وجو</h2><p>اطلاعات تکمیلی و اختیاری برای نتایج جست‌وجو.</p></div></div><label class="ak-field"><span>عنوان متا</span><input type="text" name="meta_title" value="{{ old('meta_title', $product?->meta_title) }}" maxlength="255" placeholder="جست‌وجو result title"></label><label class="ak-field"><span>توضیح متا</span><textarea name="meta_description" rows="4" maxlength="500" placeholder="Brief search result summary">{{ old('meta_description', $product?->meta_description) }}</textarea></label></section>
+                <section class="ak-panel ak-aside-panel"><div class="ak-panel-heading"><div><h2>تنظیمات جست‌وجو</h2><p>اطلاعات تکمیلی و اختیاری برای نتایج جست‌وجو.</p></div></div><label class="ak-field"><span>عنوان متا</span><input type="text" name="meta_title" value="{{ old('meta_title', $product?->meta_title) }}" maxlength="255" placeholder="{{ $product?->meta_title ?: $product?->name ?: 'نام محصول | نام فروشگاه' }}"></label><label class="ak-field"><span>توضیح متا</span><textarea name="meta_description" rows="4" maxlength="500" placeholder="{{ $product?->meta_description ?: $product?->short_description ?: 'توضیح کوتاه و دقیق دربارهٔ محصول' }}">{{ old('meta_description', $product?->meta_description) }}</textarea></label></section>
                 @if($product)<section class="ak-panel ak-aside-panel"><div class="ak-panel-heading"><div><h2>جزئیات رکورد</h2></div></div><div class="ak-detail-list"><span>Product ID<strong>#{{ $product->getKey() }}</strong></span><span>تاریخ ایجاد<strong>{{ $product->created_at?->format('M d, Y') ?: '—' }}</strong></span><span>آخرین به‌روزرسانی<strong>{{ $product->updated_at?->diffForHumans() ?: '—' }}</strong></span></div><a class="ak-text-link" href="{{ route('commerce-admin.products.show', $product->getKey()) }}">مشاهدهٔ رکورد ↗</a></section>@endif
                 <div class="ak-form-sticky-actions"><button class="ak-button ak-button-dark ak-button-wide" type="submit" form="productForm">ذخیرهٔ محصول <span>✓</span></button><a class="ak-button ak-button-light ak-button-wide" href="{{ route('commerce-admin.products.index') }}">انصراف</a></div>
             </aside>
         </div>
     </form>
+        <div class="ak-crop-modal" data-crop-modal hidden role="dialog" aria-modal="true" aria-labelledby="akCropTitle">
+            <div class="ak-crop-dialog">
+                <div class="ak-crop-dialog-head">
+                    <div><h2 id="akCropTitle">برش تصویر محصول</h2><p data-crop-count>پیش‌نمایش قبل از ذخیره</p></div>
+                    <button class="ak-icon-button" type="button" data-crop-cancel aria-label="لغو انتخاب تصویرها">×</button>
+                </div>
+                <div class="ak-crop-preview-stage"><canvas data-crop-preview width="640" height="640"></canvas></div>
+                <div class="ak-crop-controls">
+                    <label class="ak-field"><span>نسبت تصویر</span><select data-crop-ratio><option value="original">حفظ نسبت اصلی</option><option value="1:1">مربع (۱:۱)</option><option value="4:3">افقی (۴:۳)</option><option value="3:4">عمودی (۳:۴)</option></select></label>
+                    <label class="ak-field"><span>بزرگ‌نمایی <output data-crop-zoom-value>۱۰۰٪</output></span><input type="range" min="100" max="250" step="5" value="100" data-crop-zoom></label>
+                    <label class="ak-field"><span>جابجایی افقی</span><input type="range" min="0" max="100" value="50" data-crop-x></label>
+                    <label class="ak-field"><span>جابجایی عمودی</span><input type="range" min="0" max="100" value="50" data-crop-y></label>
+                </div>
+                <div class="ak-crop-dialog-actions">
+                    <button class="ak-button ak-button-light" type="button" data-crop-skip>استفاده بدون برش</button>
+                    <div><button class="ak-button ak-button-light" type="button" data-crop-cancel>لغو</button><button class="ak-button ak-button-dark" type="button" data-crop-apply>تأیید برش و ادامه</button></div>
+                </div>
+            </div>
+        </div>
+    @if($product)
+        @foreach($product->galleryMedia as $asset)
+            <form id="delete-product-media-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.media.destroy', [$product->getKey(), $asset->getKey()]) }}" data-confirm="این تصویر از محصول حذف شود؟">@csrf @method('DELETE')</form>
+        @endforeach
+    @endif
 @endsection

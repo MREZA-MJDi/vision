@@ -104,6 +104,18 @@ class StorefrontController extends Controller
         $initialImage = $initialProduct?->primaryGalleryMedia?->url
             ?? $initialProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
 
+        $heroProduct = null;
+        if ($request->routeIs('storefront.index')) {
+            $heroProduct = Product::query()
+                ->active()
+                ->where('is_hero', true)
+                ->whereHas('activeVariants')
+                ->with(['category', 'brand', 'primaryGalleryMedia', 'primaryActiveVariant.primaryGalleryMedia'])
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->first();
+        }
+
         return view('store.index', [
             'products' => $products,
             'categories' => $categories,
@@ -117,6 +129,7 @@ class StorefrontController extends Controller
             'saleOnly' => $saleOnly,
             'initialProduct' => $initialProduct,
             'initialImage' => $initialImage,
+            'heroProduct' => $heroProduct,
         ]);
     }
 

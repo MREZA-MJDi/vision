@@ -9,14 +9,13 @@
         $price = $primaryVariant?->sale_price ?? $primaryVariant?->price ?? 0;
         $colors = $model->variants->pluck('color')->filter()->unique()->values();
         $sizes = $model->variants->pluck('size')->filter()->unique()->values();
-        $currency = config('commerce-admin.currency_symbol', '$');
     @endphp
 
     <div class="ak-page-heading">
         <div>
             <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">محصول List</a> <span>/</span> جزئیات محصول</div>
             <h1>{{ $model->name }}</h1>
-            <p>{{ $model->brand?->name ?: 'بدون برند' }} · تاریخ انتشار {{ $model->created_at?->format('M d, Y') ?: 'تاریخ ثبت نشده' }} · شناسه SKU {{ $primaryVariant?->sku ?: 'تخصیص داده نشده' }}</p>
+            <p>{{ $model->brand?->name ?: 'بدون برند' }} · تاریخ انتشار @jalali($model->created_at, 'j F Y') · شناسه SKU {{ $primaryVariant?->sku ?: 'تخصیص داده نشده' }}</p>
         </div>
         <div class="ak-heading-actions">
             <a class="ak-button ak-button-light" href="{{ route('commerce-admin.products.edit', $model->getKey()) }}">✎ ویرایش</a>
@@ -58,7 +57,7 @@
             <section class="ak-product-inline-stats">
                 <article class="ak-product-inline-stat">
                     <span>قیمت</span>
-                    <strong>{{ $currency }}{{ number_format((float) $price, 2) }}</strong>
+                    <strong>@money($price)</strong>
                     <small>{{ $primaryVariant?->is_on_sale ? 'قیمت فروش ویژه' : 'قیمت پایه' }}</small>
                 </article>
                 <article class="ak-product-inline-stat">
@@ -73,7 +72,7 @@
                 </article>
                 <article class="ak-product-inline-stat">
                     <span>درآمد کل</span>
-                    <strong>{{ $currency }}{{ number_format((float) $grossSales, 2) }}</strong>
+                    <strong>@money($grossSales)</strong>
                     <small>{{ number_format((int) $unitsSold) }} units sold</small>
                 </article>
             </section>
@@ -113,7 +112,7 @@
 
             <section class="ak-panel ak-product-variants-panel">
                 <div class="ak-panel-heading">
-                    <div><h2>تنوع‌ها و موجودی</h2><p>قیمتs, شناسه شناسه SKUs and stock levels from the product record.</p></div>
+                    <div><h2>تنوع‌ها و موجودی</h2><p>قیمت‌ها، کدهای SKU و موجودی هر تنوع محصول.</p></div>
                     <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.products.edit', $model->getKey()) }}">مدیریت تنوع‌ها ↗</a>
                 </div>
                 @if($model->variants->isEmpty())
@@ -121,7 +120,7 @@
                 @else
                     <div class="ak-table-scroll">
                         <table class="ak-table">
-                            <thead><tr><th>تنوع</th><th>شناسه شناسه شناسه SKU / بارکد</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
+                            <thead><tr><th>تنوع</th><th>شناسهٔ SKU</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
                             <tbody>
                             @foreach($model->variants as $variant)
                                 <tr>
@@ -131,8 +130,8 @@
                                             <span>{{ $variant->display_name ?: collect([$variant->color, $variant->size])->filter()->implode(' / ') ?: 'Default variant' }}</span>
                                         </div>
                                     </td>
-                                    <td><span class="ak-mono">{{ $variant->sku ?: '—' }}</span><small class="ak-table-subtext">{{ $variant->barcode ?: 'No barcode' }}</small></td>
-                                    <td><strong>{{ $currency }}{{ number_format((float) ($variant->sale_price ?? $variant->price ?? 0), 2) }}</strong></td>
+                                    <td><span class="ak-mono">{{ $variant->sku ?: '—' }}</span></td>
+                                    <td><strong>@money(($variant->sale_price ?? $variant->price ?? 0))</strong></td>
                                     <td>{{ number_format((int) $variant->stock) }}</td>
                                     <td><span class="ak-status-pill {{ $variant->is_active ? 'status-active' : 'status-draft' }}">{{ $variant->is_active ? 'فعال' : 'غیرفعال' }}</span></td>
                                 </tr>

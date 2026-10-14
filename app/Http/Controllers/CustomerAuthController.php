@@ -6,10 +6,12 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Services\Auth\AuthenticatedUserRedirector;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -17,23 +19,19 @@ use Illuminate\View\View;
 
 class CustomerAuthController extends Controller
 {
-    public function create(): View|RedirectResponse
+    public function create(AuthenticatedUserRedirector $redirector): View|RedirectResponse
     {
         if (Auth::check()) {
-            return (bool) Auth::user()->getAttribute('is_admin')
-                ? redirect()->route('commerce-admin.dashboard')
-                : redirect()->route('account.show');
+            return $redirector->forExistingSession(Auth::user());
         }
 
         return view('store.auth.login');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AuthenticatedUserRedirector $redirector): RedirectResponse
     {
         if (Auth::check()) {
-            return (bool) Auth::user()->getAttribute('is_admin')
-                ? redirect()->route('commerce-admin.dashboard')
-                : redirect()->route('account.show');
+            return $redirector->forExistingSession(Auth::user());
         }
 
         $validated = $request->validate([
@@ -42,42 +40,57 @@ class CustomerAuthController extends Controller
             'remember' => ['sometimes', 'boolean'],
         ]);
 
-        $sessionId = $request->session()->getId();
-        $credentials = [
-            'email' => Str::lower(trim($validated['email'])),
-            'password' => $validated['password'],
-            'is_admin' => false,
-        ];
+        $email = Str::lower(trim($validated['email']));
+        $key = 'storefront-login:' . hash('sha256', $email . '|' . $request->ip());
+        $maxAttempts = max(1, (int) config('commerce-admin.login_throttle_attempts', 5));
+        $decaySeconds = max(1, (int) config('commerce-admin.login_throttle_seconds', 60));
 
-        if (! Auth::attempt($credentials, (bool) ($validated['remember'] ?? false))) {
+        if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
             throw ValidationException::withMessages([
-                'email' => 'These customer credentials could not be verified.',
+                'email' => 'These credentials could not be verified. Please wait before trying again.',
             ]);
         }
 
+        $sessionId = $request->session()->getId();
+        $credentials = [
+            'email' => $email,
+            'password' => $validated['password'],
+        ];
+
+        if (! Auth::attempt($credentials, (bool) ($validated['remember'] ?? false))) {
+            RateLimiter::hit($key, $decaySeconds);
+
+            throw ValidationException::withMessages([
+                'email' => 'These credentials could not be verified.',
+            ]);
+        }
+
+        RateLimiter::clear($key);
         $request->session()->regenerate();
+
+        $user = Auth::user();
+        if ($redirector->hasAdminAccess($user)) {
+            return $redirector->afterLogin($request, $user);
+        }
+
         $this->mergeGuestCart((int) Auth::id(), $sessionId);
 
-        return redirect()->intended(route('account.show'));
+        return $redirector->afterLogin($request, $user);
     }
 
-    public function registerForm(): View|RedirectResponse
+    public function registerForm(AuthenticatedUserRedirector $redirector): View|RedirectResponse
     {
         if (Auth::check()) {
-            return (bool) Auth::user()->getAttribute('is_admin')
-                ? redirect()->route('commerce-admin.dashboard')
-                : redirect()->route('account.show');
+            return $redirector->forExistingSession(Auth::user());
         }
 
         return view('store.auth.register');
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, AuthenticatedUserRedirector $redirector): RedirectResponse
     {
         if (Auth::check()) {
-            return (bool) Auth::user()->getAttribute('is_admin')
-                ? redirect()->route('commerce-admin.dashboard')
-                : redirect()->route('account.show');
+            return $redirector->forExistingSession(Auth::user());
         }
 
         $validated = $request->validate([
@@ -105,7 +118,7 @@ class CustomerAuthController extends Controller
         $request->session()->regenerate();
         $this->mergeGuestCart((int) $user->getKey(), $sessionId);
 
-        return redirect()->intended(route('account.show'))
+        return $redirector->afterCustomerRegistration($request)
             ->with('status', 'Your account is ready.');
     }
 

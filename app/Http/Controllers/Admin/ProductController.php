@@ -11,13 +11,15 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\SeoDefaults;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\BulkArchiveProductsRequest;
+use App\Http\Requests\Admin\SaveProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -54,6 +56,9 @@ class ProductController
 
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
+        if (! in_array($status, ['all', 'active', 'draft', 'inactive', 'low_stock', 'sale'], true)) {
+            $status = 'all';
+        }
         $categoryId = $request->integer('category_id') ?: null;
 
         if ($search !== '') {
@@ -61,8 +66,7 @@ class ProductController
                 $builder->where('name', 'like', '%' . $search . '%')
                     ->orWhere('slug', 'like', '%' . $search . '%')
                     ->orWhereHas('variants', fn ($variantQuery) => $variantQuery
-                        ->where('sku', 'like', '%' . $search . '%')
-                        ->orWhere('barcode', 'like', '%' . $search . '%'));
+                        ->where('sku', 'like', '%' . $search . '%'));
             });
         }
 
@@ -88,19 +92,14 @@ class ProductController
             ->withQueryString();
 
         $stats = [
-            'revenue' => $orderModel::query()->where('payment_status', 'paid')
-                ->whereNotIn('status', ['cancelled', 'returned'])->sum('total'),
             'orders' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->count(),
             'sales' => $orderItemModel::query()->whereHas('order', fn ($query) => $query
                 ->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']))->sum('line_total'),
             'customers' => $userModel::query()->where(config('commerce-admin.admin_flag_column', 'is_admin'), false)->count(),
-            'discount_total' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->sum('discount'),
-            'products' => $productModel::query()->count(),
-            'low_stock' => $variantModel::query()->where('is_active', true)
-                ->whereColumn('stock', '<=', 'low_stock_threshold')->count(),
+            'discount_total' => $orderModel::query()->where('payment_status', 'paid')
+                ->whereNotIn('status', ['cancelled', 'returned'])->sum('discount'),
             'discounted' => $variantModel::query()->whereNotNull('sale_price')
                 ->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price')->count(),
-            'units_sold' => $orderItemModel::query()->sum('quantity'),
         ];
 
         $categoryModel = $this->model('category', Category::class);
@@ -116,14 +115,14 @@ class ProductController
         return view('commerce-admin::products.form', array_merge(
             $this->formData(),
             ['product' => null, 'variants' => collect([(object) [
-                'id' => null, 'sku' => '', 'barcode' => '', 'size' => '', 'color' => '',
+                'id' => null, 'sku' => '', 'size' => '', 'color' => '',
                 'color_code' => '#171717', 'price' => null, 'sale_price' => null, 'stock' => 0,
                 'low_stock_threshold' => 5, 'is_active' => true,
             ]])]
         ));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveProductRequest $request): RedirectResponse
     {
         $productModel = $this->model('product', Product::class);
         $product = new $productModel();
@@ -166,7 +165,7 @@ class ProductController
         $variants = $model->variants->values();
         if ($variants->isEmpty()) {
             $variants = collect([(object) [
-                'id' => null, 'sku' => '', 'barcode' => '', 'size' => '', 'color' => '',
+                'id' => null, 'sku' => '', 'size' => '', 'color' => '',
                 'color_code' => '#171717', 'price' => null, 'sale_price' => null, 'stock' => 0,
                 'low_stock_threshold' => 5, 'is_active' => true,
             ]]);
@@ -178,7 +177,7 @@ class ProductController
         ));
     }
 
-    public function update(Request $request, int $product): RedirectResponse
+    public function update(SaveProductRequest $request, int $product): RedirectResponse
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()->findOrFail($product);
@@ -186,54 +185,17 @@ class ProductController
         return $this->save($request, $model, true);
     }
 
-    private function save(Request $request, object $product, bool $updating): RedirectResponse
+    private function save(SaveProductRequest $request, object $product, bool $updating): RedirectResponse
     {
         $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
-        $productTable = (new $productModel())->getTable();
-        $categoryModel = $this->model('category', Category::class);
-        $brandModel = $this->model('brand', Brand::class);
-        $rules = [
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique($productTable, 'slug')->ignore($product->getKey())],
-            'category_id' => ['nullable', 'integer', Rule::exists((new $categoryModel())->getTable(), 'id')],
-            'brand_id' => ['nullable', 'integer', Rule::exists((new $brandModel())->getTable(), 'id')],
-            'short_description' => ['nullable', 'string', 'max:500'],
-            'description' => ['nullable', 'string'],
-            'meta_title' => ['nullable', 'string', 'max:255'],
-            'meta_description' => ['nullable', 'string', 'max:500'],
-            'is_featured' => ['sometimes', 'boolean'],
-            'is_hero' => ['sometimes', 'boolean'],
-            'is_taxable' => ['sometimes', 'boolean'],
-            'status' => ['required', Rule::in(['active', 'draft'])],
-            'variants' => ['required', 'array', 'min:1', 'max:30'],
-            'variants.*.id' => ['nullable', 'integer'],
-            'variants.*.sku' => ['nullable', 'string', 'max:100'],
-            'variants.*.barcode' => ['nullable', 'string', 'max:100'],
-            'variants.*.size' => ['nullable', 'string', 'max:50'],
-            'variants.*.color' => ['nullable', 'string', 'max:80'],
-            'variants.*.color_code' => ['nullable', 'string', 'max:20'],
-            'variants.*.price' => ['required', 'numeric', 'min:0'],
-            'variants.*.sale_price' => ['nullable', 'numeric', 'min:0'],
-            'variants.*.stock' => ['required', 'integer', 'min:0'],
-            'variants.*.low_stock_threshold' => ['required', 'integer', 'min:0'],
-            'variants.*.is_active' => ['required', 'boolean'],
-            'images' => ['sometimes', 'array', 'max:8'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
-        ];
+        $validated = $request->validated();
 
-        $validated = $request->validate($rules);
+        $storedFiles = [];
 
-        foreach (($validated['variants'] ?? []) as $index => $variant) {
-            if (($variant['sale_price'] ?? null) !== null && (float) $variant['sale_price'] >= (float) $variant['price']) {
-                throw ValidationException::withMessages([
-                    "variants.$index.sale_price" => 'Sale price must be lower than the regular price.',
-                ]);
-            }
-        }
-
-        DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel): void {
+        try {
+            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, &$storedFiles): void {
             $requestedSlug = trim((string) ($validated['slug'] ?? ''));
             $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
 
@@ -245,7 +207,7 @@ class ProductController
                 $baseSlug = $slug;
                 $suffix = 2;
                 $slugTaken = static function (string $candidate) use ($productModel, $product): bool {
-                    return $productModel::query()
+                    return $productModel::withTrashed()
                         ->where('slug', $candidate)
                         ->when(
                             $product->exists,
@@ -266,8 +228,11 @@ class ProductController
                 'brand_id' => $validated['brand_id'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
-                'meta_title' => $validated['meta_title'] ?? null,
-                'meta_description' => $validated['meta_description'] ?? null,
+                'meta_title' => SeoDefaults::title((string) $validated['name'], $validated['meta_title'] ?? null),
+                'meta_description' => SeoDefaults::description((string) $validated['name'], $validated['meta_description'] ?? null, [
+                    $validated['short_description'] ?? null,
+                    $validated['description'] ?? null,
+                ]),
                 'is_active' => ($validated['status'] ?? 'draft') === 'active',
                 'is_featured' => (bool) ($validated['is_featured'] ?? false),
                 'is_hero' => (bool) ($validated['is_hero'] ?? false),
@@ -275,14 +240,20 @@ class ProductController
             ]);
             $product->save();
 
+            // The homepage has one hero slot: selecting a new hero clears the previous selection atomically.
+            if ((bool) $product->getAttribute('is_hero')) {
+                $productModel::query()
+                    ->where($product->getKeyName(), '<>', $product->getKey())
+                    ->where('is_hero', true)
+                    ->update(['is_hero' => false]);
+            }
+
             $keepIds = [];
             $seenSkus = [];
-            $seenBarcodes = [];
 
             foreach (array_values($validated['variants']) as $index => $input) {
                 $variantId = $input['id'] ?? null;
                 $sku = trim((string) ($input['sku'] ?? ''));
-                $barcode = trim((string) ($input['barcode'] ?? '')) ?: null;
 
                 // product_variants.sku is required and unique in the database.
                 // When the form leaves it blank, generate a stable-format SKU
@@ -292,7 +263,7 @@ class ProductController
                         $sku = 'VIS-' . Str::upper(Str::random(10));
                     } while (
                         in_array($sku, $seenSkus, true)
-                        || $variantModel::query()->where('sku', $sku)->exists()
+                        || $variantModel::withTrashed()->where('sku', $sku)->exists()
                     );
                 }
 
@@ -301,13 +272,8 @@ class ProductController
                         "variants.$index.sku" => 'Each variant must have a different SKU.',
                     ]);
                 }
-                if ($barcode !== null && in_array($barcode, $seenBarcodes, true)) {
-                    throw ValidationException::withMessages([
-                        "variants.$index.barcode" => 'Each variant must have a different barcode.',
-                    ]);
-                }
                 {
-                    $exists = $variantModel::query()->where('sku', $sku)
+                    $exists = $variantModel::withTrashed()->where('sku', $sku)
                         ->when($variantId, fn ($q) => $q->where('id', '<>', $variantId))->exists();
                     if ($exists) {
                         throw ValidationException::withMessages([
@@ -316,17 +282,6 @@ class ProductController
                     }
                     $seenSkus[] = $sku;
                 }
-                if ($barcode !== null) {
-                    $exists = $variantModel::query()->where('barcode', $barcode)
-                        ->when($variantId, fn ($q) => $q->where('id', '<>', $variantId))->exists();
-                    if ($exists) {
-                        throw ValidationException::withMessages([
-                            "variants.$index.barcode" => 'This barcode is already used by another product variant.',
-                        ]);
-                    }
-                    $seenBarcodes[] = $barcode;
-                }
-
                 if ($variantId) {
                     $variant = $product->variants()->whereKey($variantId)->firstOrFail();
                 } else {
@@ -337,7 +292,6 @@ class ProductController
 
                 $variant->fill([
                     'sku' => $sku,
-                    'barcode' => $barcode,
                     'size' => $input['size'] ?? null,
                     'color' => $input['color'] ?? null,
                     'color_code' => $input['color_code'] ?? null,
@@ -374,32 +328,76 @@ class ProductController
                     $variant->delete();
                 });
             }
-        });
 
-        if ($request->hasFile('images')) {
-            $mediaDisk = config('commerce-admin.media_disk', 'public');
-            foreach ($request->file('images', []) as $image) {
-                $path = $image->store(
-                    trim(config('commerce-admin.media_directory', 'products'), '/') . '/' . $product->getKey(),
-                    $mediaDisk
-                );
+            // Keep product, variant, stock-ledger, and media records in one DB transaction.
+            // Filesystem writes are compensated if any later DB operation fails.
+            if ($request->hasFile('images')) {
+                $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
+                $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/') . '/' . $product->getKey();
 
-                $product->media()->create([
-                    'collection' => 'gallery',
-                    'disk' => $mediaDisk,
-                    'path' => $path,
-                    'original_name' => $image->getClientOriginalName(),
-                    'mime_type' => $image->getMimeType(),
-                    'size' => $image->getSize(),
-                    'alt_text' => $product->name,
-                    'sort_order' => $product->galleryMedia()->count(),
-                    'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
-                ]);
+                foreach ($request->file('images', []) as $image) {
+                    $path = $image->store($directory, $mediaDisk);
+                    if (! is_string($path) || $path === '') {
+                        throw ValidationException::withMessages([
+                            'images' => 'ذخیره‌سازی یکی از تصاویر انجام نشد؛ هیچ تغییری ثبت نشد.',
+                        ]);
+                    }
+
+                    $storedFiles[] = [$mediaDisk, $path];
+
+                    $product->media()->create([
+                        'collection' => 'gallery',
+                        'disk' => $mediaDisk,
+                        'path' => $path,
+                        'original_name' => $image->getClientOriginalName(),
+                        'mime_type' => $image->getMimeType(),
+                        'size' => $image->getSize(),
+                        'alt_text' => $product->name,
+                        'sort_order' => $product->galleryMedia()->count(),
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+                }
             }
+            }, 3);
+        } catch (\Throwable $exception) {
+            foreach ($storedFiles as [$disk, $path]) {
+                try {
+                    Storage::disk($disk)->delete($path);
+                } catch (\Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
+
+            throw $exception;
         }
 
         return redirect()->route('commerce-admin.products.show', $product->getKey())
             ->with('status', $updating ? 'Product changes saved.' : 'Product created.');
+    }
+
+    public function bulkArchive(BulkArchiveProductsRequest $request): RedirectResponse
+    {
+        $productModel = $this->model('product', Product::class);
+        $ids = array_values(array_unique(array_map('intval', $request->validated('product_ids'))));
+
+        $archivedCount = DB::transaction(function () use ($productModel, $ids): int {
+            $products = $productModel::query()->whereKey($ids)->lockForUpdate()->get();
+
+            if ($products->count() !== count($ids)) {
+                throw ValidationException::withMessages([
+                    'product_ids' => 'یک یا چند محصول انتخاب‌شده دیگر در دسترس نیستند؛ فهرست را تازه‌سازی کنید.',
+                ]);
+            }
+
+            foreach ($products as $product) {
+                $product->delete();
+            }
+
+            return $products->count();
+        }, 3);
+
+        return redirect()->route('commerce-admin.products.index')
+            ->with('status', number_format($archivedCount) . ' محصول با موفقیت بایگانی شد.');
     }
 
     public function destroy(int $product): RedirectResponse

@@ -23,7 +23,6 @@ class DashboardController
     public function index(): View
     {
         $orderModel = $this->model('order', Order::class);
-        $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
         $userModel = $this->model('user', User::class);
         $adminFlag = (string) config('commerce-admin.admin_flag_column', 'is_admin');
@@ -35,8 +34,6 @@ class DashboardController
 
         $orderCount = (clone $orders)->count();
         $pendingOrders = (clone $orders)->whereIn('status', ['pending', 'confirmed', 'preparing'])->count();
-        $productsCount = $productModel::query()->count();
-        $activeProducts = $productModel::query()->where('is_active', true)->count();
         $lowStockCount = $variantModel::query()->where('is_active', true)
             ->whereColumn('stock', '<=', 'low_stock_threshold')->count();
         $customersCount = $userModel::query()->where($adminFlag, false)->count();
@@ -51,8 +48,6 @@ class DashboardController
             'revenue',
             'orderCount',
             'pendingOrders',
-            'productsCount',
-            'activeProducts',
             'lowStockCount',
             'customersCount',
             'series',
@@ -119,8 +114,8 @@ class DashboardController
             ->whereHas('order', fn ($query) => $query
                 ->where('payment_status', 'paid')
                 ->whereNotIn('status', ['cancelled', 'returned']))
-            ->select('product_name', DB::raw('SUM(quantity) as units_sold'), DB::raw('SUM(line_total) as gross_sales'))
-            ->groupBy('product_name')->orderByDesc('units_sold')->limit(5)->get();
+            ->select('product_id', 'product_name', DB::raw('SUM(quantity) as units_sold'), DB::raw('SUM(line_total) as gross_sales'))
+            ->groupBy('product_id', 'product_name')->orderByDesc('units_sold')->limit(5)->get();
 
         $lowStock = $variantModel::query()->with('product')
             ->where('is_active', true)->whereColumn('stock', '<=', 'low_stock_threshold')
@@ -145,11 +140,13 @@ class DashboardController
                 ->where('customer_email', '<>', '')->distinct()->count('customer_email');
 
         $repeatUserCustomers = (clone $paid)->whereNotNull('user_id')
-            ->select('user_id')->groupBy('user_id')->havingRaw('COUNT(*) > 1')->get()->count();
+            ->select('user_id')->groupBy('user_id')->havingRaw('COUNT(*) > 1')
+            ->getQuery()->getCountForPagination();
         $repeatEmailCustomers = (clone $paid)->whereNull('user_id')
             ->whereNotNull('customer_email')->where('customer_email', '<>', '')
             ->selectRaw('LOWER(customer_email) as normalized_email')
-            ->groupByRaw('LOWER(customer_email)')->havingRaw('COUNT(*) > 1')->get()->count();
+            ->groupByRaw('LOWER(customer_email)')->havingRaw('COUNT(*) > 1')
+            ->getQuery()->getCountForPagination();
         $returningRate = $identifiedCustomers > 0
             ? round((($repeatUserCustomers + $repeatEmailCustomers) / $identifiedCustomers) * 100, 1)
             : 0;
@@ -212,7 +209,7 @@ class DashboardController
                                 ->whereBetween('created_at', [$anchor, $end]);
                         });
                 })
-                ->groupBy('month_bucket')
+                ->groupByRaw($monthExpression)
                 ->get()
                 ->keyBy('month_bucket');
         }

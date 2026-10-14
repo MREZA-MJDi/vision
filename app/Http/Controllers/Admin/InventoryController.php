@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\InventoryMovement;
 use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\AdjustInventoryRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,6 @@ class InventoryController
         if ($search !== '') {
             $query->where(fn ($variants) => $variants
                 ->where('sku', 'like', '%' . $search . '%')
-                ->orWhere('barcode', 'like', '%' . $search . '%')
                 ->orWhereHas('product', fn ($product) => $product->where('name', 'like', '%' . $search . '%')));
         }
 
@@ -65,20 +65,11 @@ class InventoryController
         ));
     }
 
-    public function adjust(Request $request, int $variant): RedirectResponse
+    public function adjust(AdjustInventoryRequest $request, int $variant): RedirectResponse
     {
-        $validated = $request->validate([
-            'adjustment' => ['required', 'integer', 'min:-100000', 'max:100000'],
-            'note' => ['required', 'string', 'min:3', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $delta = (int) $validated['adjustment'];
-        if ($delta === 0) {
-            throw ValidationException::withMessages([
-                'adjustment' => 'برای اصلاح موجودی، عددی غیر از صفر وارد کنید.',
-            ]);
-        }
-
         $variantModel = $this->model('variant', ProductVariant::class);
         $movementModel = $this->model('inventory_movement', InventoryMovement::class);
         $guard = (string) config('commerce-admin.guard', 'web');

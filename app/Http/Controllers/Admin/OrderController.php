@@ -10,12 +10,16 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\SearchOrderVariantsRequest;
+use App\Http\Requests\Admin\StoreAdminOrderRequest;
+use App\Http\Requests\Admin\UpdateOrderPaymentRequest;
+use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -29,11 +33,16 @@ class OrderController
     public function index(Request $request): View
     {
         $orderModel = $this->model('order', Order::class);
-        $orderItemModel = $this->model('order_item', OrderItem::class);
 
-        $query = $orderModel::query()->with(['user', 'items']);
+        $query = $orderModel::query()
+            ->with(['user', 'primaryItem'])
+            ->withSum('items as admin_total_quantity', 'quantity');
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
+        $validStatusFilters = array_merge(['all', 'pending', 'shipped', 'cancelled'], Order::STATUSES);
+        if (! in_array($status, $validStatusFilters, true)) {
+            $status = 'all';
+        }
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search): void {
@@ -64,26 +73,72 @@ class OrderController
             'shipped' => $orderModel::query()->whereIn('status', ['shipped', 'out_for_delivery'])->count(),
             'delivered' => $orderModel::query()->where('status', 'delivered')->count(),
             'cancelled' => $orderModel::query()->whereIn('status', ['cancelled', 'returned'])->count(),
-            'gross' => $orderItemModel::query()->sum('line_total'),
         ];
 
-        // The paginator already eager-loads order items, so the table stays query-bounded.
-
-
+        // Load one item snapshot and a SQL aggregate instead of hydrating every order item.
         return view('commerce-admin::orders.index', compact('orders', 'stats', 'search', 'status'));
     }
 
     public function create(): View
     {
         $variantModel = $this->model('variant', ProductVariant::class);
-        $variants = $variantModel::query()->with(['product', 'primaryGalleryMedia', 'product.primaryGalleryMedia'])
-            ->where('is_active', true)->orderBy('product_id')->orderBy('sort_order')->get()
-            ->filter(fn ($variant) => $variant->product && $variant->product->is_active);
+        $hasActiveVariants = $variantModel::query()
+            ->where('is_active', true)
+            ->whereHas('product', fn ($query) => $query->where('is_active', true))
+            ->exists();
 
-        return view('commerce-admin::orders.create', compact('variants'));
+        return view('commerce-admin::orders.create', compact('hasActiveVariants'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function searchVariants(SearchOrderVariantsRequest $request): JsonResponse
+    {
+        $variantModel = $this->model('variant', ProductVariant::class);
+        $search = trim((string) $request->validated('q', ''));
+        $selectedIds = collect($request->validated('ids', []))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+        $baseQuery = fn () => $variantModel::query()
+            ->with('product')
+            ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->whereHas('product', fn ($productQuery) => $productQuery->where('is_active', true));
+
+        $selectedVariants = $selectedIds->isEmpty()
+            ? collect()
+            : $baseQuery()->whereKey($selectedIds)->get();
+
+        $query = $baseQuery();
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search): void {
+                $term = '%' . $search . '%';
+                $builder->where('sku', 'like', $term)
+                    ->orWhere('size', 'like', $term)
+                    ->orWhere('color', 'like', $term)
+                    ->orWhereHas('product', fn ($productQuery) => $productQuery->where('name', 'like', $term));
+            });
+        }
+
+        $searchResults = $query->orderByDesc('updated_at')->orderByDesc('id')->limit(31)->get();
+        $hasMore = $searchResults->count() > 30;
+        $results = $selectedVariants->concat($searchResults->take(30))
+            ->unique(fn ($variant) => $variant->getKey())
+            ->values();
+        $data = $results->map(fn ($variant): array => [
+            'id' => $variant->getKey(),
+            'label' => implode(' · ', array_values(array_filter([
+                $variant->product?->name ?? 'محصول',
+                ! in_array($variant->display_name, [$variant->sku, $variant->product?->name, 'Variant'], true) ? $variant->display_name : null,
+                $variant->sku,
+            ]))),
+            'price' => (float) $variant->effective_price,
+            'stock' => (int) $variant->stock,
+        ])->values();
+
+        return response()->json(['data' => $data, 'has_more' => $hasMore]);
+    }
+
+    public function store(StoreAdminOrderRequest $request): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
         $itemModel = $this->model('order_item', OrderItem::class);
@@ -92,20 +147,7 @@ class OrderController
         $userModel = $this->model('user', User::class);
         $paymentModel = $this->model('payment', Payment::class);
 
-        $validated = $request->validate([
-            'customer_name' => ['required', 'string', 'max:255'],
-            'customer_email' => ['nullable', 'email', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:30'],
-            'shipping_address' => ['nullable', 'string', 'max:2000'],
-            'shipping_province' => ['nullable', 'string', 'max:100'],
-            'shipping_city' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:30'],
-            'payment_method' => ['required', Rule::in(['cash_on_delivery', 'bank_transfer', 'manual'])],
-            'shipping_cost' => ['required', 'numeric', 'min:0'],
-            'items' => ['required', 'array', 'min:1', 'max:50'],
-            'items.*.variant_id' => ['required', 'integer', 'distinct', 'exists:product_variants,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $order = DB::transaction(function () use (
             $validated,
@@ -295,12 +337,10 @@ class OrderController
         ));
     }
 
-    public function updateStatus(Request $request, int $order, OrderService $orderService): RedirectResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, int $order, OrderService $orderService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(Order::STATUSES)],
-        ]);
+        $validated = $request->validated();
 
         $record = $orderModel::query()->findOrFail($order);
         if (! $record instanceof Order) {
@@ -321,12 +361,10 @@ class OrderController
             ->with('status', 'وضعیت سفارش ذخیره شد.');
     }
 
-    public function updatePayment(Request $request, int $order, PaymentService $paymentService): RedirectResponse
+    public function updatePayment(UpdateOrderPaymentRequest $request, int $order, PaymentService $paymentService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $validated = $request->validate([
-            'payment_status' => ['required', Rule::in(Payment::STATUSES)],
-        ]);
+        $validated = $request->validated();
 
         $record = $orderModel::query()->findOrFail($order);
         if (! $record instanceof Order) {

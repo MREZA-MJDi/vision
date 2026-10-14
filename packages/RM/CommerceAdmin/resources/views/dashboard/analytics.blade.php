@@ -4,7 +4,6 @@
 
 @section('content')
     @php
-        $currency = config('commerce-admin.currency_symbol', '$');
         $maxRevenue = max(1, (float) collect($series)->max('value'));
         $maxOrders = max(1, (int) collect($series)->max('orders_count'));
         $revenuePoints = collect($series)->values()->map(fn ($point, $index) =>
@@ -45,13 +44,13 @@
                 <span class="ak-period-label">{{ config('commerce-admin.currency', 'USD') }}</span>
             </div>
             <div class="ak-analytics-main-value">
-                <strong>{{ $currency }}{{ number_format((float) $revenue, 2) }}</strong>
+                <strong>@money($revenue)</strong>
                 <span>تمام سفارش‌های پرداخت‌شدهٔ ثبت‌شده</span>
             </div>
             <div class="ak-bar-chart ak-bar-chart-tall" role="img" aria-label="درآمد پرداخت‌شده by month">
                 @foreach ($series as $point)
                     <div class="ak-bar-column">
-                        <span class="ak-bar-tooltip">{{ $currency }}{{ number_format((float) $point['value'], 0) }}</span>
+                        <span class="ak-bar-tooltip">@money($point['value'])</span>
                         <div class="ak-bar-track"><span style="height:{{ max(2, (((float) $point['value']) / $maxRevenue) * 100) }}%"></span></div>
                         <small>{{ $point['label'] }}</small>
                     </div>
@@ -96,9 +95,9 @@
             </div>
             @forelse ($byCity as $city)
                 <div class="ak-location-row">
-                    <div class="ak-location-label"><span>{{ $city->shipping_city }}</span><strong>{{ $currency }}{{ number_format((float) $city->revenue_total, 0) }}</strong></div>
+                    <div class="ak-location-label"><span>{{ $city->shipping_city }}</span><strong>@money($city->revenue_total)</strong></div>
                     <div class="ak-location-track"><span style="width:{{ min(100, ((float) $city->revenue_total / $cityMax) * 100) }}%"></span></div>
-                    <div class="ak-location-meta"><span>{{ number_format((int) $city->orders_count) }} orders</span><span>{{ $cityMax > 0 ? number_format(((float) $city->revenue_total / $cityMax) * 100, 0) : 0 }}%</span></div>
+                    <div class="ak-location-meta"><span>{{ number_format((int) $city->orders_count) }} سفارش</span><span>{{ $cityMax > 0 ? number_format(((float) $city->revenue_total / $cityMax) * 100, 0) : 0 }}%</span></div>
                 </div>
             @empty
                 <div class="ak-compact-empty">پس از ثبت شهر مقصد در سفارش‌ها، اطلاعات این بخش نمایش داده می‌شود.</div>
@@ -121,7 +120,7 @@
                     @endforelse
                 </div>
             </div>
-            <div class="ak-source-footer"><span>Paid orders</span><strong>{{ number_format((int) $paidCount) }}</strong></div>
+            <div class="ak-source-footer"><span>سفارش‌های پرداخت‌شده</span><strong>{{ number_format((int) $paidCount) }}</strong></div>
         </article>
 
         <article class="ak-panel ak-review-panel">
@@ -131,7 +130,7 @@
             </div>
             <div class="ak-review-summary">
                 <strong>{{ number_format((float) $reviewAverage, 1) }}</strong>
-                <div><div class="ak-review-stars" aria-label="{{ number_format((float) $reviewAverage, 1) }} out of 5 stars">★★★★★</div><small>{{ number_format((int) $reviewsCount) }} approved reviews</small></div>
+                <div><div class="ak-review-stars" aria-label="{{ number_format((float) $reviewAverage, 1) }} out of 5 stars">★★★★★</div><small>{{ number_format((int) $reviewsCount) }} نظر تأییدشده</small></div>
             </div>
             @for ($rating = 5; $rating >= 1; $rating--)
                 @php $ratingCount = (int) ($reviewDistribution[$rating] ?? 0); @endphp
@@ -142,7 +141,7 @@
                 </div>
             @endfor
             @if ($pendingReviews > 0)
-                <a class="ak-pending-review-link" href="{{ route('commerce-admin.reviews.index', ['status' => 'pending']) }}">{{ number_format((int) $pendingReviews) }} reviews waiting for moderation <span>→</span></a>
+                <a class="ak-pending-review-link" href="{{ route('commerce-admin.reviews.index', ['status' => 'pending']) }}">{{ number_format((int) $pendingReviews) }} نظر در انتظار بررسی <span>→</span></a>
             @endif
         </article>
     </section>
@@ -157,7 +156,7 @@
                     <thead><tr><th>محصول</th><th>تعداد فروش</th><th>مجموع فروش</th></tr></thead>
                     <tbody>
                     @foreach ($topProducts as $item)
-                        <tr><td class="ak-table-primary">{{ $item->product_name }}</td><td>{{ number_format((int) $item->units_sold) }}</td><td>{{ $currency }}{{ number_format((float) $item->gross_sales, 2) }}</td></tr>
+                        <tr><td class="ak-table-primary">{{ $item->product_name }}</td><td>{{ number_format((int) $item->units_sold) }}</td><td>@money($item->gross_sales)</td></tr>
                     @endforeach
                     </tbody>
                 </table></div>
@@ -168,8 +167,8 @@
             <div class="ak-panel-heading"><div><h2>پایش موجودی</h2><p>تنوع‌های فعال با موجودی کمتر از حد هشدار یا برابر آن</p></div><a class="ak-text-link" href="{{ route('commerce-admin.products.index', ['status' => 'low_stock']) }}">بررسی موجودی ↗</a></div>
             @forelse ($lowStock as $variant)
                 <div class="ak-stock-row">
-                    <div><strong>{{ $variant->product?->name ?: 'Product variant' }}</strong><small>{{ $variant->sku ?: 'No SKU' }}</small></div>
-                    <span class="{{ (int) $variant->stock <= 0 ? 'is-out' : 'is-low' }}">{{ number_format((int) $variant->stock) }} left</span>
+                    <div><strong>{{ $variant->product?->name ?: 'تنوع محصول' }}</strong><small>{{ $variant->sku ?: 'بدون SKU' }}</small></div>
+                    <span class="{{ (int) $variant->stock <= 0 ? 'is-out' : 'is-low' }}">{{ number_format((int) $variant->stock) }} عدد باقی‌مانده</span>
                 </div>
             @empty
                 <div class="ak-compact-empty">در حال حاضر هیچ تنوع فعالی زیر حد هشدار موجودی نیست.</div>

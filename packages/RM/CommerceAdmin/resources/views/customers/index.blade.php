@@ -18,7 +18,7 @@
 @else
 <div class="ak-table-scroll"><table class="ak-table"><thead><tr><th>مشتری</th><th>تلفن</th><th>تعداد سفارش</th><th>مجموع پرداخت موفق</th><th>عضویت</th><th>عملیات</th></tr></thead><tbody>
 @foreach($customers as $customer)
-<tr><td><strong class="ak-table-primary">{{ $customer->name ?: 'مشتری بدون نام' }}</strong><small class="ak-table-subtext">{{ $customer->email ?: 'ایمیل ثبت نشده' }}</small></td><td>{{ $customer->phone ?: '—' }}</td><td>{{ number_format((int)$customer->orders_count) }}</td><td>{{ config('commerce-admin.currency_symbol','$') }}{{ number_format((float)($customer->paid_revenue ?? 0),2) }}</td><td>{{ $customer->created_at?->locale('fa')->translatedFormat('j M Y') ?: '—' }}</td><td><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.customers.show',$customer->getKey()) }}">مشاهده سابقه</a></td></tr>
+<tr><td><strong class="ak-table-primary">{{ $customer->name ?: 'مشتری بدون نام' }}</strong><small class="ak-table-subtext">{{ $customer->email ?: 'ایمیل ثبت نشده' }}</small></td><td>{{ $customer->phone ?: '—' }}</td><td>{{ number_format((int)$customer->orders_count) }}</td><td>@money(($customer->paid_revenue ?? 0))</td><td>@jalali($customer->created_at, 'j F Y')</td><td><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.customers.show',$customer->getKey()) }}">مشاهده سابقه</a></td></tr>
 @endforeach
 </tbody></table></div>
 <div class="ak-pagination-wrap"><span>نمایش {{ $customers->firstItem() }} تا {{ $customers->lastItem() }} از {{ $customers->total() }}</span>{{ $customers->links('commerce-admin::partials.pagination') }}</div>
