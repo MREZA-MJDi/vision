@@ -1,6 +1,6 @@
 <?php
 
-namespace Rm\\CommerceAdmin\\Support;
+namespace Rm\CommerceAdmin\Support;
 
 final class MoneyFormatter
 {
