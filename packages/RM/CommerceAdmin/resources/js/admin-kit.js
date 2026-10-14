@@ -192,6 +192,12 @@
     const orderList = $('[data-order-items]');
     const orderTemplate = $('#order-item-template');
     const shippingInput = $('[data-shipping-cost]');
+    const orderVariantSearch = $('[data-order-variant-search]');
+    const orderVariantResults = $('[data-order-variant-results]');
+    const orderVariantSearchUrl = $('#orderCreateForm')?.dataset.orderVariantSearchUrl;
+    let lastVariantResults = [];
+    let variantSearchTimer = null;
+    let variantSearchSequence = 0;
     const recalculateOrder = () => {
         let subtotal = 0;
         $$('[data-order-item-row]', orderList || document).forEach((row) => {
@@ -215,6 +221,49 @@
         if (subtotalEl) subtotalEl.textContent = money(subtotal);
         if (totalEl) totalEl.textContent = money(subtotal + shipping);
     };
+    const updateOrderVariantOptions = (items) => {
+        $('[data-order-variant]', orderList || document).forEach((select) => {
+            const selectedValue = select.value;
+            const selectedOption = select.selectedOptions?.[0]?.cloneNode(true);
+            select.replaceChildren(new Option('ابتدا محصول را جست‌وجو کنید', ''));
+            items.forEach((item) => {
+                const option = new Option(`${item.label} — ${money(item.price)} (${item.stock} موجود)`, String(item.id));
+                option.dataset.price = String(item.price);
+                option.dataset.stock = String(item.stock);
+                select.append(option);
+            });
+            if (selectedValue && !items.some((item) => String(item.id) === selectedValue) && selectedOption) {
+                select.append(selectedOption);
+            }
+            select.value = selectedValue;
+        });
+        recalculateOrder();
+    };
+    const loadOrderVariants = async (search = '') => {
+        if (!orderVariantSearchUrl || !orderVariantResults) return;
+        const sequence = ++variantSearchSequence;
+        orderVariantResults.textContent = 'در حال جست‌وجوی تنوع‌های فعال…';
+        const url = new URL(orderVariantSearchUrl, window.location.origin);
+        if (search.trim() !== '') url.searchParams.set('q', search.trim());
+        else url.searchParams.delete('q');
+        try {
+            const response = await fetch(url.toString(), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Variant search failed');
+            const payload = await response.json();
+            if (sequence !== variantSearchSequence) return;
+            lastVariantResults = Array.isArray(payload.data) ? payload.data : [];
+            updateOrderVariantOptions(lastVariantResults);
+            orderVariantResults.textContent = lastVariantResults.length === 0
+                ? 'با این عبارت محصول فعالی پیدا نشد.'
+                : `${lastVariantResults.length} گزینهٔ قابل فروش${payload.has_more ? ' — نتایج بیشتر است؛ جست‌وجو را دقیق‌تر کنید.' : ''}`;
+        } catch (_) {
+            if (sequence === variantSearchSequence) orderVariantResults.textContent = 'بارگذاری گزینه‌ها ناموفق بود؛ دوباره جست‌وجو کنید.';
+        }
+    };
+    orderVariantSearch?.addEventListener('input', () => {
+        if (variantSearchTimer !== null) window.clearTimeout(variantSearchTimer);
+        variantSearchTimer = window.setTimeout(() => loadOrderVariants(orderVariantSearch.value), 220);
+    });
     const renumberOrderItems = () => {
         const rows = $$('[data-order-item-row]', orderList || document);
         rows.forEach((row, index) => {
@@ -230,6 +279,7 @@
         if (!orderList || !orderTemplate) return;
         const index = $$('[data-order-item-row]', orderList).length;
         orderList.insertAdjacentHTML('beforeend', orderTemplate.innerHTML.replaceAll('__INDEX__', String(index)));
+        updateOrderVariantOptions(lastVariantResults);
         renumberOrderItems();
     });
     orderList?.addEventListener('click', (event) => {
@@ -247,4 +297,5 @@
     });
     shippingInput?.addEventListener('input', recalculateOrder);
     renumberOrderItems();
+    if (orderVariantSearch) loadOrderVariants('');
 })();

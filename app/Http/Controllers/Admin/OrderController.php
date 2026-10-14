@@ -10,7 +10,9 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\SearchOrderVariantsRequest;
 use App\Http\Requests\Admin\StoreAdminOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderPaymentRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
@@ -82,11 +84,44 @@ class OrderController
     public function create(): View
     {
         $variantModel = $this->model('variant', ProductVariant::class);
-        $variants = $variantModel::query()->with(['product', 'primaryGalleryMedia', 'product.primaryGalleryMedia'])
-            ->where('is_active', true)->orderBy('product_id')->orderBy('sort_order')->get()
-            ->filter(fn ($variant) => $variant->product && $variant->product->is_active);
+        $hasActiveVariants = $variantModel::query()
+            ->where('is_active', true)
+            ->whereHas('product', fn ($query) => $query->where('is_active', true))
+            ->exists();
 
-        return view('commerce-admin::orders.create', compact('variants'));
+        return view('commerce-admin::orders.create', compact('hasActiveVariants'));
+    }
+
+    public function searchVariants(SearchOrderVariantsRequest $request): JsonResponse
+    {
+        $variantModel = $this->model('variant', ProductVariant::class);
+        $search = trim((string) $request->validated('q', ''));
+        $query = $variantModel::query()
+            ->with('product')
+            ->where('is_active', true)
+            ->whereHas('product', fn ($productQuery) => $productQuery->where('is_active', true));
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search): void {
+                $term = '%' . $search . '%';
+                $builder->where('sku', 'like', $term)
+                    ->orWhere('barcode', 'like', $term)
+                    ->orWhere('size', 'like', $term)
+                    ->orWhere('color', 'like', $term)
+                    ->orWhereHas('product', fn ($productQuery) => $productQuery->where('name', 'like', $term));
+            });
+        }
+
+        $results = $query->orderByDesc('updated_at')->orderByDesc('id')->limit(31)->get();
+        $hasMore = $results->count() > 30;
+        $data = $results->take(30)->map(fn ($variant): array => [
+            'id' => $variant->getKey(),
+            'label' => trim(($variant->product?->name ?? 'محصول') . ' · ' . $variant->display_name . ($variant->sku ? ' · ' . $variant->sku : '')),
+            'price' => (float) $variant->effective_price,
+            'stock' => (int) $variant->stock,
+        ])->values();
+
+        return response()->json(['data' => $data, 'has_more' => $hasMore]);
     }
 
     public function store(StoreAdminOrderRequest $request): RedirectResponse

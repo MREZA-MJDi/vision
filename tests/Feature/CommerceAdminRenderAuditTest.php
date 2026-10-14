@@ -244,6 +244,52 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->get('/products')->assertOk()->assertDontSee('store-hero-product', false);
     }
 
+    public function test_order_variant_search_is_bounded_and_excludes_inactive_catalog_records(): void
+    {
+        $admin = $this->makeAdmin();
+        $activeProduct = Product::query()->create([
+            'name' => 'Searchable Active Shoe',
+            'slug' => 'searchable-active-shoe',
+            'is_active' => true,
+        ]);
+        $activeVariant = ProductVariant::query()->create([
+            'product_id' => $activeProduct->getKey(),
+            'sku' => 'SEARCH-ACTIVE-001',
+            'price' => 40,
+            'stock' => 3,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+        ProductVariant::query()->create([
+            'product_id' => $activeProduct->getKey(),
+            'sku' => 'SEARCH-INACTIVE-VARIANT',
+            'price' => 40,
+            'stock' => 3,
+            'low_stock_threshold' => 1,
+            'is_active' => false,
+        ]);
+        $inactiveProduct = Product::query()->create([
+            'name' => 'Searchable Inactive Shoe',
+            'slug' => 'searchable-inactive-shoe',
+            'is_active' => false,
+        ]);
+        ProductVariant::query()->create([
+            'product_id' => $inactiveProduct->getKey(),
+            'sku' => 'SEARCH-INACTIVE-PRODUCT',
+            'price' => 40,
+            'stock' => 3,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson(route('commerce-admin.orders.variants.search', ['q' => 'Searchable']))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $activeVariant->getKey())
+            ->assertJsonPath('data.0.label', 'Searchable Active Shoe · · SEARCH-ACTIVE-001');
+    }
+
     private function makeAdmin(): User
     {
         $admin = User::query()->create([
