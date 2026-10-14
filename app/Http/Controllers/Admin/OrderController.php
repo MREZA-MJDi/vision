@@ -116,7 +116,11 @@ class OrderController
         $hasMore = $results->count() > 30;
         $data = $results->take(30)->map(fn ($variant): array => [
             'id' => $variant->getKey(),
-            'label' => trim(($variant->product?->name ?? 'محصول') . ' · ' . $variant->display_name . ($variant->sku ? ' · ' . $variant->sku : '')),
+            'label' => implode(' · ', array_values(array_filter([
+                $variant->product?->name ?? 'محصول',
+                ! in_array($variant->display_name, [$variant->sku, $variant->product?->name, 'Variant'], true) ? $variant->display_name : null,
+                $variant->sku,
+            ]))),
             'price' => (float) $variant->effective_price,
             'stock' => (int) $variant->stock,
         ])->values();

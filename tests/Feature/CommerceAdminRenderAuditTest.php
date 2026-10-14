@@ -287,7 +287,7 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $activeVariant->getKey())
-            ->assertJsonPath('data.0.label', 'Searchable Active Shoe · · SEARCH-ACTIVE-001');
+            ->assertJsonPath('data.0.label', 'Searchable Active Shoe · SEARCH-ACTIVE-001');
     }
 
     private function makeAdmin(): User
