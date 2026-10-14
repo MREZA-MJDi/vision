@@ -156,6 +156,74 @@ class CommerceAdminRenderAuditTest extends TestCase
         ));
     }
 
+    public function test_admin_product_list_details_and_editor_render_variant_photo_when_first_variant_has_none(): void
+    {
+        $admin = $this->makeAdmin();
+        $product = Product::query()->create([
+            'name' => 'Variant Photo Visibility Product',
+            'slug' => 'variant-photo-visibility-product',
+            'is_active' => true,
+        ]);
+
+        // The first in-stock variant has no photo. Listing/detail views must
+        // still find the photo attached to a different variant without N+1 queries.
+        ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'VARIANT-PHOTO-NONE',
+            'color' => 'خاکستری',
+            'color_code' => '#777777',
+            'size' => 'M',
+            'price' => 1000,
+            'stock' => 3,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+        $photoVariant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'VARIANT-PHOTO-BLACK',
+            'color' => 'مشکی',
+            'color_code' => '#17191C',
+            'size' => 'M',
+            'price' => 1200,
+            'stock' => 4,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $photoUrl = 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990';
+        $photoVariant->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => $photoUrl,
+            'original_name' => 'black-tee.jpg',
+            'mime_type' => 'image/jpeg',
+            'size' => null,
+            'alt_text' => 'تی‌شرت مشکی — تصویر نمونه',
+            'metadata' => [
+                'source' => 'Unsplash',
+                'license' => 'Unsplash License',
+            ],
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin);
+
+        $this->get(route('commerce-admin.products.index'))
+            ->assertOk()
+            ->assertSee($photoUrl, false);
+
+        $this->get(route('commerce-admin.products.show', $product->getKey()))
+            ->assertOk()
+            ->assertSee($photoUrl, false)
+            ->assertSee('تصویر تنوع');
+
+        $this->get(route('commerce-admin.products.edit', $product->getKey()))
+            ->assertOk()
+            ->assertSee($photoUrl, false)
+            ->assertSee('data-variant-image-preview', false);
+    }
+
     public function test_product_variants_store_separate_images_and_publish_their_image_urls(): void
     {
         Storage::fake('public');
