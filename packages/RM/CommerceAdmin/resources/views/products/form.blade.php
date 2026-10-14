@@ -97,6 +97,9 @@
                                     @if($variantImage)
                                         <label class="ak-variant-remove-image"><input type="checkbox" name="variants[{{ $index }}][remove_image]" value="1" data-remove-variant-image><span>حذف تصویر اختصاصی و استفاده از تصویر اصلی محصول</span></label>
                                     @endif
+                                    @if($variantImage && data_get($variant, 'id'))
+                                        <button class="ak-button ak-button-light ak-button-sm" type="submit" form="delete-variant-media-{{ data_get($variant, 'id') }}-{{ $product?->getKey() }}" aria-label="حذف تصویر اختصاصی">حذف تصویر</button>
+                                    @endif
                                 </div>
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>

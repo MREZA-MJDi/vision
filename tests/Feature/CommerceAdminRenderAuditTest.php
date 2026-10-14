@@ -259,24 +259,10 @@ class CommerceAdminRenderAuditTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->put(route('commerce-admin.products.update', $product->getKey()), [
-                'name' => $product->name,
-                'slug' => $product->slug,
-                'status' => 'active',
-                'variants' => [[
-                    'id' => $variant->getKey(),
-                    'sku' => $variant->sku,
-                    'color' => $variant->color,
-                    'price' => '1000',
-                    'sale_price' => '',
-                    'stock' => '5',
-                    'low_stock_threshold' => '1',
-                    'is_active' => '1',
-                    'remove_image' => '1',
-                ]],
-            ])
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('commerce-admin.products.show', $product->getKey()));
+            ->delete(route('commerce-admin.products.variants.media.destroy', [
+                $product->getKey(), $variant->getKey(), $media->getKey(),
+            ]))
+            ->assertRedirect(route('commerce-admin.products.edit', $product->getKey()));
 
         $this->assertDatabaseMissing('media', ['id' => $media->getKey()]);
         Storage::disk('public')->assertMissing($path);

@@ -495,7 +495,8 @@ class ProductController
         return redirect()->route('commerce-admin.products.edit', $model->getKey())
             ->with('status', 'Image removed.');
     }
-    public function deleteVariantMedia(int $product, int $variant, int $media): RedirectResponse
+
+public function deleteVariantMedia(int $product, int $variant, int $media): RedirectResponse
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()->findOrFail($product);
