@@ -41,7 +41,7 @@
     <div class="store-atmosphere" aria-hidden="true"></div>
 
     @if (request()->routeIs('storefront.index'))
-        <div class="tiamir-intro" data-tiamir-intro data-first-duration="5600" data-return-duration="2500" aria-hidden="true">
+        <div class="tiamir-intro" data-tiamir-intro data-first-duration="3200" data-return-duration="1900" aria-hidden="true">
             <canvas class="tiamir-intro__static" data-tiamir-static></canvas>
             <span class="tiamir-intro__grain" aria-hidden="true"></span>
             <span class="tiamir-intro__scanlines" aria-hidden="true"></span>
