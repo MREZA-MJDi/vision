@@ -8,8 +8,14 @@
 @section('content')
 @php
     $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
-    $primaryImage = $defaultVariant?->primaryGalleryMedia?->url
-        ?? $product->primaryGalleryMedia?->url;
+    $baseImage = $product->primaryGalleryMedia?->url ?? $product->galleryMedia->first()?->url;
+    $primaryImage = $defaultVariant?->primaryGalleryMedia?->url ?? $baseImage;
+    $colorVariants = $product->activeVariants
+        ->filter(fn ($variant) => trim((string) $variant->color) !== '')
+        ->groupBy(fn ($variant) => mb_strtolower(trim((string) $variant->color)))
+        ->map(fn ($variants) => $variants->first(fn ($variant) => (int) $variant->stock > 0) ?? $variants->first())
+        ->values();
+    $selectedColor = mb_strtolower(trim((string) $defaultVariant?->color));
     $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
 @endphp
 
@@ -23,16 +29,18 @@
     <section class="store-product-detail">
         <div class="store-product-detail__gallery">
             @forelse($product->galleryMedia as $media)
-                <div class="store-product-detail__image">
-                    <img src="{{ $loop->first ? ($defaultVariant?->primaryGalleryMedia?->url ?? $media->url) : $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" @if($loop->first) data-product-main-image data-fallback-src="{{ $product->primaryGalleryMedia?->url ?? $media->url }}" @endif loading="{{ $loop->first ? 'eager' : 'lazy' }}">
+                <div class="store-product-detail__image" @if($loop->first) data-product-main-stage data-base-image="{{ $baseImage ?? '' }}" @endif>
+                    <img src="{{ $loop->first ? ($defaultVariant?->primaryGalleryMedia?->url ?? $media->url) : $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" @if($loop->first) data-product-main-image data-fallback-src="{{ $baseImage ?? '' }}" @endif loading="{{ $loop->first ? 'eager' : 'lazy' }}">
+                    @if($loop->first)<div class="store-product-detail__image--empty" data-product-image-placeholder hidden><span>VISION<br>STUDIO</span></div>@endif
                 </div>
             @empty
                 @if($primaryImage)
-                    <div class="store-product-detail__image">
-                        <img data-product-main-image data-fallback-src="{{ $product->primaryGalleryMedia?->url ?? '' }}" src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager">
+                    <div class="store-product-detail__image" data-product-main-stage data-base-image="{{ $baseImage ?? '' }}">
+                        <img data-product-main-image data-fallback-src="{{ $baseImage ?? '' }}" src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager">
+                        <div class="store-product-detail__image--empty" data-product-image-placeholder hidden><span>VISION<br>STUDIO</span></div>
                     </div>
                 @else
-                    <div class="store-product-detail__image">
+                    <div class="store-product-detail__image" data-product-main-stage data-base-image="">
                         <img data-product-main-image data-fallback-src="" src="" alt="{{ $product->name }}" loading="eager" hidden>
                         <div class="store-product-detail__image--empty" data-product-image-placeholder><span>VISION<br>STUDIO</span></div>
                     </div>
@@ -68,9 +76,12 @@
                                     value="{{ $variant->getKey() }}"
                                     data-price="{{ $variant->effective_price }}"
                                     data-original-price="{{ $variant->price }}"
-                                    data-image="{{ $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url ?? $defaultVariant?->primaryGalleryMedia?->url ?? '' }}"
+                                    data-image="{{ $variant->primaryGalleryMedia?->url ?? '' }}"
+                                    data-image-alt="{{ trim(implode(' ', array_filter([$product->name, $variant->color, $variant->size]))) }}"
                                     data-sale="{{ $variant->is_on_sale ? '1' : '0' }}"
                                     data-stock="{{ $variant->stock }}"
+                                    data-color="{{ trim((string) $variant->color) }}"
+                                    data-size="{{ trim((string) $variant->size) }}"
                                     @selected($variant->getKey() === $defaultVariant?->getKey())
                                     @disabled((int) $variant->stock < 1)
                                 >
@@ -81,6 +92,29 @@
                             @endforeach
                         </select>
                     </label>
+                    @if($colorVariants->isNotEmpty())
+                        <div class="store-variant-colors" data-variant-colors>
+                            <span class="store-variant-colors__label">رنگ</span>
+                            <div class="store-variant-colors__options" role="group" aria-label="انتخاب رنگ">
+                                @foreach($colorVariants as $colorVariant)
+                                    @php $isSelectedColor = mb_strtolower(trim((string) $colorVariant->color)) === $selectedColor; @endphp
+                                    <button
+                                        type="button"
+                                        class="store-variant-color {{ $isSelectedColor ? 'is-selected' : '' }}"
+                                        data-variant-pick="{{ $colorVariant->getKey() }}"
+                                        data-color="{{ $colorVariant->color }}"
+                                        data-variant-color-pick="{{ $colorVariant->color }}"
+                                        aria-pressed="{{ $isSelectedColor ? 'true' : 'false' }}"
+                                        title="{{ $colorVariant->color }}"
+                                        @disabled((int) $colorVariant->stock < 1)
+                                    >
+                                        <span class="store-variant-color__swatch" style="--variant-color: {{ $colorVariant->color_code ?: '#888888' }}" aria-hidden="true"></span>
+                                        <span>{{ $colorVariant->color }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                     <label class="commerce-field">Quantity
                         <input type="number" name="quantity" value="1" min="1" max="{{ min(100, max(1, (int) $defaultVariant->stock)) }}" data-variant-quantity required>
                     </label>
