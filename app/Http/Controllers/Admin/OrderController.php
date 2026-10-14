@@ -84,6 +84,7 @@ class OrderController
         $variantModel = $this->model('variant', ProductVariant::class);
         $hasActiveVariants = $variantModel::query()
             ->where('is_active', true)
+            ->where('stock', '>', 0)
             ->whereHas('product', fn ($query) => $query->where('is_active', true))
             ->exists();
 
@@ -101,14 +102,13 @@ class OrderController
         $baseQuery = fn () => $variantModel::query()
             ->with('product')
             ->where('is_active', true)
-            ->where('stock', '>', 0)
             ->whereHas('product', fn ($productQuery) => $productQuery->where('is_active', true));
 
         $selectedVariants = $selectedIds->isEmpty()
             ? collect()
             : $baseQuery()->whereKey($selectedIds)->get();
 
-        $query = $baseQuery();
+        $query = $baseQuery()->where('stock', '>', 0);
         if ($search !== '') {
             $query->where(function ($builder) use ($search): void {
                 $term = '%' . $search . '%';

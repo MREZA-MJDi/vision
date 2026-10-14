@@ -192,10 +192,11 @@ class ProductController
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $validated = $request->validated();
 
-        $storedFiles = [];
+        $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
+        $storedImagePaths = [];
 
         try {
-            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, &$storedFiles): void {
+            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, &$storedImagePaths): void {
             $requestedSlug = trim((string) ($validated['slug'] ?? ''));
             $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
 
@@ -228,6 +229,14 @@ class ProductController
                 'brand_id' => $validated['brand_id'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'attributes' => collect($validated['attributes'] ?? [])
+                    ->filter(fn ($attribute) => is_array($attribute)
+                        && trim((string) ($attribute['key'] ?? '')) !== ''
+                        && trim((string) ($attribute['value'] ?? '')) !== '')
+                    ->mapWithKeys(fn ($attribute) => [
+                        trim((string) $attribute['key']) => trim((string) $attribute['value']),
+                    ])
+                    ->all() ?: null,
                 'meta_title' => SeoDefaults::title((string) $validated['name'], $validated['meta_title'] ?? null),
                 'meta_description' => SeoDefaults::description((string) $validated['name'], $validated['meta_description'] ?? null, [
                     $validated['short_description'] ?? null,
@@ -329,22 +338,19 @@ class ProductController
                 });
             }
 
-            // Keep product, variant, stock-ledger, and media records in one DB transaction.
-            // Filesystem writes are compensated if any later DB operation fails.
             if ($request->hasFile('images')) {
-                $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
-                $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/') . '/' . $product->getKey();
+                $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
+                    . '/' . $product->getKey();
+                $sortOrder = $product->galleryMedia()->count();
 
-                foreach ($request->file('images', []) as $image) {
+                foreach ($request->file('images', []) as $offset => $image) {
                     $path = $image->store($directory, $mediaDisk);
+
                     if (! is_string($path) || $path === '') {
-                        throw ValidationException::withMessages([
-                            'images' => 'ذخیره‌سازی یکی از تصاویر انجام نشد؛ هیچ تغییری ثبت نشد.',
-                        ]);
+                        throw new \RuntimeException('ذخیره‌سازی تصویر محصول انجام نشد.');
                     }
 
-                    $storedFiles[] = [$mediaDisk, $path];
-
+                    $storedImagePaths[] = $path;
                     $product->media()->create([
                         'collection' => 'gallery',
                         'disk' => $mediaDisk,
@@ -353,19 +359,15 @@ class ProductController
                         'mime_type' => $image->getMimeType(),
                         'size' => $image->getSize(),
                         'alt_text' => $product->name,
-                        'sort_order' => $product->galleryMedia()->count(),
+                        'sort_order' => $sortOrder + $offset,
                         'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                     ]);
                 }
             }
-            }, 3);
+            }, 1);
         } catch (\Throwable $exception) {
-            foreach ($storedFiles as [$disk, $path]) {
-                try {
-                    Storage::disk($disk)->delete($path);
-                } catch (\Throwable $cleanupException) {
-                    report($cleanupException);
-                }
+            foreach ($storedImagePaths as $path) {
+                Storage::disk($mediaDisk)->delete($path);
             }
 
             throw $exception;

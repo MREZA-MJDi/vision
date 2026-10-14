@@ -1775,3 +1775,8 @@ body.storefront-body button { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
     .store-hero-product__media img { transition: none; }
 }
+
+.store-product-attributes{display:grid;gap:0;margin:14px 0 0;border-top:1px solid #e8e3dc}
+.store-product-attributes>div{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid #e8e3dc}
+.store-product-attributes dt{color:#7b756d;font-size:.88rem}
+.store-product-attributes dd{margin:0;color:inherit;font-size:.9rem;text-align:end;overflow-wrap:anywhere}

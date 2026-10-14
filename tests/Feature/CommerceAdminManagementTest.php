@@ -163,7 +163,7 @@ class CommerceAdminManagementTest extends TestCase
             ->assertOk()
             ->assertSee('VS-REAL-PAYMENT-01')
             ->assertSee('PAY-REAL-101')
-            ->assertSee('54.25');
+            ->assertSee('54 تومان');
     }
 
     public function test_stock_adjustment_updates_stock_and_writes_an_audit_movement(): void

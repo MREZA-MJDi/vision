@@ -20,13 +20,19 @@
         return fractionParts.length ? grouped + '.' + fraction : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
-    $('[data-money-input]').forEach((input) => {
-        input.value = formatMoneyInput(input.value);
-        input.addEventListener('focus', () => { input.value = cleanMoneyInput(input.value); });
-        input.addEventListener('blur', () => { input.value = formatMoneyInput(input.value); });
+    $$('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });
+    document.addEventListener('focusin', (event) => {
+        if (event.target.matches?.('[data-money-input]')) {
+            event.target.value = cleanMoneyInput(event.target.value);
+        }
+    });
+    document.addEventListener('focusout', (event) => {
+        if (event.target.matches?.('[data-money-input]')) {
+            event.target.value = formatMoneyInput(event.target.value);
+        }
     });
     document.addEventListener('submit', (event) => {
-        $('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
+        $$('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
     }, true);
 
     // Sidebar interactions (desktop expandable navigation + mobile drawer).
@@ -88,7 +94,7 @@
         checkbox.addEventListener('change', apply);
         apply();
     });
-    const rowCheckboxes = $('[data-row-select]');
+    const rowCheckboxes = $$('[data-row-select]');
     const bulkArchiveButton = $('[data-bulk-archive-button]');
     const updateBulkArchiveButton = () => {
         const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length;
@@ -304,8 +310,15 @@
             if (button) { button.disabled = false; button.textContent = 'تأیید برش و ادامه'; }
         }
     });
-    $('[data-crop-skip]')?.addEventListener('click', () => continueWithImage(cropQueue[cropIndex]));
-    $('[data-crop-cancel]').forEach((button) => button.addEventListener('click', () => {
+    $('[data-crop-skip]')?.addEventListener('click', () => {
+        const file = cropQueue[cropIndex];
+        if (file && file.size > 4 * 1024 * 1024) {
+            window.alert('این تصویر بیشتر از ۴ مگابایت است؛ برای ارسال، آن را برش دهید تا فشرده شود.');
+            return;
+        }
+        if (file) continueWithImage(file);
+    });
+    $$('[data-crop-cancel]').forEach((button) => button.addEventListener('click', () => {
         cropQueue = [];
         cropResults = [];
         cropIndex = 0;
@@ -370,6 +383,33 @@
     });
     renumberVariants();
 
+    // Dynamic product specification rows (material, dimensions, warranty, etc.).
+    const attributeList = $('[data-attribute-list]');
+    const attributeTemplate = $('#attribute-row-template');
+    const renumberAttributes = () => {
+        const rows = $$('[data-attribute-row]', attributeList || document);
+        rows.forEach((row, index) => {
+            $$('[name]', row).forEach((field) => {
+                field.name = field.name.replace(/attributes\[\d+\]/, 'attributes[' + index + ']');
+            });
+        });
+    };
+    $('[data-add-attribute]')?.addEventListener('click', () => {
+        if (!attributeList || !attributeTemplate) return;
+        const index = $$('[data-attribute-row]', attributeList).length;
+        if (index >= 50) { window.alert('حداکثر ۵۰ مشخصه برای هر محصول مجاز است.'); return; }
+        attributeList.insertAdjacentHTML('beforeend', attributeTemplate.innerHTML.replaceAll('__INDEX__', String(index)));
+        renumberAttributes();
+    });
+    attributeList?.addEventListener('click', (event) => {
+        const remove = event.target.closest('[data-remove-attribute]');
+        if (remove) {
+            remove.closest('[data-attribute-row]')?.remove();
+            renumberAttributes();
+        }
+    });
+    renumberAttributes();
+
     // Product gallery thumbnail switching.
     $$('[data-gallery-image]').forEach((button) => button.addEventListener('click', () => {
         const image = $('.ak-product-hero-image img');
@@ -416,7 +456,7 @@
         if (totalEl) totalEl.textContent = money(subtotal + shipping);
     };
     const updateOrderVariantOptions = (items) => {
-        $('[data-order-variant]', orderList || document).forEach((select) => {
+        $$('[data-order-variant]', orderList || document).forEach((select) => {
             const selectedValue = select.value || select.dataset.initialValue || '';
             const selectedOption = select.selectedOptions?.[0]?.cloneNode(true);
             select.replaceChildren(new Option('ابتدا محصول را جست‌وجو کنید', ''));
@@ -443,7 +483,7 @@
         else url.searchParams.delete('q');
         const selectedIds = [...new Set([
             ...pendingInitialVariantIds,
-            ...$('[data-order-variant]', orderList || document).map((select) => select.value || select.dataset.initialValue).filter(Boolean),
+            ...$$('[data-order-variant]', orderList || document).map((select) => select.value || select.dataset.initialValue).filter(Boolean),
         ])];
         selectedIds.forEach((id) => url.searchParams.append('ids[]', id));
         try {

@@ -33,7 +33,8 @@ class ExampleTest extends TestCase
     {
         $this->get('/admin')->assertRedirect(route('commerce-admin.login'));
         $this->get('/admin/products')->assertRedirect(route('commerce-admin.login'));
-        $this->get('/admin/login')->assertOk()->assertSee('ورود به پنل فروشگاه');
+        $this->get('/admin/login')->assertRedirect(route('login'));
+        $this->get(route('login'))->assertOk();
 
         $this->assertTrue(Route::has('commerce-admin.dashboard'));
         $this->assertTrue(Route::has('commerce-admin.products.index'));
@@ -98,7 +99,6 @@ class ExampleTest extends TestCase
             'variants' => [
                 [
                     'sku' => 'REF-VIEW-001',
-                    'barcode' => 'REF-VIEW-001',
                     'size' => 'M',
                     'color' => 'Black',
                     'color_code' => '#000000',
