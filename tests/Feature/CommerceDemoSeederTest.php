@@ -39,7 +39,7 @@ class CommerceDemoSeederTest extends TestCase
         $this->assertSame('demo-essential-cotton-tee', $black->product->slug);
         $this->assertSame('مشکی', $black->color);
         $this->assertSame('demo-products/tee-black.svg', $black->primaryGalleryMedia->path);
-        Storage::disk('public')->assertExists('demo-products/tee-black.svg');
+        $this->assertTrue(Storage::disk('public')->exists('demo-products/tee-black.svg'));
 
         $this->assertDatabaseHas('inventory_movements', [
             'product_variant_id' => $black->getKey(),
