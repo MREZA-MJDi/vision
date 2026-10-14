@@ -74,7 +74,7 @@ class StorefrontController extends Controller
             ->orderBy('name')
             ->get();
 
-        $search = is_string($request->input('q')) ? trim($request->input('q')) : '';
+        $search = is_string($request->input('q')) ? mb_substr(trim($request->input('q')), 0, 120) : '';
         $categoryId = filter_var($request->input('category_id'), FILTER_VALIDATE_INT) ?: null;
         $brandId = filter_var($request->input('brand_id'), FILTER_VALIDATE_INT) ?: null;
         $minPrice = is_numeric($request->input('price_min')) ? max(0, (float) $request->input('price_min')) : null;
@@ -90,7 +90,9 @@ class StorefrontController extends Controller
             $productsQuery->where(function (Builder $query) use ($search): void {
                 $query->where('name', 'like', '%' . $search . '%')
                     ->orWhere('short_description', 'like', '%' . $search . '%')
-                    ->orWhereHas('brand', fn (Builder $brandQuery) => $brandQuery->where('name', 'like', '%' . $search . '%'));
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhereHas('brand', fn (Builder $brandQuery) => $brandQuery->where('name', 'like', '%' . $search . '%'))
+                    ->orWhereHas('category', fn (Builder $categoryQuery) => $categoryQuery->where('name', 'like', '%' . $search . '%'));
             });
         }
 
