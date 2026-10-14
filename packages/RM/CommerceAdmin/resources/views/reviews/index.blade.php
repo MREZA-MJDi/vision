@@ -47,7 +47,7 @@
                         <td class="ak-review-text"><strong>{{ $review->title ?: 'Customer review' }}</strong><p>{{ \Illuminate\Support\Str::limit($review->body ?: 'No written comment.', 130) }}</p></td>
                         <td>{{ $review->created_at?->format('M d, Y') ?: '—' }}</td>
                         <td><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($review->status) }}">{{ \Illuminate\Support\Str::headline($review->status) }}</span></td>
-                        <td><form method="POST" action="{{ route('commerce-admin.reviews.status', [$review->getKey(), 'status'=>$status]) }}" class="ak-review-moderation">@csrf @method('PATCH')<select name="status" aria-label="Review status">@foreach(\App\Models\ProductReview::STATUSES as $reviewStatus)<option value="{{ $reviewStatus }}" @selected($review->status === $reviewStatus)>{{ \Illuminate\Support\Str::headline($reviewStatus) }}</option>@endforeach</select><button class="ak-button ak-button-dark ak-button-sm" type="submit">Save</button></form></td>
+                        <td><form method="POST" action="{{ route('commerce-admin.reviews.status', [$review->getKey(), 'status'=>$status]) }}" class="ak-review-moderation">@csrf @method('PATCH')<select name="status" aria-label="Review status">@foreach($reviewStatuses as $reviewStatus)<option value="{{ $reviewStatus }}" @selected($review->status === $reviewStatus)>{{ \Illuminate\Support\Str::headline($reviewStatus) }}</option>@endforeach</select><button class="ak-button ak-button-dark ak-button-sm" type="submit">Save</button></form></td>
                     </tr>
                 @endforeach
                 </tbody>
