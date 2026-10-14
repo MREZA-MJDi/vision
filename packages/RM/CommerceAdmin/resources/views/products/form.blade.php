@@ -89,11 +89,14 @@
                                 @if(data_get($variant, 'id'))<input type="hidden" name="variants[{{ $index }}][id]" value="{{ data_get($variant, 'id') }}">@endif
                                 <div class="ak-variant-image-field">
                                     @if($variantImage)
-                                        <img class="ak-variant-image-preview" src="{{ $variantImage }}" alt="{{ $product?->name }} {{ data_get($variant, 'color') }}" data-variant-image-preview>
+                                        <img class="ak-variant-image-preview" src="{{ $variantImage }}" data-existing-src="{{ $variantImage }}" alt="{{ $product?->name }} {{ data_get($variant, 'color') }}" data-variant-image-preview>
                                     @else
-                                        <img class="ak-variant-image-preview" src="" alt="" data-variant-image-preview hidden>
+                                        <img class="ak-variant-image-preview" src="" data-existing-src="" alt="" data-variant-image-preview hidden>
                                     @endif
                                     <label class="ak-field"><span>تصویر مخصوص این تنوع</span><input type="file" name="variants[{{ $index }}][image]" accept="image/jpeg,image/png,image/webp" data-variant-image-input><small>با انتخاب این رنگ، تصویر همین تنوع در صفحهٔ محصول نمایش داده می‌شود. حداکثر ۴ مگابایت.</small></label>
+                                    @if($variantImage)
+                                        <label class="ak-variant-remove-image"><input type="checkbox" name="variants[{{ $index }}][remove_image]" value="1" data-remove-variant-image><span>حذف تصویر اختصاصی و استفاده از تصویر اصلی محصول</span></label>
+                                    @endif
                                 </div>
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>
