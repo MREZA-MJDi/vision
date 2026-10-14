@@ -7,6 +7,7 @@ use App\Models\ProductVariant;
 use Database\Seeders\CommerceDemoSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CommerceDemoSeederTest extends TestCase
@@ -171,18 +172,34 @@ class CommerceDemoSeederTest extends TestCase
         $this->assertDatabaseCount('products', 2);
     }
 
-    public function test_normal_database_seeder_does_not_add_demo_catalog_records(): void
+    public function test_normal_database_seeder_creates_idempotent_editable_launch_records_without_demo_or_phantom_media(): void
     {
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
         ]);
 
+        // The production seeder must create real, editable catalog rows but
+        // must not persist media records for assets that are not present.
+        Storage::fake('public');
+
+        $this->seed(DatabaseSeeder::class);
         $this->seed(DatabaseSeeder::class);
 
         $this->assertDatabaseCount('users', 0);
-        $this->assertDatabaseCount('categories', 0);
-        $this->assertDatabaseCount('products', 0);
-        $this->assertDatabaseCount('product_variants', 0);
+        $this->assertDatabaseCount('categories', 1);
+        $this->assertDatabaseCount('brands', 1);
+        $this->assertDatabaseCount('products', 2);
+        $this->assertDatabaseCount('product_variants', 2);
+        $this->assertDatabaseCount('media', 0);
+
+        $this->assertDatabaseHas('categories', ['slug' => 'outerwear', 'name' => 'پوشاک رویی']);
+        $this->assertDatabaseHas('brands', ['slug' => 'vision', 'name' => 'VISION']);
+        $this->assertDatabaseHas('products', ['slug' => 'vision-solar-puffer', 'name' => 'کاپشن پافر سولار']);
+        $this->assertDatabaseHas('products', ['slug' => 'vision-chestnut-coat', 'name' => 'کت پشمی چستنات']);
+        $this->assertDatabaseHas('product_variants', ['sku' => 'VIS-SOLAR-PUFFER-ORANGE', 'stock' => 12]);
+        $this->assertDatabaseHas('product_variants', ['sku' => 'VIS-CHESTNUT-COAT-BROWN', 'stock' => 8]);
+        $this->assertDatabaseMissing('products', ['slug' => 'demo-essential-cotton-tee']);
+        $this->assertDatabaseMissing('product_variants', ['sku' => 'VISION-DEMO-TEE-BLACK']);
     }
 }
