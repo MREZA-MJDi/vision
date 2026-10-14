@@ -2945,3 +2945,25 @@ body.storefront-home-body .store-shell > .store-header {
     .home-hero__variant,
     .home-hero__mini-product { transition: none; }
 }
+
+/* Keep the product-derived token layer last: legacy homepage rules above
+   establish geometry, while these tokens own the visible theme per slide. */
+.home-hero {
+    --hero-ink: #fffaf2;
+    --hero-panel: color-mix(in srgb, var(--home-hero-base) 68%, #160b05);
+    --hero-soft: color-mix(in srgb, var(--home-hero-base) 82%, #fff);
+    background: var(--home-hero-base);
+    transition: background-color 360ms ease;
+}
+.home-hero__frame { background: var(--hero-panel); color: var(--hero-ink); box-shadow: 0 24px 60px color-mix(in srgb, var(--home-hero-base) 36%, transparent); }
+.home-hero__title, .home-hero__price, .home-hero__price-panel, .home-hero__image-caption strong { color: var(--hero-ink); }
+.home-hero__description, .home-hero__eyebrow, .home-hero__price-label, .home-hero__stock, .home-hero__image-caption { color: color-mix(in srgb, var(--hero-ink) 76%, transparent); }
+.home-hero__image-stage { isolation: isolate; }
+.home-hero__image-stage::before { position: absolute; z-index: -1; inset: 12% 10%; border-radius: 50%; background: color-mix(in srgb, var(--hero-soft) 58%, transparent); content: ''; filter: blur(42px); opacity: .72; }
+.home-hero__image-stage img { max-height: min(62vh, 590px); object-fit: contain; filter: drop-shadow(0 30px 22px rgb(30 12 4 / 35%)); transform: translateY(0) scale(1); transition: opacity 180ms ease, transform 360ms cubic-bezier(.2,.8,.2,1); }
+.home-hero.is-transitioning .home-hero__image-stage img { transform: translateY(-5px) scale(1.018); }
+.home-hero__variant-picker { margin-top: 20px; }
+.home-hero__variant { color: var(--hero-ink); }
+.home-hero__variant.is-selected { border-color: var(--hero-ink); box-shadow: 0 0 0 2px color-mix(in srgb, var(--hero-ink) 55%, transparent); }
+.home-hero__variant-dot { background: var(--home-hero-swatch); }
+@media (max-width: 720px) { .home-hero__frame { min-height: 680px; } .home-hero__image-stage img { max-height: 320px; } }

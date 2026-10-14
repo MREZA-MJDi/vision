@@ -481,7 +481,7 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $untouched->getKey(), 'deleted_at' => null]);
     }
 
-    public function test_admin_hero_selection_drives_homepage_and_replaces_previous_selection(): void
+    public function test_admin_hero_selection_adds_to_the_homepage_playlist(): void
     {
         $admin = $this->makeAdmin();
         $oldHero = Product::query()->create([
@@ -515,11 +515,12 @@ class CommerceAdminRenderAuditTest extends TestCase
 
         $newHero = Product::query()->where('slug', 'new-homepage-hero')->firstOrFail();
         $this->assertTrue((bool) $newHero->is_hero);
-        $this->assertFalse((bool) $oldHero->fresh()->is_hero);
+        $this->assertTrue((bool) $oldHero->fresh()->is_hero);
 
         $this->get('/')
             ->assertOk()
             ->assertSee('New Homepage Hero')
+            ->assertSee('data-home-hero-slide', false)
             ->assertSee('home-hero__price-panel', false);
 
         $this->get('/products')

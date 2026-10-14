@@ -10,6 +10,26 @@
     $heroVariant = $heroProduct?->primaryAvailableVariant ?? $heroProduct?->primaryActiveVariant;
     $heroImage = $heroVariant?->primaryGalleryMedia?->url ?? $heroProduct?->primaryGalleryMedia?->url;
     $heroVariants = $heroProduct?->activeVariants ?? collect();
+    $heroSlides = ($heroProducts ?? collect())->map(function ($product) use ($formatPrice) {
+        $variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant;
+        $image = $variant?->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url;
+        $color = preg_match('/^#[0-9a-fA-F]{3,8}$/', (string) $variant?->color_code)
+            ? $variant->color_code
+            : '#9a5527';
+
+        return [
+            'id' => $product->getKey(),
+            'name' => $product->name,
+            'description' => $product->short_description ?: $product->description ?: 'انتخابی دقیق برای کمدی که با تو حرکت می‌کند.',
+            'url' => route('products.show', ['product' => $product->slug]),
+            'image' => $image,
+            'color' => $color,
+            'variant_label' => $variant?->color ?: ($variant?->size ?: 'انتخاب VISION'),
+            'price' => $variant ? $formatPrice($variant->effective_price) : 'قیمت نامشخص',
+            'original_price' => $variant?->is_on_sale ? $formatPrice($variant->price) : null,
+            'stock' => $variant && (int) $variant->stock > 0 ? number_format((int) $variant->stock) . ' عدد موجود' : 'فعلاً ناموجود',
+        ];
+    })->values();
     $heroColors = $heroVariants
         ->filter(fn ($variant) => filled($variant->color))
         ->unique(fn ($variant) => mb_strtolower(trim((string) $variant->color)))
@@ -30,7 +50,8 @@
 
 <main class="store-main store-home">
     {{-- The split-color editorial hero follows the supplied visual reference. --}}
-    <section class="home-hero" aria-labelledby="home-hero-title" data-home-hero>
+    <section class="home-hero" aria-labelledby="home-hero-title" data-home-hero
+             style="--home-hero-base: {{ data_get($heroSlides, '0.color', '#9a5527') }}">
         <div class="home-hero__frame">
             <div class="home-hero__frame-brand">
                 <a href="{{ route('storefront.index') }}" aria-label="صفحهٔ اصلی VISION">
@@ -42,7 +63,7 @@
             <nav class="home-hero__nav" aria-label="دسترسی سریع">
                 @if($heroProduct)
                     <a class="home-hero__nav-link home-hero__nav-link--current"
-                       href="{{ route('products.show', ['product' => $heroProduct->slug]) }}">محصول ویژه</a>
+                       href="{{ route('products.show', ['product' => $heroProduct->slug]) }}" data-home-hero-product-link>محصول ویژه</a>
                 @endif
                 <a class="home-hero__nav-link" href="{{ route('shop.index') }}">همهٔ محصولات</a>
                 <a class="home-hero__nav-link" href="#home-brand-story">داستان ما</a>
@@ -65,10 +86,10 @@
                     <button type="button" data-home-hero-next aria-label="گزینهٔ بعدی">›</button>
                 </div>
                 <p class="home-hero__eyebrow">مجموعهٔ منتخب VISION</p>
-                <h1 id="home-hero-title" class="home-hero__title">متفاوت باش،<br>بدون تلاش اضافه</h1>
-                <p class="home-hero__description">انتخاب‌هایی برای هر روز؛ طراحی دقیق، جزئیات حساب‌شده و پوشاکی هماهنگ با سبک تو.</p>
+                <h1 id="home-hero-title" class="home-hero__title" data-home-hero-title>متفاوت باش،<br>بدون تلاش اضافه</h1>
+                <p class="home-hero__description" data-home-hero-description>انتخاب‌هایی برای هر روز؛ طراحی دقیق، جزئیات حساب‌شده و پوشاکی هماهنگ با سبک تو.</p>
                 @if($heroProduct)
-                    <a class="home-hero__cta" href="{{ route('products.show', ['product' => $heroProduct->slug]) }}">
+                    <a class="home-hero__cta" href="{{ route('products.show', ['product' => $heroProduct->slug]) }}" data-home-hero-cta>
                         <span>این محصول را ببین</span><span aria-hidden="true">↗</span>
                     </a>
                 @else
@@ -118,45 +139,30 @@
                         @endif
                     </span>
 
-                    @if($heroVariantChoices->isNotEmpty())
+                    @if($heroSlides->count() > 1)
                         <div class="home-hero__variant-picker">
-                            <span class="home-hero__variant-label">{{ $heroChoiceMode === 'color' ? 'رنگت را انتخاب کن' : 'سایز موجود' }}</span>
-                            <div class="home-hero__variants" role="group" aria-label="{{ $heroChoiceMode === 'color' ? 'انتخاب رنگ محصول' : 'انتخاب سایز محصول' }}">
-                                @foreach($heroVariantChoices as $variant)
-                                    @php
-                                        $choiceText = $heroChoiceMode === 'color' ? $variant->color : $variant->size;
-                                        $currentChoice = $heroVariant
-                                            ? ($heroChoiceMode === 'color' ? $heroVariant->color : $heroVariant->size)
-                                            : null;
-                                        $isCurrentChoice = $currentChoice !== null
-                                            && mb_strtolower(trim((string) $currentChoice)) === mb_strtolower(trim((string) $choiceText));
-                                        $variantImage = $variant->primaryGalleryMedia?->url ?? $heroProduct->primaryGalleryMedia?->url;
-                                        $safeSwatch = preg_match('/^#[0-9a-fA-F]{3,8}$/', (string) $variant->color_code)
-                                            ? $variant->color_code
-                                            : '#7f5135';
-                                    @endphp
+                            <span class="home-hero__variant-label">کالکشن را ورق بزن</span>
+                            <div class="home-hero__variants" role="group" aria-label="انتخاب اسلاید محصول">
+                                @foreach($heroSlides as $index => $slide)
                                     <button type="button"
-                                            class="home-hero__variant{{ $isCurrentChoice ? ' is-selected' : '' }}"
-                                            data-home-hero-variant
-                                            data-variant-id="{{ $variant->getKey() }}"
-                                            data-choice-value="{{ $choiceText }}"
-                                            data-choice-label="{{ $choiceText ?: $variant->display_name }}"
-                                            data-price="{{ $variant->effective_price }}"
-                                            data-original-price="{{ $variant->price }}"
-                                            data-sale="{{ $variant->is_on_sale ? '1' : '0' }}"
-                                            data-stock="{{ (int) $variant->stock }}"
-                                            data-image="{{ $variantImage ?? '' }}"
-                                            data-image-alt="{{ $heroProduct->name }} — {{ $choiceText }}"
-                                            style="--home-hero-swatch: {{ $safeSwatch }}"
-                                            aria-label="{{ $heroChoiceMode === 'color' ? 'انتخاب رنگ ' : 'انتخاب سایز ' }}{{ $choiceText }}"
-                                            title="{{ $choiceText }}"
-                                            aria-pressed="{{ $isCurrentChoice ? 'true' : 'false' }}">
-                                        @if($heroChoiceMode === 'color')
+                                            class="home-hero__variant{{ $index === 0 ? ' is-selected' : '' }}"
+                                            data-home-hero-slide
+                                            data-title="{{ $slide['name'] }}"
+                                            data-description="{{ $slide['description'] }}"
+                                            data-url="{{ $slide['url'] }}"
+                                            data-price="{{ $slide['price'] }}"
+                                            data-original-price="{{ $slide['original_price'] ?? '' }}"
+                                            data-stock="{{ $slide['stock'] }}"
+                                            data-image="{{ $slide['image'] ?? '' }}"
+                                            data-image-alt="{{ $slide['name'] }}"
+                                            data-label="{{ $slide['variant_label'] }}"
+                                            data-theme="{{ $slide['color'] }}"
+                                            style="--home-hero-swatch: {{ $slide['color'] }}"
+                                            aria-label="نمایش {{ $slide['name'] }}"
+                                            title="{{ $slide['name'] }}"
+                                            aria-pressed="{{ $index === 0 ? 'true' : 'false' }}">
                                             <span class="home-hero__variant-dot" aria-hidden="true"></span>
-                                            <span class="home-hero__variant-initial" aria-hidden="true">{{ mb_substr((string) $choiceText, 0, 1) }}</span>
-                                        @else
-                                            <span class="home-hero__variant-size">{{ $choiceText }}</span>
-                                        @endif
+                                            <span class="home-hero__variant-initial" aria-hidden="true">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                                     </button>
                                 @endforeach
                             </div>

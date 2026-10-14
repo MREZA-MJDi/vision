@@ -549,8 +549,9 @@
 
     // The homepage hero is data-backed: switching a color/size updates
     // the real variant image, price, stock and thumbnail without another request.
-    const heroChoices = Array.from(root.querySelectorAll('[data-home-hero-variant]'));
-    if (heroChoices.length) {
+    const heroSlides = Array.from(root.querySelectorAll('[data-home-hero-slide]'));
+    if (heroSlides.length) {
+        const hero = root.querySelector('[data-home-hero]');
         const heroImage = root.querySelector('[data-home-hero-image]');
         const heroImageMissing = root.querySelector('[data-home-hero-image-missing]');
         const heroStage = root.querySelector('[data-home-hero-stage]');
@@ -560,41 +561,47 @@
         const heroCaption = root.querySelector('[data-home-hero-caption]');
         const heroThumbnail = root.querySelector('[data-home-hero-thumbnail]');
         const heroThumbnailLink = root.querySelector('[data-home-hero-thumbnail-link]');
+        const heroTitle = root.querySelector('[data-home-hero-title]');
+        const heroDescription = root.querySelector('[data-home-hero-description]');
+        const heroCta = root.querySelector('[data-home-hero-cta]');
+        const heroProductLink = root.querySelector('[data-home-hero-product-link]');
         const heroPrev = root.querySelector('[data-home-hero-prev]');
         const heroNext = root.querySelector('[data-home-hero-next]');
-        let activeHeroIndex = Math.max(0, heroChoices.findIndex((choice) => choice.getAttribute('aria-pressed') === 'true'));
+        let activeHeroIndex = Math.max(0, heroSlides.findIndex((slide) => slide.getAttribute('aria-pressed') === 'true'));
+        let heroTimer = null;
 
-        const selectHeroChoice = (index) => {
-            activeHeroIndex = (index + heroChoices.length) % heroChoices.length;
-            const choice = heroChoices[activeHeroIndex];
-            const price = Number(choice.dataset.price || 0);
-            const originalPrice = Number(choice.dataset.originalPrice || 0);
-            const stock = Math.max(0, Number(choice.dataset.stock || 0));
-            const imageUrl = choice.dataset.image || heroStage?.dataset.baseImage || '';
+        const selectHeroSlide = (index) => {
+            activeHeroIndex = (index + heroSlides.length) % heroSlides.length;
+            const slide = heroSlides[activeHeroIndex];
+            const imageUrl = slide.dataset.image || '';
 
-            heroChoices.forEach((item, itemIndex) => {
+            heroSlides.forEach((item, itemIndex) => {
                 const selected = itemIndex === activeHeroIndex;
                 item.classList.toggle('is-selected', selected);
                 item.setAttribute('aria-pressed', selected ? 'true' : 'false');
             });
 
-            if (heroPrice) heroPrice.textContent = formatMoney(price);
+            hero?.style.setProperty('--home-hero-base', slide.dataset.theme || '#9a5527');
+            hero?.classList.remove('is-transitioning');
+            // Restart a small, compositor-friendly entrance animation without
+            // reading layout for every product card on the page.
+            window.requestAnimationFrame(() => hero?.classList.add('is-transitioning'));
+            if (heroTitle) heroTitle.textContent = slide.dataset.title || 'محصول منتخب';
+            if (heroDescription) heroDescription.textContent = slide.dataset.description || '';
+            if (heroCta) heroCta.href = slide.dataset.url || heroCta.href;
+            if (heroProductLink) heroProductLink.href = slide.dataset.url || heroProductLink.href;
+            if (heroPrice) heroPrice.textContent = slide.dataset.price || 'قیمت نامشخص';
             if (heroOriginalPrice) {
-                const onSale = choice.dataset.sale === '1' && originalPrice > price;
-                heroOriginalPrice.hidden = !onSale;
-                heroOriginalPrice.textContent = onSale ? formatMoney(originalPrice) : '';
+                heroOriginalPrice.hidden = !slide.dataset.originalPrice;
+                heroOriginalPrice.textContent = slide.dataset.originalPrice || '';
             }
-            if (heroStock) {
-                heroStock.textContent = stock > 0
-                    ? stock.toLocaleString('fa-IR') + ' عدد موجود'
-                    : 'فعلاً ناموجود';
-            }
-            if (heroCaption) heroCaption.textContent = choice.dataset.choiceLabel || choice.dataset.choiceValue || 'محصول منتخب';
+            if (heroStock) heroStock.textContent = slide.dataset.stock || 'فعلاً ناموجود';
+            if (heroCaption) heroCaption.textContent = slide.dataset.label || 'محصول منتخب';
 
             if (heroImage) {
                 if (imageUrl) {
                     if (heroImage.getAttribute('src') !== imageUrl) heroImage.src = imageUrl;
-                    heroImage.alt = choice.dataset.imageAlt || 'تصویر محصول منتخب';
+                    heroImage.alt = slide.dataset.imageAlt || 'تصویر محصول منتخب';
                     heroImage.hidden = false;
                 } else {
                     heroImage.removeAttribute('src');
@@ -614,17 +621,29 @@
             if (heroThumbnailLink) heroThumbnailLink.hidden = !imageUrl;
         };
 
-        const updateHeroArrows = () => {
-            const disabled = heroChoices.length < 2;
+        const updateHeroControls = () => {
+            const disabled = heroSlides.length < 2;
             if (heroPrev) heroPrev.disabled = disabled;
             if (heroNext) heroNext.disabled = disabled;
         };
 
-        heroChoices.forEach((choice, index) => choice.addEventListener('click', () => selectHeroChoice(index)));
-        heroPrev?.addEventListener('click', () => selectHeroChoice(activeHeroIndex - 1));
-        heroNext?.addEventListener('click', () => selectHeroChoice(activeHeroIndex + 1));
-        updateHeroArrows();
-        selectHeroChoice(activeHeroIndex);
+        const resetHeroTimer = () => {
+            if (heroTimer) window.clearInterval(heroTimer);
+            if (heroSlides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            heroTimer = window.setInterval(() => selectHeroSlide(activeHeroIndex + 1), 6500);
+        };
+
+        heroSlides.forEach((slide, index) => slide.addEventListener('click', () => {
+            selectHeroSlide(index);
+            resetHeroTimer();
+        }));
+        heroPrev?.addEventListener('click', () => { selectHeroSlide(activeHeroIndex - 1); resetHeroTimer(); });
+        heroNext?.addEventListener('click', () => { selectHeroSlide(activeHeroIndex + 1); resetHeroTimer(); });
+        hero?.addEventListener('mouseenter', () => heroTimer && window.clearInterval(heroTimer));
+        hero?.addEventListener('mouseleave', resetHeroTimer);
+        updateHeroControls();
+        selectHeroSlide(activeHeroIndex);
+        resetHeroTimer();
     }
 
     updateCartCount(0);

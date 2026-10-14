@@ -11,8 +11,8 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        // No demo catalog data is injected into the live commerce database.
-        // The admin bootstrap is environment-driven and does not overwrite an existing password.
-        $this->call(AdminSeeder::class);
+        // Launch data is real application data: it is editable in Commerce
+        // Admin and respects any later edit, archive, or media deletion.
+        $this->call([AdminSeeder::class, StorefrontLaunchSeeder::class]);
     }
 }

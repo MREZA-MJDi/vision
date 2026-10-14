@@ -43,11 +43,17 @@ class StorefrontController extends Controller
             ->limit(8)
             ->get();
 
-        $heroProduct = $this->catalogProducts()
+        // The hero is a small, already eager-loaded playlist. It is rendered in
+        // the initial document so changing slides never adds a request.
+        $heroProducts = $this->catalogProducts()
             ->where('is_hero', true)
+            ->orderBy('sort_order')
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->first();
+            ->limit(6)
+            ->get();
+
+        $heroProduct = $heroProducts->first();
 
         if (!$heroProduct) {
             $heroProduct = $this->catalogProducts()
@@ -55,6 +61,10 @@ class StorefrontController extends Controller
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
                 ->first();
+
+            if ($heroProduct) {
+                $heroProducts = collect([$heroProduct]);
+            }
         }
 
         // The hero picker uses real active variants and each variant's own
@@ -95,6 +105,7 @@ class StorefrontController extends Controller
         return view('store.home', compact(
             'categories',
             'heroProduct',
+            'heroProducts',
             'featuredProducts',
             'brandStoryProduct',
         ));

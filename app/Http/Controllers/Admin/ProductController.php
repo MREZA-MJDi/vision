@@ -250,13 +250,9 @@ class ProductController
             ]);
             $product->save();
 
-            // The homepage has one hero slot: selecting a new hero clears the previous selection atomically.
-            if ((bool) $product->getAttribute('is_hero')) {
-                $productModel::query()
-                    ->where($product->getKeyName(), '<>', $product->getKey())
-                    ->where('is_hero', true)
-                    ->update(['is_hero' => false]);
-            }
+            // Hero products form a bounded playlist, ordered by their normal
+            // catalog sort order. Editors can therefore publish more than one
+            // real product without a second, duplicate hero-content system.
 
             $keepIds = [];
             $seenSkus = [];
