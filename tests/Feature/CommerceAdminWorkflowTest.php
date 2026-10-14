@@ -261,6 +261,10 @@ class CommerceAdminWorkflowTest extends TestCase
                 'slug' => '',
                 'status' => 'active',
                 'is_taxable' => '1',
+                'attributes' => [
+                    ['key' => 'Material', 'value' => 'Cotton'],
+                    ['key' => 'Weight', 'value' => '250 g'],
+                ],
                 'variants' => [
                     [
                         'sku' => '',
@@ -282,6 +286,7 @@ class CommerceAdminWorkflowTest extends TestCase
 
         $this->assertSame('cropped-jacket', $product->slug);
         $this->assertStringStartsWith('VIS-', $variant->sku);
+        $this->assertSame(['Material' => 'Cotton', 'Weight' => '250 g'], $product->attributes);
         $this->assertEquals(79500, (float) $variant->price);
         $this->assertSame('Cropped Jacket', $product->meta_title);
         $this->assertStringContainsString('Cropped Jacket', (string) $product->meta_description);

@@ -229,6 +229,14 @@ class ProductController
                 'brand_id' => $validated['brand_id'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'attributes' => collect($validated['attributes'] ?? [])
+                    ->filter(fn ($attribute) => is_array($attribute)
+                        && trim((string) ($attribute['key'] ?? '')) !== ''
+                        && trim((string) ($attribute['value'] ?? '')) !== '')
+                    ->mapWithKeys(fn ($attribute) => [
+                        trim((string) $attribute['key']) => trim((string) $attribute['value']),
+                    ])
+                    ->all() ?: null,
                 'meta_title' => SeoDefaults::title((string) $validated['name'], $validated['meta_title'] ?? null),
                 'meta_description' => SeoDefaults::description((string) $validated['name'], $validated['meta_description'] ?? null, [
                     $validated['short_description'] ?? null,

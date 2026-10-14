@@ -51,6 +51,9 @@ class SaveProductRequest extends FormRequest
             'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
+            'attributes' => ['sometimes', 'array', 'max:50'],
+            'attributes.*.key' => ['nullable', 'string', 'max:100'],
+            'attributes.*.value' => ['nullable', 'string', 'max:500'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'is_featured' => ['sometimes', 'boolean'],
@@ -76,6 +79,29 @@ class SaveProductRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
+            $seenAttributeKeys = [];
+            foreach ((array) $this->input('attributes', []) as $index => $attribute) {
+                if (! is_array($attribute)) {
+                    continue;
+                }
+
+                $key = trim((string) ($attribute['key'] ?? ''));
+                $value = trim((string) ($attribute['value'] ?? ''));
+                if ($key === '' && $value === '') {
+                    continue;
+                }
+                if ($key === '') {
+                    $validator->errors()->add("attributes.$index.key", 'برای مقدار واردشده، عنوان مشخصه را بنویسید.');
+                    continue;
+                }
+
+                $normalizedKey = mb_strtolower($key);
+                if (isset($seenAttributeKeys[$normalizedKey])) {
+                    $validator->errors()->add("attributes.$index.key", 'عنوان مشخصه نباید تکراری باشد.');
+                }
+                $seenAttributeKeys[$normalizedKey] = true;
+            }
+
             foreach ((array) $this->input('variants', []) as $index => $variant) {
                 if (! is_array($variant) || ! isset($variant['price']) || ! is_numeric($variant['price'])) {
                     continue;
