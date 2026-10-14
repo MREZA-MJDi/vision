@@ -52,9 +52,6 @@
                     <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-cyan"
                          src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
                          alt="" aria-hidden="true" loading="eager" decoding="async">
-                    <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-red"
-                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
-                         alt="" aria-hidden="true" loading="eager" decoding="async">
                     <img class="tiamir-intro__logo tiamir-intro__logo--main"
                          src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
                          alt="" aria-hidden="true" data-tiamir-logo fetchpriority="high" loading="eager" decoding="async">
@@ -62,8 +59,11 @@
                 </span>
             </div>
 
-            <div class="tiamir-intro__signature">Created by R MAJIDI</div>
+            <div class="tiamir-intro__signature">Created by R. Majidi.</div>
         </div>
+        <button class="tiamir-replay" type="button" data-tiamir-replay hidden aria-label="Replay intro animation">
+            Replay intro <span aria-hidden="true">↻</span>
+        </button>
     @endif
 
     <div class="store-shell" data-storefront
