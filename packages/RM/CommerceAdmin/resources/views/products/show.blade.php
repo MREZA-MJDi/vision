@@ -27,7 +27,9 @@
             ->filter(fn ($asset) => $asset && $asset->url)
             ->unique('id')
             ->values();
-        $heroAsset = $model->galleryMedia->first() ?: $primaryImageVariant?->primaryGalleryMedia ?: $galleryAssets->first();
+        $heroAsset = $model->galleryMedia->first(fn ($asset) => $asset->url)
+            ?: $primaryImageVariant?->primaryGalleryMedia
+            ?: $galleryAssets->first();
     @endphp
 
     <div class="ak-page-heading">
