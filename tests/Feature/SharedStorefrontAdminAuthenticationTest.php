@@ -17,7 +17,7 @@ class SharedStorefrontAdminAuthenticationTest extends TestCase
         $this->get(route('login'))
             ->assertOk()
             ->assertSee(route('login.store'), false)
-            ->assertSee('Access is routed according to your account permissions.');
+            ->assertSee('دسترسی بر اساس مجوزهای حساب کاربری تعیین می‌شود.');
 
         $this->post(route('login.store'), [
             'email' => $admin->email,

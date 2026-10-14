@@ -22,7 +22,7 @@
 @endphp
 
 <main class="store-main commerce-page">
-    <nav class="commerce-breadcrumbs" aria-label="Breadcrumb">
+    <nav class="commerce-breadcrumbs" aria-label="مسیر صفحه">
         <a href="{{ route('storefront.index') }}">خانه</a><span>/</span>
         <a href="{{ route('shop.index') }}">فروشگاه</a><span>/</span>
         <span>{{ $product->name }}</span>
@@ -50,7 +50,7 @@
             @endforelse
 
             <button class="store-product-detail__tryon-trigger" type="button" data-variant-preview-open aria-haspopup="dialog">
-                <span>نمایش تصویر همین وریانت روی مدل</span>
+                <span>پیش‌نمایش تصویر وریانت</span>
                 <span aria-hidden="true">↗</span>
             </button>
         </div>
@@ -180,7 +180,7 @@
         <div class="store-variant-preview__panel">
             <header class="store-variant-preview__header">
                 <div>
-                    <p class="store-eyebrow">VISION FITTING ROOM</p>
+                    <p class="store-eyebrow">اتاق پرو VISION</p>
                     <h2 id="store-variant-preview-title">پیش‌نمایش مدل</h2>
                 </div>
                 <button class="store-variant-preview__close" type="button" data-variant-preview-close aria-label="بستن پیش‌نمایش">×</button>

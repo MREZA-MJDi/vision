@@ -22,9 +22,9 @@ class CustomerCommerceFlowTest extends TestCase
 
     public function test_empty_cart_and_customer_auth_screens_render_without_catalog_context(): void
     {
-        $this->get('/cart')->assertOk()->assertSee('Nothing in your bag yet.');
-        $this->get('/login')->assertOk()->assertSee('Sign in');
-        $this->get('/register')->assertOk()->assertSee('Create account');
+        $this->get('/cart')->assertOk()->assertSee('سبد خرید شما خالی است.');
+        $this->get('/login')->assertOk()->assertSee('ورود به حساب');
+        $this->get('/register')->assertOk()->assertSee('ساخت حساب کاربری');
         $this->get('/checkout')->assertRedirect(route('cart.index'));
     }
 
@@ -160,7 +160,7 @@ class CustomerCommerceFlowTest extends TestCase
         $customer = User::query()->where('email', 'registered@example.test')->firstOrFail();
         $this->assertFalse((bool) $customer->is_admin);
         $this->assertAuthenticatedAs($customer);
-        $this->get('/account')->assertOk()->assertSee('My account');
+        $this->get('/account')->assertOk()->assertSee('حساب کاربری');
 
         $otherCustomer = User::query()->create([
             'name' => 'Another Customer',

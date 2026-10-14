@@ -10,7 +10,7 @@
     <meta property="og:site_name" content="VISION">
     <meta property="og:locale" content="fa_IR">
     <meta property="og:type" content="{{ $__env->yieldContent('og-type', 'website') }}">
-    <meta property="og:title" content="{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}">
+    <meta property="og:title" content="{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}">
     <meta property="og:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
     <meta property="og:url" content="{{ $__env->yieldContent('canonical', url()->current()) }}">
     @if (filled(trim($__env->yieldContent('og-image'))))
@@ -20,9 +20,9 @@
     @else
         <meta name="twitter:card" content="summary">
     @endif
-    <meta name="twitter:title" content="{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}">
+    <meta name="twitter:title" content="{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}">
     <meta name="twitter:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
-    <title>{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}</title>
+    <title>{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}</title>
 
     @if (request()->routeIs('storefront.index'))
         <link rel="preconnect" href="https://tiamir.com" crossorigin>
@@ -41,15 +41,20 @@
     <div class="store-atmosphere" aria-hidden="true"></div>
 
     @if (request()->routeIs('storefront.index'))
-        <div class="tiamir-intro" data-tiamir-intro data-first-duration="5000" data-return-duration="2500" aria-hidden="true">
+        <div class="tiamir-intro" data-tiamir-intro data-first-duration="5600" data-return-duration="2500" aria-hidden="true">
             <canvas class="tiamir-intro__static" data-tiamir-static></canvas>
             <span class="tiamir-intro__grain" aria-hidden="true"></span>
             <span class="tiamir-intro__scanlines" aria-hidden="true"></span>
             <span class="tiamir-intro__scan-beam" aria-hidden="true"></span>
+            <span class="tiamir-intro__disturbance" aria-hidden="true"></span>
+            <span class="tiamir-intro__flash" aria-hidden="true"></span>
 
             <div class="tiamir-intro__identity">
                 <span class="tiamir-intro__logo-wrap">
                     <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-cyan"
+                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
+                         alt="" aria-hidden="true" loading="eager" decoding="async">
+                    <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-red"
                          src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
                          alt="" aria-hidden="true" loading="eager" decoding="async">
                     <img class="tiamir-intro__logo tiamir-intro__logo--main"
@@ -59,10 +64,11 @@
                 </span>
             </div>
 
-            <div class="tiamir-intro__signature">Created by R. Majidi.</div>
+            <div class="tiamir-intro__signature">Created by R MAJIDI</div>
+            <div class="tiamir-intro__hint" data-tiamir-hint aria-hidden="true">ANALOG SIGNAL / 01</div>
         </div>
-        <button class="tiamir-replay" type="button" data-tiamir-replay hidden aria-label="Replay intro animation">
-            Replay intro <span aria-hidden="true">↻</span>
+        <button class="tiamir-intro__replay" type="button" data-tiamir-replay aria-label="پخش دوبارهٔ اینترو" hidden>
+            پخش دوباره <span aria-hidden="true">↻</span>
         </button>
     @endif
 
