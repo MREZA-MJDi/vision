@@ -399,6 +399,13 @@
         const stockDisplay = root.querySelector('[data-variant-stock]');
         const quantityInput = root.querySelector('[data-variant-quantity]');
         const addButton = root.querySelector('[data-product-add]');
+        const mainStage = root.querySelector('[data-product-main-stage]');
+        const mainImage = root.querySelector('[data-product-main-image]');
+        const imagePlaceholder = root.querySelector('[data-product-image-placeholder]');
+        const currencySymbol = root.dataset.currencySymbol || 'تومان';
+        const formatMoney = (value) => Number(value || 0).toLocaleString('en-US', {
+            maximumFractionDigits: 0
+        }) + ' ' + currencySymbol;
 
         const refreshVariant = () => {
             const option = select.selectedOptions?.[0];
@@ -417,23 +424,43 @@
                 priceDisplay.replaceChildren();
                 if (onSale && Number.isFinite(originalPrice)) {
                     const del = document.createElement('del');
-                    del.textContent = new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD'
-                    }).format(originalPrice);
+                    del.textContent = formatMoney(originalPrice);
                     priceDisplay.append(del);
                 }
                 const strong = document.createElement('strong');
-                strong.textContent = new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD'
-                }).format(price);
+                strong.textContent = formatMoney(price);
                 priceDisplay.append(strong);
             }
 
+            // A variant image wins; otherwise fall back to the product gallery's
+            // first image. Price, availability and image are updated from one
+            // selected option so they cannot drift apart.
+            const imageUrl = option.dataset.image || mainStage?.dataset.baseImage || '';
+            if (mainImage) {
+                if (imageUrl) {
+                    mainImage.src = imageUrl;
+                    mainImage.alt = option.dataset.imageAlt || select.closest('.store-product-detail__info')?.querySelector('h1')?.textContent?.trim() || 'Product image';
+                    mainImage.hidden = false;
+                } else {
+                    mainImage.removeAttribute('src');
+                    mainImage.hidden = true;
+                }
+            }
+            if (imagePlaceholder) imagePlaceholder.hidden = Boolean(imageUrl);
+
+            root.querySelectorAll('[data-variant-pick]').forEach((button) => {
+                const selected = String(button.dataset.color || '') !== ''
+                    && button.dataset.color === String(option.dataset.color || '');
+                button.classList.toggle('is-selected', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            root.querySelectorAll('[data-gallery-image]').forEach((button) => {
+                button.classList.toggle('is-selected', button.dataset.galleryImage === imageUrl);
+            });
+
             if (stockDisplay) {
                 stockDisplay.textContent = stock > 0
-                    ? stock + ' available'
+                    ? stock.toLocaleString('en-US') + ' available'
                     : 'Currently unavailable';
             }
             if (quantityInput) {
@@ -446,7 +473,33 @@
         };
 
         select.addEventListener('change', refreshVariant);
+        root.querySelectorAll('[data-variant-pick]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const matchingOption = Array.from(select.options).find((option) => option.value === button.dataset.variantPick);
+                if (!matchingOption) return;
+                select.value = matchingOption.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
         refreshVariant();
+    });
+
+    root.querySelectorAll('[data-gallery-image]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const stage = root.querySelector('[data-product-main-stage]');
+            const image = root.querySelector('[data-product-main-image]');
+            const placeholder = root.querySelector('[data-product-image-placeholder]');
+            const imageUrl = button.dataset.galleryImage || '';
+            if (!image || !imageUrl) return;
+            image.src = imageUrl;
+            image.alt = button.dataset.galleryAlt || 'Product image';
+            image.hidden = false;
+            if (placeholder) placeholder.hidden = true;
+            root.querySelectorAll('[data-gallery-image]').forEach((thumb) => {
+                thumb.classList.toggle('is-selected', thumb === button);
+            });
+            if (stage) stage.dataset.manualImageSelection = 'true';
+        });
     });
 
     root.querySelector('[data-store-language]')?.addEventListener('click', () => {
