@@ -20,6 +20,26 @@
         return fractionParts.length ? grouped + '.' + fraction : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
+
+    // Preview an image chosen for a specific product variant (separate from the product gallery crop flow).
+    document.addEventListener('change', (event) => {
+        const input = event.target;
+        if (!input.matches?.('[data-variant-image-input]')) return;
+        const preview = input.closest('[data-variant-row]')?.querySelector('[data-variant-image-preview]');
+        if (!preview) return;
+
+        if (preview.dataset.objectUrl) URL.revokeObjectURL(preview.dataset.objectUrl);
+        const file = input.files?.[0];
+        if (!file || !file.type.startsWith('image/')) {
+            preview.hidden = !preview.getAttribute('src');
+            return;
+        }
+
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+        preview.dataset.objectUrl = url;
+        preview.hidden = false;
+    });
     $$('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });
     document.addEventListener('focusin', (event) => {
         if (event.target.matches?.('[data-money-input]')) {
