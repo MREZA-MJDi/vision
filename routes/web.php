@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 | resolved and validated server-side during checkout.
 |
 */
-Route::get('/', [StorefrontController::class, 'index'])->name('storefront.index');
+Route::get('/', [StorefrontController::class, 'home'])->name('storefront.index');
 Route::get('/shop', [StorefrontController::class, 'index'])->name('shop.index');
 Route::get('/products', [StorefrontController::class, 'index'])->name('products.index');
 Route::get('/products/{product:slug}', [StorefrontController::class, 'show'])

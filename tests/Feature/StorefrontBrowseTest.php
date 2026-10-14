@@ -17,9 +17,18 @@ class StorefrontBrowseTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('New Arrivals');
-        $response->assertSee('Fitting room');
-        $response->assertSee('Filters');
+        $response->assertSee('lang="fa" dir="rtl"', false);
+        $response->assertSee('استایل خودت را');
+        $response->assertDontSee('data-fitting-room', false);
+    }
+
+    public function test_shop_contains_filters_and_fitting_room_ui(): void
+    {
+        $this->get('/shop')
+            ->assertOk()
+            ->assertSee('پیش‌نمایش استایل')
+            ->assertSee('فیلترها')
+            ->assertSee('data-fitting-room', false);
     }
 
     public function test_product_catalog_lists_active_products_and_hides_inactive_products(): void

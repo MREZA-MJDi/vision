@@ -11,6 +11,46 @@ use Illuminate\View\View;
 
 class StorefrontController extends Controller
 {
+    public function home(): View
+    {
+        $categories = Category::query()
+            ->active()
+            ->withCount([
+                'products as active_products_count' => fn (Builder $query) => $query
+                    ->where('is_active', true)
+                    ->whereHas('activeVariants'),
+            ])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->limit(8)
+            ->get();
+
+        $heroProduct = $this->catalogProducts()
+            ->where('is_hero', true)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$heroProduct) {
+            $heroProduct = $this->catalogProducts()
+                ->orderByDesc('is_featured')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        $featuredProducts = $this->catalogProducts()
+            ->when($heroProduct, fn (Builder $query) => $query->where('id', '!=', $heroProduct->getKey()))
+            ->orderByDesc('is_featured')
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(8)
+            ->get();
+
+        return view('store.home', compact('categories', 'heroProduct', 'featuredProducts'));
+    }
+
     public function index(Request $request): View
     {
         $categories = Category::query()
@@ -34,34 +74,39 @@ class StorefrontController extends Controller
             ->orderBy('name')
             ->get();
 
-        $search = is_string($request->input('q')) ? trim($request->input('q')) : '';
+        $search = is_string($request->input('q')) ? mb_substr(trim($request->input('q')), 0, 120) : '';
         $categoryId = filter_var($request->input('category_id'), FILTER_VALIDATE_INT) ?: null;
         $brandId = filter_var($request->input('brand_id'), FILTER_VALIDATE_INT) ?: null;
-        $minPrice = is_numeric($request->input('price_min')) ? max(0, (float) $request->input('price_min')) : null;
-        $maxPrice = is_numeric($request->input('price_max')) ? max(0, (float) $request->input('price_max')) : null;
+        $minPriceInput = $request->input('price_min');
+        $maxPriceInput = $request->input('price_max');
+        $minPrice = is_scalar($minPriceInput)
+            ? filter_var($minPriceInput, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])
+            : false;
+        $maxPrice = is_scalar($maxPriceInput)
+            ? filter_var($maxPriceInput, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])
+            : false;
+        $minPrice = $minPrice === false ? null : $minPrice;
+        $maxPrice = $maxPrice === false ? null : $maxPrice;
+
+        // The inputs represent whole currency units. If the range is inverted,
+        // normalize it instead of returning a confusing empty result set.
+        if ($minPrice !== null && $maxPrice !== null && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
         $sort = in_array($request->input('sort'), ['newest', 'featured', 'price_asc', 'price_desc'], true)
             ? $request->input('sort')
             : 'newest';
         $saleOnly = $request->boolean('sale');
 
-        $productsQuery = Product::query()
-            ->active()
-            ->whereHas('activeVariants')
-            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
-            ->withCount('approvedReviews')
-            ->with([
-                'category',
-                'brand',
-                'primaryGalleryMedia',
-                'primaryAvailableVariant.primaryGalleryMedia',
-                'primaryActiveVariant.primaryGalleryMedia',
-            ]);
+        $productsQuery = $this->catalogProducts();
 
         if ($search !== '') {
             $productsQuery->where(function (Builder $query) use ($search): void {
                 $query->where('name', 'like', '%' . $search . '%')
                     ->orWhere('short_description', 'like', '%' . $search . '%')
-                    ->orWhereHas('brand', fn (Builder $brandQuery) => $brandQuery->where('name', 'like', '%' . $search . '%'));
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhereHas('brand', fn (Builder $brandQuery) => $brandQuery->where('name', 'like', '%' . $search . '%'))
+                    ->orWhereHas('category', fn (Builder $categoryQuery) => $categoryQuery->where('name', 'like', '%' . $search . '%'));
             });
         }
 
@@ -73,23 +118,46 @@ class StorefrontController extends Controller
             $productsQuery->where('brand_id', $brandId);
         }
 
-        // Keep sale/price filters aligned with the same primary variant shown on each card.
+        // Filters must use the exact variant the cards display: first in-stock
+        // active variant, falling back to the first active variant when all are sold out.
+        $displayedSaleFilter = static fn (Builder $variantQuery) => $variantQuery
+            ->whereNotNull('sale_price')
+            ->where('sale_price', '>=', 0)
+            ->whereColumn('sale_price', '<', 'price');
+
+        $displayedPriceFilter = static function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
+            if ($minPrice !== null) {
+                $variantQuery->whereRaw(
+                    'CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END >= ?',
+                    [$minPrice]
+                );
+            }
+
+            if ($maxPrice !== null) {
+                $variantQuery->whereRaw(
+                    'CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END <= ?',
+                    [$maxPrice]
+                );
+            }
+        };
+
         if ($saleOnly) {
-            $productsQuery->whereHas('primaryAvailableVariant', fn (Builder $variantQuery) => $variantQuery
-                ->whereNotNull('sale_price')
-                ->where('sale_price', '>=', 0)
-                ->whereColumn('sale_price', '<', 'price'));
+            $productsQuery->where(function (Builder $query) use ($displayedSaleFilter): void {
+                $query->whereHas('primaryAvailableVariant', $displayedSaleFilter)
+                    ->orWhere(function (Builder $fallbackQuery) use ($displayedSaleFilter): void {
+                        $fallbackQuery->whereDoesntHave('primaryAvailableVariant')
+                            ->whereHas('primaryActiveVariant', $displayedSaleFilter);
+                    });
+            });
         }
 
         if ($minPrice !== null || $maxPrice !== null) {
-            $productsQuery->whereHas('primaryAvailableVariant', function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
-                if ($minPrice !== null) {
-                    $variantQuery->whereRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END >= ?', [$minPrice]);
-                }
-
-                if ($maxPrice !== null) {
-                    $variantQuery->whereRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END <= ?', [$maxPrice]);
-                }
+            $productsQuery->where(function (Builder $query) use ($displayedPriceFilter): void {
+                $query->whereHas('primaryAvailableVariant', $displayedPriceFilter)
+                    ->orWhere(function (Builder $fallbackQuery) use ($displayedPriceFilter): void {
+                        $fallbackQuery->whereDoesntHave('primaryAvailableVariant')
+                            ->whereHas('primaryActiveVariant', $displayedPriceFilter);
+                    });
             });
         }
 
@@ -101,22 +169,6 @@ class StorefrontController extends Controller
         };
 
         $products = $productsQuery->paginate(12)->withQueryString();
-        $initialProduct = $products->first();
-        $initialImage = $initialProduct?->primaryGalleryMedia?->url
-            ?? $initialProduct?->primaryAvailableVariant?->primaryGalleryMedia?->url
-            ?? $initialProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
-
-        $heroProduct = null;
-        if ($request->routeIs('storefront.index')) {
-            $heroProduct = Product::query()
-                ->active()
-                ->where('is_hero', true)
-                ->whereHas('activeVariants')
-                ->with(['category', 'brand', 'primaryGalleryMedia', 'primaryAvailableVariant.primaryGalleryMedia', 'primaryActiveVariant.primaryGalleryMedia'])
-                ->orderByDesc('updated_at')
-                ->orderByDesc('id')
-                ->first();
-        }
 
         return view('store.index', [
             'products' => $products,
@@ -129,9 +181,6 @@ class StorefrontController extends Controller
             'maxPrice' => $maxPrice,
             'sort' => $sort,
             'saleOnly' => $saleOnly,
-            'initialProduct' => $initialProduct,
-            'initialImage' => $initialImage,
-            'heroProduct' => $heroProduct,
         ]);
     }
 
@@ -181,4 +230,23 @@ class StorefrontController extends Controller
         return view('store.products.show', compact('product', 'relatedProducts'));
     }
 
+    /**
+     * A bounded, eager-loaded base query shared by the homepage and catalog.
+     * The card templates never need per-product follow-up queries.
+     */
+    private function catalogProducts(): Builder
+    {
+        return Product::query()
+            ->active()
+            ->whereHas('activeVariants')
+            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
+            ->withCount('approvedReviews')
+            ->with([
+                'category',
+                'brand',
+                'primaryGalleryMedia',
+                'primaryAvailableVariant.primaryGalleryMedia',
+                'primaryActiveVariant.primaryGalleryMedia',
+            ]);
+    }
 }

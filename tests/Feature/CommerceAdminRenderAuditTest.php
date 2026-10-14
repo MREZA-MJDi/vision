@@ -449,8 +449,14 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->assertTrue((bool) $newHero->is_hero);
         $this->assertFalse((bool) $oldHero->fresh()->is_hero);
 
-        $this->get('/')->assertOk()->assertSee('New Homepage Hero')->assertSee('store-hero-product', false);
-        $this->get('/products')->assertOk()->assertDontSee('store-hero-product', false);
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('New Homepage Hero')
+            ->assertSee('home-hero__product-label', false);
+
+        $this->get('/products')
+            ->assertOk()
+            ->assertDontSee('home-hero__product-label', false);
     }
 
     public function test_order_variant_search_is_bounded_and_excludes_inactive_catalog_records(): void

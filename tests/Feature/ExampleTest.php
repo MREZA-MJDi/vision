@@ -12,21 +12,23 @@ class ExampleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_public_storefront_returns_a_successful_response(): void
+    public function test_the_public_homepage_renders_without_authentication(): void
     {
-        $response = $this->get('/');
-
-        $response->assertOk()
-            ->assertSee('New Arrivals')
-            ->assertSee('Fitting room')
-            ->assertSee('Your edit starts here.');
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('lang="fa" dir="rtl"', false)
+            ->assertSee('استایل خودت را')
+            ->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_the_shop_alias_uses_the_same_public_storefront(): void
+    public function test_the_shop_route_owns_the_catalog_and_fitting_room_controls(): void
     {
         $this->get('/shop')
             ->assertOk()
-            ->assertSee('New Arrivals');
+            ->assertSee('فروشگاه محصولات')
+            ->assertSee('پیش‌نمایش استایل')
+            ->assertSee('فیلترها')
+            ->assertSee('data-fitting-room', false);
     }
 
     public function test_admin_kit_routes_exist_and_protect_private_pages(): void
