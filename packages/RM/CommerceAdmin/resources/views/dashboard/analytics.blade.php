@@ -4,7 +4,6 @@
 
 @section('content')
     @php
-        $currency = config('commerce-admin.currency_symbol', '$');
         $maxRevenue = max(1, (float) collect($series)->max('value'));
         $maxOrders = max(1, (int) collect($series)->max('orders_count'));
         $revenuePoints = collect($series)->values()->map(fn ($point, $index) =>
@@ -45,13 +44,13 @@
                 <span class="ak-period-label">{{ config('commerce-admin.currency', 'USD') }}</span>
             </div>
             <div class="ak-analytics-main-value">
-                <strong>{{ $currency }}{{ number_format((float) $revenue, 2) }}</strong>
+                <strong>@money($revenue)</strong>
                 <span>تمام سفارش‌های پرداخت‌شدهٔ ثبت‌شده</span>
             </div>
             <div class="ak-bar-chart ak-bar-chart-tall" role="img" aria-label="درآمد پرداخت‌شده by month">
                 @foreach ($series as $point)
                     <div class="ak-bar-column">
-                        <span class="ak-bar-tooltip">{{ $currency }}{{ number_format((float) $point['value'], 0) }}</span>
+                        <span class="ak-bar-tooltip">@money($point['value'])</span>
                         <div class="ak-bar-track"><span style="height:{{ max(2, (((float) $point['value']) / $maxRevenue) * 100) }}%"></span></div>
                         <small>{{ $point['label'] }}</small>
                     </div>
@@ -96,7 +95,7 @@
             </div>
             @forelse ($byCity as $city)
                 <div class="ak-location-row">
-                    <div class="ak-location-label"><span>{{ $city->shipping_city }}</span><strong>{{ $currency }}{{ number_format((float) $city->revenue_total, 0) }}</strong></div>
+                    <div class="ak-location-label"><span>{{ $city->shipping_city }}</span><strong>@money($city->revenue_total)</strong></div>
                     <div class="ak-location-track"><span style="width:{{ min(100, ((float) $city->revenue_total / $cityMax) * 100) }}%"></span></div>
                     <div class="ak-location-meta"><span>{{ number_format((int) $city->orders_count) }} سفارش</span><span>{{ $cityMax > 0 ? number_format(((float) $city->revenue_total / $cityMax) * 100, 0) : 0 }}%</span></div>
                 </div>
@@ -157,7 +156,7 @@
                     <thead><tr><th>محصول</th><th>تعداد فروش</th><th>مجموع فروش</th></tr></thead>
                     <tbody>
                     @foreach ($topProducts as $item)
-                        <tr><td class="ak-table-primary">{{ $item->product_name }}</td><td>{{ number_format((int) $item->units_sold) }}</td><td>{{ $currency }}{{ number_format((float) $item->gross_sales, 2) }}</td></tr>
+                        <tr><td class="ak-table-primary">{{ $item->product_name }}</td><td>{{ number_format((int) $item->units_sold) }}</td><td>@money($item->gross_sales)</td></tr>
                     @endforeach
                     </tbody>
                 </table></div>
