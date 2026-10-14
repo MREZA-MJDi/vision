@@ -71,10 +71,11 @@ Route::get('/account/orders/{order}', [CustomerAccountController::class, 'order'
 
 /*
 |--------------------------------------------------------------------------
-| Reusable Commerce Admin Kit
+| Application-owned admin routes
 |--------------------------------------------------------------------------
 |
-| The package service provider registers /admin routes behind its own
-| administrator middleware. Do not duplicate or bypass those routes here.
+| The Admin controllers, middleware and validation belong to this application.
+| CommerceAdmin is only the reusable Blade/CSS/JS presentation kit.
 |
 */
+require __DIR__.'/admin.php';

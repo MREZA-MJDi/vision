@@ -1,6 +1,6 @@
 # VISION — Commerce Storefront
 
-VISION is a Laravel 12 storefront backed by Eloquent, Blade, Vite and a reusable Commerce Admin Kit.
+VISION is a Laravel 12 storefront backed by Eloquent, Blade and Vite. The reusable Commerce Admin UI kit contains Blade views and static CSS/JavaScript only; this application owns routes, controllers, authorization, configuration and database migrations.
 
 ## Customer routes
 
@@ -15,7 +15,7 @@ When a customer signs in or registers, their guest bag is merged into their acco
 
 Wishlist hearts are currently device-local. They are not synced across browsers or stored in the customer's account.
 
-## Commerce Admin Kit
+## Commerce Admin UI Kit
 
 - \`/admin/login\` and \`/admin\` — protected by the configured administrator flag.
 - Product CRUD with variants, SKU/barcode validation, media uploads, taxable flag, and stock adjustments recorded to the inventory ledger.
@@ -60,6 +60,7 @@ Copy \`.env.example\` to \`.env\` (Windows CMD: \`copy .env.example .env\`; Powe
 \`\`\`bash
 php artisan key:generate
 php artisan migrate
+php artisan vendor:publish --tag=commerce-admin-assets --force
 npm install
 npm run build
 php artisan storage:link

@@ -2,8 +2,7 @@
 
 return [
     /*
-    | Model adapters let other Laravel applications reuse the module without
-    | changing the UI. See docs/commerce-admin-kit.md for the model contract.
+    | Host-application model adapters keep business logic outside the UI kit.
     */
     'models' => [
         'user' => App\Models\User::class,

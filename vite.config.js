@@ -10,8 +10,6 @@ export default defineConfig({
                 'resources/css/storefront.css',
                 'resources/js/app.js',
                 'resources/js/storefront.js',
-                'packages/RM/CommerceAdmin/resources/css/admin-kit.css',
-                'packages/RM/CommerceAdmin/resources/js/admin-kit.js',
             ],
             refresh: true,
         }),
