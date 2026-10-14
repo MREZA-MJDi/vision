@@ -54,6 +54,7 @@ class ExampleTest extends TestCase
         $this->actingAs($administrator)
             ->get(route('commerce-admin.dashboard'))
             ->assertOk()
+            ->assertSee('lang="fa" dir="rtl"', false)
             ->assertSee('مشتری‌های اخیر')
             ->assertSee('درآمد پرداخت‌شده')
             ->assertSee('روند فروشگاه')
@@ -80,6 +81,7 @@ class ExampleTest extends TestCase
 
         $this->get(route('commerce-admin.products.index'))
             ->assertOk()
+            ->assertSee('lang="fa" dir="rtl"', false)
             ->assertSee('مجموع فروش')
             ->assertSee('امتیاز')
             ->assertSee('فهرست محصولات');
