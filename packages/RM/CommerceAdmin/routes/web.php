@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use Rm\CommerceAdmin\Http\Controllers\AuthController;
+use Rm\CommerceAdmin\Http\Controllers\BrandController;
+use Rm\CommerceAdmin\Http\Controllers\CategoryController;
+use Rm\CommerceAdmin\Http\Controllers\CustomerController;
+use Rm\CommerceAdmin\Http\Controllers\InventoryController;
+use Rm\CommerceAdmin\Http\Controllers\PaymentController;
 use Rm\CommerceAdmin\Http\Controllers\DashboardController;
 use Rm\CommerceAdmin\Http\Controllers\OrderController;
 use Rm\CommerceAdmin\Http\Controllers\ProductController;
@@ -17,6 +22,28 @@ Route::middleware('web')->prefix('admin')->as('commerce-admin.')->group(function
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
         Route::get('/analytics/export', [DashboardController::class, 'export'])->name('analytics.export');
+
+        Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+        Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+        Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+        Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->whereNumber('category')->name('categories.edit');
+        Route::put('/categories/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('categories.update');
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->name('categories.destroy');
+
+        Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
+        Route::get('/brands/create', [BrandController::class, 'create'])->name('brands.create');
+        Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');
+        Route::get('/brands/{brand}/edit', [BrandController::class, 'edit'])->whereNumber('brand')->name('brands.edit');
+        Route::put('/brands/{brand}', [BrandController::class, 'update'])->whereNumber('brand')->name('brands.update');
+        Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->whereNumber('brand')->name('brands.destroy');
+
+        Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('/customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->name('customers.show');
+
+        Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+
+        Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory/{variant}/adjust', [InventoryController::class, 'adjust'])->whereNumber('variant')->name('inventory.adjust');
 
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
