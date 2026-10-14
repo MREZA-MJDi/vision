@@ -18,7 +18,7 @@
     @endif
     @stack('styles')
 </head>
-<body class="storefront-body">
+<body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }}">
     <div class="store-atmosphere" aria-hidden="true"></div>
 
     <div class="store-shell" data-storefront
@@ -64,10 +64,34 @@
 
         @yield('content')
 
-        <footer class="store-footer">
-            <a class="store-footer__wordmark" href="{{ route('storefront.index') }}">VISION</a>
-            <span>انتخاب دقیق‌تر، شلوغی کمتر</span>
-            <span>مجموعهٔ منتخب VISION</span>
+        <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
+            <div class="store-footer__main">
+                <div class="store-footer__brand">
+                    <a class="store-footer__wordmark" href="{{ route('storefront.index') }}" aria-label="صفحهٔ اصلی VISION">VISION</a>
+                    <p>انتخاب دقیق‌تر، شلوغی کمتر؛ محصولات و اطلاعات سفارش در یک فروشگاه یکپارچه.</p>
+                </div>
+
+                <nav class="store-footer__column" aria-label="دسترسی سریع">
+                    <h2>دسترسی سریع</h2>
+                    <a href="{{ route('storefront.index') }}">خانه</a>
+                    <a href="{{ route('shop.index') }}">فروشگاه</a>
+                    <a href="{{ route('shop.index', ['sort' => 'newest']) }}">تازه‌های فروشگاه</a>
+                    <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
+                </nav>
+
+                <nav class="store-footer__column" aria-label="خرید و حساب کاربری">
+                    <h2>خرید و حساب کاربری</h2>
+                    <a href="{{ route('cart.index') }}">سبد خرید</a>
+                    <a href="{{ route('checkout.index') }}">ادامهٔ خرید</a>
+                    <a href="{{ route('login') }}">ورود</a>
+                    <a href="{{ route('register') }}">ساخت حساب</a>
+                </nav>
+            </div>
+
+            <div class="store-footer__bottom">
+                <span>© {{ now()->year }} VISION — تمام حقوق محفوظ است.</span>
+                <a href="{{ route('storefront.index') }}">بازگشت به صفحهٔ اصلی <span aria-hidden="true">↑</span></a>
+            </div>
         </footer>
 
         <div class="store-toast" data-store-toast role="status" aria-live="polite"></div>
