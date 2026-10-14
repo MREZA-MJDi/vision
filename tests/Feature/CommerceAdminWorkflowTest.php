@@ -18,7 +18,7 @@ class CommerceAdminWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_routes_redirect_guests_to_the_package_login(): void
+    public function test_admin_routes_redirect_guests_to_the_shared_storefront_login(): void
     {
         $this->get('/admin')
             ->assertRedirect(route('commerce-admin.login'));
@@ -143,6 +143,50 @@ class CommerceAdminWorkflowTest extends TestCase
 
         $this->assertSame(5, (int) ProductVariant::withTrashed()->findOrFail($variant->getKey())->stock);
         $this->assertSame($movementCount + 1, InventoryMovement::query()->count());
+    }
+
+    public function test_order_can_progress_through_out_for_delivery_and_records_timestamps(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Delivery Admin',
+            'email' => 'delivery-admin@example.test',
+            'password' => 'admin-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $order = Order::query()->create([
+            'order_number' => 'VS-DELIVERY-MILESTONE-0001',
+            'customer_name' => 'Delivery Test Buyer',
+            'shipping_address' => '4 Test Road',
+            'status' => 'shipped',
+            'payment_status' => 'pending',
+            'payment_method' => 'cash_on_delivery',
+            'subtotal' => 10,
+            'discount' => 0,
+            'shipping_cost' => 0,
+            'tax' => 0,
+            'total' => 10,
+            'placed_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('commerce-admin.orders.status', $order->getKey()), [
+                'status' => 'out_for_delivery',
+            ])
+            ->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
+
+        $order->refresh();
+        $this->assertSame('out_for_delivery', $order->status);
+        $this->assertNotNull($order->out_for_delivery_at);
+
+        $this->patch(route('commerce-admin.orders.status', $order->getKey()), [
+            'status' => 'delivered',
+        ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
+
+        $order->refresh();
+        $this->assertSame('delivered', $order->status);
+        $this->assertNotNull($order->out_for_delivery_at);
+        $this->assertNotNull($order->delivered_at);
     }
 
     public function test_order_state_machine_rejects_skipping_fulfillment_steps(): void

@@ -12,11 +12,12 @@
         .replace(/[^0-9.]/g, '');
     const formatMoneyInput = (value) => {
         const clean = cleanMoneyInput(value);
-        if (!clean || !/^\d*\.?\d*$/.test(clean)) return clean;
-        const [whole, ...fraction] = clean.split('.');
+        if (!clean) return clean;
+        const [whole, ...fractionParts] = clean.split('.');
+        const fraction = fractionParts.join('');
         const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        const decimals = fraction.join('').replace(/0+$/, '');
-        return decimals ? grouped + '.' + decimals : grouped;
+        // Preserve the decimal separator and trailing zeroes while the user edits (e.g. "12.").
+        return fractionParts.length ? grouped + '.' + fraction : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
     $$('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });

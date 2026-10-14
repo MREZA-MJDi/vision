@@ -65,24 +65,14 @@ final class OrderService
                 ]);
             }
 
-            $wasCancelledLike = in_array(
-                $oldStatus,
-                Order::CANCEL_LIKE_STATUSES,
-                true
-            );
-
             $willBeCancelledLike = in_array(
                 $newStatus,
                 Order::CANCEL_LIKE_STATUSES,
                 true
             );
 
-            if (! $wasCancelledLike && $willBeCancelledLike) {
+            if (! in_array($oldStatus, Order::CANCEL_LIKE_STATUSES, true) && $willBeCancelledLike) {
                 $this->restoreInventory($order, $newStatus === 'returned' ? 'return' : 'adjustment');
-            }
-
-            if ($wasCancelledLike && ! $willBeCancelledLike) {
-                $this->deductInventoryAgain($order);
             }
 
             $order->update([
@@ -92,6 +82,9 @@ final class OrderService
                 'shipped_at' => $newStatus === 'shipped'
                     ? ($order->shipped_at ?? now())
                     : $order->shipped_at,
+                'out_for_delivery_at' => $newStatus === 'out_for_delivery'
+                    ? ($order->out_for_delivery_at ?? now())
+                    : $order->out_for_delivery_at,
                 'delivered_at' => $newStatus === 'delivered'
                     ? ($order->delivered_at ?? now())
                     : $order->delivered_at,
@@ -146,45 +139,11 @@ final class OrderService
                 'type' => $movementType,
                 'quantity' => (int) $item->quantity,
                 'stock_after' => $variant->stock,
-                'reference_type' => Order::class,
+                'reference_type' => $order->getMorphClass(),
                 'reference_id' => $order->id,
                 'note' => $movementType === 'return'
                     ? "بازگشت موجودی سفارش {$order->order_number}"
                     : "بازگشت موجودی پس از لغو سفارش {$order->order_number}",
-                'created_by' => auth()->id(),
-            ]);
-        }
-    }
-
-    private function deductInventoryAgain(Order $order): void
-    {
-        $order->load('items');
-
-        foreach ($order->items as $item) {
-            if (! $item->product_variant_id) {
-                continue;
-            }
-
-            $variant = ProductVariant::query()
-                ->lockForUpdate()
-                ->find($item->product_variant_id);
-
-            abort_unless(
-                $variant && $variant->stock >= $item->quantity,
-                422,
-                "موجودی برای فعال‌سازی مجدد سفارش «{$order->order_number}» کافی نیست."
-            );
-
-            $variant->decrement('stock', (int) $item->quantity);
-            $variant->refresh();
-
-            $variant->inventoryMovements()->create([
-                'type' => 'sale',
-                'quantity' => -((int) $item->quantity),
-                'stock_after' => $variant->stock,
-                'reference_type' => Order::class,
-                'reference_id' => $order->id,
-                'note' => "کسر مجدد موجودی سفارش {$order->order_number}",
                 'created_by' => auth()->id(),
             ]);
         }
@@ -196,15 +155,8 @@ final class OrderService
             return;
         }
 
-        $allowed = match ($from) {
-            'pending' => ['confirmed', 'cancelled'],
-            'confirmed' => ['preparing', 'cancelled'],
-            'preparing' => ['shipped', 'cancelled'],
-            'shipped' => ['delivered', 'returned'],
-            'delivered' => ['returned'],
-            'cancelled', 'returned' => [],
-            default => [],
-        };
+        // Keep workflow validation aligned with the model and the options rendered by the admin view.
+        $allowed = Order::STATUS_TRANSITIONS[$from] ?? [];
 
         if (! in_array($to, $allowed, true)) {
             throw ValidationException::withMessages([
