@@ -519,4 +519,26 @@ class ProductController
         return redirect()->route('commerce-admin.products.edit', $model->getKey())
             ->with('status', 'Image removed.');
     }
+    public function deleteVariantMedia(int $product, int $variant, int $media): RedirectResponse
+    {
+        $productModel = $this->model('product', Product::class);
+        $model = $productModel::query()->findOrFail($product);
+        $variantModel = $this->model('variant', ProductVariant::class);
+        $variantRecord = $variantModel::withTrashed()
+            ->where('product_id', $model->getKey())
+            ->whereKey($variant)
+            ->firstOrFail();
+        $asset = $variantRecord->media()->whereKey($media)->firstOrFail();
+
+        if ($asset->path && ! preg_match('/^https?:\\/\\//i', $asset->path)
+            && ! str_starts_with(ltrim((string) $asset->path, '/'), 'demo-products/')) {
+            Storage::disk($asset->disk ?: config('commerce-admin.media_disk', 'public'))->delete($asset->path);
+        }
+
+        $asset->delete();
+
+        return redirect()->route('commerce-admin.products.edit', $model->getKey())
+            ->with('status', 'Image removed.');
+    }
+
 }
