@@ -31,7 +31,7 @@
             @forelse($product->galleryMedia as $media)
                 <div class="store-product-detail__image" @if($loop->first) data-product-main-stage data-base-image="{{ $baseImage ?? '' }}" @endif>
                     <img src="{{ $loop->first ? ($defaultVariant?->primaryGalleryMedia?->url ?? $media->url) : $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" @if($loop->first) data-product-main-image data-fallback-src="{{ $baseImage ?? '' }}" @endif loading="{{ $loop->first ? 'eager' : 'lazy' }}">
-                    @if($loop->first)<div class="store-product-detail__image--empty" data-product-image-placeholder hidden><span>VISION<br>STUDIO</span></div>@endif
+                    @if($loop->first)<div class="store-product-detail__image--empty" data-product-image-placeholder hidden><span>تصویر<br>محصول</span></div>@endif
                 </div>
             @empty
                 @if($primaryImage)
@@ -85,7 +85,7 @@
                                     @selected($variant->getKey() === $defaultVariant?->getKey())
                                     @disabled((int) $variant->stock < 1)
                                 >
-                                    {{ implode(' / ', array_filter([$variant->size, $variant->color])) ?: ($variant->sku ?: 'Standard') }}
+                                    {{ implode(' / ', array_filter([$variant->size, $variant->color])) ?: ($variant->sku ?: 'معمولی') }}
                                     · {{ $formatPrice($variant->effective_price) }}
                                     {{ (int) $variant->stock < 1 ? ' — ناموجود' : '' }}
                                 </option>
