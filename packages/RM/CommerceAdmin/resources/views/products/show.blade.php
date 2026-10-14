@@ -5,7 +5,7 @@
 @section('content')
     @php
         $primaryVariant = $model->variants->firstWhere('is_active', true) ?: $model->variants->first();
-        $price = $primaryVariant?->sale_price ?? $primaryVariant?->price ?? 0;
+        $price = $primaryVariant?->effective_price ?? 0;
         $colors = $model->variants->pluck('color')->filter()->unique()->values();
         $sizes = $model->variants->pluck('size')->filter()->unique()->values();
         $attributes = collect($model->attributes ?? [])->filter(fn ($value) => is_scalar($value) && trim((string) $value) !== '');
