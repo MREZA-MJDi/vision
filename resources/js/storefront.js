@@ -2,6 +2,9 @@
     const root = document.querySelector('[data-storefront]');
     if (!root) return;
 
+    const currencySymbol = root.dataset.currencySymbol || 'تومان';
+    const formatMoney = (value) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(value) || 0) + ' ' + currencySymbol;
+
     const sidebar = root.querySelector('[data-store-sidebar]');
     const filterToggle = root.querySelector('[data-store-filter-toggle]');
     const backdrop = root.querySelector('[data-store-filter-backdrop]');
@@ -397,6 +400,8 @@
     root.querySelectorAll('[data-variant-select]').forEach((select) => {
         const priceDisplay = root.querySelector('[data-variant-price]');
         const stockDisplay = root.querySelector('[data-variant-stock]');
+        const imageDisplay = root.querySelector('[data-product-main-image]');
+        const imagePlaceholder = root.querySelector('[data-product-image-placeholder]');
         const quantityInput = root.querySelector('[data-variant-quantity]');
         const addButton = root.querySelector('[data-product-add]');
 
@@ -413,21 +418,28 @@
             const onSale = option.dataset.sale === '1';
             const stock = Math.max(0, Number(option.dataset.stock) || 0);
 
+            const imageUrl = option.dataset.image || imageDisplay?.dataset.fallbackSrc || '';
+            if (imageDisplay) {
+                if (imageUrl) {
+                    imageDisplay.src = imageUrl;
+                    imageDisplay.hidden = false;
+                    if (imagePlaceholder) imagePlaceholder.hidden = true;
+                } else {
+                    imageDisplay.removeAttribute('src');
+                    imageDisplay.hidden = true;
+                    if (imagePlaceholder) imagePlaceholder.hidden = false;
+                }
+            }
+
             if (priceDisplay && Number.isFinite(price)) {
                 priceDisplay.replaceChildren();
                 if (onSale && Number.isFinite(originalPrice)) {
                     const del = document.createElement('del');
-                    del.textContent = new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD'
-                    }).format(originalPrice);
+                    del.textContent = formatMoney(originalPrice);
                     priceDisplay.append(del);
                 }
                 const strong = document.createElement('strong');
-                strong.textContent = new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD'
-                }).format(price);
+                strong.textContent = formatMoney(price);
                 priceDisplay.append(strong);
             }
 
