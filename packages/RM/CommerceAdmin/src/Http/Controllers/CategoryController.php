@@ -187,7 +187,7 @@ class CategoryController
             while ($current && $current->getKey()) {
                 $currentId = (int) $current->getKey();
 
-                if ($currentId === $parentId) {
+                if ($record->getKey() && $currentId === (int) $record->getKey()) {
                     throw ValidationException::withMessages([
                         'parent_id' => 'یک دسته‌بندی نمی‌تواند والد خودش یا یکی از والدهایش باشد.',
                     ]);
@@ -220,7 +220,7 @@ class CategoryController
         $suffix = 2;
 
         while ($model::withTrashed()->where('slug', $candidate)
-            ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->when($ignoreId, fn ($query) => $query->where($query->getModel()->getKeyName(), '<>', $ignoreId))
             ->exists()) {
             $candidate = $base . '-' . $suffix++;
         }
