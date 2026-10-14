@@ -50,17 +50,7 @@ class ProductController
         $userModel = $this->model('user', User::class);
 
         $query = $productModel::query()
-            ->with(['category', 'brand', 'primaryGalleryMedia', 'primaryActiveVariant.primaryGalleryMedia'])
-            ->withSum(['variants as active_stock_sum' => fn ($variants) => $variants->where('is_active', true)], 'stock')
-            ->withExists([
-                'variants as has_low_stock_variant' => fn ($variants) => $variants
-                    ->where('is_active', true)
-                    ->whereColumn('stock', '<=', 'low_stock_threshold'),
-                'variants as has_sale_variant' => fn ($variants) => $variants
-                    ->whereNotNull('sale_price')
-                    ->where('sale_price', '>=', 0)
-                    ->whereColumn('sale_price', '<', 'price'),
-            ])
+            ->with(['category', 'brand', 'variants.primaryGalleryMedia', 'galleryMedia'])
             ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
             ->withCount('approvedReviews');
 
@@ -145,7 +135,7 @@ class ProductController
         $productModel = $this->model('product', Product::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
         $model = $productModel::query()
-            ->with(['category', 'brand', 'variants.galleryMedia', 'galleryMedia'])
+            ->with(['category', 'brand', 'variants.primaryGalleryMedia', 'galleryMedia', 'primaryGalleryMedia'])
             ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
             ->withCount('approvedReviews')
             ->findOrFail($product);
@@ -169,7 +159,7 @@ class ProductController
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()
-            ->with(['category', 'brand', 'variants.galleryMedia', 'galleryMedia'])
+            ->with(['category', 'brand', 'variants.galleryMedia', 'variants.primaryGalleryMedia', 'galleryMedia', 'primaryGalleryMedia'])
             ->findOrFail($product);
 
         $variants = $model->variants->values();
@@ -202,10 +192,12 @@ class ProductController
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $validated = $request->validated();
 
-        $storedFiles = [];
+        $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
+        $storedImagePaths = [];
+        $obsoleteImagePaths = [];
 
         try {
-            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, &$storedFiles): void {
+            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, &$storedImagePaths, &$obsoleteImagePaths): void {
             $requestedSlug = trim((string) ($validated['slug'] ?? ''));
             $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
 
@@ -238,14 +230,14 @@ class ProductController
                 'brand_id' => $validated['brand_id'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
-                'attributes' => array_key_exists('attributes', $validated)
-                    ? (collect($validated['attributes'])
-                        ->filter(fn ($attribute) => is_array($attribute)
-                            && trim((string) ($attribute['key'] ?? '')) !== ''
-                            && trim((string) ($attribute['value'] ?? '')) !== '')
-                        ->mapWithKeys(fn ($attribute) => [trim((string) $attribute['key']) => trim((string) $attribute['value'])])
-                        ->all() ?: null)
-                    : $product->getAttribute('attributes'),
+                'attributes' => collect($validated['attributes'] ?? [])
+                    ->filter(fn ($attribute) => is_array($attribute)
+                        && trim((string) ($attribute['key'] ?? '')) !== ''
+                        && trim((string) ($attribute['value'] ?? '')) !== '')
+                    ->mapWithKeys(fn ($attribute) => [
+                        trim((string) $attribute['key']) => trim((string) $attribute['value']),
+                    ])
+                    ->all() ?: null,
                 'meta_title' => SeoDefaults::title((string) $validated['name'], $validated['meta_title'] ?? null),
                 'meta_description' => SeoDefaults::description((string) $validated['name'], $validated['meta_description'] ?? null, [
                     $validated['short_description'] ?? null,
@@ -269,8 +261,8 @@ class ProductController
             $keepIds = [];
             $seenSkus = [];
 
+            $variantPosition = 0;
             foreach ($validated['variants'] as $index => $input) {
-                $sortOrder = count($keepIds);
                 $variantId = $input['id'] ?? null;
                 $sku = trim((string) ($input['sku'] ?? ''));
 
@@ -319,7 +311,7 @@ class ProductController
                     'stock' => (int) $input['stock'],
                     'low_stock_threshold' => (int) $input['low_stock_threshold'],
                     'is_active' => (bool) $input['is_active'],
-                    'sort_order' => $sortOrder,
+                    'sort_order' => $variantPosition++,
                 ]);
                 $variant->save();
                 $keepIds[] = $variant->getKey();
@@ -375,6 +367,46 @@ class ProductController
                         'created_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                     ]);
                 }
+
+                // A variant can retain a single primary upload from the editor or accept
+                // a small gallery from API/import clients. Replacing media is transactional;
+                // old physical files are removed only after the database commit succeeds.
+                $variantImages = array_values(array_filter(array_merge(
+                    [$request->file("variants.{$index}.image")],
+                    (array) $request->file("variants.{$index}.images", [])
+                )));
+
+                if ($variantImages !== []) {
+                    foreach ($variant->galleryMedia()->get() as $existingAsset) {
+                        if ($existingAsset->path && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
+                            $obsoleteImagePaths[] = [$existingAsset->disk ?: $mediaDisk, $existingAsset->path];
+                        }
+                        $existingAsset->delete();
+                    }
+
+                    $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
+                        . '/' . $product->getKey() . '/variants/' . $variant->getKey();
+
+                    foreach ($variantImages as $imageOffset => $variantImage) {
+                        $path = $variantImage->store($directory, $mediaDisk);
+                        if (! is_string($path) || $path === '') {
+                            throw new \RuntimeException('ذخیره‌سازی تصویر تنوع انجام نشد.');
+                        }
+
+                        $storedImagePaths[] = $path;
+                        $variant->media()->create([
+                            'collection' => 'gallery',
+                            'disk' => $mediaDisk,
+                            'path' => $path,
+                            'original_name' => $variantImage->getClientOriginalName(),
+                            'mime_type' => $variantImage->getMimeType(),
+                            'size' => $variantImage->getSize(),
+                            'alt_text' => trim($product->name . ($variant->color ? ' - ' . $variant->color : '')),
+                            'sort_order' => $imageOffset,
+                            'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                        ]);
+                    }
+                }
             }
 
             if ($updating) {
@@ -384,22 +416,19 @@ class ProductController
                 });
             }
 
-            // Keep product, variant, stock-ledger, and media records in one DB transaction.
-            // Filesystem writes are compensated if any later DB operation fails.
             if ($request->hasFile('images')) {
-                $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
-                $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/') . '/' . $product->getKey();
+                $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
+                    . '/' . $product->getKey();
+                $sortOrder = $product->galleryMedia()->count();
 
-                foreach ($request->file('images', []) as $image) {
+                foreach ($request->file('images', []) as $offset => $image) {
                     $path = $image->store($directory, $mediaDisk);
+
                     if (! is_string($path) || $path === '') {
-                        throw ValidationException::withMessages([
-                            'images' => 'ذخیره‌سازی یکی از تصاویر انجام نشد؛ هیچ تغییری ثبت نشد.',
-                        ]);
+                        throw new \RuntimeException('ذخیره‌سازی تصویر محصول انجام نشد.');
                     }
 
-                    $storedFiles[] = [$mediaDisk, $path];
-
+                    $storedImagePaths[] = $path;
                     $product->media()->create([
                         'collection' => 'gallery',
                         'disk' => $mediaDisk,
@@ -408,22 +437,22 @@ class ProductController
                         'mime_type' => $image->getMimeType(),
                         'size' => $image->getSize(),
                         'alt_text' => $product->name,
-                        'sort_order' => $product->galleryMedia()->count(),
+                        'sort_order' => $sortOrder + $offset,
                         'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                     ]);
                 }
             }
-            }, 3);
+            }, 1);
         } catch (\Throwable $exception) {
-            foreach ($storedFiles as [$disk, $path]) {
-                try {
-                    Storage::disk($disk)->delete($path);
-                } catch (\Throwable $cleanupException) {
-                    report($cleanupException);
-                }
+            foreach ($storedImagePaths as $path) {
+                Storage::disk($mediaDisk)->delete($path);
             }
 
             throw $exception;
+        }
+
+        foreach ($obsoleteImagePaths as [$disk, $path]) {
+            Storage::disk($disk)->delete($path);
         }
 
         return redirect()->route('commerce-admin.products.show', $product->getKey())

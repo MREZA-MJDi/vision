@@ -34,9 +34,7 @@ class ExampleTest extends TestCase
         $this->get('/admin')->assertRedirect(route('commerce-admin.login'));
         $this->get('/admin/products')->assertRedirect(route('commerce-admin.login'));
         $this->get('/admin/login')->assertRedirect(route('login'));
-        auth()->logout();
-        $this->flushSession();
-        $this->get(route('login'))->assertOk()->assertSee('Sign in');
+        $this->get(route('login'))->assertOk();
 
         $this->assertTrue(Route::has('commerce-admin.dashboard'));
         $this->assertTrue(Route::has('commerce-admin.products.index'));

@@ -54,12 +54,12 @@
                                     <h3>{{ $product?->name ?? 'Unavailable product' }}</h3>
                                     <p>{{ $variant?->display_name ?? 'This variant is no longer available' }}</p>
                                 </div>
-                                <strong>{{ '$' }}{{ number_format((float) $item->display_line_total, 2) }}</strong>
+                                <strong>@money($item->display_line_total)</strong>
                             </div>
                             @if(!$item->checkout_available)
                                 <p class="commerce-inline-error">This item is unavailable or the requested quantity exceeds current stock. Remove it or update the quantity.</p>
                             @else
-                                <p class="commerce-muted">{{ '$' }}{{ number_format((float) $item->display_unit_price, 2) }} each · {{ (int) $variant->stock }} available</p>
+                                <p class="commerce-muted">@money($item->display_unit_price) each · {{ (int) $variant->stock }} available</p>
                             @endif
                             <div class="commerce-cart-row__actions">
                                 @if($variant && $product)
@@ -81,12 +81,12 @@
             </section>
 
             <aside class="commerce-panel commerce-summary">
-                <div class="commerce-panel-heading"><h2>Order summary</h2><span>USD</span></div>
+                <div class="commerce-panel-heading"><h2>Order summary</h2><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span></div>
                 <div class="commerce-summary__lines">
-                    <div><span>Subtotal</span><strong>{{ '$' }}{{ number_format((float) $summary['subtotal'], 2) }}</strong></div>
-                    <div><span>Tax</span><strong>{{ '$' }}{{ number_format((float) $summary['tax'], 2) }}</strong></div>
-                    <div><span>Shipping</span><strong>{{ '$' }}{{ number_format((float) $summary['shipping'], 2) }}</strong></div>
-                    <div class="commerce-summary__total"><span>Total</span><strong>{{ '$' }}{{ number_format((float) $summary['total'], 2) }}</strong></div>
+                    <div><span>Subtotal</span><strong>@money($summary['subtotal'])</strong></div>
+                    <div><span>Tax</span><strong>@money($summary['tax'])</strong></div>
+                    <div><span>Shipping</span><strong>@money($summary['shipping'])</strong></div>
+                    <div class="commerce-summary__total"><span>Total</span><strong>@money($summary['total'])</strong></div>
                 </div>
                 @if($summary['allAvailable'])
                     <a class="commerce-button commerce-button--primary commerce-button--wide" href="{{ route('checkout.index') }}">Continue to checkout ↗</a>

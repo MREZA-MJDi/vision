@@ -24,7 +24,8 @@
          data-cart-url="{{ route('cart.index') }}"
          data-cart-summary-url="{{ route('cart.summary') }}"
          data-cart-add-url="{{ route('cart.items.store') }}"
-         data-account-url="{{ route('account.show') }}">
+         data-account-url="{{ route('account.show') }}"
+         data-currency-symbol="{{ config('commerce-admin.currency_symbol', 'تومان') }}">
         <header class="store-header">
             <nav class="store-nav" aria-label="Main navigation">
                 <a href="{{ route('storefront.index') }}" class="store-nav__link {{ request()->query->count() === 0 ? 'is-current' : '' }}">Home</a>

@@ -12,8 +12,8 @@
         <p>Your order has been recorded. Inventory was updated and your order is now pending confirmation.</p>
         <div class="commerce-complete__number"><span>ORDER NUMBER</span><strong>{{ $order->order_number }}</strong></div>
         <div class="commerce-summary__lines">
-            <div><span>Order status</span><strong>{{ str($order->status)->headline() }}</strong></div>
-            <div><span>Payment</span><strong>{{ str($order->payment_status)->headline() }}</strong></div>
+            <div><span>Order status</span><strong>{{ \Illuminate\Support\Str::headline($order->status) }}</strong></div>
+            <div><span>Payment</span><strong>{{ \Illuminate\Support\Str::headline($order->payment_status) }}</strong></div>
             <div><span>Subtotal</span><strong>@money($order->subtotal)</strong></div>
             <div><span>Tax</span><strong>@money($order->tax)</strong></div>
             <div><span>Shipping</span><strong>@money($order->shipping_cost)</strong></div>

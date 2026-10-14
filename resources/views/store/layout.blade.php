@@ -6,6 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'VISION — Wear Your Point of View')</title>
     <meta name="description" content="@yield('description', 'Discover statement fashion, modern footwear and bags curated for your own point of view.')">
+    <link rel="canonical" href="@yield('canonical', url()->current())">
+    <meta property="og:title" content="@yield('title', 'VISION — Wear Your Point of View')">
+    <meta property="og:description" content="@yield('description', 'Discover statement fashion, modern footwear and bags curated for your own point of view.')">
+    <meta property="og:url" content="@yield('canonical', url()->current())">
+    <meta property="og:type" content="website">
     <meta name="theme-color" content="#f4f0e9">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

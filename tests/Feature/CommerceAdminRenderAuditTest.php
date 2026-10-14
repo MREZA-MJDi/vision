@@ -11,7 +11,9 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CommerceAdminRenderAuditTest extends TestCase
@@ -154,6 +156,170 @@ class CommerceAdminRenderAuditTest extends TestCase
         ));
     }
 
+    public function test_product_variants_store_separate_images_and_publish_their_image_urls(): void
+    {
+        Storage::fake('public');
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.products.store'), [
+                'name' => 'Variant Image Test Product',
+                'status' => 'active',
+                'variants' => [
+                    [
+                        'sku' => 'VARIANT-IMAGE-BLACK',
+                        'color' => 'مشکی',
+                        'color_code' => '#000000',
+                        'price' => '155,000',
+                        'stock' => '4',
+                        'low_stock_threshold' => '1',
+                        'is_active' => '1',
+                        'image' => UploadedFile::fake()->createWithContent('black.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', true)),
+                    ],
+                    [
+                        'sku' => 'VARIANT-IMAGE-WHITE',
+                        'color' => 'سفید',
+                        'color_code' => '#ffffff',
+                        'price' => '155,000',
+                        'stock' => '3',
+                        'low_stock_threshold' => '1',
+                        'is_active' => '1',
+                        'image' => UploadedFile::fake()->createWithContent('white.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', true)),
+                    ],
+                    [
+                        'sku' => 'VARIANT-IMAGE-RED',
+                        'color' => 'قرمز',
+                        'color_code' => '#ff0000',
+                        'price' => '155,000',
+                        'stock' => '2',
+                        'low_stock_threshold' => '1',
+                        'is_active' => '1',
+                    ],
+                ],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $product = Product::query()->where('slug', 'variant-image-test-product')->firstOrFail();
+        $variants = $product->variants()->orderBy('sort_order')->get();
+
+        $this->assertCount(3, $variants);
+        $blackMedia = $variants[0]->primaryGalleryMedia()->firstOrFail();
+        $whiteMedia = $variants[1]->primaryGalleryMedia()->firstOrFail();
+
+        $this->assertNotSame($blackMedia->path, $whiteMedia->path);
+        Storage::disk('public')->assertExists($blackMedia->path);
+        Storage::disk('public')->assertExists($whiteMedia->path);
+
+        $html = $this->get(route('products.show', ['product' => $product->slug]))
+            ->assertOk()
+            ->assertSee('data-variant-select', false)
+            ->assertSee('data-product-main-image', false)
+            ->assertSee('data-image="' . e($blackMedia->url) . '"', false)
+            ->assertSee('data-image="' . e($whiteMedia->url) . '"', false)
+            ->assertSee('data-variant-color-pick="مشکی"', false)
+            ->assertSee('data-variant-color-pick="سفید"', false)
+            ->assertSee('data-variant-color-pick="قرمز"', false)
+            ->assertSee('data-color="قرمز"', false)
+            ->assertSee('data-image=""', false)
+            ->assertSee('data-product-image-placeholder', false)
+            ->getContent();
+
+        $this->assertStringContainsString($blackMedia->url, $html);
+    }
+
+    public function test_variant_image_can_be_removed_and_the_stored_file_is_deleted(): void
+    {
+        Storage::fake('public');
+        $admin = $this->makeAdmin();
+        $product = Product::query()->create([
+            'name' => 'Variant Image Removal Product',
+            'slug' => 'variant-image-removal-product',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'VARIANT-REMOVE-001',
+            'color' => 'Blue',
+            'price' => 1000,
+            'stock' => 5,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+        $path = 'products/' . $product->getKey() . '/variants/' . $variant->getKey() . '/blue.png';
+        Storage::disk('public')->put($path, 'stored-image-bytes');
+        $media = $variant->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => $path,
+            'original_name' => 'blue.png',
+            'mime_type' => 'image/png',
+            'size' => 18,
+            'alt_text' => 'Variant Image Removal Product - Blue',
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('commerce-admin.products.update', $product->getKey()), [
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'status' => 'active',
+                'variants' => [[
+                    'id' => $variant->getKey(),
+                    'sku' => $variant->sku,
+                    'color' => $variant->color,
+                    'price' => '1000',
+                    'sale_price' => '',
+                    'stock' => '5',
+                    'low_stock_threshold' => '1',
+                    'is_active' => '1',
+                    'remove_image' => '1',
+                ]],
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('commerce-admin.products.show', $product->getKey()));
+
+        $this->assertDatabaseMissing('media', ['id' => $media->getKey()]);
+        Storage::disk('public')->assertMissing($path);
+        $this->assertNull($variant->primaryGalleryMedia()->first());
+    }
+
+    public function test_product_store_rejects_soft_deleted_category_and_brand_ids(): void
+    {
+        $admin = $this->makeAdmin();
+        $category = Category::query()->create([
+            'name' => 'Archived Category',
+            'slug' => 'archived-category',
+            'is_active' => true,
+        ]);
+        $brand = Brand::query()->create([
+            'name' => 'Archived Brand',
+            'slug' => 'archived-brand',
+            'is_active' => true,
+        ]);
+        $category->delete();
+        $brand->delete();
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.products.create'))
+            ->post(route('commerce-admin.products.store'), [
+                'name' => 'Invalid Taxonomy Product',
+                'status' => 'active',
+                'category_id' => $category->getKey(),
+                'brand_id' => $brand->getKey(),
+                'variants' => [[
+                    'sku' => 'INVALID-TAXONOMY-001',
+                    'price' => '1000',
+                    'stock' => '1',
+                    'low_stock_threshold' => '0',
+                    'is_active' => '1',
+                ]],
+            ])
+            ->assertRedirect(route('commerce-admin.products.create'))
+            ->assertSessionHasErrors(['category_id', 'brand_id']);
+
+        $this->assertDatabaseMissing('products', ['slug' => 'invalid-taxonomy-product']);
+    }
+
     public function test_form_requests_reject_invalid_product_order_inventory_and_login_input(): void
     {
         $admin = $this->makeAdmin();
@@ -193,6 +359,21 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertSessionHasErrors('variants.0.sale_price');
 
         $this->assertDatabaseMissing('products', ['name' => 'Invalid Sale Product']);
+
+        $this->post(route('commerce-admin.products.store'), [
+            'name' => 'Invalid Variant Color Code',
+            'status' => 'active',
+            'variants' => [[
+                'sku' => 'INVALID-COLOR-CODE-001',
+                'color' => 'Black',
+                'color_code' => '#000000;display:none',
+                'price' => '10.00',
+                'stock' => '1',
+                'low_stock_threshold' => '1',
+                'is_active' => '1',
+            ]],
+        ])->assertSessionHasErrors('variants.0.color_code');
+        $this->assertDatabaseMissing('products', ['name' => 'Invalid Variant Color Code']);
 
         $this->post(route('commerce-admin.orders.store'), [
             'customer_name' => 'Invalid Order',

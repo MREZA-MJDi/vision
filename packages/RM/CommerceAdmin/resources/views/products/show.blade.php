@@ -9,11 +9,12 @@
         $price = $primaryVariant?->sale_price ?? $primaryVariant?->price ?? 0;
         $colors = $model->variants->pluck('color')->filter()->unique()->values();
         $sizes = $model->variants->pluck('size')->filter()->unique()->values();
+        $attributes = collect($model->attributes ?? [])->filter(fn ($value) => is_scalar($value) && trim((string) $value) !== '');
     @endphp
 
     <div class="ak-page-heading">
         <div>
-            <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">محصول List</a> <span>/</span> جزئیات محصول</div>
+            <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">محصولات</a> <span>/</span> جزئیات محصول</div>
             <h1>{{ $model->name }}</h1>
             <p>{{ $model->brand?->name ?: 'بدون برند' }} · تاریخ انتشار @jalali($model->created_at, 'j F Y') · شناسه SKU {{ $primaryVariant?->sku ?: 'تخصیص داده نشده' }}</p>
         </div>
@@ -68,24 +69,32 @@
                 <article class="ak-product-inline-stat">
                     <span>موجودی قابل فروش</span>
                     <strong>{{ number_format((int) $stock) }}</strong>
-                    <small>{{ number_format($model->variants->count()) }} variants</small>
+                    <small>{{ number_format($model->variants->count()) }} تنوع</small>
                 </article>
                 <article class="ak-product-inline-stat">
                     <span>درآمد کل</span>
                     <strong>@money($grossSales)</strong>
-                    <small>{{ number_format((int) $unitsSold) }} units sold</small>
+                    <small>{{ number_format((int) $unitsSold) }} عدد فروخته‌شده</small>
                 </article>
             </section>
 
             <section class="ak-panel ak-product-info-card">
                 <div class="ak-product-section-title"><h2>توضیحات</h2><span class="ak-eyebrow">اطلاعات محصول</span></div>
-                <p class="ak-description-copy">{{ $model->description ?: ($model->short_description ?: 'No description has been saved for this product yet.') }}</p>
+                <p class="ak-description-copy">{{ $model->description ?: ($model->short_description ?: 'برای این محصول هنوز توضیحی ثبت نشده است.') }}</p>
+                @if($attributes->isNotEmpty())
+                    <div class="ak-product-detail-divider"></div>
+                    <div class="ak-attribute-grid">
+                        @foreach($attributes as $attributeName => $attributeValue)
+                            <div><small>{{ $attributeName }}</small><strong>{{ $attributeValue }}</strong></div>
+                        @endforeach
+                    </div>
+                @endif
                 <div class="ak-product-detail-divider"></div>
                 <div class="ak-attribute-grid">
                     <div><small>دسته‌بندی</small><strong>{{ $model->category?->name ?: 'بدون دسته‌بندی' }}</strong></div>
                     <div><small>برند</small><strong>{{ $model->brand?->name ?: 'بدون برند' }}</strong></div>
                     <div><small>وضعیت محصول</small><strong>{{ $model->is_active ? 'فعال' : 'پیش‌نویس' }}</strong></div>
-                    <div><small>Tax</small><strong>{{ $model->is_taxable ? 'Taxable' : 'Not taxable' }}</strong></div>
+                    <div><small>مالیات</small><strong>{{ $model->is_taxable ? 'مشمول مالیات' : 'بدون مالیات' }}</strong></div>
                 </div>
                 @if($colors->isNotEmpty())
                     <div class="ak-variant-attribute">

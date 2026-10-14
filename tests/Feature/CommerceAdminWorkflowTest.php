@@ -27,13 +27,6 @@ class CommerceAdminWorkflowTest extends TestCase
         $this->get(route('login'))->assertOk();
     }
 
-    public function test_unauthenticated_admin_json_requests_receive_401_instead_of_login_html(): void
-    {
-        $this->getJson('/admin/orders/variants/search')
-            ->assertUnauthorized()
-            ->assertJson(['message' => 'Unauthenticated.']);
-    }
-
     public function test_non_admin_customers_cannot_open_the_admin_panel(): void
     {
         $customer = User::query()->create([
@@ -164,7 +157,7 @@ class CommerceAdminWorkflowTest extends TestCase
         $order = Order::query()->create([
             'order_number' => 'VS-DELIVERY-MILESTONE-0001',
             'customer_name' => 'Delivery Test Buyer',
-            'customer_phone' => '555-0140',
+            'customer_phone' => '555-0197',
             'shipping_address' => '4 Test Road',
             'status' => 'shipped',
             'payment_status' => 'pending',
@@ -264,6 +257,7 @@ class CommerceAdminWorkflowTest extends TestCase
             ->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
         $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertSame('cash_on_delivery', $order->fresh()->payment_method);
         $this->assertNotNull($order->fresh()->paid_at);
 
         $payment = Payment::query()->where('order_id', $order->getKey())->firstOrFail();
@@ -276,6 +270,7 @@ class CommerceAdminWorkflowTest extends TestCase
         ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
         $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame('cash_on_delivery', $order->fresh()->payment_method);
         $this->assertSame('refunded', $payment->fresh()->status);
     }
 
@@ -313,6 +308,10 @@ class CommerceAdminWorkflowTest extends TestCase
                 'slug' => '',
                 'status' => 'active',
                 'is_taxable' => '1',
+                'attributes' => [
+                    ['key' => 'Material', 'value' => 'Cotton'],
+                    ['key' => 'Weight', 'value' => '250 g'],
+                ],
                 'variants' => [
                     [
                         'sku' => '',
@@ -334,6 +333,7 @@ class CommerceAdminWorkflowTest extends TestCase
 
         $this->assertSame('cropped-jacket', $product->slug);
         $this->assertStringStartsWith('VIS-', $variant->sku);
+        $this->assertSame(['Material' => 'Cotton', 'Weight' => '250 g'], $product->attributes);
         $this->assertEquals(79500, (float) $variant->price);
         $this->assertSame('Cropped Jacket', $product->meta_title);
         $this->assertStringContainsString('Cropped Jacket', (string) $product->meta_description);

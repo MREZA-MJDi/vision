@@ -40,14 +40,14 @@
                 <div class="ak-customer-detail-card">
                     <span class="ak-avatar ak-avatar-large">{{ strtoupper(substr($model->customer_name ?: 'C', 0, 1)) }}</span>
                     <div>
-                        <strong>{{ $model->customer_name ?: $model->user?->name ?: 'Guest customer' }}</strong>
-                        <span>{{ $model->customer_email ?: 'No email saved' }}</span>
-                        <span>{{ $model->customer_phone ?: 'No phone saved' }}</span>
+                        <strong>{{ $model->customer_name ?: $model->user?->name ?: 'مشتری مهمان' }}</strong>
+                        <span>{{ $model->customer_email ?: 'ایمیل ثبت نشده' }}</span>
+                        <span>{{ $model->customer_phone ?: 'شماره تلفن ثبت نشده' }}</span>
                     </div>
                 </div>
                 <div class="ak-two-column-info">
                     <div><small>نشانی ارسال</small><strong>{{ $model->shipping_address ?: 'نشانی ثبت نشده است' }}</strong><span>{{ collect([$model->shipping_city, $model->shipping_province, $model->postal_code])->filter()->implode(', ') }}</span></div>
-                    <div><small>حساب مشتری</small><strong>{{ $model->user?->name ?: ($model->user_id ? 'حساب متصل' : 'سفارش مهمان') }}</strong><span>{{ $model->user?->email ?: 'No linked account' }}</span></div>
+                    <div><small>حساب مشتری</small><strong>{{ $model->user?->name ?: ($model->user_id ? 'حساب متصل' : 'سفارش مهمان') }}</strong><span>{{ $model->user?->email ?: 'حساب کاربری متصل نیست' }}</span></div>
                 </div>
                 @if($model->customer_note)
                     <div class="ak-help-note"><strong>یادداشت مشتری</strong><p>{{ $model->customer_note }}</p></div>
@@ -56,14 +56,14 @@
 
             <section class="ak-panel ak-order-items-panel">
                 <div class="ak-panel-heading">
-                    <div><h2>اقلام سفارش</h2><p>{{ number_format((int) $items->sum('quantity')) }} units across {{ $items->count() }} قلم سفارش</p></div>
+                    <div><h2>اقلام سفارش</h2><p>{{ number_format((int) $items->sum('quantity')) }} واحد در {{ $items->count() }} قلم سفارش</p></div>
                 </div>
                 @if($items->isEmpty())
                     <div class="ak-empty-state"><strong>قلمی ثبت نشده است</strong><p>برای این سفارش اطلاعات اقلام ثبت نشده است.</p></div>
                 @else
                     <div class="ak-table-scroll">
                         <table class="ak-table">
-                            <thead><tr><th>محصول</th><th>شناسه شناسه SKU / تنوع</th><th>تعداد</th><th>قیمت واحد</th><th>مبلغ کل</th></tr></thead>
+                            <thead><tr><th>محصول</th><th>SKU / تنوع</th><th>تعداد</th><th>قیمت واحد</th><th>مبلغ کل</th></tr></thead>
                             <tbody>
                             @foreach($items as $item)
                                 <tr>
@@ -77,7 +77,7 @@
                                             <strong>{{ $item->product_name ?: 'محصول item' }}</strong>
                                         </div>
                                     </td>
-                                    <td><span class="ak-mono">{{ $item->sku ?: '—' }}</span><small class="ak-table-subtext">{{ $item->variant_name ?: 'Default variant' }}</small></td>
+                                    <td><span class="ak-mono">{{ $item->sku ?: '—' }}</span><small class="ak-table-subtext">{{ $item->variant_name ?: 'تنوع پیش‌فرض' }}</small></td>
                                     <td>{{ number_format((int) $item->quantity) }}</td>
                                     <td>@money($item->unit_price)</td>
                                     <td><strong>@money($item->line_total)</strong></td>
@@ -100,14 +100,14 @@
                     <div class="ak-delivery-steps">
                         <div class="ak-delivery-step is-complete"><span>✓</span><div><strong>ثبت سفارش</strong><small>@jalali($model->placed_at ?: $model->created_at, 'j F Y · H:i')</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 1 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>@if($model->shipped_at) @jalali($model->shipped_at, 'j F Y · H:i') @else هنوز ارسال نشده @endif</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>@if($model->shipped_at)@jalali($model->shipped_at, 'j F Y · H:i')@else هنوز ارسال نشده @endif</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 2 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>@if($model->delivered_at) @jalali($model->delivered_at, 'j F Y · H:i') @else در انتظار تحویل @endif</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>@if($model->delivered_at)@jalali($model->delivered_at, 'j F Y · H:i')@else در انتظار تحویل @endif</small></div></div>
                     </div>
                     <form method="POST" action="{{ route('commerce-admin.orders.status', $model->getKey()) }}" class="ak-inline-status-form">
                         @csrf @method('PATCH')
                         <label class="ak-inline-field">
-                            <span>Update order status</span>
+                            <span>تغییر وضعیت سفارش</span>
                             <select name="status">
                                 @foreach($availableStatuses as $status)
                                     <option value="{{ $status }}" @selected($model->status === $status)>{{ config('commerce-admin.status_labels.' . $status, str($status)->headline()) }}</option>
@@ -126,8 +126,8 @@
                 <div class="ak-summary-lines">
                     <div><span>جمع جزء</span><strong>@money($model->subtotal)</strong></div>
                     <div><span>تخفیف</span><strong class="{{ (float) $model->discount > 0 ? 'ak-negative-value' : '' }}">−@money($model->discount)</strong></div>
-                    <div><span>Shipping</span><strong>@money($model->shipping_cost)</strong></div>
-                    <div><span>Tax</span><strong>@money($model->tax)</strong></div>
+                    <div><span>هزینهٔ ارسال</span><strong>@money($model->shipping_cost)</strong></div>
+                    <div><span>مالیات</span><strong>@money($model->tax)</strong></div>
                     <div class="ak-summary-total"><span>مبلغ کل</span><strong>@money($model->total)</strong></div>
                 </div>
                 <div class="ak-payment-detail">
@@ -164,7 +164,7 @@
                 <div class="ak-detail-list">
                     <span>سفارش ID<strong>#{{ $model->getKey() }}</strong></span>
                     <span>ثبت شده<strong>@jalali($model->placed_at ?: $model->created_at, 'j F Y')</strong></span>
-                    <span>به‌روزرسانی<strong>{{ $model->updated_at?->diffForHumans() ?: '—' }}</strong></span>
+                    <span>به‌روزرسانی<strong>{{ $model->updated_at?->locale('fa')->diffForHumans() ?: '—' }}</strong></span>
                     <span>کد رهگیری<strong>{{ $model->tracking_code ?: 'تخصیص داده نشده' }}</strong></span>
                 </div>
             </section>

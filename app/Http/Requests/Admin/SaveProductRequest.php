@@ -47,13 +47,13 @@ class SaveProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($productTable, 'slug')->ignore($this->route('product'))],
-            'category_id' => ['nullable', 'integer', Rule::exists($categoryTable, 'id')],
-            'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')],
+            'category_id' => ['nullable', 'integer', Rule::exists($categoryTable, 'id')->whereNull('deleted_at')],
+            'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')->whereNull('deleted_at')],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
-            'attributes' => ['sometimes', 'array', 'max:30'],
-            'attributes.*.key' => ['required_with:attributes.*.value', 'string', 'max:80'],
-            'attributes.*.value' => ['required_with:attributes.*.key', 'string', 'max:500'],
+            'attributes' => ['sometimes', 'array', 'max:50'],
+            'attributes.*.key' => ['nullable', 'string', 'max:100'],
+            'attributes.*.value' => ['nullable', 'string', 'max:500'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'is_featured' => ['sometimes', 'boolean'],
@@ -65,14 +65,15 @@ class SaveProductRequest extends FormRequest
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.size' => ['nullable', 'string', 'max:50'],
             'variants.*.color' => ['nullable', 'string', 'max:80'],
-            'variants.*.color_code' => ['nullable', 'string', 'max:20', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'variants.*.images' => ['sometimes', 'array', 'max:4'],
-            'variants.*.images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'variants.*.color_code' => ['nullable', 'string', 'regex:/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'variants.*.price' => ['required', 'numeric', 'min:0'],
             'variants.*.sale_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.stock' => ['required', 'integer', 'min:0'],
             'variants.*.low_stock_threshold' => ['required', 'integer', 'min:0'],
             'variants.*.is_active' => ['required', 'boolean'],
+            'variants.*.image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'variants.*.images' => ['sometimes', 'array', 'max:4'],
+            'variants.*.images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'images' => ['sometimes', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ];
@@ -81,6 +82,29 @@ class SaveProductRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
+            $seenAttributeKeys = [];
+            foreach ((array) $this->input('attributes', []) as $index => $attribute) {
+                if (! is_array($attribute)) {
+                    continue;
+                }
+
+                $key = trim((string) ($attribute['key'] ?? ''));
+                $value = trim((string) ($attribute['value'] ?? ''));
+                if ($key === '' && $value === '') {
+                    continue;
+                }
+                if ($key === '') {
+                    $validator->errors()->add("attributes.$index.key", 'برای مقدار واردشده، عنوان مشخصه را بنویسید.');
+                    continue;
+                }
+
+                $normalizedKey = mb_strtolower($key);
+                if (isset($seenAttributeKeys[$normalizedKey])) {
+                    $validator->errors()->add("attributes.$index.key", 'عنوان مشخصه نباید تکراری باشد.');
+                }
+                $seenAttributeKeys[$normalizedKey] = true;
+            }
+
             foreach ((array) $this->input('variants', []) as $index => $variant) {
                 if (! is_array($variant) || ! isset($variant['price']) || ! is_numeric($variant['price'])) {
                     continue;
@@ -108,9 +132,11 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock.min' => 'موجودی نمی‌تواند منفی باشد.',
             'images.*.image' => 'فایل انتخاب‌شده باید تصویر باشد.',
             'images.*.max' => 'اندازهٔ هر تصویر حداکثر ۴ مگابایت است.',
+            'variants.*.color_code.regex' => 'کد رنگ باید مقدار HEX معتبر مانند #000000 باشد.',
+            'variants.*.image.image' => 'تصویر تنوع باید یک فایل تصویری معتبر باشد.',
+            'variants.*.image.max' => 'اندازهٔ تصویر هر تنوع حداکثر ۴ مگابایت است.',
             'variants.*.images.*.image' => 'تصویر هر تنوع باید یک فایل تصویری معتبر باشد.',
             'variants.*.images.*.max' => 'اندازهٔ هر تصویر تنوع حداکثر ۴ مگابایت است.',
-            'variants.*.color_code.regex' => 'کد رنگ باید یک رنگ معتبر HEX مانند #171717 باشد.',
         ];
     }
 }
