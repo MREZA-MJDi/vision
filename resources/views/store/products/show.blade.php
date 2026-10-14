@@ -5,7 +5,7 @@
 
 @section('canonical', route('products.show', ['product' => $product->slug]))
 @section('og-type', 'product')
-@section('og-image', $product->primaryGalleryMedia?->url ?: $product->galleryMedia->first()?->url)
+@section('og-image', $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0)?->primaryGalleryMedia?->url ?: $product->activeVariants->first()?->primaryGalleryMedia?->url ?: $product->primaryGalleryMedia?->url ?: $product->galleryMedia->first()?->url)
 
 @section('content')
 @php
