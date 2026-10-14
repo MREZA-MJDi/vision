@@ -31,4 +31,10 @@ return [
     'items_per_page' => 10,
     'media_disk' => env('COMMERCE_ADMIN_MEDIA_DISK', 'public'),
     'media_directory' => 'products',
+    // Used only by AdminSeeder. Never commit real values in this file.
+    'bootstrap_admin' => [
+        'email' => env('COMMERCE_ADMIN_EMAIL'),
+        'name' => env('COMMERCE_ADMIN_NAME', 'Store Administrator'),
+        'password' => env('COMMERCE_ADMIN_PASSWORD'),
+    ],
 ];
