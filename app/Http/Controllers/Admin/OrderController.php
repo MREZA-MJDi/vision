@@ -90,6 +90,7 @@ class OrderController
         $variantModel = $this->model('variant', ProductVariant::class);
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $userModel = $this->model('user', User::class);
+        $paymentModel = $this->model('payment', Payment::class);
 
         $validated = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
@@ -106,19 +107,57 @@ class OrderController
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
         ]);
 
-        $order = DB::transaction(function () use ($validated, $orderModel, $itemModel, $variantModel, $inventoryModel, $userModel) {
+        $order = DB::transaction(function () use (
+            $validated,
+            $orderModel,
+            $itemModel,
+            $variantModel,
+            $inventoryModel,
+            $userModel,
+            $paymentModel
+        ) {
             $taxRate = max(0, (float) config('commerce-admin.tax_rate', 0));
-            $email = $validated['customer_email'] ?? null;
-            $customer = $email ? $userModel::query()->where('email', $email)->first() : null;
-            $number = 'VS-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(4));
-            $subtotal = 0.0;
-            $taxAmount = 0.0;
+            $email = isset($validated['customer_email'])
+                ? Str::lower(trim((string) $validated['customer_email']))
+                : null;
+            $adminFlag = (string) config('commerce-admin.admin_flag_column', 'is_admin');
+            $customer = $email
+                ? $userModel::query()
+                    ->whereRaw('LOWER(email) = ?', [$email])
+                    ->where($adminFlag, false)
+                    ->first()
+                : null;
+
+            $number = 'VS-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(6));
+            $subtotalCents = 0;
+            $taxCents = 0;
             $preparedItems = [];
 
+            // Lock all requested variants in a stable order to reduce deadlocks,
+            // and eager-load product/media once instead of issuing one query per line.
+            $variantPrototype = new $variantModel();
+            $variantIds = collect($validated['items'])
+                ->pluck('variant_id')
+                ->map(fn ($id): int => (int) $id)
+                ->unique()
+                ->sort()
+                ->values();
+            $variants = $variantModel::query()
+                ->with(['product', 'primaryGalleryMedia', 'product.primaryGalleryMedia'])
+                ->whereKey($variantIds)
+                ->orderBy($variantPrototype->getQualifiedKeyName())
+                ->lockForUpdate()
+                ->get()
+                ->keyBy(fn ($variant): int => (int) $variant->getKey());
+
             foreach ($validated['items'] as $index => $input) {
-                $variant = $variantModel::query()
-                    ->with(['product', 'primaryGalleryMedia', 'product.primaryGalleryMedia'])
-                    ->whereKey($input['variant_id'])->lockForUpdate()->firstOrFail();
+                $variant = $variants->get((int) $input['variant_id']);
+
+                if (! $variant) {
+                    throw ValidationException::withMessages([
+                        "items.$index.variant_id" => 'This product option no longer exists.',
+                    ]);
+                }
 
                 if (! $variant->is_active || ! $variant->product || ! $variant->product->is_active) {
                     throw ValidationException::withMessages([
@@ -133,31 +172,33 @@ class OrderController
                     ]);
                 }
 
-                $unitPrice = (float) $variant->effective_price;
-                $lineTotal = round($unitPrice * $quantity, 2);
-                $lineTax = (bool) $variant->product->getAttribute('is_taxable')
-                    ? round($lineTotal * $taxRate, 2)
-                    : 0.0;
-                $subtotal += $lineTotal;
-                $taxAmount += $lineTax;
+                $unitCents = (int) round(((float) $variant->effective_price) * 100);
+                $lineCents = $unitCents * $quantity;
+                $lineTaxCents = (bool) $variant->product->getAttribute('is_taxable')
+                    ? (int) round($lineCents * $taxRate)
+                    : 0;
+
+                $subtotalCents += $lineCents;
+                $taxCents += $lineTaxCents;
                 $preparedItems[] = [
                     'variant' => $variant,
                     'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'line_total' => $lineTotal,
-                    'tax_amount' => $lineTax,
+                    'unit_price' => $unitCents / 100,
+                    'line_total' => $lineCents / 100,
+                    'tax_amount' => $lineTaxCents / 100,
                     'image' => $variant->primaryGalleryMedia?->url
                         ?? $variant->product->primaryGalleryMedia?->url,
                 ];
             }
 
-            $subtotal = round($subtotal, 2);
-            $taxAmount = round($taxAmount, 2);
-            $shipping = round((float) $validated['shipping_cost'], 2);
+            $shippingCents = (int) round(max(0, (float) $validated['shipping_cost']) * 100);
+            $totalCents = $subtotalCents + $taxCents + $shippingCents;
+
             $order = $orderModel::query()->create([
                 'user_id' => $customer?->getKey(),
                 'address_id' => null,
                 'order_number' => $number,
+                'public_token' => (string) Str::uuid(),
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'] ?? null,
                 'customer_email' => $email,
@@ -168,20 +209,20 @@ class OrderController
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'payment_method' => $validated['payment_method'],
-                'subtotal' => $subtotal,
+                'subtotal' => $subtotalCents / 100,
                 'discount' => 0,
-                'shipping_cost' => $shipping,
-                'tax' => $taxAmount,
-                'total' => round($subtotal + $shipping + $taxAmount, 2),
+                'shipping_cost' => $shippingCents / 100,
+                'tax' => $taxCents / 100,
+                'total' => $totalCents / 100,
                 'placed_at' => now(),
             ]);
 
             $actorId = Auth::guard(config('commerce-admin.guard', 'web'))->id();
+
             foreach ($preparedItems as $line) {
                 $variant = $line['variant'];
                 $product = $variant->product;
-                $before = (int) $variant->stock;
-                $after = $before - $line['quantity'];
+                $after = (int) $variant->stock - $line['quantity'];
 
                 $itemModel::query()->create([
                     'order_id' => $order->getKey(),
@@ -212,11 +253,20 @@ class OrderController
                 ]);
             }
 
+            // Manual orders start with an auditable pending payment, matching checkout.
+            $paymentModel::query()->create([
+                'order_id' => $order->getKey(),
+                'gateway' => 'manual',
+                'idempotency_key' => 'admin-order:' . $order->order_number,
+                'amount' => $totalCents / 100,
+                'status' => 'pending',
+            ]);
+
             return $order;
-        });
+        }, 3);
 
         return redirect()->route('commerce-admin.orders.show', $order->getKey())
-            ->with('status', 'Order created and stock updated.');
+            ->with('status', 'سفارش ثبت شد، موجودی به‌روزرسانی و پرداخت معلق ایجاد شد.');
     }
 
     public function show(int $order): View
