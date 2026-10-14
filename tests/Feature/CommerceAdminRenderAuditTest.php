@@ -207,6 +207,8 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertSee('data-product-main-image', false)
             ->assertSee('data-image="' . e($blackMedia->url) . '"', false)
             ->assertSee('data-image="' . e($whiteMedia->url) . '"', false)
+            ->assertSee('data-variant-color-pick="مشکی"', false)
+            ->assertSee('data-variant-color-pick="سفید"', false)
             ->getContent();
 
         $this->assertStringContainsString($blackMedia->url, $html);
