@@ -1,6 +1,6 @@
 {
     "name": "rm/commerce-admin-kit",
-    "description": "Reusable Laravel commerce administration module with database-backed catalog and order workflows.",
+    "description": "Reusable Laravel Blade admin UI kit with views, CSS and JavaScript only.",
     "type": "library",
     "license": "MIT",
     "require": {
@@ -10,13 +10,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Rm\CommerceAdmin\": "src/"
+            "Rm\\CommerceAdmin\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Rm\CommerceAdmin\CommerceAdminServiceProvider"
+                "Rm\\CommerceAdmin\\CommerceAdminServiceProvider"
             ]
         }
     }

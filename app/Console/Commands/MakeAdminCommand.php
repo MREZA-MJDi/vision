@@ -1,6 +1,6 @@
 <?php
 
-namespace Rm\CommerceAdmin\Console;
+namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Rm\CommerceAdmin\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Models\InventoryMovement;
 use App\Models\Order;

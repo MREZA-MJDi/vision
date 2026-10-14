@@ -1,14 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Middleware\Admin\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
-use Rm\CommerceAdmin\Http\Controllers\AuthController;
-use Rm\CommerceAdmin\Http\Controllers\DashboardController;
-use Rm\CommerceAdmin\Http\Controllers\OrderController;
-use Rm\CommerceAdmin\Http\Controllers\ProductController;
-use Rm\CommerceAdmin\Http\Controllers\ReviewController;
-use Rm\CommerceAdmin\Http\Middleware\EnsureAdmin;
 
-Route::middleware('web')->prefix('admin')->as('commerce-admin.')->group(function (): void {
+Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
     Route::post('/logout', [AuthController::class, 'destroy'])->middleware(EnsureAdmin::class)->name('logout');
