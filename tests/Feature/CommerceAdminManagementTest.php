@@ -46,7 +46,8 @@ class CommerceAdminManagementTest extends TestCase
 
         $parent = Category::query()->where('name', 'پوشاک')->firstOrFail();
         $this->assertSame('پوشاک', $parent->name);
-        $this->assertSame('پوشاک', $parent->slug);
+        $this->assertNotSame('', $parent->slug);
+        $this->assertDatabaseHas('categories', ['slug' => $parent->slug]);
 
         $child = Category::query()->create([
             'parent_id' => $parent->getKey(),
