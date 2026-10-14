@@ -6,7 +6,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Throwable;
 
-final class JalaliDateFormatterFormatter
+final class JalaliDateFormatter
 {
     private const MONTHS = [
         1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد', 4 => 'تیر',
