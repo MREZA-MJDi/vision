@@ -127,6 +127,7 @@ class Product extends Model
             ->selectRaw('CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END')
             ->whereColumn('product_id', 'products.id')
             ->where('is_active', true)
+            ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->limit(1);
