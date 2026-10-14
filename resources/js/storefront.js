@@ -442,8 +442,8 @@
                 priceDisplay.append(current);
             }
 
-            // Selected-variant media takes priority. If it has no image, use
-            // only the product gallery fallback; never another variant's image.
+            // Prefer the selected variant's own photo; otherwise use the
+            // product gallery fallback, never a different variant's photo.
             const imageUrl = option.dataset.image
                 || mainStage?.dataset.baseImage
                 || mainImage?.dataset.fallbackSrc
@@ -477,6 +477,7 @@
                 button.classList.toggle('is-selected', selected);
                 button.setAttribute('aria-pressed', selected ? 'true' : 'false');
             });
+
             root.querySelectorAll('[data-gallery-image]').forEach((button) => {
                 button.classList.toggle('is-selected', button.dataset.galleryImage === imageUrl);
             });
@@ -501,8 +502,9 @@
                 normalizeColor(option.dataset.color) === requestedColor
             );
             const currentSize = normalizeColor(select.selectedOptions?.[0]?.dataset.size);
-            const nextOption = options.find((option) => !option.disabled && normalizeColor(option.dataset.size) === currentSize)
-                || options.find((option) => !option.disabled);
+            const nextOption = options.find((option) =>
+                !option.disabled && normalizeColor(option.dataset.size) === currentSize
+            ) || options.find((option) => !option.disabled);
 
             if (!nextOption) return;
             select.value = nextOption.value;
@@ -512,58 +514,15 @@
         select.addEventListener('change', refreshVariant);
         root.querySelectorAll('[data-variant-pick]').forEach((button) => {
             button.addEventListener('click', () => {
-                const matchingOption = Array.from(select.options).find((option) => option.value === button.dataset.variantPick);
+                const matchingOption = Array.from(select.options).find((option) =>
+                    option.value === button.dataset.variantPick
+                );
                 if (!matchingOption || matchingOption.disabled) return;
                 select.value = matchingOption.value;
                 select.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
         refreshVariant();
-    });
-
-    root.querySelectorAll('[data-gallery-image]').forEach((button) => {
-                button.classList.toggle('is-selected', button.dataset.galleryImage === imageUrl);
-            });
-
-            if (stockDisplay) {
-                stockDisplay.textContent = stock > 0
-                    ? stock.toLocaleString('en-US') + ' available'
-                    : 'Currently unavailable';
-            }
-            if (quantityInput) {
-                quantityInput.max = String(Math.min(100, Math.max(1, stock)));
-                if (stock > 0 && Number(quantityInput.value) > stock) {
-                    quantityInput.value = String(stock);
-                }
-            }
-            if (addButton) addButton.disabled = stock < 1;
-        };
-
-        colorButtons.forEach((button) => button.addEventListener('click', () => {
-            const requestedColor = normalizeColor(button.dataset.variantColorPick);
-            const options = Array.from(select.options).filter((option) =>
-                normalizeColor(option.dataset.color) === requestedColor
-            );
-            const currentSize = normalizeColor(select.selectedOptions?.[0]?.dataset.size);
-            const nextOption = options.find((option) => !option.disabled && normalizeColor(option.dataset.size) === currentSize)
-                || options.find((option) => !option.disabled);
-
-            if (!nextOption) return;
-            select.value = nextOption.value;
-            select.dispatchEvent(new Event('change', { bubbles: true }));
-        }));
-
-        select.addEventListener('change', refreshVariant);
-        root.querySelectorAll('[data-variant-pick]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const matchingOption = Array.from(select.options).find((option) => option.value === button.dataset.variantPick);
-                if (!matchingOption) return;
-                select.value = matchingOption.value;
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-            });
-        });
-        refreshVariant();
-        syncColorButtons();
     });
 
     root.querySelectorAll('[data-gallery-image]').forEach((button) => {
