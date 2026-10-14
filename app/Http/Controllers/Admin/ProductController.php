@@ -347,7 +347,7 @@ class ProductController
                         . '/' . $product->getKey() . '/variants/' . $variant->getKey();
                     $path = $variantImage->store($directory, $mediaDisk);
                     if (! is_string($path) || $path === '') {
-                        throw new \\RuntimeException('ذخیره‌سازی تصویر تنوع انجام نشد.');
+                        throw new \RuntimeException('ذخیره‌سازی تصویر تنوع انجام نشد.');
                     }
 
                     $storedImagePaths[] = $path;
