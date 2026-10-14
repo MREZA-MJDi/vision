@@ -114,7 +114,7 @@
             fittingPlaceholder.hidden = false;
             fittingPreview?.classList.add('is-placeholder');
             const caption = fittingPlaceholder.querySelector('span:last-child');
-            if (caption) caption.textContent = product?.name ? product.name.toUpperCase() + ' · IMAGE UNAVAILABLE' : 'SELECT A PIECE TO START YOUR PREVIEW';
+            if (caption) caption.textContent = product?.name ? product.name + ' · تصویر در دسترس نیست' : 'برای شروع یک محصول انتخاب کن.';
             return;
         }
 
