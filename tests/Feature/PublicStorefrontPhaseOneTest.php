@@ -22,6 +22,11 @@ class PublicStorefrontPhaseOneTest extends TestCase
         $response->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
             ->assertSee('VISION — فروشگاه پوشاک')
+            ->assertSee('data-tiamir-intro', false)
+            ->assertSee('data-first-duration="5000"', false)
+            ->assertSee('data-return-duration="2500"', false)
+            ->assertSee('Created by R MAJIDI')
+            ->assertSee('https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png', false)
             ->assertSee('VISION')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
             ->assertSee('انتخاب بر اساس استایل')
@@ -43,6 +48,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
         $response = $this->get('/shop?sort=price_asc');
 
         $response->assertOk()
+            ->assertDontSee('data-tiamir-intro', false)
             ->assertSee('data-fitting-room', false)
             ->assertSee('data-store-sort', false)
             ->assertSee('data-product-grid', false)
