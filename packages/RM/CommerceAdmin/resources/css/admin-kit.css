@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('../../../../../resources/iranyekanx/fontface.css');
 :root{color-scheme:light;--ink:#17191d;--muted:#858c97;--border:#e7e9ed;--canvas:#f7f8fa;--blue:#477df5;--green:#20ae77;--red:#d9535d;--sidebar:236px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}html{min-width:320px;background:var(--canvas)}body.admin-kit{margin:0;color:var(--ink);background:var(--canvas);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}.admin-kit button,.admin-kit input,.admin-kit select,.admin-kit textarea{font:inherit}.admin-kit a{color:inherit;text-decoration:none}.admin-kit img{max-width:100%}.admin-kit button:focus-visible,.admin-kit a:focus-visible,.admin-kit input:focus-visible,.admin-kit select:focus-visible,.admin-kit textarea:focus-visible{outline:3px solid #477df544;outline-offset:2px}
 .ak-app{display:flex;min-height:100vh}.ak-sidebar{position:fixed;z-index:40;inset:0 auto 0 0;display:flex;flex-direction:column;width:var(--sidebar);padding:17px 13px 12px;overflow-y:auto;background:#fff;border-right:1px solid #eceef1}.ak-brand{display:flex;align-items:center;gap:8px;padding:0 6px 15px;font-size:14px;font-weight:700;letter-spacing:-.35px}.ak-brand-mark{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:7px;color:#fff;background:#191b1f;font-size:16px}.ak-brand-chevron{margin-left:auto;color:#89909a;font-size:15px}.ak-search-side{display:flex;align-items:center;gap:7px;margin:7px 2px 20px;min-height:33px;padding:0 9px;color:#9399a3;border:1px solid var(--border);border-radius:7px;background:#fff}.ak-search-side>span{font-size:19px}.ak-search-side input{flex:1;min-width:0;padding:5px 0;border:0;outline:0;color:var(--ink);background:transparent;font-size:11px}.ak-search-side input::placeholder{color:#a4a9b2}.ak-search-side kbd{padding:2px 4px;border:1px solid var(--border);border-radius:4px;font:10px ui-sans-serif,system-ui}
@@ -486,3 +486,24 @@ body.admin-kit { color: var(--ak-ink); background: var(--ak-page); font-family: 
 .ak-rating-cell > span { color: #eab346; font-size: 11px; }
 .ak-rating-cell strong { color: #4b5059; font-size: 9px; font-weight: 600; }
 .ak-rating-cell small { color: #9a9fa8; font-size: 8px; }
+
+/* Persian RTL / VISION Commerce */
+html[dir="rtl"]{direction:rtl}
+.admin-kit,.admin-kit button,.admin-kit input,.admin-kit select,.admin-kit textarea{font-family:'IRANYekanX',Tahoma,sans-serif}
+.admin-kit{direction:rtl}
+html[dir="rtl"] .ak-sidebar{inset:0 0 0 auto;border-right:0;border-left:1px solid #eceef1}
+html[dir="rtl"] .ak-main-wrap{margin-right:var(--sidebar);margin-left:0}
+html[dir="rtl"] .ak-brand-chevron{margin-right:auto;margin-left:0}
+html[dir="rtl"] .ak-nav-link,html[dir="rtl"] .ak-nav-group{text-align:right}
+html[dir="rtl"] .ak-nav-submenu{margin-right:19px;margin-left:0;padding-right:8px;padding-left:0;border-right:1px solid #e7e9ee;border-left:0}
+html[dir="rtl"] .ak-sidebar-bottom,html[dir="rtl"] .ak-footer-user{text-align:right}
+html[dir="rtl"] .ak-plan-card a span{margin-right:auto;margin-left:0}
+html[dir="rtl"] .ak-topbar,html[dir="rtl"] .ak-page-heading{direction:rtl}
+html[dir="rtl"] .ak-table th,html[dir="rtl"] .ak-table td{text-align:right}
+html[dir="rtl"] .ak-classic-lower-grid .ak-chart-legend a{margin-right:auto;margin-left:0}
+html[dir="rtl"] .ak-team-foot{direction:rtl}html[dir="rtl"] .ak-team-foot a{margin-right:auto}
+.ak-dashboard-kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:13px}.ak-dashboard-kpis .ak-stat-card{min-height:112px}
+.ak-classic-customer-grid{margin-top:12px}.ak-classic-customer-grid .ak-panel{min-height:0}
+@media(max-width:1120px){.ak-dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:820px){html[dir="rtl"] .ak-sidebar{transform:translateX(105%)}html[dir="rtl"] .ak-sidebar.is-open{transform:translateX(0)}html[dir="rtl"] .ak-main-wrap{margin-right:0;margin-left:0}}
+@media(max-width:520px){.ak-dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ak-dashboard-kpis .ak-stat-card{min-height:98px;padding:10px}.ak-dashboard-kpis .ak-stat-value{font-size:20px}}
