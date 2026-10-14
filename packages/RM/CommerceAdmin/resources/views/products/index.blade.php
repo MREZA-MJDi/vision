@@ -70,9 +70,10 @@
                         $variant = $item->variants->first(fn ($row) => $row->is_active && (int) $row->stock > 0)
                             ?: $item->variants->firstWhere('is_active', true)
                             ?: $item->variants->first();
-                        $asset = $variant?->primaryGalleryMedia
-                            ?: $item->galleryMedia->first()
-                            ?: $item->variants->first(fn ($row) => $row->primaryGalleryMedia?->url)?->primaryGalleryMedia;
+                        $variantAsset = $variant?->primaryGalleryMedia;
+                        $asset = $variantAsset?->url ? $variantAsset : null;
+                        $asset ??= $item->galleryMedia->first(fn ($row) => $row->url);
+                        $asset ??= $item->variants->first(fn ($row) => $row->primaryGalleryMedia?->url)?->primaryGalleryMedia;
                         $stock = (int) $item->variants->where('is_active', true)->sum('stock');
                         $isLow = $item->variants->contains(fn($row) => $row->is_active && $row->stock <= $row->low_stock_threshold);
                         $onSale = (bool) ($variant?->is_on_sale ?? false);

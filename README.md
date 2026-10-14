@@ -32,7 +32,7 @@ php artisan commerce-admin:make-admin admin@example.com
 
 The command changes only the configured administrator flag on an existing user by default. To create a new administrator deliberately, run `php artisan commerce-admin:make-admin admin@example.com --create`; it requests the name and a confirmed password interactively. No account is created without `--create`.
 
-An optional `AdminSeeder` can bootstrap the first admin from environment values; it skips when credentials are blank and never resets an existing user's password. Demo data is never included in the normal `DatabaseSeeder`. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
+An optional `AdminSeeder` can bootstrap the first admin from environment values; it skips when credentials are blank and never resets an existing user's password. `DatabaseSeeder` also creates the two launch-catalog products as ordinary Eloquent records, so their database IDs are used for editing and archiving in Commerce Admin. The launch seeder attaches an image only when the referenced file really exists on the configured public disk; it never creates a Media row pointing at a missing file. The broader demo seeders below remain opt-in. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
 
 ## Configuration
 
@@ -46,6 +46,8 @@ COMMERCE_ADMIN_SHIPPING_FLAT_RATE=0
 \`\`\`
 
 Tax rate is fractional: \`0.08\` means 8%. Shipping is a fixed per-order amount. Both default to zero until explicitly configured. Product taxability is controlled by each product's \`is_taxable\` flag.
+
+**Money-unit caution:** `COMMERCE_ADMIN_CURRENCY` and `COMMERCE_ADMIN_CURRENCY_SYMBOL` are labels only; they do not convert values. Product prices, shipping, tax, orders, payments, and ledger records must use one explicitly agreed unit end to end. The sample uses ISO code `IRR` while displaying `تومان`; verify intended units against existing production records before changing either setting or integrating a payment gateway.
 
 Displayed product and variant prices use thousands separators and the configured currency symbol. The product form accepts grouped Persian/Arabic or Latin digits, normalizes them before validation, and stores numeric values without commas. Variant images are saved against each variant's own media relation; selecting a color on the product page swaps its image, price, and stock together.
 
@@ -72,6 +74,7 @@ Requirements: PHP 8.2+, Composer, Node.js/npm, and a Laravel-supported database.
 git clone https://github.com/MREZA-MJDi/vision.git
 cd vision
 composer install
+npm ci
 \`\`\`
 
 Copy \`.env.example\` to \`.env\` (Windows CMD: \`copy .env.example .env\`; PowerShell: \`Copy-Item .env.example .env\`), create/configure your database, then run:
@@ -98,6 +101,17 @@ npm run build
 \`\`\`
 
 The test suite covers public catalog browsing, customer cart/checkout, order totals, stock accounting, customer order privacy, administrator access, payment-state synchronization, and order-state transitions.
+
+
+## Architecture and release quality baseline
+
+- `routes/web.php` defines public catalog, product, cart, checkout, account, and authentication routes; `routes/admin.php` owns protected admin routes.
+- `StorefrontController` supplies the homepage, catalog, and product detail. The active public views are `store/home.blade.php`, `store/index.blade.php`, and `store/products/show.blade.php`.
+- `resources/views/layouts/store.blade.php` is the canonical Persian/RTL layout; the previous welcome screen and legacy English storefront templates are not part of the active route flow.
+- Controllers/Form Requests validate inputs; shared business behavior for order state, payment, accounting, media, and homepage hero belongs in application services. The Commerce Admin package remains presentation-only.
+- The Tiamir signal intro is limited to the home route, has a 5-second first-visit and 2.5-second return-visit sequence, pauses its timer when the tab is hidden, and never redirects users away from Vision.
+- CI smoke-tests on PHP 8.2, runs the full suite on PHP 8.3, and builds assets from the npm lockfile with `npm ci`.
+- Before release, verify currency units against production data, review migrations/backups, configure HTTPS/session cookies and production flags, and test responsive interactions at 320, 360, 390, 430, 768, and desktop widths. Manual payment status changes do not constitute provider settlement; online payment processing/reconciliation must be separately integrated and tested.
 
 ## Links
 

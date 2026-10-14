@@ -503,7 +503,8 @@ public function deleteVariantMedia(int $product, int $variant, int $media): Redi
             ->firstOrFail();
         $asset = $variantRecord->media()->whereKey($media)->firstOrFail();
 
-        if ($asset->path && ! preg_match('/^https?:\\/\\//i', $asset->path)
+        if ($asset->path
+            && ! Str::startsWith($asset->path, ['http://', 'https://'])
             && ! str_starts_with(ltrim((string) $asset->path, '/'), 'demo-products/')) {
             Storage::disk($asset->disk ?: config('commerce-admin.media_disk', 'public'))->delete($asset->path);
         }

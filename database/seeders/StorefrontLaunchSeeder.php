@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Creates a small, editable first catalog rather than presentation-only demo
@@ -75,14 +76,27 @@ class StorefrontLaunchSeeder extends Seeder
                 'color' => $item['color'], 'color_code' => $item['color_code'], 'price' => $item['price'],
                 'stock' => $item['stock'], 'low_stock_threshold' => 2, 'is_active' => true, 'sort_order' => 0,
             ])->save();
-            Media::query()->firstOrCreate([
-                'disk' => 'public', 'path' => $item['path'],
-            ], [
-                'mediable_type' => $variant->getMorphClass(), 'mediable_id' => $variant->getKey(),
-                'collection' => 'gallery', 'sort_order' => 0, 'original_name' => basename($item['path']),
-                'mime_type' => 'image/png', 'alt_text' => $product->name . ' — ' . $item['color'],
+        }
+
+        $mediaIdentity = [
+            'disk' => 'public',
+            'path' => $item['path'],
+            'mediable_type' => $variant->getMorphClass(),
+            'mediable_id' => $variant->getKey(),
+        ];
+
+        if (Storage::disk('public')->exists($item['path'])) {
+            Media::query()->firstOrCreate($mediaIdentity, [
+                'collection' => 'gallery',
+                'sort_order' => 0,
+                'original_name' => basename($item['path']),
+                'mime_type' => 'image/png',
+                'alt_text' => $product->name . ' — ' . $item['color'],
                 'metadata' => ['source' => 'VISION launch asset', 'theme_color' => $item['color_code']],
             ]);
+        } else {
+            // Remove legacy metadata for image files that are not present.
+            Media::query()->where($mediaIdentity)->delete();
         }
     }
 }

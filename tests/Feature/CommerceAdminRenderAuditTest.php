@@ -293,6 +293,14 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString($blackMedia->url, $html);
+
+        $this->get(route('commerce-admin.products.index'))
+            ->assertOk()
+            ->assertSee($blackMedia->url, false);
+
+        $this->get(route('storefront.index'))
+            ->assertOk()
+            ->assertSee($blackMedia->url, false);
     }
 
     public function test_variant_image_can_be_removed_and_the_stored_file_is_deleted(): void
@@ -701,6 +709,187 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertSessionHasErrors('items.0.variant_id');
 
         $this->get(route('commerce-admin.orders.create'))->assertOk();
+    }
+
+    public function test_product_update_persists_variant_image_and_renders_it_in_admin_list_and_homepage(): void
+    {
+        Storage::fake('public');
+        $admin = $this->makeAdmin();
+
+        $product = Product::query()->create([
+            'name' => 'Before Dashboard Update',
+            'slug' => 'before-dashboard-update',
+            'is_active' => true,
+            'is_featured' => true,
+            'is_hero' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'DASHBOARD-UPDATE-001',
+            'size' => 'M',
+            'color' => 'مشکی',
+            'color_code' => '#000000',
+            'price' => 1200,
+            'stock' => 4,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $oldPath = 'products/' . $product->getKey() . '/variants/' . $variant->getKey() . '/old.png';
+        Storage::disk('public')->put($oldPath, 'old-image-bytes');
+        $oldMedia = $variant->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => $oldPath,
+            'original_name' => 'old.png',
+            'mime_type' => 'image/png',
+            'size' => 16,
+            'alt_text' => 'Old variant image',
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('commerce-admin.products.update', $product->getKey()), [
+                'name' => 'After Dashboard Update',
+                'slug' => 'after-dashboard-update',
+                'status' => 'active',
+                'is_featured' => '1',
+                'is_hero' => '1',
+                'variants' => [[
+                    'id' => $variant->getKey(),
+                    'sku' => $variant->sku,
+                    'size' => 'M',
+                    'color' => 'مشکی',
+                    'color_code' => '#000000',
+                    'price' => '1550',
+                    'sale_price' => '',
+                    'stock' => '6',
+                    'low_stock_threshold' => '1',
+                    'is_active' => '1',
+                    'image' => UploadedFile::fake()->image('replacement.png'),
+                ]],
+            ])
+            ->assertRedirect(route('commerce-admin.products.show', $product->getKey()))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->getKey(),
+            'name' => 'After Dashboard Update',
+            'slug' => 'after-dashboard-update',
+            'is_active' => true,
+            'is_hero' => true,
+        ]);
+        $this->assertSame(6, (int) $variant->fresh()->stock);
+        $this->assertSame(1550.0, (float) $variant->fresh()->price);
+        $this->assertDatabaseMissing('media', ['id' => $oldMedia->getKey()]);
+        Storage::disk('public')->assertMissing($oldPath);
+
+        $newMedia = Media::query()
+            ->where('mediable_type', $variant->getMorphClass())
+            ->where('mediable_id', $variant->getKey())
+            ->where('collection', 'gallery')
+            ->firstOrFail();
+        Storage::disk('public')->assertExists($newMedia->path);
+
+        $this->get(route('commerce-admin.products.index'))
+            ->assertOk()
+            ->assertSee('After Dashboard Update')
+            ->assertSee($newMedia->url, false);
+
+        $this->get(route('storefront.index'))
+            ->assertOk()
+            ->assertSee('After Dashboard Update')
+            ->assertSee($newMedia->url, false);
+    }
+
+    public function test_variant_image_delete_button_targets_the_real_delete_form_and_endpoint(): void
+    {
+        Storage::fake('public');
+        $admin = $this->makeAdmin();
+        $product = Product::query()->create([
+            'name' => 'Variant Delete Form Test',
+            'slug' => 'variant-delete-form-test',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'VARIANT-DELETE-001',
+            'price' => 100,
+            'stock' => 2,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+        $path = 'products/variant-delete-form-test.png';
+        Storage::disk('public')->put($path, 'test-image-bytes');
+        $media = $variant->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => $path,
+            'original_name' => 'variant.png',
+            'mime_type' => 'image/png',
+            'size' => 17,
+            'alt_text' => 'Variant image',
+            'sort_order' => 0,
+        ]);
+
+        $formId = 'delete-variant-media-' . $product->getKey() . '-' . $variant->getKey() . '-' . $media->getKey();
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.products.edit', $product->getKey()))
+            ->assertOk()
+            ->assertSee('form="' . $formId . '"', false)
+            ->assertSee('id="' . $formId . '"', false);
+
+        $this->delete(route('commerce-admin.products.variants.media.destroy', [
+            $product->getKey(),
+            $variant->getKey(),
+            $media->getKey(),
+        ]))->assertRedirect(route('commerce-admin.products.edit', $product->getKey()));
+
+        $this->assertDatabaseMissing('media', ['id' => $media->getKey()]);
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_invalid_product_update_shows_validation_errors_without_mutating_the_record(): void
+    {
+        $admin = $this->makeAdmin();
+        $product = Product::query()->create([
+            'name' => 'Validation Baseline Product',
+            'slug' => 'validation-baseline-product',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'VALIDATION-BASELINE-001',
+            'price' => 100,
+            'stock' => 2,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.products.edit', $product->getKey()))
+            ->put(route('commerce-admin.products.update', $product->getKey()), [
+                'name' => '',
+                'slug' => $product->slug,
+                'status' => 'active',
+                'variants' => [[
+                    'id' => $variant->getKey(),
+                    'sku' => $variant->sku,
+                    'price' => '100',
+                    'stock' => '2',
+                    'low_stock_threshold' => '1',
+                    'is_active' => '1',
+                ]],
+            ])
+            ->assertRedirect(route('commerce-admin.products.edit', $product->getKey()))
+            ->assertSessionHasErrors('name');
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->getKey(),
+            'name' => 'Validation Baseline Product',
+            'slug' => 'validation-baseline-product',
+        ]);
     }
 
     private function makeAdmin(): User
