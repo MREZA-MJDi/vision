@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\StorefrontLaunchSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class StorefrontLaunchSeederTest extends TestCase
@@ -14,6 +15,7 @@ class StorefrontLaunchSeederTest extends TestCase
 
     public function test_launch_seed_creates_editable_database_records_idempotently_without_phantom_media(): void
     {
+        Storage::fake('public');
         $this->seed(StorefrontLaunchSeeder::class);
         $this->seed(StorefrontLaunchSeeder::class);
 
