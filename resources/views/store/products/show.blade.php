@@ -48,6 +48,11 @@
                     </div>
                 @endif
             @endforelse
+
+            <button class="store-product-detail__tryon-trigger" type="button" data-variant-preview-open aria-haspopup="dialog">
+                <span>نمایش تصویر همین وریانت روی مدل</span>
+                <span aria-hidden="true">↗</span>
+            </button>
         </div>
 
         <div class="store-product-detail__info">
@@ -170,5 +175,49 @@
             </div>
         </section>
     @endif
+
+    <dialog class="store-variant-preview" data-variant-preview-modal aria-labelledby="store-variant-preview-title">
+        <div class="store-variant-preview__panel">
+            <header class="store-variant-preview__header">
+                <div>
+                    <p class="store-eyebrow">VISION FITTING ROOM</p>
+                    <h2 id="store-variant-preview-title">پیش‌نمایش مدل</h2>
+                </div>
+                <button class="store-variant-preview__close" type="button" data-variant-preview-close aria-label="بستن پیش‌نمایش">×</button>
+            </header>
+
+            <div class="store-variant-preview__body">
+                <div class="store-variant-preview__visual">
+                    <img
+                        data-variant-preview-image
+                        src="{{ $defaultVariant?->primaryGalleryMedia?->url ?? '' }}"
+                        alt="{{ trim(implode(' ', array_filter([$product->name, $defaultVariant?->color, $defaultVariant?->size]))) }}"
+                        @if(!$defaultVariant?->primaryGalleryMedia?->url) hidden @endif
+                    >
+                    <div class="store-variant-preview__placeholder" data-variant-preview-placeholder @if($defaultVariant?->primaryGalleryMedia?->url) hidden @endif>
+                        <span aria-hidden="true">V.</span>
+                        <strong>برای این وریانت تصویری ثبت نشده است.</strong>
+                        <p>تصویر مخصوص همین رنگ را در رسانه‌های وریانت در پنل مدیریت ثبت کن.</p>
+                    </div>
+                </div>
+
+                <aside class="store-variant-preview__details">
+                    <p class="store-variant-preview__eyebrow">محصول واقعی فروشگاه</p>
+                    <h3>{{ $product->name }}</h3>
+                    <p class="store-variant-preview__choice" data-variant-preview-choice>{{ implode(' / ', array_filter([$defaultVariant?->size, $defaultVariant?->color])) ?: 'معمولی' }}</p>
+                    <div class="store-variant-preview__price" data-variant-preview-price>
+                        @if($defaultVariant?->is_on_sale)<del>{{ $formatPrice($defaultVariant->price) }}</del>@endif
+                        <strong>{{ $formatPrice($defaultVariant?->effective_price ?? 0) }}</strong>
+                    </div>
+                    <p class="store-variant-preview__stock" data-variant-preview-stock>
+                        {{ (int) ($defaultVariant?->stock ?? 0) > 0 ? ((int) $defaultVariant->stock . ' عدد موجود') : 'فعلاً موجود نیست' }}
+                    </p>
+                    <p class="store-variant-preview__note">تصویر این بخش از رسانهٔ ثبت‌شده برای همین وریانت می‌آید؛ با انتخاب رنگ یا سایز، اطلاعات پیش‌نمایش با همان رکورد همگام می‌شود.</p>
+                    <button class="store-variant-preview__back" type="button" data-variant-preview-close>بازگشت به جزئیات محصول <span aria-hidden="true">↙</span></button>
+                </aside>
+            </div>
+        </div>
+    </dialog>
+
 </main>
 @endsection
