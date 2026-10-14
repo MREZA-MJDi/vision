@@ -103,7 +103,8 @@ class CommerceDemoSeederTest extends TestCase
 
         // A custom admin-uploaded path is intentionally not managed by the demo seeder.
         $whiteImage = $white->primaryGalleryMedia()->firstOrFail();
-        $whiteImage->update(['path' => 'products/7/variants/' . $white->getKey() . '/admin-white.jpg']);
+        $adminWhitePath = 'products/' . $white->product_id . '/variants/' . $white->getKey() . '/admin-white.jpg';
+        $whiteImage->update(['path' => $adminWhitePath]);
 
         $this->seed(CommerceDemoSeeder::class);
 
@@ -112,7 +113,7 @@ class CommerceDemoSeederTest extends TestCase
             $black->primaryGalleryMedia()->firstOrFail()->path
         );
         $this->assertSame(
-            'products/7/variants/' . $white->getKey() . '/admin-white.jpg',
+            $adminWhitePath,
             $white->primaryGalleryMedia()->firstOrFail()->path
         );
 
