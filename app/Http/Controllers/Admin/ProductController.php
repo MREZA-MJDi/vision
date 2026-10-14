@@ -359,11 +359,11 @@ class ProductController
                 }
             }
             }, 3);
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             foreach ($storedFiles as [$disk, $path]) {
                 try {
                     Storage::disk($disk)->delete($path);
-                } catch (\\Throwable $cleanupException) {
+                } catch (\Throwable $cleanupException) {
                     report($cleanupException);
                 }
             }
