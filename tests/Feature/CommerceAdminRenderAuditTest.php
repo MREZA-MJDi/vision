@@ -1,0 +1,186 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class CommerceAdminRenderAuditTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_all_admin_tabs_and_primary_record_views_render_from_database_records(): void
+    {
+        $admin = $this->makeAdmin();
+        $customer = User::query()->create([
+            'name' => 'Render Audit Customer',
+            'email' => 'render-customer@example.test',
+            'password' => 'customer-password-123',
+            'is_admin' => false,
+        ]);
+        $category = Category::query()->create([
+            'name' => 'Render Audit Category',
+            'slug' => 'render-audit-category',
+            'is_active' => true,
+        ]);
+        $brand = Brand::query()->create([
+            'name' => 'Render Audit Brand',
+            'slug' => 'render-audit-brand',
+            'is_active' => true,
+        ]);
+        $product = Product::query()->create([
+            'category_id' => $category->getKey(),
+            'brand_id' => $brand->getKey(),
+            'name' => 'Render Audit Product',
+            'slug' => 'render-audit-product',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'RENDER-AUDIT-001',
+            'size' => 'M',
+            'price' => 25,
+            'stock' => 4,
+            'low_stock_threshold' => 2,
+            'is_active' => true,
+        ]);
+        $order = Order::query()->create([
+            'user_id' => $customer->getKey(),
+            'order_number' => 'VS-RENDER-AUDIT-001',
+            'customer_name' => $customer->name,
+            'customer_phone' => '555-0102',
+            'customer_email' => $customer->email,
+            'shipping_address' => '1 Render Audit Road',
+            'shipping_city' => 'Baku',
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'payment_method' => 'cash_on_delivery',
+            'subtotal' => 25,
+            'discount' => 0,
+            'shipping_cost' => 0,
+            'tax' => 0,
+            'total' => 25,
+            'placed_at' => now(),
+        ]);
+        OrderItem::query()->create([
+            'order_id' => $order->getKey(),
+            'product_id' => $product->getKey(),
+            'product_variant_id' => $variant->getKey(),
+            'product_name' => $product->name,
+            'variant_name' => $variant->display_name,
+            'sku' => $variant->sku,
+            'unit_price' => 25,
+            'quantity' => 1,
+            'line_total' => 25,
+            'tax_amount' => 0,
+        ]);
+
+        $this->actingAs($admin);
+
+        $paths = [
+            route('commerce-admin.dashboard'),
+            route('commerce-admin.analytics'),
+            route('commerce-admin.products.index'),
+            route('commerce-admin.products.create'),
+            route('commerce-admin.products.show', $product->getKey()),
+            route('commerce-admin.products.edit', $product->getKey()),
+            route('commerce-admin.categories.index'),
+            route('commerce-admin.categories.create'),
+            route('commerce-admin.categories.edit', $category->getKey()),
+            route('commerce-admin.brands.index'),
+            route('commerce-admin.brands.create'),
+            route('commerce-admin.brands.edit', $brand->getKey()),
+            route('commerce-admin.customers.index'),
+            route('commerce-admin.customers.show', $customer->getKey()),
+            route('commerce-admin.payments.index'),
+            route('commerce-admin.inventory.index'),
+            route('commerce-admin.reviews.index'),
+            route('commerce-admin.orders.index'),
+            route('commerce-admin.orders.create'),
+            route('commerce-admin.orders.show', $order->getKey()),
+        ];
+
+        foreach ($paths as $path) {
+            $this->get($path)->assertOk();
+        }
+    }
+
+    public function test_form_requests_reject_invalid_product_order_inventory_and_login_input(): void
+    {
+        $admin = $this->makeAdmin();
+        $category = Category::query()->create([
+            'name' => 'Validation Category',
+            'slug' => 'validation-category',
+            'is_active' => true,
+        ]);
+        $product = Product::query()->create([
+            'category_id' => $category->getKey(),
+            'name' => 'Validation Product',
+            'slug' => 'validation-product',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'VALIDATION-001',
+            'price' => 10,
+            'stock' => 3,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.products.store'), [
+                'name' => 'Invalid Sale Product',
+                'status' => 'active',
+                'variants' => [[
+                    'sku' => 'INVALID-SALE-001',
+                    'price' => '10.00',
+                    'sale_price' => '10.00',
+                    'stock' => '1',
+                    'low_stock_threshold' => '1',
+                    'is_active' => '1',
+                ]],
+            ])
+            ->assertSessionHasErrors('variants.0.sale_price');
+
+        $this->assertDatabaseMissing('products', ['name' => 'Invalid Sale Product']);
+
+        $this->post(route('commerce-admin.orders.store'), [
+            'customer_name' => 'Invalid Order',
+            'payment_method' => 'cash_on_delivery',
+            'shipping_cost' => 0,
+            'items' => [],
+        ])->assertSessionHasErrors('items');
+
+        $this->post(route('commerce-admin.inventory.adjust', $variant->getKey()), [
+            'adjustment' => 0,
+            'note' => 'No change',
+        ])->assertSessionHasErrors('adjustment');
+
+        auth()->logout();
+
+        $this->post(route('commerce-admin.login.store'), [
+            'email' => 'not-an-email',
+            'password' => '',
+        ])->assertSessionHasErrors(['email', 'password']);
+    }
+
+    private function makeAdmin(): User
+    {
+        $admin = User::query()->create([
+            'name' => 'Render Audit Admin',
+            'email' => 'render-admin@example.test',
+            'password' => 'admin-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        return $admin;
+    }
+}
