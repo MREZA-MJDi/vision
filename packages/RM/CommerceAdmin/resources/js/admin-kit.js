@@ -20,10 +20,18 @@
         return fractionParts.length ? grouped + '.' + fraction : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
-    $('[data-money-input]').forEach((input) => {
-        input.value = formatMoneyInput(input.value);
-        input.addEventListener('focus', () => { input.value = cleanMoneyInput(input.value); });
-        input.addEventListener('blur', () => { input.value = formatMoneyInput(input.value); });
+    // Format every price field (including dynamically added variants) without
+    // changing its underlying value until submit.
+    $('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });
+    document.addEventListener('focusin', (event) => {
+        if (event.target instanceof HTMLInputElement && event.target.matches('[data-money-input]')) {
+            event.target.value = cleanMoneyInput(event.target.value);
+        }
+    });
+    document.addEventListener('focusout', (event) => {
+        if (event.target instanceof HTMLInputElement && event.target.matches('[data-money-input]')) {
+            event.target.value = formatMoneyInput(event.target.value);
+        }
     });
     document.addEventListener('submit', (event) => {
         $('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
