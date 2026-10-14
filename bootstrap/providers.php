@@ -1,9 +1,9 @@
 <?php
 
 use App\Providers\AppServiceProvider;
-use Rm\CommerceAdmin\CommerceAdminServiceProvider;
+use App\Providers\CommerceAdminViewServiceProvider;
 
 return [
     AppServiceProvider::class,
-    CommerceAdminServiceProvider::class,
+    CommerceAdminViewServiceProvider::class,
 ];
