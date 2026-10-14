@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\ProductVariant;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class OrderService
 {
@@ -48,20 +50,20 @@ final class OrderService
 
             $this->assertStatusTransition($oldStatus, $newStatus);
 
-            abort_if(
-                $newStatus === 'returned'
-                    && $oldPaymentStatus === 'paid'
-                    && $paymentStatus !== 'refunded',
-                422,
-                'برای ثبت مرجوعی سفارش پرداخت‌شده، بازپرداخت را هم‌زمان ثبت کنید.'
-            );
+            $isCancellationLike = in_array($newStatus, Order::CANCEL_LIKE_STATUSES, true);
 
-            abort_if(
-                $paymentStatus === 'refunded'
-                    && ($newStatus !== 'returned' || $oldPaymentStatus !== 'paid'),
-                422,
-                'بازپرداخت فقط همراه با مرجوعی سفارش پرداخت‌شده مجاز است.'
-            );
+            if ($isCancellationLike && $oldPaymentStatus === 'paid' && $paymentStatus !== 'refunded') {
+                throw ValidationException::withMessages([
+                    'status' => 'برای لغو یا مرجوعی سفارش پرداخت‌شده، ابتدا بازپرداخت را ثبت کنید.',
+                ]);
+            }
+
+            if ($paymentStatus === 'refunded'
+                && (! $isCancellationLike || ! in_array($oldPaymentStatus, ['paid', 'refunded'], true))) {
+                throw ValidationException::withMessages([
+                    'payment_status' => 'بازپرداخت فقط برای سفارش پرداخت‌شدهٔ در حال لغو یا مرجوعی مجاز است.',
+                ]);
+            }
 
             $wasCancelledLike = in_array(
                 $oldStatus,
@@ -76,7 +78,7 @@ final class OrderService
             );
 
             if (! $wasCancelledLike && $willBeCancelledLike) {
-                $this->restoreInventory($order);
+                $this->restoreInventory($order, $newStatus === 'returned' ? 'return' : 'adjustment');
             }
 
             if ($wasCancelledLike && ! $willBeCancelledLike) {
@@ -118,7 +120,7 @@ final class OrderService
         }, 3);
     }
 
-    private function restoreInventory(Order $order): void
+    private function restoreInventory(Order $order, string $movementType): void
     {
         $order->load('items');
 
@@ -127,9 +129,11 @@ final class OrderService
                 continue;
             }
 
-            $variant = ProductVariant::query()
-                ->lockForUpdate()
-                ->find($item->product_variant_id);
+            $variantQuery = ProductVariant::query()->lockForUpdate();
+            if (in_array(SoftDeletes::class, class_uses_recursive(ProductVariant::class), true)) {
+                $variantQuery->withTrashed();
+            }
+            $variant = $variantQuery->find($item->product_variant_id);
 
             if (! $variant) {
                 continue;
@@ -139,12 +143,14 @@ final class OrderService
             $variant->refresh();
 
             $variant->inventoryMovements()->create([
-                'type' => 'return',
+                'type' => $movementType,
                 'quantity' => (int) $item->quantity,
                 'stock_after' => $variant->stock,
                 'reference_type' => Order::class,
                 'reference_id' => $order->id,
-                'note' => "بازگشت موجودی سفارش {$order->order_number}",
+                'note' => $movementType === 'return'
+                    ? "بازگشت موجودی سفارش {$order->order_number}"
+                    : "بازگشت موجودی پس از لغو سفارش {$order->order_number}",
                 'created_by' => auth()->id(),
             ]);
         }
@@ -200,10 +206,10 @@ final class OrderService
             default => [],
         };
 
-        abort_unless(
-            in_array($to, $allowed, true),
-            422,
-            'تغییر وضعیت سفارش از وضعیت فعلی مجاز نیست.'
-        );
+        if (! in_array($to, $allowed, true)) {
+            throw ValidationException::withMessages([
+                'status' => 'تغییر وضعیت سفارش از وضعیت فعلی مجاز نیست.',
+            ]);
+        }
     }
 }

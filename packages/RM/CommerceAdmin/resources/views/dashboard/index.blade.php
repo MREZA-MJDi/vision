@@ -1,6 +1,6 @@
 @extends('commerce-admin::layout')
 
-@section('title', 'Classic Dashboard')
+@section('title', 'داشبورد فروشگاه')
 
 @section('content')
     @php
@@ -10,9 +10,6 @@
         $revenuePoints = collect($series)->values()->map(fn ($point, $index) =>
             round(10 + ($index * 340 / max(1, count($series) - 1)), 1).','.round(85 - (((float) $point['value'] / $revenueMax) * 66), 1)
         )->implode(' ');
-        $revenueMiniPoints = collect($series)->values()->map(fn ($point, $index) =>
-            round(3 + ($index * 354 / max(1, count($series) - 1)), 1).','.round(52 - (((float) $point['value'] / $revenueMax) * 42), 1)
-        )->implode(' ');
         $ordersPoints = collect($series)->values()->map(fn ($point, $index) =>
             round(10 + ($index * 340 / max(1, count($series) - 1)), 1).','.round(85 - (((int) $point['orders_count'] / $ordersMax) * 58), 1)
         )->implode(' ');
@@ -20,82 +17,51 @@
 
     <div class="ak-page-heading">
         <div>
-            <div class="ak-breadcrumb">Dashboards <span>/</span> Classic Dashboard</div>
-            <h1>Dashboard</h1>
-            <p>Your store at a glance, with live figures from the commerce database.</p>
+            <div class="ak-breadcrumb">مدیریت <span>/</span> داشبورد فروشگاه</div>
+            <h1>داشبورد فروشگاه</h1>
+            <p>وضعیت فروش، سفارش‌ها و موجودی بر اساس اطلاعات واقعی فروشگاه.</p>
         </div>
         <div class="ak-heading-actions">
-            <span class="ak-date-chip"><span>◷</span> {{ now()->startOfMonth()->format('M d') }} – {{ now()->format('M d, Y') }}</span>
-            <a class="ak-button ak-button-dark" href="{{ route('commerce-admin.analytics') }}">View analytics <span>↗</span></a>
+            <span class="ak-date-chip">◷ {{ now()->locale('fa')->translatedFormat('j F Y') }}</span>
+            <a class="ak-button ak-button-dark" href="{{ route('commerce-admin.analytics') }}">گزارش کامل <span>↗</span></a>
         </div>
     </div>
 
-    <section class="ak-classic-top-grid">
-        <article class="ak-panel ak-team-panel">
-            <div class="ak-panel-heading">
-                <div><h2>Customers</h2><p>Recent customer accounts</p></div>
-                <span class="ak-count-chip">{{ number_format((int) $customersCount) }} total</span>
-            </div>
-            @forelse($recentCustomers as $customer)
-                <div class="ak-team-row">
-                    <span class="ak-avatar ak-team-avatar">{{ strtoupper(mb_substr($customer->name ?: $customer->email ?: 'C', 0, 1)) }}</span>
-                    <div class="ak-team-identity">
-                        <strong>{{ $customer->name ?: 'Customer' }}</strong>
-                        <small>{{ $customer->email ?: 'No email saved' }}</small>
-                    </div>
-                    <a class="ak-team-action" href="{{ route('commerce-admin.orders.index', ['q' => $customer->email ?: $customer->name]) }}">Orders</a>
-                </div>
-            @empty
-                <div class="ak-compact-empty">Registered customers will appear here when they join your store.</div>
-            @endforelse
-            <div class="ak-team-foot"><span>{{ number_format((int) $customersCount) }} customer accounts</span><a href="{{ route('commerce-admin.orders.index') }}">View orders ↗</a></div>
+    <section class="ak-stat-grid ak-stat-grid-four ak-dashboard-kpis" aria-label="شاخص‌های اصلی فروشگاه">
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-green">＄</span><span class="ak-stat-kicker">درآمد پرداخت‌شده</span></div>
+            <div class="ak-stat-value">{{ $currency }}{{ number_format((float) $revenue, 2) }}</div>
+            <div class="ak-stat-footer"><span class="ak-stat-note">بدون سفارش لغو یا مرجوع‌شده</span></div>
         </article>
-
-        <article class="ak-panel ak-subscription-panel">
-            <div class="ak-panel-heading">
-                <div><h2>Orders</h2><p>Order volume over the last 12 months</p></div>
-                <a class="ak-icon-button" href="{{ route('commerce-admin.orders.index') }}" aria-label="View orders">↗</a>
-            </div>
-            <div class="ak-classic-metric">{{ number_format((int) $orderCount) }}</div>
-            <div class="ak-classic-change"><span class="ak-live-indicator"></span>{{ number_format((int) $pendingOrders) }} currently in progress</div>
-            <div class="ak-subscription-bars" role="img" aria-label="Monthly order counts">
-                @foreach($series as $point)
-                    <div class="ak-subscription-bar-column" title="{{ $point['full_label'] }}: {{ number_format((int) $point['orders_count']) }} orders">
-                        <span style="height:{{ max(4, ((int) $point['orders_count'] / $ordersMax) * 100) }}%"></span>
-                        <small>{{ $point['label'] }}</small>
-                    </div>
-                @endforeach
-            </div>
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-blue">▤</span><span class="ak-stat-kicker">کل سفارش‌ها</span></div>
+            <div class="ak-stat-value">{{ number_format((int) $orderCount) }}</div>
+            <div class="ak-stat-footer"><a class="ak-stat-link" href="{{ route('commerce-admin.orders.index') }}">مشاهده سفارش‌ها ↗</a></div>
         </article>
-
-        <article class="ak-panel ak-total-revenue-panel">
-            <div class="ak-panel-heading">
-                <div><h2>Total Revenue</h2><p>Paid orders only</p></div>
-                <a class="ak-icon-button" href="{{ route('commerce-admin.analytics') }}" aria-label="View revenue analytics">↗</a>
-            </div>
-            <div class="ak-classic-metric">{{ $currency }}{{ number_format((float) $revenue, 2) }}</div>
-            <div class="ak-classic-change"><span class="ak-live-indicator"></span>Excluding cancelled and returned orders</div>
-            <div class="ak-mini-line-chart" role="img" aria-label="Monthly revenue trend">
-                <svg viewBox="0 0 360 62" preserveAspectRatio="none" aria-hidden="true">
-                    <line x1="2" y1="54" x2="358" y2="54"></line>
-                    <polyline points="{{ $revenueMiniPoints }}"></polyline>
-                </svg>
-            </div>
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-yellow">◷</span><span class="ak-stat-kicker">در انتظار / در حال انجام</span></div>
+            <div class="ak-stat-value">{{ number_format((int) $pendingOrders) }}</div>
+            <div class="ak-stat-footer"><a class="ak-stat-link" href="{{ route('commerce-admin.orders.index', ['status' => 'pending']) }}">پیگیری سفارش‌های باز ↗</a></div>
+        </article>
+        <article class="ak-stat-card">
+            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-red">▣</span><span class="ak-stat-kicker">تنوع با موجودی کم</span></div>
+            <div class="ak-stat-value">{{ number_format((int) $lowStockCount) }}</div>
+            <div class="ak-stat-footer"><a class="ak-stat-link" href="{{ route('commerce-admin.inventory.index', ['status' => 'low_stock']) }}">بررسی موجودی ↗</a></div>
         </article>
     </section>
 
     <section class="ak-classic-lower-grid">
         <article class="ak-panel ak-activity-panel">
             <div class="ak-panel-heading">
-                <div><h2>Store Activity</h2><p>Monthly revenue and order volume, based on saved orders</p></div>
-                <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.analytics.export') }}">Export CSV ↓</a>
+                <div><h2>روند فروشگاه</h2><p>درآمد پرداخت‌شده و تعداد سفارش در ۱۲ ماه اخیر</p></div>
+                <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.analytics.export') }}">خروجی CSV ↓</a>
             </div>
             <div class="ak-activity-summary">
-                <div><small>Total revenue</small><strong>{{ $currency }}{{ number_format((float) $revenue, 2) }}</strong></div>
-                <div><small>Total orders</small><strong>{{ number_format((int) $orderCount) }}</strong></div>
-                <div><small>Pending / in progress</small><strong>{{ number_format((int) $pendingOrders) }}</strong></div>
+                <div><small>درآمد پرداخت‌شده</small><strong>{{ $currency }}{{ number_format((float) $revenue, 2) }}</strong></div>
+                <div><small>کل سفارش‌ها</small><strong>{{ number_format((int) $orderCount) }}</strong></div>
+                <div><small>سفارش‌های باز</small><strong>{{ number_format((int) $pendingOrders) }}</strong></div>
             </div>
-            <div class="ak-classic-line-chart" role="img" aria-label="Revenue and order activity over the last 12 months">
+            <div class="ak-classic-line-chart" role="img" aria-label="نمودار درآمد و سفارش در ۱۲ ماه اخیر">
                 <div class="ak-line-chart-labels"><span>{{ $series[0]['label'] ?? '' }}</span><span>{{ $series[3]['label'] ?? '' }}</span><span>{{ $series[6]['label'] ?? '' }}</span><span>{{ $series[9]['label'] ?? '' }}</span><span>{{ $series[11]['label'] ?? '' }}</span></div>
                 <svg viewBox="0 0 360 180" preserveAspectRatio="none" aria-hidden="true">
                     <line x1="8" y1="22" x2="352" y2="22"></line>
@@ -107,33 +73,55 @@
                 </svg>
             </div>
             <div class="ak-chart-legend">
-                <span><i class="ak-legend-dot"></i> Revenue</span>
-                <span><i class="ak-legend-dot ak-legend-dot-light"></i> Orders</span>
-                <a href="{{ route('commerce-admin.analytics') }}">Full report →</a>
+                <span><i class="ak-legend-dot"></i> درآمد</span>
+                <span><i class="ak-legend-dot ak-legend-dot-light"></i> سفارش‌ها</span>
+                <a href="{{ route('commerce-admin.analytics') }}">گزارش تحلیلی ←</a>
             </div>
         </article>
 
         <article class="ak-panel ak-latest-orders-panel">
             <div class="ak-panel-heading">
-                <div><h2>Latest Orders</h2><p>Recent transactions from your store</p></div>
-                <a class="ak-text-link" href="{{ route('commerce-admin.orders.index') }}">View all ↗</a>
+                <div><h2>آخرین سفارش‌ها</h2><p>سفارش‌های ثبت‌شده در فروشگاه</p></div>
+                <a class="ak-text-link" href="{{ route('commerce-admin.orders.index') }}">مشاهده همه ↗</a>
             </div>
             @forelse($recentOrders as $order)
                 <a class="ak-latest-order-row" href="{{ route('commerce-admin.orders.show', $order->getKey()) }}">
-                    <span class="ak-latest-order-avatar">{{ strtoupper(mb_substr($order->customer_name ?: $order->user?->name ?: 'C', 0, 1)) }}</span>
+                    <span class="ak-latest-order-avatar">{{ mb_strtoupper(mb_substr($order->customer_name ?: $order->user?->name ?: 'م', 0, 1)) }}</span>
                     <span class="ak-latest-order-identity">
-                        <strong>{{ $order->customer_name ?: $order->user?->name ?: 'Guest customer' }}</strong>
-                        <small>#{{ $order->order_number }} · {{ optional($order->placed_at ?: $order->created_at)->format('M d') }}</small>
+                        <strong>{{ $order->customer_name ?: $order->user?->name ?: 'مشتری مهمان' }}</strong>
+                        <small>#{{ $order->order_number }} · {{ optional($order->placed_at ?: $order->created_at)->locale('fa')->translatedFormat('j M') }}</small>
                     </span>
                     <span class="ak-latest-order-total">{{ $currency }}{{ number_format((float) $order->total, 2) }}<small class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($order->status) }}">{{ \Illuminate\Support\Str::headline($order->status) }}</small></span>
                 </a>
             @empty
-                <div class="ak-compact-empty">New orders will be listed here as soon as they are saved.</div>
+                <div class="ak-compact-empty">هنوز سفارشی ثبت نشده است.</div>
             @endforelse
             <div class="ak-latest-orders-foot">
-                <div><span class="ak-mini-status-dot"></span><span>{{ number_format((int) $lowStockCount) }} variants need stock attention</span></div>
-                <a href="{{ route('commerce-admin.products.index', ['status' => 'low_stock']) }}">Check inventory →</a>
+                <div><span class="ak-mini-status-dot"></span><span>{{ number_format((int) $lowStockCount) }} تنوع نیازمند بررسی موجودی است</span></div>
+                <a href="{{ route('commerce-admin.inventory.index', ['status' => 'low_stock']) }}">مدیریت موجودی ←</a>
             </div>
+        </article>
+    </section>
+
+    <section class="ak-classic-customer-grid">
+        <article class="ak-panel ak-team-panel">
+            <div class="ak-panel-heading">
+                <div><h2>مشتری‌های اخیر</h2><p>حساب‌های مشتری ثبت‌شده در دیتابیس</p></div>
+                <span class="ak-count-chip">{{ number_format((int) $customersCount) }} مشتری</span>
+            </div>
+            @forelse($recentCustomers as $customer)
+                <div class="ak-team-row">
+                    <span class="ak-avatar ak-team-avatar">{{ mb_strtoupper(mb_substr($customer->name ?: $customer->email ?: 'م', 0, 1)) }}</span>
+                    <div class="ak-team-identity">
+                        <strong>{{ $customer->name ?: 'مشتری' }}</strong>
+                        <small>{{ $customer->email ?: 'ایمیل ثبت نشده' }}</small>
+                    </div>
+                    <a class="ak-team-action" href="{{ route('commerce-admin.customers.show', $customer->getKey()) }}">جزئیات</a>
+                </div>
+            @empty
+                <div class="ak-compact-empty">هنوز حساب مشتری ثبت نشده است.</div>
+            @endforelse
+            <div class="ak-team-foot"><span>{{ number_format((int) $customersCount) }} حساب مشتری</span><a href="{{ route('commerce-admin.customers.index') }}">فهرست مشتری‌ها ↗</a></div>
         </article>
     </section>
 @endsection

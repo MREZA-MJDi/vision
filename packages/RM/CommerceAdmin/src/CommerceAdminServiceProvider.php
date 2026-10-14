@@ -10,7 +10,7 @@ class CommerceAdminServiceProvider extends ServiceProvider
     {
         $packagePath = dirname(__DIR__);
 
-        // The kit owns presentation only; application routes and business logic live in app/.
+        // This package owns presentation only; routes and business logic live in the host application.
         $this->loadViewsFrom($packagePath . '/resources/views', 'commerce-admin');
 
         $this->publishes([

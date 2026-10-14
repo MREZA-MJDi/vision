@@ -2,7 +2,8 @@
 
 return [
     /*
-    | Host-application model adapters keep business logic outside the UI kit.
+    | Model adapters let other Laravel applications reuse the module without
+    | changing the UI. Controllers and routes stay in the application; packages/RM/CommerceAdmin contains only presentation resources.
     */
     'models' => [
         'user' => App\Models\User::class,
@@ -27,7 +28,37 @@ return [
     'tax_rate' => (float) env('COMMERCE_ADMIN_TAX_RATE', 0),
     // Flat shipping amount; checkout ignores client-supplied shipping prices.
     'shipping_flat_rate' => (float) env('COMMERCE_ADMIN_SHIPPING_FLAT_RATE', 0),
+    'status_labels' => [
+        'pending' => 'در انتظار',
+        'confirmed' => 'تأییدشده',
+        'preparing' => 'در حال آماده‌سازی',
+        'shipped' => 'ارسال‌شده',
+        'out_for_delivery' => 'در حال ارسال',
+        'delivered' => 'تحویل‌شده',
+        'cancelled' => 'لغوشده',
+        'returned' => 'مرجوع‌شده',
+        'paid' => 'پرداخت‌شده',
+        'failed' => 'ناموفق',
+        'refunded' => 'بازپرداخت‌شده',
+        'approved' => 'تأییدشده',
+        'rejected' => 'ردشده',
+        'active' => 'فعال',
+        'inactive' => 'غیرفعال',
+        'draft' => 'پیش‌نویس',
+    ],
+    'movement_labels' => [
+        'sale' => 'فروش',
+        'return' => 'مرجوعی',
+        'adjustment' => 'اصلاح موجودی',
+        'purchase' => 'خرید',
+    ],
     'items_per_page' => 10,
     'media_disk' => env('COMMERCE_ADMIN_MEDIA_DISK', 'public'),
     'media_directory' => 'products',
+    // Used only by AdminSeeder. Never commit real values in this file.
+    'bootstrap_admin' => [
+        'email' => env('COMMERCE_ADMIN_EMAIL'),
+        'name' => env('COMMERCE_ADMIN_NAME', 'Store Administrator'),
+        'password' => env('COMMERCE_ADMIN_PASSWORD'),
+    ],
 ];

@@ -18,9 +18,11 @@ Wishlist hearts are currently device-local. They are not synced across browsers 
 ## Commerce Admin UI Kit
 
 - \`/admin/login\` and \`/admin\` — protected by the configured administrator flag.
-- Product CRUD with variants, SKU/barcode validation, media uploads, taxable flag, and stock adjustments recorded to the inventory ledger.
-- Order list/detail, manually-created orders, delivery-state transitions, cancellation/return stock restoration, and manual payment-record updates.
-- Review moderation and analytics dashboards.
+- Persian RTL administration using the local IRANYekanX font, with four live dashboard KPIs and a 12-month grouped sales/order chart.
+- Paginated product CRUD with variants, SKU/barcode validation, media uploads, taxable flag, and inventory audit trail.
+- Category and brand management with unique slugs and safe deactivation when products still reference a record.
+- Order list/detail, manually-created orders, state transitions, cancellation/return stock restoration, and shared payment/accounting services.
+- Standalone customer, payment and inventory ledger screens, plus review moderation and analytics.
 
 Create a customer account first, then promote an existing account to administrator from the project root:
 
@@ -28,9 +30,9 @@ Create a customer account first, then promote an existing account to administrat
 php artisan commerce-admin:make-admin admin@example.com
 \`\`\`
 
-The command changes only the configured administrator flag on the existing user. It does not create an account or seed fake commerce data.
+The command changes only the configured administrator flag on an existing user by default. To create a new administrator deliberately, run `php artisan commerce-admin:make-admin admin@example.com --create`; it requests the name and a confirmed password interactively. No account is created without `--create`.
 
-The module does not currently provide standalone category/brand management screens; product forms select existing category and brand records. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
+An optional `AdminSeeder` can bootstrap the first admin from environment values; it skips when credentials are blank and never resets an existing user's password. No demo products or customers are seeded. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
 
 ## Configuration
 

@@ -69,13 +69,4 @@ Route::get('/account/orders/{order}', [CustomerAccountController::class, 'order'
     ->whereNumber('order')
     ->name('account.orders.show');
 
-/*
-|--------------------------------------------------------------------------
-| Application-owned admin routes
-|--------------------------------------------------------------------------
-|
-| The Admin controllers, middleware and validation belong to this application.
-| CommerceAdmin is only the reusable Blade/CSS/JS presentation kit.
-|
-*/
-require __DIR__.'/admin.php';
+require __DIR__ . '/admin.php';

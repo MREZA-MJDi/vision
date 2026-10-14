@@ -274,4 +274,105 @@ class CommerceAdminWorkflowTest extends TestCase
         ]);
     }
 
+
+    public function test_admin_manual_order_creates_payment_token_and_inventory_audit_atomically(): void
+    {
+        config([
+            'commerce-admin.tax_rate' => 0.10,
+            'commerce-admin.shipping_flat_rate' => 0,
+        ]);
+
+        $admin = User::query()->create([
+            'name' => 'Manual Order Admin',
+            'email' => 'manual-order-admin@example.test',
+            'password' => 'admin-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $category = Category::query()->create([
+            'name' => 'Manual Order Category',
+            'slug' => 'manual-order-category',
+            'is_active' => true,
+        ]);
+
+        $product = Product::query()->create([
+            'category_id' => $category->getKey(),
+            'name' => 'Manual Order Product',
+            'slug' => 'manual-order-product',
+            'is_active' => true,
+            'is_taxable' => true,
+        ]);
+
+        $firstVariant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'MANUAL-ORDER-001',
+            'size' => 'M',
+            'price' => 10.00,
+            'stock' => 5,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $secondVariant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'MANUAL-ORDER-002',
+            'size' => 'L',
+            'price' => 15.00,
+            'stock' => 3,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.orders.store'), [
+                'customer_name' => 'Manual Order Customer',
+                'customer_email' => 'buyer@example.test',
+                'customer_phone' => '555-0144',
+                'shipping_address' => '1 Commerce Street',
+                'shipping_province' => 'Test Province',
+                'shipping_city' => 'Test City',
+                'postal_code' => '12345',
+                'payment_method' => 'bank_transfer',
+                'shipping_cost' => '5.00',
+                'items' => [
+                    ['variant_id' => $firstVariant->getKey(), 'quantity' => 2],
+                    ['variant_id' => $secondVariant->getKey(), 'quantity' => 1],
+                ],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $order = Order::query()->where('customer_email', 'buyer@example.test')->firstOrFail();
+
+        $this->assertNotEmpty($order->public_token);
+        $this->assertSame('35.00', $order->subtotal);
+        $this->assertSame('3.50', $order->tax);
+        $this->assertSame('5.00', $order->shipping_cost);
+        $this->assertSame('43.50', $order->total);
+        $this->assertSame(2, $order->items()->count());
+
+        $this->assertSame(3, (int) $firstVariant->fresh()->stock);
+        $this->assertSame(2, (int) $secondVariant->fresh()->stock);
+
+        $this->assertDatabaseHas('inventory_movements', [
+            'product_variant_id' => $firstVariant->getKey(),
+            'type' => 'sale',
+            'quantity' => -2,
+            'stock_after' => 3,
+            'reference_id' => $order->getKey(),
+        ]);
+        $this->assertDatabaseHas('inventory_movements', [
+            'product_variant_id' => $secondVariant->getKey(),
+            'type' => 'sale',
+            'quantity' => -1,
+            'stock_after' => 2,
+            'reference_id' => $order->getKey(),
+        ]);
+
+        $payment = Payment::query()->where('order_id', $order->getKey())->firstOrFail();
+        $this->assertSame('pending', $payment->status);
+        $this->assertSame('43.50', $payment->amount);
+        $this->assertSame('manual', $payment->gateway);
+        $this->assertSame('admin-order:' . $order->order_number, $payment->idempotency_key);
+    }
+
 }

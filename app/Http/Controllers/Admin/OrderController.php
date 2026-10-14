@@ -8,9 +8,10 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Services\OrderService;
+use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -89,6 +90,7 @@ class OrderController
         $variantModel = $this->model('variant', ProductVariant::class);
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $userModel = $this->model('user', User::class);
+        $paymentModel = $this->model('payment', Payment::class);
 
         $validated = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
@@ -105,19 +107,57 @@ class OrderController
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
         ]);
 
-        $order = DB::transaction(function () use ($validated, $orderModel, $itemModel, $variantModel, $inventoryModel, $userModel) {
+        $order = DB::transaction(function () use (
+            $validated,
+            $orderModel,
+            $itemModel,
+            $variantModel,
+            $inventoryModel,
+            $userModel,
+            $paymentModel
+        ) {
             $taxRate = max(0, (float) config('commerce-admin.tax_rate', 0));
-            $email = $validated['customer_email'] ?? null;
-            $customer = $email ? $userModel::query()->where('email', $email)->first() : null;
-            $number = 'VS-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(4));
-            $subtotal = 0.0;
-            $taxAmount = 0.0;
+            $email = isset($validated['customer_email'])
+                ? Str::lower(trim((string) $validated['customer_email']))
+                : null;
+            $adminFlag = (string) config('commerce-admin.admin_flag_column', 'is_admin');
+            $customer = $email
+                ? $userModel::query()
+                    ->whereRaw('LOWER(email) = ?', [$email])
+                    ->where($adminFlag, false)
+                    ->first()
+                : null;
+
+            $number = 'VS-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(6));
+            $subtotalCents = 0;
+            $taxCents = 0;
             $preparedItems = [];
 
+            // Lock all requested variants in a stable order to reduce deadlocks,
+            // and eager-load product/media once instead of issuing one query per line.
+            $variantPrototype = new $variantModel();
+            $variantIds = collect($validated['items'])
+                ->pluck('variant_id')
+                ->map(fn ($id): int => (int) $id)
+                ->unique()
+                ->sort()
+                ->values();
+            $variants = $variantModel::query()
+                ->with(['product', 'primaryGalleryMedia', 'product.primaryGalleryMedia'])
+                ->whereKey($variantIds)
+                ->orderBy($variantPrototype->getQualifiedKeyName())
+                ->lockForUpdate()
+                ->get()
+                ->keyBy(fn ($variant): int => (int) $variant->getKey());
+
             foreach ($validated['items'] as $index => $input) {
-                $variant = $variantModel::query()
-                    ->with(['product', 'primaryGalleryMedia', 'product.primaryGalleryMedia'])
-                    ->whereKey($input['variant_id'])->lockForUpdate()->firstOrFail();
+                $variant = $variants->get((int) $input['variant_id']);
+
+                if (! $variant) {
+                    throw ValidationException::withMessages([
+                        "items.$index.variant_id" => 'This product option no longer exists.',
+                    ]);
+                }
 
                 if (! $variant->is_active || ! $variant->product || ! $variant->product->is_active) {
                     throw ValidationException::withMessages([
@@ -132,31 +172,33 @@ class OrderController
                     ]);
                 }
 
-                $unitPrice = (float) $variant->effective_price;
-                $lineTotal = round($unitPrice * $quantity, 2);
-                $lineTax = (bool) $variant->product->getAttribute('is_taxable')
-                    ? round($lineTotal * $taxRate, 2)
-                    : 0.0;
-                $subtotal += $lineTotal;
-                $taxAmount += $lineTax;
+                $unitCents = (int) round(((float) $variant->effective_price) * 100);
+                $lineCents = $unitCents * $quantity;
+                $lineTaxCents = (bool) $variant->product->getAttribute('is_taxable')
+                    ? (int) round($lineCents * $taxRate)
+                    : 0;
+
+                $subtotalCents += $lineCents;
+                $taxCents += $lineTaxCents;
                 $preparedItems[] = [
                     'variant' => $variant,
                     'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'line_total' => $lineTotal,
-                    'tax_amount' => $lineTax,
+                    'unit_price' => $unitCents / 100,
+                    'line_total' => $lineCents / 100,
+                    'tax_amount' => $lineTaxCents / 100,
                     'image' => $variant->primaryGalleryMedia?->url
                         ?? $variant->product->primaryGalleryMedia?->url,
                 ];
             }
 
-            $subtotal = round($subtotal, 2);
-            $taxAmount = round($taxAmount, 2);
-            $shipping = round((float) $validated['shipping_cost'], 2);
+            $shippingCents = (int) round(max(0, (float) $validated['shipping_cost']) * 100);
+            $totalCents = $subtotalCents + $taxCents + $shippingCents;
+
             $order = $orderModel::query()->create([
                 'user_id' => $customer?->getKey(),
                 'address_id' => null,
                 'order_number' => $number,
+                'public_token' => (string) Str::uuid(),
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'] ?? null,
                 'customer_email' => $email,
@@ -167,20 +209,20 @@ class OrderController
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'payment_method' => $validated['payment_method'],
-                'subtotal' => $subtotal,
+                'subtotal' => $subtotalCents / 100,
                 'discount' => 0,
-                'shipping_cost' => $shipping,
-                'tax' => $taxAmount,
-                'total' => round($subtotal + $shipping + $taxAmount, 2),
+                'shipping_cost' => $shippingCents / 100,
+                'tax' => $taxCents / 100,
+                'total' => $totalCents / 100,
                 'placed_at' => now(),
             ]);
 
             $actorId = Auth::guard(config('commerce-admin.guard', 'web'))->id();
+
             foreach ($preparedItems as $line) {
                 $variant = $line['variant'];
                 $product = $variant->product;
-                $before = (int) $variant->stock;
-                $after = $before - $line['quantity'];
+                $after = (int) $variant->stock - $line['quantity'];
 
                 $itemModel::query()->create([
                     'order_id' => $order->getKey(),
@@ -211,11 +253,20 @@ class OrderController
                 ]);
             }
 
+            // Manual orders start with an auditable pending payment, matching checkout.
+            $paymentModel::query()->create([
+                'order_id' => $order->getKey(),
+                'gateway' => 'manual',
+                'idempotency_key' => 'admin-order:' . $order->order_number,
+                'amount' => $totalCents / 100,
+                'status' => 'pending',
+            ]);
+
             return $order;
-        });
+        }, 3);
 
         return redirect()->route('commerce-admin.orders.show', $order->getKey())
-            ->with('status', 'Order created and stock updated.');
+            ->with('status', 'سفارش ثبت شد، موجودی به‌روزرسانی و پرداخت معلق ایجاد شد.');
     }
 
     public function show(int $order): View
@@ -244,165 +295,49 @@ class OrderController
         ));
     }
 
-    public function updateStatus(Request $request, int $order): RedirectResponse
+    public function updateStatus(Request $request, int $order, OrderService $orderService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $itemModel = $this->model('order_item', OrderItem::class);
-        $variantModel = $this->model('variant', ProductVariant::class);
-        $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
-
         $validated = $request->validate([
             'status' => ['required', Rule::in(Order::STATUSES)],
         ]);
 
-        DB::transaction(function () use ($order, $validated, $orderModel, $itemModel, $variantModel, $inventoryModel): void {
-            $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
-            $next = $validated['status'];
-            $terminal = ['cancelled', 'returned'];
-            $allowedTransitions = Order::STATUS_TRANSITIONS;
+        $record = $orderModel::query()->findOrFail($order);
+        if (! $record instanceof Order) {
+            throw ValidationException::withMessages([
+                'status' => 'The configured order model must extend the application Order model to use the shared order workflow.',
+            ]);
+        }
 
-            if ($next !== $model->status && ! in_array($next, $allowedTransitions[$model->status] ?? [], true)) {
-                throw ValidationException::withMessages([
-                    'status' => 'That status change is not allowed from the current order state.',
-                ]);
-            }
-
-            $wasTerminal = in_array($model->status, $terminal, true);
-            $willBeTerminal = in_array($next, $terminal, true);
-
-            if (! $wasTerminal && $willBeTerminal) {
-                $actorId = Auth::guard(config('commerce-admin.guard', 'web'))->id();
-                $items = $itemModel::query()->where('order_id', $model->getKey())->get();
-
-                foreach ($items as $item) {
-                    if (! $item->product_variant_id) {
-                        continue;
-                    }
-
-                    $variantQuery = $variantModel::query();
-                    if (in_array(SoftDeletes::class, class_uses_recursive($variantModel), true)) {
-                        // A variant may be archived from the catalog while an
-                        // order still references it. Restoring that order must
-                        // restore stock to the archived SKU as well.
-                        $variantQuery->withTrashed();
-                    }
-
-                    $variant = $variantQuery->whereKey($item->product_variant_id)->lockForUpdate()->first();
-                    if (! $variant) {
-                        continue;
-                    }
-
-                    $variant->stock = (int) $variant->stock + (int) $item->quantity;
-                    $variant->save();
-
-                    $inventoryModel::query()->create([
-                        'product_variant_id' => $variant->getKey(),
-                        'type' => $next === 'returned' ? 'return' : 'adjustment',
-                        'quantity' => (int) $item->quantity,
-                        'stock_after' => (int) $variant->stock,
-                        'reference_type' => $model->getMorphClass(),
-                        'reference_id' => $model->getKey(),
-                        'note' => 'Stock restored after order ' . $next . ' (' . $model->order_number . ')',
-                        'created_by' => $actorId,
-                    ]);
-                }
-            }
-
-            $model->status = $next;
-            if (in_array($next, ['shipped', 'out_for_delivery', 'delivered'], true) && ! $model->shipped_at) {
-                $model->shipped_at = now();
-            }
-            if ($next === 'out_for_delivery' && ! $model->out_for_delivery_at) {
-                $model->out_for_delivery_at = now();
-            }
-            if ($next === 'delivered' && ! $model->delivered_at) {
-                $model->delivered_at = now();
-            }
-            if ($next === 'cancelled' && ! $model->cancelled_at) {
-                $model->cancelled_at = now();
-            }
-            $model->save();
-        });
+        $orderService->updateStatus(
+            $record,
+            $validated['status'],
+            (string) $record->payment_status,
+            $record->customer_note,
+            $record->tracking_code
+        );
 
         return redirect()->route('commerce-admin.orders.show', $order)
-            ->with('status', 'Order status updated.');
+            ->with('status', 'وضعیت سفارش ذخیره شد.');
     }
 
-    public function updatePayment(Request $request, int $order): RedirectResponse
+    public function updatePayment(Request $request, int $order, PaymentService $paymentService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $paymentModel = $this->model('payment', Payment::class);
-
         $validated = $request->validate([
             'payment_status' => ['required', Rule::in(Payment::STATUSES)],
         ]);
 
-        DB::transaction(function () use ($orderModel, $paymentModel, $order, $validated): void {
-            $model = $orderModel::query()->whereKey($order)->lockForUpdate()->firstOrFail();
-            $next = $validated['payment_status'];
+        $record = $orderModel::query()->findOrFail($order);
+        if (! $record instanceof Order) {
+            throw ValidationException::withMessages([
+                'payment_status' => 'The configured order model must extend the application Order model to use shared payment accounting.',
+            ]);
+        }
 
-            if ($next === $model->payment_status) {
-                return;
-            }
-
-            $allowedTransitions = [
-                'pending' => ['paid', 'failed'],
-                'failed' => ['pending', 'paid'],
-                'paid' => ['refunded'],
-                'refunded' => [],
-            ];
-
-            if (! in_array($next, $allowedTransitions[$model->payment_status] ?? [], true)) {
-                throw ValidationException::withMessages([
-                    'payment_status' => 'That payment status change is not allowed from the current payment state.',
-                ]);
-            }
-
-            $paymentQuery = $paymentModel::query()->where('order_id', $model->getKey());
-
-            if ($next === 'refunded') {
-                $paymentRecord = (clone $paymentQuery)
-                    ->where('status', 'paid')
-                    ->orderByDesc('id')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $paymentRecord) {
-                    throw ValidationException::withMessages([
-                        'payment_status' => 'A successful payment record is required before recording a refund.',
-                    ]);
-                }
-            } else {
-                $paymentRecord = (clone $paymentQuery)
-                    ->orderByDesc('id')
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $paymentRecord) {
-                    $paymentRecord = $paymentModel::query()->create([
-                        'order_id' => $model->getKey(),
-                        'gateway' => 'manual',
-                        'idempotency_key' => 'admin-manual-order-' . $model->getKey(),
-                        'amount' => $model->total,
-                        'status' => $next,
-                    ]);
-                }
-            }
-
-            $paymentRecord->status = $next;
-            if ($next === 'paid' && ! $paymentRecord->paid_at) {
-                $paymentRecord->paid_at = now();
-            }
-            $paymentRecord->save();
-
-            $model->payment_status = $next;
-            if ($next === 'paid' && ! $model->paid_at) {
-                $model->paid_at = now();
-            }
-            $model->save();
-        });
+        $paymentService->matchStatus($record, $validated['payment_status']);
 
         return redirect()->route('commerce-admin.orders.show', $order)
-            ->with('status', 'Payment status and payment record updated. Gateway reconciliation remains separate.');
+            ->with('status', 'وضعیت پرداخت و سوابق مالی از مسیر سرویس مشترک به‌روزرسانی شد.');
     }
 }

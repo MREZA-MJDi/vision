@@ -39,6 +39,11 @@ class ExampleTest extends TestCase
         $this->assertTrue(Route::has('commerce-admin.products.index'));
         $this->assertTrue(Route::has('commerce-admin.orders.index'));
         $this->assertTrue(Route::has('commerce-admin.login'));
+        $this->assertTrue(Route::has('commerce-admin.categories.index'));
+        $this->assertTrue(Route::has('commerce-admin.brands.index'));
+        $this->assertTrue(Route::has('commerce-admin.customers.index'));
+        $this->assertTrue(Route::has('commerce-admin.payments.index'));
+        $this->assertTrue(Route::has('commerce-admin.inventory.index'));
     }
 
     public function test_an_administrator_can_render_the_database_backed_dashboard(): void
@@ -49,10 +54,11 @@ class ExampleTest extends TestCase
         $this->actingAs($administrator)
             ->get(route('commerce-admin.dashboard'))
             ->assertOk()
-            ->assertSee('Customers')
-            ->assertSee('Total Revenue')
-            ->assertSee('Store Activity')
-            ->assertSee('Latest Orders');
+            ->assertSee('lang="fa" dir="rtl"', false)
+            ->assertSee('مشتری‌های اخیر')
+            ->assertSee('درآمد پرداخت‌شده')
+            ->assertSee('روند فروشگاه')
+            ->assertSee('آخرین سفارش‌ها');
     }
 
     public function test_reference_commerce_screens_render_and_remain_connected_to_catalog_and_orders(): void
@@ -63,10 +69,10 @@ class ExampleTest extends TestCase
         $this->actingAs($administrator)
             ->get(route('commerce-admin.analytics'))
             ->assertOk()
-            ->assertSee('E-Commerce Dashboard')
-            ->assertSee('Returning Rate')
-            ->assertSee('Sales by Location')
-            ->assertSee('Customer Reviews');
+            ->assertSee('داشبورد فروشگاه')
+            ->assertSee('نرخ بازگشت مشتریان')
+            ->assertSee('فروش بر اساس شهر')
+            ->assertSee('نظرات مشتریان');
 
         $export = $this->get(route('commerce-admin.analytics.export'));
         $export->assertOk();
@@ -75,13 +81,14 @@ class ExampleTest extends TestCase
 
         $this->get(route('commerce-admin.products.index'))
             ->assertOk()
-            ->assertSee('TOTAL SALES')
-            ->assertSee('Rating')
-            ->assertSee('Product list');
+            ->assertSee('lang="fa" dir="rtl"', false)
+            ->assertSee('مجموع فروش')
+            ->assertSee('امتیاز')
+            ->assertSee('فهرست محصولات');
 
         $this->get(route('commerce-admin.products.create'))
             ->assertOk()
-            ->assertSee('Product information');
+            ->assertSee('اطلاعات محصول');
 
         $this->post(route('commerce-admin.products.store'), [
             'name' => 'Reference View Sample',
@@ -109,10 +116,10 @@ class ExampleTest extends TestCase
         $this->get(route('commerce-admin.products.show', $product->getKey()))
             ->assertOk()
             ->assertSee('Reference View Sample')
-            ->assertSee('Variants');
+            ->assertSee('تنوع‌ها');
 
         $this->get(route('commerce-admin.orders.index'))
             ->assertOk()
-            ->assertSee('Orders');
+            ->assertSee('سفارش‌ها');
     }
 }
