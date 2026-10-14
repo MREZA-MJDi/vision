@@ -204,6 +204,46 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $untouched->getKey(), 'deleted_at' => null]);
     }
 
+    public function test_admin_hero_selection_drives_homepage_and_replaces_previous_selection(): void
+    {
+        $admin = $this->makeAdmin();
+        $oldHero = Product::query()->create([
+            'name' => 'Previous Hero',
+            'slug' => 'previous-hero',
+            'is_active' => true,
+            'is_hero' => true,
+        ]);
+        ProductVariant::query()->create([
+            'product_id' => $oldHero->getKey(),
+            'sku' => 'PREVIOUS-HERO-001',
+            'price' => 20,
+            'stock' => 2,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.products.store'), [
+                'name' => 'New Homepage Hero',
+                'status' => 'active',
+                'is_hero' => '1',
+                'variants' => [[
+                    'price' => '35.00',
+                    'stock' => '2',
+                    'low_stock_threshold' => '1',
+                    'is_active' => '1',
+                ]],
+            ])
+            ->assertRedirect();
+
+        $newHero = Product::query()->where('slug', 'new-homepage-hero')->firstOrFail();
+        $this->assertTrue((bool) $newHero->is_hero);
+        $this->assertFalse((bool) $oldHero->fresh()->is_hero);
+
+        $this->get('/')->assertOk()->assertSee('New Homepage Hero')->assertSee('store-hero-product', false);
+        $this->get('/products')->assertOk()->assertDontSee('store-hero-product', false);
+    }
+
     private function makeAdmin(): User
     {
         $admin = User::query()->create([

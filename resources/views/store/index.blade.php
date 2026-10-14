@@ -9,6 +9,32 @@
 @endphp
 
 <main class="store-main">
+    @if($heroProduct)
+        @php
+            $heroVariant = $heroProduct->primaryActiveVariant;
+            $heroImage = $heroProduct->primaryGalleryMedia?->url
+                ?? $heroVariant?->primaryGalleryMedia?->url;
+        @endphp
+        <section class="store-hero-product" aria-labelledby="store-hero-product-title">
+            <a class="store-hero-product__media" href="{{ route('products.show', ['product' => $heroProduct->slug]) }}" aria-label="مشاهدهٔ {{ $heroProduct->name }}">
+                @if($heroImage)
+                    <img src="{{ $heroImage }}" alt="{{ $heroProduct->name }}" fetchpriority="high">
+                @else
+                    <span class="store-hero-product__placeholder">VISION <small>SELECTED PIECE</small></span>
+                @endif
+            </a>
+            <div class="store-hero-product__copy">
+                <p class="store-eyebrow">HOMEPAGE / SELECTED PIECE</p>
+                <h2 id="store-hero-product-title">{{ $heroProduct->name }}</h2>
+                <p>{{ $heroProduct->short_description ?: ($heroProduct->category?->name ?: 'A selected piece from the VISION collection.') }}</p>
+                @if($heroVariant?->effective_price !== null)
+                    <strong class="store-hero-product__price">{{ $formatPrice($heroVariant->effective_price) }}</strong>
+                @endif
+                <a class="store-hero-product__cta" href="{{ route('products.show', ['product' => $heroProduct->slug]) }}">مشاهدهٔ محصول <span aria-hidden="true">↗</span></a>
+            </div>
+        </section>
+    @endif
+
     <div class="store-titlebar">
         <div class="store-titlebar__left">
             <h1 id="catalog-title">{{ $saleOnly ? 'The Sale Edit' : ($search !== '' ? 'Search results' : 'New Arrivals') }}</h1>

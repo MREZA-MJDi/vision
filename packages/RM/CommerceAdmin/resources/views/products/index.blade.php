@@ -69,7 +69,7 @@
                     @php
                         $variant = $item->variants->firstWhere('is_active', true) ?: $item->variants->first();
                         $asset = $item->galleryMedia->first();
-                        $stock = (int)$item->variants->sum('stock');
+                        $stock = (int) $item->variants->where('is_active', true)->sum('stock');
                         $isLow = $item->variants->contains(fn($row) => $row->is_active && $row->stock <= $row->low_stock_threshold);
                         $onSale = $item->variants->contains(fn($row) => $row->sale_price !== null && $row->sale_price < $row->price);
                     @endphp
