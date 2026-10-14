@@ -11,8 +11,8 @@
         }
 
         const returningVisitor = hasSeenCookie || hasSeenSession;
-        const firstDuration = Math.max(1000, Number(intro.dataset.firstDuration) || 5600);
-        const returnDuration = Math.max(1000, Number(intro.dataset.returnDuration) || 2500);
+        const firstDuration = Math.max(1000, Number(intro.dataset.firstDuration) || 3200);
+        const returnDuration = Math.max(1000, Number(intro.dataset.returnDuration) || 1900);
         const exitDuration = 220;
         const shell = document.querySelector('.store-shell');
         const canvas = intro.querySelector('[data-tiamir-static]');
