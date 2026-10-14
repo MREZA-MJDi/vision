@@ -7,7 +7,7 @@
     <section class="commerce-auth-card commerce-panel">
         <p class="store-eyebrow">WELCOME BACK</p>
         <h1>Sign in<span>.</span></h1>
-        <p class="commerce-muted">Sign in to view your orders and keep your shopping bag connected to your account.</p>
+        <p class="commerce-muted">Sign in with your registered email and password. Access is routed according to your account permissions.</p>
 
         @if(session('status'))<p class="commerce-alert commerce-alert--success" role="status">{{ session('status') }}</p>@endif
         @if($errors->any())<div class="commerce-alert commerce-alert--error" role="alert">{{ $errors->first() }}</div>@endif
