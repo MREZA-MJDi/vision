@@ -11,7 +11,7 @@
     <section class="ak-stat-grid ak-stat-grid-four">
         <article class="ak-stat-card">
             <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-green">ت</span><span class="ak-stat-kicker">مجموع فروش</span></div>
-            <div class="ak-stat-value">@money($stats['sales'])</div>
+            <div class="ak-stat-value">@commerceMoney($stats['sales'])</div>
             <div class="ak-stat-footer"><span class="ak-stat-note">اقلام سفارش‌های پرداخت‌شده و لغونشده</span><span class="ak-mini-badge">به‌روز</span></div>
         </article>
         <article class="ak-stat-card">
@@ -26,7 +26,7 @@
         </article>
         <article class="ak-stat-card">
             <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-red">↘</span><span class="ak-stat-kicker">تخفیف‌ها</span></div>
-            <div class="ak-stat-value">@money($stats['discount_total'])</div>
+            <div class="ak-stat-value">@commerceMoney($stats['discount_total'])</div>
             <div class="ak-stat-footer"><span class="ak-stat-note">تخفیف سفارش‌های پرداخت‌شده، به‌جز لغو یا مرجوعی</span><span class="ak-mini-badge">{{ number_format((int) $stats['discounted']) }} تنوع تخفیف‌دار</span></div>
         </article>
     </section>
@@ -83,7 +83,7 @@
                         <td><div class="ak-product-cell">@if($asset?->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $item->name }}" loading="lazy" decoding="async">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<div><a class="ak-table-primary" href="{{ route('commerce-admin.products.show', $item->getKey()) }}">{{ $item->name }}</a><small>SKU {{ $variant?->sku ?: '—' }}</small></div></div></td>
                         <td data-column="category">{{ $item->category?->name ?: 'بدون دسته‌بندی' }}</td>
                         
-                        <td data-column="price"><div class="ak-price-cell"><strong>@money(($variant?->effective_price ?? $variant?->price ?? 0))</strong>@if($onSale)<small class="ak-old-price">@money(($variant?->price ?? 0))</small>@endif</div></td>
+                        <td data-column="price"><div class="ak-price-cell"><strong>@commerceMoney(($variant?->effective_price ?? $variant?->price ?? 0))</strong>@if($onSale)<small class="ak-old-price">@commerceMoney(($variant?->price ?? 0))</small>@endif</div></td>
                         <td data-column="stock"><span class="ak-stock-indicator {{ $stock <= 0 ? 'is-out' : ($isLow ? 'is-low' : 'is-ok') }}"><i></i>{{ number_format($stock) }}</span></td>
                         <td data-column="rating"><div class="ak-rating-cell"><span aria-hidden="true">★</span><strong>{{ number_format((float) ($item->approved_reviews_avg_rating ?? 0), 1) }}</strong><small>({{ number_format((int) $item->approved_reviews_count) }})</small></div></td>
                         <td data-column="status"><span class="ak-status-pill {{ $item->is_active ? 'status-active' : 'status-draft' }}">{{ $item->is_active ? 'فعال' : 'پیش‌نویس' }}</span></td>
