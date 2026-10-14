@@ -316,6 +316,42 @@ class ProductController
                 $variant->save();
                 $keepIds[] = $variant->getKey();
 
+                // Every color/size option owns a gallery so the storefront can
+                // swap to the selected variant's photo instead of the product default.
+                $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
+                $variantImages = $request->file('variants.' . $index . '.images', []);
+                $imageSortStart = (int) $variant->galleryMedia()->count();
+                foreach (is_array($variantImages) ? $variantImages : [] as $imageOffset => $image) {
+                    if (! $image || ! $image->isValid()) {
+                        continue;
+                    }
+
+                    $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
+                        . '/' . $product->getKey() . '/variants/' . $variant->getKey();
+                    $path = $image->store($directory, $mediaDisk);
+                    if (! is_string($path) || $path === '') {
+                        throw ValidationException::withMessages([
+                            "variants.$index.images" => 'ذخیره تصویر این تنوع انجام نشد؛ هیچ تغییری ثبت نشد.',
+                        ]);
+                    }
+
+                    $storedFiles[] = [$mediaDisk, $path];
+                    $dimensions = @getimagesize($image->getRealPath()) ?: [];
+                    $variant->media()->create([
+                        'collection' => 'gallery',
+                        'disk' => $mediaDisk,
+                        'path' => $path,
+                        'original_name' => $image->getClientOriginalName(),
+                        'mime_type' => $image->getMimeType(),
+                        'size' => $image->getSize(),
+                        'width' => $dimensions[0] ?? null,
+                        'height' => $dimensions[1] ?? null,
+                        'alt_text' => trim(implode(' ', array_filter([$product->name, $variant->color, $variant->size]))),
+                        'sort_order' => $imageSortStart + (int) $imageOffset,
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+                }
+
                 $stockDelta = (int) $variant->stock - $previousStock;
                 if ($stockDelta !== 0) {
                     $inventoryModel::query()->create([
@@ -461,9 +497,20 @@ class ProductController
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()->findOrFail($product);
-        $asset = $model->media()->whereKey($media)->firstOrFail();
+        $asset = $model->media()->whereKey($media)->first();
+        if (! $asset) {
+            $variant = $model->variants()->withTrashed()
+                ->whereHas('media', fn ($query) => $query->whereKey($media))
+                ->firstOrFail();
+            $asset = $variant->media()->whereKey($media)->firstOrFail();
+        }
 
-        if ($asset->path && ! preg_match('/^https?:\/\//i', $asset->path)) {
+        $normalizedPath = ltrim((string) $asset->path, '/');
+        $isVersionedDemoAsset = str_starts_with($normalizedPath, 'demo-products/');
+
+        // Demo artwork is version-controlled seed input. Remove its database
+        // attachment, but keep the file so a future opt-in seed can restore it.
+        if ($asset->path && ! $isVersionedDemoAsset && ! preg_match('/^https?:\/\//i', $asset->path)) {
             Storage::disk($asset->disk ?: config('commerce-admin.media_disk', 'public'))->delete($asset->path);
         }
 

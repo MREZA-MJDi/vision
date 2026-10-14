@@ -195,6 +195,8 @@
     // Select, crop and preview new product images before they reach Laravel.
     const imageInput = $('[data-image-input]');
     const previewBox = $('[data-image-preview]');
+    let activeImageInput = imageInput;
+    let activePreviewBox = previewBox;
     const cropModal = $('[data-crop-modal]');
     const cropCanvas = $('[data-crop-preview]');
     const cropContext = cropCanvas?.getContext('2d');
@@ -209,29 +211,46 @@
     let cropIndex = 0;
     let cropObjectUrl = null;
     let cropRect = null;
-    let previewUrls = [];
+    const previewUrlsByBox = new WeakMap();
 
-    const revokePreviewUrls = () => {
-        previewUrls.forEach((url) => URL.revokeObjectURL(url));
-        previewUrls = [];
+    const revokePreviewUrls = (box = activePreviewBox) => {
+        if (!box) return;
+        (previewUrlsByBox.get(box) || []).forEach((url) => URL.revokeObjectURL(url));
+        previewUrlsByBox.delete(box);
+    };
+    const selectImageTarget = (input) => {
+        activeImageInput = input || imageInput;
+        activePreviewBox = activeImageInput?.matches('[data-variant-image-input]')
+            ? activeImageInput.closest('[data-variant-row]')?.querySelector('[data-variant-image-preview]')
+            : previewBox;
     };
     const renderImages = (files) => {
-        if (!previewBox) return;
-        revokePreviewUrls();
-        previewBox.replaceChildren();
-        Array.from(files || []).slice(0, 8).forEach((file) => {
-            if (!file.type.startsWith('image/')) return;
+        if (!activePreviewBox) return;
+        const box = activePreviewBox;
+        revokePreviewUrls(box);
+        box.replaceChildren();
+        const localUrls = [];
+        const isVariantUpload = activeImageInput?.matches('[data-variant-image-input]');
+        const limit = isVariantUpload ? 4 : 8;
+        Array.from(files || []).slice(0, limit).forEach((file) => {
+            if (!file.type?.startsWith('image/')) return;
             const tile = document.createElement('div');
             tile.className = 'ak-new-image-tile';
             const image = document.createElement('img');
             image.alt = file.name;
+            image.loading = 'lazy';
             image.src = URL.createObjectURL(file);
-            previewUrls.push(image.src);
+            localUrls.push(image.src);
+            image.addEventListener('error', () => {
+                image.alt = 'پیش‌نمایش این تصویر در مرورگر ممکن نیست';
+                tile.classList.add('is-preview-error');
+            }, { once: true });
             const name = document.createElement('small');
             name.textContent = file.name;
             tile.append(image, name);
-            previewBox.appendChild(tile);
+            box.appendChild(tile);
         });
+        previewUrlsByBox.set(box, localUrls);
     };
     const currentCropRatio = () => {
         if (cropRatio?.value === '1:1') return 1;
@@ -276,11 +295,19 @@
         cropObjectUrl = null;
     };
     const assignCroppedFiles = () => {
-        if (!imageInput) return;
-        const transfer = new DataTransfer();
-        cropResults.slice(0, 8).forEach((file) => transfer.items.add(file));
-        imageInput.files = transfer.files;
-        renderImages(imageInput.files);
+        if (!activeImageInput) return;
+        const limit = activeImageInput.matches('[data-variant-image-input]') ? 4 : 8;
+        const files = cropResults.slice(0, limit);
+        try {
+            const transfer = new DataTransfer();
+            files.forEach((file) => transfer.items.add(file));
+            activeImageInput.files = transfer.files;
+        } catch (error) {
+            window.alert('مرورگر نتوانست فایل‌های آماده‌شده را به فرم پیوند بدهد. لطفاً از نسخهٔ به‌روز Chrome یا Edge استفاده کنید.');
+            closeCropper();
+            return;
+        }
+        renderImages(activeImageInput.files);
         closeCropper();
     };
     const showCropAtIndex = () => {
@@ -304,25 +331,32 @@
         if (cropY) cropY.value = '50';
         cropModal?.removeAttribute('hidden');
     };
-    const startImageCropping = (fileList) => {
+    const startImageCropping = (fileList, targetInput = imageInput) => {
+        selectImageTarget(targetInput);
         const files = Array.from(fileList || []);
         if (!files.length) return;
-        if (files.length > 8) {
-            window.alert('در هر بار ذخیره حداکثر ۸ تصویر انتخاب کنید.');
-            if (imageInput) imageInput.value = '';
+        const maxImages = activeImageInput?.matches('[data-variant-image-input]') ? 4 : 8;
+        if (files.length > maxImages) {
+            window.alert(activeImageInput?.matches('[data-variant-image-input]')
+                ? 'برای هر تنوع حداکثر ۴ تصویر انتخاب کنید.'
+                : 'در هر بار ذخیره حداکثر ۸ تصویر انتخاب کنید.');
+            if (activeImageInput) activeImageInput.value = '';
+            renderImages([]);
             return;
         }
         const images = files.filter((file) => file.type.startsWith('image/'));
         if (images.length !== files.length) window.alert('فقط فایل‌های تصویری پذیرفته می‌شوند.');
         if (images.some((file) => file.size > 16 * 1024 * 1024)) {
             window.alert('حجم فایل اصلی هر تصویر نباید بیشتر از ۱۶ مگابایت باشد.');
-            if (imageInput) imageInput.value = '';
+            if (activeImageInput) activeImageInput.value = '';
             return;
         }
         cropQueue = images;
         cropResults = [];
         cropIndex = 0;
-        if (imageInput) imageInput.value = '';
+        // Show an immediate local preview while the crop dialog is open.
+        renderImages(images);
+        if (activeImageInput) activeImageInput.value = '';
         if (!cropModal || !cropCanvas || !cropContext) {
             cropResults = images;
             assignCroppedFiles();
@@ -370,7 +404,14 @@
         })().catch(reject);
     });
     $('[data-browse-images]')?.addEventListener('click', () => imageInput?.click());
-    imageInput?.addEventListener('change', () => startImageCropping(imageInput.files));
+    imageInput?.addEventListener('change', () => startImageCropping(imageInput.files, imageInput));
+    // Delegation supports variant rows added dynamically after page load.
+    document.addEventListener('change', (event) => {
+        const input = event.target;
+        if (input instanceof HTMLInputElement && input.matches('[data-variant-image-input]')) {
+            startImageCropping(input.files, input);
+        }
+    });
     [cropRatio, cropZoom, cropX, cropY].forEach((control) => control?.addEventListener('input', paintCropPreview));
     $('[data-crop-apply]')?.addEventListener('click', async () => {
         const button = $('[data-crop-apply]');
@@ -395,7 +436,7 @@
         cropQueue = [];
         cropResults = [];
         cropIndex = 0;
-        if (imageInput) imageInput.value = '';
+        if (activeImageInput) activeImageInput.value = '';
         renderImages([]);
         closeCropper();
     }));
@@ -410,7 +451,7 @@
             dropZone.classList.remove('is-dragging');
         }));
         dropZone.addEventListener('drop', (event) => {
-            startImageCropping(event.dataTransfer?.files || []);
+            startImageCropping(event.dataTransfer?.files || [], imageInput);
         });
     }
 

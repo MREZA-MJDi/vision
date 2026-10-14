@@ -35,7 +35,7 @@
             <section class="ak-panel ak-order-info-panel">
                 <div class="ak-panel-heading">
                     <div><h2>اطلاعات مشتری</h2><p>اطلاعات تماس ذخیره‌شده در سفارش.</p></div>
-                    <span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($model->status) }}">{{ config('commerce-admin.status_labels.' . $model->status, config('commerce-admin.status_labels.' . $model->status, \Illuminate\Support\Str::headline($model->status))) }}</span>
+                    <span class="ak-status-pill status-{{ str($model->status)->slug() }}">{{ config('commerce-admin.status_labels.' . $model->status, config('commerce-admin.status_labels.' . $model->status, str($model->status)->headline())) }}</span>
                 </div>
                 <div class="ak-customer-detail-card">
                     <span class="ak-avatar ak-avatar-large">{{ strtoupper(substr($model->customer_name ?: 'C', 0, 1)) }}</span>
@@ -93,7 +93,7 @@
                 <div class="ak-panel-heading"><div><h2>وضعیت ارسال</h2><p>تغییر وضعیت اعتبارسنجی می‌شود و زمان آن در سفارش ثبت می‌شود.</p></div></div>
                 @if($isTerminal)
                     <div class="ak-terminal-notice">
-                        <strong>{{ config('commerce-admin.status_labels.' . $model->status, config('commerce-admin.status_labels.' . $model->status, \Illuminate\Support\Str::headline($model->status))) }}</strong>
+                        <strong>{{ config('commerce-admin.status_labels.' . $model->status, config('commerce-admin.status_labels.' . $model->status, str($model->status)->headline())) }}</strong>
                         <p>بازگرداندن موجودی برای این وضعیت نهایی قبلاً ثبت شده است. این سفارش دوباره باز نمی‌شود.</p>
                     </div>
                 @else
@@ -110,7 +110,7 @@
                             <span>تغییر وضعیت سفارش</span>
                             <select name="status">
                                 @foreach($availableStatuses as $status)
-                                    <option value="{{ $status }}" @selected($model->status === $status)>{{ config('commerce-admin.status_labels.' . $status, \Illuminate\Support\Str::headline($status)) }}</option>
+                                    <option value="{{ $status }}" @selected($model->status === $status)>{{ config('commerce-admin.status_labels.' . $status, str($status)->headline()) }}</option>
                                 @endforeach
                             </select>
                         </label>
@@ -132,8 +132,8 @@
                 </div>
                 <div class="ak-payment-detail">
                     <span class="ak-payment-icon" aria-hidden="true">▤</span>
-                    <div><strong>روش پرداخت</strong><small>{{ \Illuminate\Support\Str::headline($model->payment_method ?: 'ثبت نشده') }}</small></div>
-                    <span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($model->payment_status) }}">{{ config('commerce-admin.status_labels.' . $model->payment_status, config('commerce-admin.status_labels.' . $model->payment_status, \Illuminate\Support\Str::headline($model->payment_status))) }}</span>
+                    <div><strong>روش پرداخت</strong><small>{{ str($model->payment_method ?: 'ثبت نشده')->headline() }}</small></div>
+                    <span class="ak-status-pill status-{{ str($model->payment_status)->slug() }}">{{ config('commerce-admin.status_labels.' . $model->payment_status, config('commerce-admin.status_labels.' . $model->payment_status, str($model->payment_status)->headline())) }}</span>
                 </div>
                 @if($model->paid_at)<p class="ak-help-note">تاریخ پرداخت @jalali($model->paid_at, 'j F Y H:i')</p>@endif
                 <form method="POST" action="{{ route('commerce-admin.orders.payment', $model->getKey()) }}" class="ak-payment-form">
@@ -142,7 +142,7 @@
                         <span>وضعیت پرداخت</span>
                         <select name="payment_status">
                             @foreach($availablePaymentStatuses as $paymentStatus)
-                                <option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ config('commerce-admin.status_labels.' . $paymentStatus, \Illuminate\Support\Str::headline($paymentStatus)) }}</option>
+                                <option value="{{ $paymentStatus }}" @selected($model->payment_status === $paymentStatus)>{{ config('commerce-admin.status_labels.' . $paymentStatus, str($paymentStatus)->headline()) }}</option>
                             @endforeach
                         </select>
                     </label>
@@ -153,7 +153,7 @@
                     <div class="ak-detail-list">
                         <span>سوابق پرداخت<strong>{{ $model->payments->count() }}</strong></span>
                         @foreach($model->payments as $payment)
-                            <span>{{ \Illuminate\Support\Str::headline($payment->gateway) }} · {{ \Illuminate\Support\Str::headline($payment->status) }}<strong>@money($payment->amount)</strong></span>
+                            <span>{{ str($payment->gateway)->headline() }} · {{ str($payment->status)->headline() }}<strong>@money($payment->amount)</strong></span>
                         @endforeach
                     </div>
                 @endif

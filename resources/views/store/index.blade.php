@@ -153,14 +153,14 @@
                 @endif
 
                 <div class="filter-group filter-group--price">
-                    <div class="filter-group__heading"><h3>Price range</h3><span>USD</span></div>
+                    <div class="filter-group__heading"><h3>Price range</h3><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span></div>
                     <form class="price-filter" action="{{ route('storefront.index') }}" method="GET">
                         @foreach(request()->query() as $key => $value)
                             @if(!in_array($key, ['price_min', 'price_max', 'page'], true) && is_scalar($value))
                                 <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                             @endif
                         @endforeach
-                        <label><span>Min</span><span class="price-input"><span>$</span><input type="number" min="0" step="1" name="price_min" value="{{ $minPrice }}" placeholder="0" aria-label="Minimum price"></span></label>
+                        <label><span>Min</span><span class="price-input"><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span><input type="number" min="0" step="1" name="price_min" value="{{ $minPrice }}" placeholder="0" aria-label="Minimum price"></span></label>
                         <label><span>Max</span><span class="price-input"><span>$</span><input type="number" min="0" step="1" name="price_max" value="{{ $maxPrice }}" placeholder="Any" aria-label="Maximum price"></span></label>
                         <button type="submit" class="filter-apply">Apply price <span aria-hidden="true">↗</span></button>
                     </form>
