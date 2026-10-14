@@ -49,19 +49,21 @@ final class OrderService
 
             $this->assertStatusTransition($oldStatus, $newStatus);
 
+            $isCancellationLike = in_array($newStatus, Order::CANCEL_LIKE_STATUSES, true);
+
             abort_if(
-                $newStatus === 'returned'
+                $isCancellationLike
                     && $oldPaymentStatus === 'paid'
                     && $paymentStatus !== 'refunded',
                 422,
-                'برای ثبت مرجوعی سفارش پرداخت‌شده، بازپرداخت را هم‌زمان ثبت کنید.'
+                'برای لغو یا مرجوعی سفارش پرداخت‌شده، ابتدا بازپرداخت را ثبت کنید.'
             );
 
             abort_if(
                 $paymentStatus === 'refunded'
-                    && ($newStatus !== 'returned' || $oldPaymentStatus !== 'paid'),
+                    && (! $isCancellationLike || ! in_array($oldPaymentStatus, ['paid', 'refunded'], true)),
                 422,
-                'بازپرداخت فقط همراه با مرجوعی سفارش پرداخت‌شده مجاز است.'
+                'بازپرداخت فقط برای سفارش پرداخت‌شدهٔ در حال لغو یا مرجوعی مجاز است.'
             );
 
             $wasCancelledLike = in_array(
