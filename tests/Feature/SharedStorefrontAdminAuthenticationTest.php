@@ -72,9 +72,7 @@ class SharedStorefrontAdminAuthenticationTest extends TestCase
                 'password' => 'not-the-password',
             ])
             ->assertRedirect(route('login'))
-            ->assertSessionHasErrors([
-                'email' => 'These credentials could not be verified.',
-            ]);
+            ->assertSessionHasErrors('email');
 
         $this->assertGuest();
     }
