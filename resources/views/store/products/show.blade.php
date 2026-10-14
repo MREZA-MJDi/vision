@@ -8,9 +8,9 @@
 @section('content')
 @php
     $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
-    $primaryImage = $product->primaryGalleryMedia?->url
-        ?? $defaultVariant?->primaryGalleryMedia?->url;
-    $formatPrice = static fn ($amount) => '$' . number_format((float) $amount, 2);
+    $primaryImage = $defaultVariant?->primaryGalleryMedia?->url
+        ?? $product->primaryGalleryMedia?->url;
+    $formatPrice = static fn ($amount) => \\App\\Support\\Money::format($amount);
 @endphp
 
 <main class="store-main commerce-page">
@@ -24,15 +24,18 @@
         <div class="store-product-detail__gallery">
             @forelse($product->galleryMedia as $media)
                 <div class="store-product-detail__image">
-                    <img src="{{ $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}">
+                    <img src="{{ $loop->first ? ($defaultVariant?->primaryGalleryMedia?->url ?? $media->url) : $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" @if($loop->first) data-product-main-image data-fallback-src="{{ $product->primaryGalleryMedia?->url ?? $media->url }}" @endif loading="{{ $loop->first ? 'eager' : 'lazy' }}">
                 </div>
             @empty
                 @if($primaryImage)
                     <div class="store-product-detail__image">
-                        <img src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager">
+                        <img data-product-main-image data-fallback-src="{{ $product->primaryGalleryMedia?->url ?? '' }}" src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager">
                     </div>
                 @else
-                    <div class="store-product-detail__image store-product-detail__image--empty"><span>VISION<br>STUDIO</span></div>
+                    <div class="store-product-detail__image">
+                        <img data-product-main-image data-fallback-src="" src="" alt="{{ $product->name }}" loading="eager" hidden>
+                        <div class="store-product-detail__image--empty" data-product-image-placeholder><span>VISION<br>STUDIO</span></div>
+                    </div>
                 @endif
             @endforelse
         </div>
@@ -65,6 +68,7 @@
                                     value="{{ $variant->getKey() }}"
                                     data-price="{{ $variant->effective_price }}"
                                     data-original-price="{{ $variant->price }}"
+                                    data-image="{{ $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url ?? $defaultVariant?->primaryGalleryMedia?->url ?? '' }}"
                                     data-sale="{{ $variant->is_on_sale ? '1' : '0' }}"
                                     data-stock="{{ $variant->stock }}"
                                     @selected($variant->getKey() === $defaultVariant?->getKey())
