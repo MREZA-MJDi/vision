@@ -128,6 +128,6 @@ class AdminDashboardTest extends TestCase
 
         $this->get(route('commerce-admin.analytics'))
             ->assertOk()
-            ->assertSee('$0.00');
+            ->assertSee('0 تومان');
     }
 }
