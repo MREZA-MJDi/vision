@@ -34,11 +34,20 @@
             <div class="ak-empty-state"><strong>موردی پیدا نشد</strong><p>برای این فیلتر رکوردی وجود ندارد. می‌توانید {{ $taxonomyTitle }} جدید اضافه کنید.</p></div>
         @else
             <div class="ak-table-scroll"><table class="ak-table">
-                <thead><tr><th>نام</th><th>شناسهٔ آدرس</th>@if($showParent)<th>والد</th><th>زیر‌دسته</th>@endif<th>محصول‌ها</th><th>وضعیت</th><th>آخرین تغییر</th><th>عملیات</th></tr></thead>
+                <thead><tr><th>نام</th>@if($showParent)<th>تصویر</th>@endif<th>شناسهٔ آدرس</th>@if($showParent)<th>والد</th><th>زیر‌دسته</th>@endif<th>محصول‌ها</th><th>وضعیت</th><th>آخرین تغییر</th><th>عملیات</th></tr></thead>
                 <tbody>
                 @foreach($items as $item)
                     <tr>
                         <td><strong class="ak-table-primary">{{ $item->name }}</strong></td>
+                        @if($showParent)
+                            <td>
+                                @if($item->coverMedia?->url)
+                                    <img class="ak-category-cover-thumb" src="{{ $item->coverMedia->url }}" alt="{{ $item->coverMedia->alt_text ?: $item->name }}" loading="lazy">
+                                @else
+                                    <span class="ak-muted">بدون تصویر</span>
+                                @endif
+                            </td>
+                        @endif
                         <td><span class="ak-mono">{{ $item->slug }}</span></td>
                         @if($showParent)
                             <td>{{ $item->parent?->name ?: 'دستهٔ اصلی' }}</td>
