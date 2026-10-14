@@ -47,7 +47,7 @@
                 <strong>@money($revenue)</strong>
                 <span>تمام سفارش‌های پرداخت‌شدهٔ ثبت‌شده</span>
             </div>
-            <div class="ak-bar-chart ak-bar-chart-tall" role="img" aria-label="درآمد پرداخت‌شده by month">
+            <div class="ak-bar-chart ak-bar-chart-tall" role="img" aria-label="درآمد پرداخت‌شده به تفکیک ماه">
                 @foreach ($series as $point)
                     <div class="ak-bar-column">
                         <span class="ak-bar-tooltip">@money($point['value'])</span>
@@ -69,9 +69,9 @@
             </div>
             <div class="ak-analytics-main-value ak-retention-value">
                 <strong>{{ number_format((float) $returningRate, 1) }}%</strong>
-                <span>{{ number_format((int) $identifiedCustomers) }} identified customers</span>
+                <span>{{ number_format((int) $identifiedCustomers) }} مشتری شناسایی‌شده</span>
             </div>
-            <div class="ak-line-chart" role="img" aria-label="Monthly revenue and order trend">
+            <div class="ak-line-chart" role="img" aria-label="روند ماهانهٔ درآمد و سفارش‌ها">
                 <svg viewBox="0 0 360 180" preserveAspectRatio="none" aria-hidden="true">
                     <line x1="10" y1="27" x2="350" y2="27"></line>
                     <line x1="10" y1="67" x2="350" y2="67"></line>
