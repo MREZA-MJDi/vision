@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::define('access-commerce-admin', static function (Model $user): bool {
+            $adminFlagColumn = (string) config('commerce-admin.admin_flag_column', 'is_admin');
+
+            return $adminFlagColumn !== ''
+                && (bool) $user->getAttribute($adminFlagColumn);
+        });
     }
 }
