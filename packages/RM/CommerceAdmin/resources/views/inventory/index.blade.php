@@ -10,7 +10,7 @@
 </section>
 <section class="ak-panel ak-table-panel"><div class="ak-panel-heading"><div><h2>موجودی تنوع‌ها <span class="ak-count-chip">{{ number_format($variants->total()) }}</span></h2><p>مقدار اصلاح مثبت برای افزودن و منفی برای کسر از موجودی است.</p></div></div>
 <form class="ak-filter-bar is-visible" method="GET" action="{{ route('commerce-admin.inventory.index') }}">
-<label class="ak-inline-field"><span>جست‌وجو</span><input type="search" name="q" value="{{ $search }}" placeholder="نام محصول، SKU یا بارکد"></label>
+<label class="ak-inline-field"><span>جست‌وجو</span><input type="search" name="q" value="{{ $search }}" placeholder="نام محصول یا SKU"></label>
 <label class="ak-inline-field"><span>فیلتر</span><select name="status"><option value="all" @selected($status==='all')>همه</option><option value="low_stock" @selected($status==='low_stock')>موجودی کم</option><option value="out_of_stock" @selected($status==='out_of_stock')>ناموجود</option><option value="inactive" @selected($status==='inactive')>غیرفعال</option></select></label>
 <div class="ak-filter-actions"><button class="ak-button ak-button-dark ak-button-sm" type="submit">اعمال</button><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.inventory.index') }}">پاک‌کردن</a></div>
 </form>

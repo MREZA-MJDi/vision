@@ -91,9 +91,21 @@
             </form>
 
             <div class="store-product-detail__accordions">
-                <details open><summary>The story</summary><div>{{ $product->description ?: $product->short_description ?: 'A considered piece from the VISION selection.' }}</div></details>
+                <details open><summary>توضیحات محصول</summary><div>{{ $product->description ?: $product->short_description ?: 'A considered piece from the VISION selection.' }}</div></details>
                 <details><summary>Shipping & returns</summary><div>Shipping is calculated using the store's configured flat rate. Contact the store for return arrangements.</div></details>
-                <details><summary>Product details</summary><div>Prices and stock shown here are indicative until the order is submitted; final availability is checked server-side.</div></details>
+                <details>
+                    <summary>مشخصات محصول</summary>
+                    <div>قیمت و موجودی نهایی هنگام ثبت سفارش دوباره در سرور بررسی می‌شوند.</div>
+                    @if(is_array($product->attributes) && count($product->attributes))
+                        <dl class="store-product-attributes">
+                            @foreach($product->attributes as $attributeName => $attributeValue)
+                                @if(is_scalar($attributeValue) && trim((string) $attributeValue) !== '')
+                                    <div><dt>{{ $attributeName }}</dt><dd>{{ $attributeValue }}</dd></div>
+                                @endif
+                            @endforeach
+                        </dl>
+                    @endif
+                </details>
             </div>
             <a class="commerce-text-link" href="{{ route('products.index') }}">← Back to the edit</a>
         </div>

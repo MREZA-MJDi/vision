@@ -19,10 +19,16 @@
         return decimals ? grouped + '.' + decimals : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
-    $$('[data-money-input]').forEach((input) => {
-        input.value = formatMoneyInput(input.value);
-        input.addEventListener('focus', () => { input.value = cleanMoneyInput(input.value); });
-        input.addEventListener('blur', () => { input.value = formatMoneyInput(input.value); });
+    $('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });
+    document.addEventListener('focusin', (event) => {
+        if (event.target.matches?.('[data-money-input]')) {
+            event.target.value = cleanMoneyInput(event.target.value);
+        }
+    });
+    document.addEventListener('focusout', (event) => {
+        if (event.target.matches?.('[data-money-input]')) {
+            event.target.value = formatMoneyInput(event.target.value);
+        }
     });
     document.addEventListener('submit', (event) => {
         $$('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
@@ -375,6 +381,33 @@
         }
     });
     renumberVariants();
+
+    // Dynamic product specification rows (material, dimensions, warranty, etc.).
+    const attributeList = $('[data-attribute-list]');
+    const attributeTemplate = $('#attribute-row-template');
+    const renumberAttributes = () => {
+        const rows = $('[data-attribute-row]', attributeList || document);
+        rows.forEach((row, index) => {
+            $('[name]', row).forEach((field) => {
+                field.name = field.name.replace(/attributes\[\d+\]/, 'attributes[' + index + ']');
+            });
+        });
+    };
+    $('[data-add-attribute]')?.addEventListener('click', () => {
+        if (!attributeList || !attributeTemplate) return;
+        const index = $('[data-attribute-row]', attributeList).length;
+        if (index >= 50) { window.alert('حداکثر ۵۰ مشخصه برای هر محصول مجاز است.'); return; }
+        attributeList.insertAdjacentHTML('beforeend', attributeTemplate.innerHTML.replaceAll('__INDEX__', String(index)));
+        renumberAttributes();
+    });
+    attributeList?.addEventListener('click', (event) => {
+        const remove = event.target.closest('[data-remove-attribute]');
+        if (remove) {
+            remove.closest('[data-attribute-row]')?.remove();
+            renumberAttributes();
+        }
+    });
+    renumberAttributes();
 
     // Product gallery thumbnail switching.
     $$('[data-gallery-image]').forEach((button) => button.addEventListener('click', () => {

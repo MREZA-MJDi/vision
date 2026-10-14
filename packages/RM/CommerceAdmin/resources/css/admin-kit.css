@@ -529,3 +529,10 @@ html[dir="rtl"] .ak-team-foot{direction:rtl}html[dir="rtl"] .ak-team-foot a{marg
 .ak-crop-dialog-actions>div{display:flex;gap:8px}
 .ak-crop-dialog button:disabled{opacity:.55;cursor:wait}
 @media(max-width:600px){.ak-crop-dialog{padding:13px}.ak-crop-controls{grid-template-columns:minmax(0,1fr)}.ak-crop-dialog-actions{align-items:stretch;flex-direction:column}.ak-crop-dialog-actions>div{display:grid;grid-template-columns:1fr 1fr}.ak-crop-dialog-actions>.ak-button{width:100%}}
+
+/* Dynamic key/value product specification rows */
+.ak-spec-attribute-list{display:flex;flex-direction:column;gap:10px}
+.ak-spec-attribute-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) 34px;align-items:end;gap:10px;padding:11px;border:1px solid #e8ebf0;border-radius:8px;background:#fff}
+.ak-spec-attribute-row .ak-field{min-width:0}
+.ak-spec-attribute-row .ak-icon-button{margin-bottom:1px}
+@media(max-width:600px){.ak-spec-attribute-row{grid-template-columns:minmax(0,1fr) 34px;gap:9px}.ak-spec-attribute-row .ak-field:first-child{grid-column:1/-1}.ak-spec-attribute-row .ak-field:nth-child(2){grid-column:1}.ak-spec-attribute-row .ak-icon-button{grid-column:2;grid-row:2}}
