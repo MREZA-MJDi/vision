@@ -60,6 +60,21 @@ class Product extends Model
         );
     }
 
+    /**
+     * The preferred variant for quick-add/catalog actions. When at least one
+     * active variant is in stock, choose the first stocked option; otherwise
+     * allow the catalog to fall back to the active (sold-out) variant.
+     */
+    public function primaryAvailableVariant(): HasOne
+    {
+        return $this->hasOne(ProductVariant::class)->ofMany(
+            ['sort_order' => 'min', 'id' => 'min'],
+            fn ($query) => $query
+                ->where('is_active', true)
+                ->where('stock', '>', 0)
+        );
+    }
+
     public function reviews(): HasMany { return $this->hasMany(ProductReview::class); }
 
     public function approvedReviews(): HasMany
