@@ -145,8 +145,11 @@ class DashboardController
             ->mapWithKeys(static fn ($row) => [(int) $row->rating => (int) $row->aggregate])
             ->all();
         $reviewsCount = array_sum($reviewDistribution);
-        $weightedRating = collect($reviewDistribution)
-            ->sum(static fn ($count, $rating) => (int) $count * (int) $rating);
+        $weightedRating = 0;
+        foreach ($reviewDistribution as $rating => $count) {
+            $weightedRating += (int) $rating * (int) $count;
+        }
+
         $reviewAverage = $reviewsCount > 0
             ? round($weightedRating / $reviewsCount, 2)
             : 0.0;
