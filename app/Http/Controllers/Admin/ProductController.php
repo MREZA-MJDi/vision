@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\BulkArchiveProductsRequest;
 use App\Http\Requests\Admin\SaveProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -54,6 +55,9 @@ class ProductController
 
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
+        if (! in_array($status, ['all', 'active', 'draft', 'inactive', 'low_stock', 'sale'], true)) {
+            $status = 'all';
+        }
         $categoryId = $request->integer('category_id') ?: null;
 
         if ($search !== '') {
@@ -354,6 +358,31 @@ class ProductController
 
         return redirect()->route('commerce-admin.products.show', $product->getKey())
             ->with('status', $updating ? 'Product changes saved.' : 'Product created.');
+    }
+
+    public function bulkArchive(BulkArchiveProductsRequest $request): RedirectResponse
+    {
+        $productModel = $this->model('product', Product::class);
+        $ids = array_values(array_unique(array_map('intval', $request->validated('product_ids'))));
+
+        $archivedCount = DB::transaction(function () use ($productModel, $ids): int {
+            $products = $productModel::query()->whereKey($ids)->lockForUpdate()->get();
+
+            if ($products->count() !== count($ids)) {
+                throw ValidationException::withMessages([
+                    'product_ids' => 'یک یا چند محصول انتخاب‌شده دیگر در دسترس نیستند؛ فهرست را تازه‌سازی کنید.',
+                ]);
+            }
+
+            foreach ($products as $product) {
+                $product->delete();
+            }
+
+            return $products->count();
+        }, 3);
+
+        return redirect()->route('commerce-admin.products.index')
+            ->with('status', number_format($archivedCount) . ' محصول با موفقیت بایگانی شد.');
     }
 
     public function destroy(int $product): RedirectResponse

@@ -172,6 +172,38 @@ class CommerceAdminRenderAuditTest extends TestCase
         ])->assertSessionHasErrors(['email', 'password']);
     }
 
+    public function test_bulk_archive_archives_only_selected_products_and_keeps_order_history(): void
+    {
+        $admin = $this->makeAdmin();
+        $category = Category::query()->create([
+            'name' => 'Bulk Archive Category',
+            'slug' => 'bulk-archive-category',
+            'is_active' => true,
+        ]);
+        $selected = Product::query()->create([
+            'category_id' => $category->getKey(),
+            'name' => 'Selected for Archive',
+            'slug' => 'selected-for-archive',
+            'is_active' => true,
+        ]);
+        $untouched = Product::query()->create([
+            'category_id' => $category->getKey(),
+            'name' => 'Keep Active',
+            'slug' => 'keep-active',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.products.bulk-archive'), [
+                'product_ids' => [$selected->getKey()],
+            ])
+            ->assertRedirect(route('commerce-admin.products.index'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSoftDeleted('products', ['id' => $selected->getKey()]);
+        $this->assertDatabaseHas('products', ['id' => $untouched->getKey(), 'deleted_at' => null]);
+    }
+
     private function makeAdmin(): User
     {
         $admin = User::query()->create([

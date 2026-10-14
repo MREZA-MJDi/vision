@@ -64,9 +64,22 @@
         checkbox.addEventListener('change', apply);
         apply();
     });
+    const rowCheckboxes = $('[data-row-select]');
+    const bulkArchiveButton = $('[data-bulk-archive-button]');
+    const updateBulkArchiveButton = () => {
+        const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length;
+        if (!bulkArchiveButton) return;
+        bulkArchiveButton.disabled = selectedCount === 0;
+        bulkArchiveButton.textContent = selectedCount > 0
+            ? `بایگانی ${selectedCount} محصول انتخاب‌شده`
+            : 'بایگانی انتخاب‌شده‌ها';
+    };
+    rowCheckboxes.forEach((checkbox) => checkbox.addEventListener('change', updateBulkArchiveButton));
     $('[data-select-all]')?.addEventListener('change', (event) => {
-        $$('[data-row-select]').forEach((checkbox) => { checkbox.checked = event.target.checked; });
+        rowCheckboxes.forEach((checkbox) => { checkbox.checked = event.target.checked; });
+        updateBulkArchiveButton();
     });
+    updateBulkArchiveButton();
 
     // Destructive actions always request confirmation.
     $$('form[data-confirm]').forEach((form) => form.addEventListener('submit', (event) => {

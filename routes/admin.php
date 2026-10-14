@@ -48,6 +48,7 @@ Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::post('/products/bulk-archive', [ProductController::class, 'bulkArchive'])->name('products.bulk-archive');
         Route::get('/products/{product}', [ProductController::class, 'show'])->whereNumber('product')->name('products.show');
         Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->whereNumber('product')->name('products.edit');
         Route::put('/products/{product}', [ProductController::class, 'update'])->whereNumber('product')->name('products.update');

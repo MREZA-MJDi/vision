@@ -36,6 +36,10 @@ class OrderController
         $query = $orderModel::query()->with(['user', 'items']);
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
+        $validStatusFilters = array_merge(['all', 'pending', 'shipped', 'cancelled'], Order::STATUSES);
+        if (! in_array($status, $validStatusFilters, true)) {
+            $status = 'all';
+        }
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search): void {

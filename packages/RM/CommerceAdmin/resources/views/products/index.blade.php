@@ -35,8 +35,8 @@
         <div class="ak-panel-heading ak-panel-heading-wrap">
             <div><h2>فهرست محصولات <span class="ak-count-chip">{{ $products->total() }}</span></h2><p>محصولات کاتالوگ همراه با اطلاعات تنوع‌های فعلی</p></div>
             <div class="ak-toolbar">
-                <button class="ak-button ak-button-light ak-button-sm" type="button" data-toggle-filters>⚙ Filters <span class="ak-filter-active">{{ $status !== 'all' || $categoryId || $search !== '' ? '•' : '' }}</span></button>
-                <button class="ak-button ak-button-light ak-button-sm" type="button" data-columns-toggle>☷ Columns</button>
+                <button class="ak-button ak-button-light ak-button-sm" type="button" data-toggle-filters>⚙ فیلترها <span class="ak-filter-active">{{ $status !== 'all' || $categoryId || $search !== '' ? '•' : '' }}</span></button>
+                <button class="ak-button ak-button-light ak-button-sm" type="button" data-columns-toggle>☷ ستون‌ها</button>
                 <a class="ak-button ak-button-primary ak-button-sm" href="{{ route('commerce-admin.products.create') }}">＋ افزودن محصول</a>
             </div>
         </div>
@@ -58,8 +58,12 @@
         @if($products->isEmpty())
             <div class="ak-empty-state"><span>▦</span><strong>محصولی با این فیلترها پیدا نشد</strong><p>فیلترها را تغییر دهید یا محصولی به کاتالوگ اضافه کنید. هیچ محصول نمایشی به‌صورت خودکار اضافه نمی‌شود.</p><a class="ak-button ak-button-primary ak-button-sm" href="{{ route('commerce-admin.products.create') }}">افزودن محصول</a></div>
         @else
+            <form id="bulkArchiveForm" method="POST" action="{{ route('commerce-admin.products.bulk-archive') }}" data-confirm="محصولات انتخاب‌شده بایگانی شوند؟ سوابق سفارش‌ها حفظ می‌شود.">
+                @csrf
+                <button class="ak-button ak-button-light ak-button-sm" type="submit" data-bulk-archive-button disabled>بایگانی انتخاب‌شده‌ها</button>
+            </form>
             <div class="ak-table-scroll"><table class="ak-table ak-products-table">
-                <thead><tr><th><input type="checkbox" data-select-all aria-label="Select all visible products"></th><th>Product</th><th data-column="category">دسته‌بندی</th><th data-column="price">قیمت</th><th data-column="stock">موجودی</th><th data-column="rating">امتیاز</th><th data-column="status">وضعیت</th><th></th></tr></thead>
+                <thead><tr><th><input type="checkbox" data-select-all aria-label="انتخاب همهٔ محصولات این صفحه"></th><th>محصول</th><th data-column="category">دسته‌بندی</th><th data-column="price">قیمت</th><th data-column="stock">موجودی</th><th data-column="rating">امتیاز</th><th data-column="status">وضعیت</th><th></th></tr></thead>
                 <tbody>
                 @foreach($products as $item)
                     @php
@@ -70,9 +74,9 @@
                         $onSale = $item->variants->contains(fn($row) => $row->sale_price !== null && $row->sale_price < $row->price);
                     @endphp
                     <tr>
-                        <td><input type="checkbox" aria-label="Select {{ $item->name }}" data-row-select></td>
+                        <td><input type="checkbox" form="bulkArchiveForm" name="product_ids[]" value="{{ $item->getKey() }}" aria-label="انتخاب {{ $item->name }}" data-row-select></td>
                         <td><div class="ak-product-cell">@if($asset?->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $item->name }}">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<div><a class="ak-table-primary" href="{{ route('commerce-admin.products.show', $item->getKey()) }}">{{ $item->name }}</a><small>SKU {{ $variant?->sku ?: '—' }}</small></div></div></td>
-                        <td data-column="category">{{ $item->category?->name ?: 'Uncategorized' }}</td>
+                        <td data-column="category">{{ $item->category?->name ?: 'بدون دسته‌بندی' }}</td>
                         
                         <td data-column="price"><div class="ak-price-cell"><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)($variant?->sale_price ?? $variant?->price ?? 0), 2) }}</strong>@if($onSale)<small class="ak-old-price">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)($variant?->price ?? 0), 2) }}</small>@endif</div></td>
                         <td data-column="stock"><span class="ak-stock-indicator {{ $stock <= 0 ? 'is-out' : ($isLow ? 'is-low' : 'is-ok') }}"><i></i>{{ number_format($stock) }}</span></td>
