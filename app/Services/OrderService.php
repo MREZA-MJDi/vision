@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\ProductVariant;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 final class OrderService
@@ -76,7 +77,7 @@ final class OrderService
             );
 
             if (! $wasCancelledLike && $willBeCancelledLike) {
-                $this->restoreInventory($order);
+                $this->restoreInventory($order, $newStatus === 'returned' ? 'return' : 'adjustment');
             }
 
             if ($wasCancelledLike && ! $willBeCancelledLike) {
@@ -118,7 +119,7 @@ final class OrderService
         }, 3);
     }
 
-    private function restoreInventory(Order $order): void
+    private function restoreInventory(Order $order, string $movementType): void
     {
         $order->load('items');
 
@@ -127,9 +128,11 @@ final class OrderService
                 continue;
             }
 
-            $variant = ProductVariant::query()
-                ->lockForUpdate()
-                ->find($item->product_variant_id);
+            $variantQuery = ProductVariant::query()->lockForUpdate();
+            if (in_array(SoftDeletes::class, class_uses_recursive(ProductVariant::class), true)) {
+                $variantQuery->withTrashed();
+            }
+            $variant = $variantQuery->find($item->product_variant_id);
 
             if (! $variant) {
                 continue;
@@ -139,12 +142,14 @@ final class OrderService
             $variant->refresh();
 
             $variant->inventoryMovements()->create([
-                'type' => 'return',
+                'type' => $movementType,
                 'quantity' => (int) $item->quantity,
                 'stock_after' => $variant->stock,
                 'reference_type' => Order::class,
                 'reference_id' => $order->id,
-                'note' => "بازگشت موجودی سفارش {$order->order_number}",
+                'note' => $movementType === 'return'
+                    ? "بازگشت موجودی سفارش {$order->order_number}"
+                    : "بازگشت موجودی پس از لغو سفارش {$order->order_number}",
                 'created_by' => auth()->id(),
             ]);
         }
