@@ -1,7 +1,7 @@
 @extends('layouts.store')
 
 @section('title', $product->meta_title ?: $product->name . ' — VISION')
-@section('description', \\App\\Support\\SeoDefaults::description($product->name, $product->meta_description, [$product->short_description, $product->description]))
+@section('description', \App\Support\SeoDefaults::description($product->name, $product->meta_description, [$product->short_description, $product->description]))
 
 @section('canonical', route('products.show', ['product' => $product->slug]))
 

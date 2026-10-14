@@ -39,7 +39,7 @@
                 </section>
 
                 <section class="ak-panel ak-form-panel">
-                    <div class="ak-panel-heading"><div><h2>تنوع‌ها و موجودی</h2><p>هر تنوع شناسه SKU، بارکد، قیمت و موجودی مستقل دارد.</p></div><button class="ak-button ak-button-light ak-button-sm" type="button" data-add-variant>＋ افزودن تنوع</button></div>
+                    <div class="ak-panel-heading"><div><h2>تنوع‌ها و موجودی</h2><p>هر تنوع کد SKU، قیمت و موجودی مستقل دارد.</p></div><button class="ak-button ak-button-light ak-button-sm" type="button" data-add-variant>＋ افزودن تنوع</button></div>
                     <div class="ak-variant-list" data-variant-list>
                         @php $formVariants = old('variants', $variants); @endphp
                         @foreach($formVariants as $index => $variant)

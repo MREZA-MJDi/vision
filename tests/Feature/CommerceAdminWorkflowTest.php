@@ -23,7 +23,8 @@ class CommerceAdminWorkflowTest extends TestCase
         $this->get('/admin')
             ->assertRedirect(route('commerce-admin.login'));
 
-        $this->get('/admin/login')->assertOk();
+        $this->get('/admin/login')->assertRedirect(route('login'));
+        $this->get(route('login'))->assertOk();
     }
 
     public function test_non_admin_customers_cannot_open_the_admin_panel(): void
