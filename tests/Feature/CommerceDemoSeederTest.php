@@ -77,6 +77,54 @@ class CommerceDemoSeederTest extends TestCase
         $this->assertDatabaseCount('inventory_movements', 5);
     }
 
+    public function test_reseeding_preserves_admin_edits_and_does_not_rewrite_inventory_history(): void
+    {
+        config([
+            'commerce-admin.bootstrap_admin.email' => null,
+            'commerce-admin.bootstrap_admin.password' => null,
+        ]);
+
+        $this->seed(CommerceDemoSeeder::class);
+
+        $product = Product::query()->where('slug', 'demo-essential-cotton-tee')->firstOrFail();
+        $variant = ProductVariant::query()->where('sku', 'VISION-DEMO-TEE-BLACK')->firstOrFail();
+        $movement = \App\Models\InventoryMovement::query()
+            ->where('product_variant_id', $variant->getKey())
+            ->where('note', 'Initial stock set by CommerceDemoSeeder.')
+            ->firstOrFail();
+
+        $product->update(['name' => 'Edited from Admin']);
+        $variant->update(['price' => 1777000, 'stock' => 2]);
+
+        $this->seed(CommerceDemoSeeder::class);
+
+        $this->assertSame('Edited from Admin', $product->fresh()->name);
+        $this->assertSame(1777000.0, (float) $variant->fresh()->price);
+        $this->assertSame(2, (int) $variant->fresh()->stock);
+        $this->assertSame(15, (int) $movement->fresh()->quantity);
+        $this->assertSame(15, (int) $movement->fresh()->stock_after);
+        $this->assertDatabaseCount('inventory_movements', 5);
+    }
+
+    public function test_reseeding_does_not_restore_a_demo_product_archived_in_admin(): void
+    {
+        config([
+            'commerce-admin.bootstrap_admin.email' => null,
+            'commerce-admin.bootstrap_admin.password' => null,
+        ]);
+
+        $this->seed(CommerceDemoSeeder::class);
+        $product = Product::query()->where('slug', 'demo-essential-cotton-tee')->firstOrFail();
+        $productId = $product->getKey();
+        $product->delete();
+
+        $this->seed(CommerceDemoSeeder::class);
+
+        $this->assertSoftDeleted('products', ['id' => $productId]);
+        $this->assertSame(1, Product::query()->count());
+        $this->assertDatabaseCount('products', 2);
+    }
+
     public function test_normal_database_seeder_does_not_add_demo_catalog_records(): void
     {
         config([
