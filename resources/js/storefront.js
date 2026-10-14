@@ -409,15 +409,86 @@
         const colorButtons = Array.from(root.querySelectorAll('[data-variant-color-pick]'));
         const quantityInput = root.querySelector('[data-variant-quantity]');
         const addButton = root.querySelector('[data-product-add]');
+        const previewDialog = root.querySelector('[data-variant-preview-modal]');
+        const previewOpenButton = root.querySelector('[data-variant-preview-open]');
+        const previewCloseButtons = Array.from(root.querySelectorAll('[data-variant-preview-close]'));
+        const previewImage = root.querySelector('[data-variant-preview-image]');
+        const previewPlaceholder = root.querySelector('[data-variant-preview-placeholder]');
+        const previewChoice = root.querySelector('[data-variant-preview-choice]');
+        const previewPrice = root.querySelector('[data-variant-preview-price]');
+        const previewStock = root.querySelector('[data-variant-preview-stock]');
         const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
         const currency = root.dataset.currencySymbol || 'تومان';
         const formatVariantMoney = (value) => Number(value || 0).toLocaleString('en-US', {
             maximumFractionDigits: 0
         }) + ' ' + currency;
 
+        const updateVariantPreview = (option) => {
+            if (!previewDialog) return;
+
+            const imageUrl = option?.dataset.image || '';
+            const productName = select.closest('.store-product-detail__info')?.querySelector('h1')?.textContent?.trim() || 'تصویر محصول';
+            const variantLabel = [option?.dataset.size, option?.dataset.color].filter((value) => String(value || '').trim() !== '').join(' / ') || 'معمولی';
+            const price = Number(option?.dataset.price || 0);
+            const originalPrice = Number(option?.dataset.originalPrice || 0);
+            const stock = Math.max(0, Number(option?.dataset.stock) || 0);
+
+            if (previewImage) {
+                previewImage.alt = [productName, option?.dataset.color, option?.dataset.size].filter(Boolean).join(' ');
+                previewImage.dataset.requestedImage = imageUrl;
+                previewImage.onerror = () => {
+                    if (previewImage.dataset.requestedImage !== imageUrl) return;
+                    previewImage.hidden = true;
+                    if (previewPlaceholder) {
+                        previewPlaceholder.hidden = false;
+                        const message = previewPlaceholder.querySelector('strong');
+                        if (message) message.textContent = 'تصویر این وریانت بارگذاری نشد.';
+                    }
+                };
+                previewImage.onload = () => {
+                    if (previewImage.dataset.requestedImage !== imageUrl) return;
+                    previewImage.hidden = false;
+                    if (previewPlaceholder) previewPlaceholder.hidden = true;
+                };
+
+                if (imageUrl) {
+                    previewImage.src = imageUrl;
+                    previewImage.hidden = false;
+                    if (previewPlaceholder) previewPlaceholder.hidden = true;
+                } else {
+                    previewImage.removeAttribute('src');
+                    previewImage.hidden = true;
+                    if (previewPlaceholder) {
+                        previewPlaceholder.hidden = false;
+                        const message = previewPlaceholder.querySelector('strong');
+                        if (message) message.textContent = 'برای این وریانت تصویری ثبت نشده است.';
+                    }
+                }
+            }
+
+            if (previewChoice) previewChoice.textContent = variantLabel;
+            if (previewPrice) {
+                previewPrice.replaceChildren();
+                if (option?.dataset.sale === '1' && Number.isFinite(originalPrice)) {
+                    const original = document.createElement('del');
+                    original.textContent = formatVariantMoney(originalPrice);
+                    previewPrice.append(original);
+                }
+                const current = document.createElement('strong');
+                current.textContent = formatVariantMoney(price);
+                previewPrice.append(current);
+            }
+            if (previewStock) {
+                previewStock.textContent = stock > 0
+                    ? stock.toLocaleString('fa-IR') + ' عدد موجود'
+                    : 'فعلاً موجود نیست';
+            }
+        };
+
         const refreshVariant = () => {
             const option = select.selectedOptions?.[0];
             if (!option) {
+                updateVariantPreview(null);
                 if (addButton) addButton.disabled = true;
                 if (stockDisplay) stockDisplay.textContent = 'فعلاً موجود نیست';
                 if (mainImage) {
@@ -497,7 +568,28 @@
                 }
             }
             if (addButton) addButton.disabled = stock < 1;
+            updateVariantPreview(option);
         };
+
+        previewOpenButton?.addEventListener('click', () => {
+            updateVariantPreview(select.selectedOptions?.[0] || null);
+            if (previewDialog && typeof previewDialog.showModal === 'function') {
+                previewDialog.showModal();
+                previewCloseButtons[0]?.focus({ preventScroll: true });
+            }
+        });
+
+        previewCloseButtons.forEach((button) => button.addEventListener('click', () => {
+            if (previewDialog?.open) previewDialog.close();
+        }));
+
+        previewDialog?.addEventListener('click', (event) => {
+            if (event.target === previewDialog) previewDialog.close();
+        });
+
+        previewDialog?.addEventListener('close', () => {
+            previewOpenButton?.focus({ preventScroll: true });
+        });
 
         colorButtons.forEach((button) => button.addEventListener('click', () => {
             const requestedColor = normalizeColor(button.dataset.variantColorPick);
