@@ -22,7 +22,7 @@
         <div>
             <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.orders.index') }}">سفارش‌ها</a> <span>/</span> جزئیات سفارش</div>
             <h1>سفارش #{{ $model->order_number }}</h1>
-            <p>تاریخ ثبت @jalali($model->placed_at ?: $model->created_at, 'j F Y · H:i')</p>
+            <p>تاریخ ثبت @commerceDate($model->placed_at ?: $model->created_at, 'j F Y · H:i')</p>
         </div>
         <div class="ak-heading-actions">
             <a class="ak-button ak-button-light" href="{{ route('commerce-admin.orders.index') }}">← همهٔ سفارش‌ها</a>
@@ -79,8 +79,8 @@
                                     </td>
                                     <td><span class="ak-mono">{{ $item->sku ?: '—' }}</span><small class="ak-table-subtext">{{ $item->variant_name ?: 'تنوع پیش‌فرض' }}</small></td>
                                     <td>{{ number_format((int) $item->quantity) }}</td>
-                                    <td>@money($item->unit_price)</td>
-                                    <td><strong>@money($item->line_total)</strong></td>
+                                    <td>@commerceMoney($item->unit_price)</td>
+                                    <td><strong>@commerceMoney($item->line_total)</strong></td>
                                 </tr>
                             @endforeach
                             </tbody>
@@ -98,11 +98,11 @@
                     </div>
                 @else
                     <div class="ak-delivery-steps">
-                        <div class="ak-delivery-step is-complete"><span>✓</span><div><strong>ثبت سفارش</strong><small>@jalali($model->placed_at ?: $model->created_at, 'j F Y · H:i')</small></div></div>
+                        <div class="ak-delivery-step is-complete"><span>✓</span><div><strong>ثبت سفارش</strong><small>@commerceDate($model->placed_at ?: $model->created_at, 'j F Y · H:i')</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 1 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>@if($model->shipped_at)@jalali($model->shipped_at, 'j F Y · H:i')@else هنوز ارسال نشده @endif</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>@if($model->shipped_at)@commerceDate($model->shipped_at, 'j F Y · H:i')@else هنوز ارسال نشده @endif</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 2 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>@if($model->delivered_at)@jalali($model->delivered_at, 'j F Y · H:i')@else در انتظار تحویل @endif</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>@if($model->delivered_at)@commerceDate($model->delivered_at, 'j F Y · H:i')@else در انتظار تحویل @endif</small></div></div>
                     </div>
                     <form method="POST" action="{{ route('commerce-admin.orders.status', $model->getKey()) }}" class="ak-inline-status-form">
                         @csrf @method('PATCH')
@@ -124,18 +124,18 @@
             <section class="ak-panel ak-aside-panel">
                 <div class="ak-panel-heading"><div><h2>خلاصهٔ سفارش</h2><p>مبالغ ذخیره‌شده در رکورد سفارش.</p></div></div>
                 <div class="ak-summary-lines">
-                    <div><span>جمع جزء</span><strong>@money($model->subtotal)</strong></div>
-                    <div><span>تخفیف</span><strong class="{{ (float) $model->discount > 0 ? 'ak-negative-value' : '' }}">−@money($model->discount)</strong></div>
-                    <div><span>هزینهٔ ارسال</span><strong>@money($model->shipping_cost)</strong></div>
-                    <div><span>مالیات</span><strong>@money($model->tax)</strong></div>
-                    <div class="ak-summary-total"><span>مبلغ کل</span><strong>@money($model->total)</strong></div>
+                    <div><span>جمع جزء</span><strong>@commerceMoney($model->subtotal)</strong></div>
+                    <div><span>تخفیف</span><strong class="{{ (float) $model->discount > 0 ? 'ak-negative-value' : '' }}">−@commerceMoney($model->discount)</strong></div>
+                    <div><span>هزینهٔ ارسال</span><strong>@commerceMoney($model->shipping_cost)</strong></div>
+                    <div><span>مالیات</span><strong>@commerceMoney($model->tax)</strong></div>
+                    <div class="ak-summary-total"><span>مبلغ کل</span><strong>@commerceMoney($model->total)</strong></div>
                 </div>
                 <div class="ak-payment-detail">
                     <span class="ak-payment-icon" aria-hidden="true">▤</span>
                     <div><strong>روش پرداخت</strong><small>{{ str($model->payment_method ?: 'ثبت نشده')->headline() }}</small></div>
                     <span class="ak-status-pill status-{{ str($model->payment_status)->slug() }}">{{ config('commerce-admin.status_labels.' . $model->payment_status, config('commerce-admin.status_labels.' . $model->payment_status, str($model->payment_status)->headline())) }}</span>
                 </div>
-                @if($model->paid_at)<p class="ak-help-note">تاریخ پرداخت @jalali($model->paid_at, 'j F Y H:i')</p>@endif
+                @if($model->paid_at)<p class="ak-help-note">تاریخ پرداخت @commerceDate($model->paid_at, 'j F Y H:i')</p>@endif
                 <form method="POST" action="{{ route('commerce-admin.orders.payment', $model->getKey()) }}" class="ak-payment-form">
                     @csrf @method('PATCH')
                     <label class="ak-field">
@@ -153,7 +153,7 @@
                     <div class="ak-detail-list">
                         <span>سوابق پرداخت<strong>{{ $model->payments->count() }}</strong></span>
                         @foreach($model->payments as $payment)
-                            <span>{{ str($payment->gateway)->headline() }} · {{ str($payment->status)->headline() }}<strong>@money($payment->amount)</strong></span>
+                            <span>{{ str($payment->gateway)->headline() }} · {{ str($payment->status)->headline() }}<strong>@commerceMoney($payment->amount)</strong></span>
                         @endforeach
                     </div>
                 @endif
@@ -163,7 +163,7 @@
                 <div class="ak-panel-heading"><div><h2>اطلاعات تکمیلی سفارش</h2></div></div>
                 <div class="ak-detail-list">
                     <span>سفارش ID<strong>#{{ $model->getKey() }}</strong></span>
-                    <span>ثبت شده<strong>@jalali($model->placed_at ?: $model->created_at, 'j F Y')</strong></span>
+                    <span>ثبت شده<strong>@commerceDate($model->placed_at ?: $model->created_at, 'j F Y')</strong></span>
                     <span>به‌روزرسانی<strong>{{ $model->updated_at?->locale('fa')->diffForHumans() ?: '—' }}</strong></span>
                     <span>کد رهگیری<strong>{{ $model->tracking_code ?: 'تخصیص داده نشده' }}</strong></span>
                 </div>
