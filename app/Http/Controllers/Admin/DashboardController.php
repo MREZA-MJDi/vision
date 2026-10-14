@@ -27,13 +27,25 @@ class DashboardController
         $userModel = $this->model('user', User::class);
         $adminFlag = (string) config('commerce-admin.admin_flag_column', 'is_admin');
 
-        $orders = $orderModel::query();
-        $revenue = (clone $orders)->where('payment_status', 'paid')
-            ->whereNotIn('status', ['cancelled', 'returned'])
-            ->sum('total');
+        // Fetch revenue and order KPIs in one scan instead of three independent aggregates.
+        // The conditional sums are portable across the supported SQL database drivers.
+        $orderMetrics = $orderModel::query()
+            ->selectRaw("
+                COUNT(*) as order_count,
+                COALESCE(SUM(CASE
+                    WHEN payment_status = 'paid' AND status NOT IN ('cancelled', 'returned')
+                    THEN total ELSE 0
+                END), 0) as paid_revenue,
+                COALESCE(SUM(CASE
+                    WHEN status IN ('pending', 'confirmed', 'preparing')
+                    THEN 1 ELSE 0
+                END), 0) as pending_orders
+            ")
+            ->first();
 
-        $orderCount = (clone $orders)->count();
-        $pendingOrders = (clone $orders)->whereIn('status', ['pending', 'confirmed', 'preparing'])->count();
+        $revenue = (float) ($orderMetrics?->paid_revenue ?? 0);
+        $orderCount = (int) ($orderMetrics?->order_count ?? 0);
+        $pendingOrders = (int) ($orderMetrics?->pending_orders ?? 0);
         $lowStockCount = $variantModel::query()->where('is_active', true)
             ->whereColumn('stock', '<=', 'low_stock_threshold')->count();
         $customersCount = $userModel::query()->where($adminFlag, false)->count();
