@@ -10,8 +10,10 @@ class BrandDemoSeeder extends Seeder
     public function run(): void
     {
         $brand = Brand::withTrashed()->firstOrNew(['slug' => 'vision-demo']);
-        if ($brand->exists && $brand->trashed()) {
-            $brand->restore();
+        if ($brand->exists) {
+            $this->command?->info('Demo brand already exists; preserving its current state and edits.');
+
+            return;
         }
 
         $brand->fill([
