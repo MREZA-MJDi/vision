@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $formatPrice = static fn ($amount) => '$' . number_format((float) $amount, 2);
+    $formatPrice = static fn ($amount) => \\App\\Support\\Money::format($amount);
 @endphp
 
 <main class="store-main">
