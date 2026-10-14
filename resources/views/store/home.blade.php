@@ -3,6 +3,7 @@
 @section('title', 'VISION — فروشگاه پوشاک')
 @section('meta-description', 'مجموعه‌ای منتخب از پوشاک و اکسسوری‌های VISION؛ محصولات واقعی، قیمت‌های به‌روز و خرید امن.')
 @section('canonical', route('storefront.index'))
+@section('og-image', $heroProduct?->primaryAvailableVariant?->primaryGalleryMedia?->url ?: $heroProduct?->primaryGalleryMedia?->url)
 
 @section('content')
 @php
