@@ -50,7 +50,17 @@ class ProductController
         $userModel = $this->model('user', User::class);
 
         $query = $productModel::query()
-            ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->with(['category', 'brand', 'primaryGalleryMedia', 'primaryActiveVariant.primaryGalleryMedia'])
+            ->withSum(['variants as active_stock_sum' => fn ($variants) => $variants->where('is_active', true)], 'stock')
+            ->withExists([
+                'variants as has_low_stock_variant' => fn ($variants) => $variants
+                    ->where('is_active', true)
+                    ->whereColumn('stock', '<=', 'low_stock_threshold'),
+                'variants as has_sale_variant' => fn ($variants) => $variants
+                    ->whereNotNull('sale_price')
+                    ->where('sale_price', '>=', 0)
+                    ->whereColumn('sale_price', '<', 'price'),
+            ])
             ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
             ->withCount('approvedReviews');
 
@@ -135,7 +145,7 @@ class ProductController
         $productModel = $this->model('product', Product::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
         $model = $productModel::query()
-            ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->with(['category', 'brand', 'variants.galleryMedia', 'galleryMedia'])
             ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
             ->withCount('approvedReviews')
             ->findOrFail($product);
@@ -159,7 +169,7 @@ class ProductController
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()
-            ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->with(['category', 'brand', 'variants.galleryMedia', 'galleryMedia'])
             ->findOrFail($product);
 
         $variants = $model->variants->values();
@@ -228,6 +238,12 @@ class ProductController
                 'brand_id' => $validated['brand_id'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'attributes' => collect($validated['attributes'] ?? [])
+                    ->filter(fn ($attribute) => is_array($attribute)
+                        && trim((string) ($attribute['key'] ?? '')) !== ''
+                        && trim((string) ($attribute['value'] ?? '')) !== '')
+                    ->mapWithKeys(fn ($attribute) => [trim((string) $attribute['key']) => trim((string) $attribute['value'])])
+                    ->all() ?: null,
                 'meta_title' => SeoDefaults::title((string) $validated['name'], $validated['meta_title'] ?? null),
                 'meta_description' => SeoDefaults::description((string) $validated['name'], $validated['meta_description'] ?? null, [
                     $validated['short_description'] ?? null,
@@ -304,6 +320,41 @@ class ProductController
                 ]);
                 $variant->save();
                 $keepIds[] = $variant->getKey();
+
+                // Every color/size option owns a gallery so the storefront can
+                // swap to the selected variant's photo instead of the product default.
+                $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
+                $variantImages = $request->file('variants.' . $index . '.images', []);
+                foreach (is_array($variantImages) ? $variantImages : [] as $imageOffset => $image) {
+                    if (! $image || ! $image->isValid()) {
+                        continue;
+                    }
+
+                    $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
+                        . '/' . $product->getKey() . '/variants/' . $variant->getKey();
+                    $path = $image->store($directory, $mediaDisk);
+                    if (! is_string($path) || $path === '') {
+                        throw ValidationException::withMessages([
+                            "variants.$index.images" => 'ذخیره تصویر این تنوع انجام نشد؛ هیچ تغییری ثبت نشد.',
+                        ]);
+                    }
+
+                    $storedFiles[] = [$mediaDisk, $path];
+                    $dimensions = @getimagesize($image->getRealPath()) ?: [];
+                    $variant->media()->create([
+                        'collection' => 'gallery',
+                        'disk' => $mediaDisk,
+                        'path' => $path,
+                        'original_name' => $image->getClientOriginalName(),
+                        'mime_type' => $image->getMimeType(),
+                        'size' => $image->getSize(),
+                        'width' => $dimensions[0] ?? null,
+                        'height' => $dimensions[1] ?? null,
+                        'alt_text' => trim(implode(' ', array_filter([$product->name, $variant->color, $variant->size]))),
+                        'sort_order' => (int) $variant->galleryMedia()->count() + (int) $imageOffset,
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+                }
 
                 $stockDelta = (int) $variant->stock - $previousStock;
                 if ($stockDelta !== 0) {
@@ -413,7 +464,13 @@ class ProductController
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()->findOrFail($product);
-        $asset = $model->media()->whereKey($media)->firstOrFail();
+        $asset = $model->media()->whereKey($media)->first();
+        if (! $asset) {
+            $variant = $model->variants()->withTrashed()
+                ->whereHas('media', fn ($query) => $query->whereKey($media))
+                ->firstOrFail();
+            $asset = $variant->media()->whereKey($media)->firstOrFail();
+        }
 
         if ($asset->path && ! preg_match('/^https?:\/\//i', $asset->path)) {
             Storage::disk($asset->disk ?: config('commerce-admin.media_disk', 'public'))->delete($asset->path);
