@@ -20,6 +20,24 @@ class StorefrontController extends Controller
                     ->where('is_active', true)
                     ->whereHas('activeVariants'),
             ])
+            ->with([
+                'coverMedia',
+                // Load at most one active, photo-ready product per category.
+                // The bounded eager load provides a useful fallback when a category
+                // has no dedicated cover image, without introducing an N+1 query.
+                'products' => fn ($query) => $query
+                    ->active()
+                    ->whereHas('activeVariants')
+                    ->with([
+                        'primaryGalleryMedia',
+                        'primaryAvailableVariant.primaryGalleryMedia',
+                        'primaryActiveVariant.primaryGalleryMedia',
+                    ])
+                    ->orderByDesc('is_featured')
+                    ->orderBy('sort_order')
+                    ->orderByDesc('id')
+                    ->limit(1),
+            ])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->limit(8)
@@ -48,7 +66,34 @@ class StorefrontController extends Controller
             ->limit(8)
             ->get();
 
-        return view('store.home', compact('categories', 'heroProduct', 'featuredProducts'));
+        $excludedStoryProductIds = $featuredProducts->modelKeys();
+        $brandStoryQuery = $this->catalogProducts();
+
+        if ($heroProduct) {
+            $brandStoryQuery->where('id', '!=', $heroProduct->getKey());
+        }
+
+        if ($excludedStoryProductIds !== []) {
+            $brandStoryQuery->whereNotIn('id', $excludedStoryProductIds);
+        }
+
+        $brandStoryProduct = $brandStoryQuery
+            ->orderByDesc('is_featured')
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        // Small catalogs may not have a separate campaign product. Reuse a real
+        // catalog record rather than inserting a fake image or hard-coded SKU.
+        $brandStoryProduct ??= $featuredProducts->last() ?? $heroProduct;
+
+        return view('store.home', compact(
+            'categories',
+            'heroProduct',
+            'featuredProducts',
+            'brandStoryProduct',
+        ));
     }
 
     public function index(Request $request): View

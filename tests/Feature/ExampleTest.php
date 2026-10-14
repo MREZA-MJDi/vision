@@ -17,7 +17,8 @@ class ExampleTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
-            ->assertSee('استایل خودت را')
+            ->assertSee('home-hero__frame', false)
+            ->assertSee('انتخاب دقیق‌تر. شلوغی کمتر.')
             ->assertDontSee('data-fitting-room', false);
     }
 
