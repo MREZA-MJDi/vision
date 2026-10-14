@@ -112,7 +112,7 @@
 
             <section class="ak-panel ak-product-variants-panel">
                 <div class="ak-panel-heading">
-                    <div><h2>تنوع‌ها و موجودی</h2><p>قیمتs, شناسه شناسه SKUs and stock levels from the product record.</p></div>
+                    <div><h2>تنوع‌ها و موجودی</h2><p>قیمت‌ها، کدهای SKU و موجودی هر تنوع محصول.</p></div>
                     <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.products.edit', $model->getKey()) }}">مدیریت تنوع‌ها ↗</a>
                 </div>
                 @if($model->variants->isEmpty())
@@ -120,7 +120,7 @@
                 @else
                     <div class="ak-table-scroll">
                         <table class="ak-table">
-                            <thead><tr><th>تنوع</th><th>شناسه شناسه شناسه SKU / بارکد</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
+                            <thead><tr><th>تنوع</th><th>شناسهٔ SKU</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
                             <tbody>
                             @foreach($model->variants as $variant)
                                 <tr>

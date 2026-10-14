@@ -7,15 +7,16 @@
     const cleanMoneyInput = (value) => String(value ?? '')
         .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
         .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
-        .replace(/[٬،,\\s]/g, '')
+        .replace(/[٬،,\s]/g, '')
         .replace(/٫/g, '.')
         .replace(/[^0-9.]/g, '');
     const formatMoneyInput = (value) => {
         const clean = cleanMoneyInput(value);
-        if (!clean || !/^\\d*\\.?\\d*$/.test(clean)) return clean;
+        if (!clean || !/^\d*\.?\d*$/.test(clean)) return clean;
         const [whole, ...fraction] = clean.split('.');
-        const grouped = whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
-        return fraction.length ? grouped + '.' + fraction.join('') : grouped;
+        const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        const decimals = fraction.join('').replace(/0+$/, '');
+        return decimals ? grouped + '.' + decimals : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
     $('[data-money-input]').forEach((input) => {
@@ -273,11 +274,15 @@
         (async () => {
             let type = 'image/webp';
             let blob = await makeBlob(type, 0.88);
-            if (!blob) {
+            if (!blob || (blob.type && blob.type !== type)) {
                 type = 'image/jpeg';
                 blob = await makeBlob(type, 0.86);
             }
-            if (blob && blob.size > 4 * 1024 * 1024) blob = await makeBlob(type, 0.65);
+            if (blob && blob.type) type = blob.type;
+            if (blob && blob.size > 4 * 1024 * 1024) {
+                blob = await makeBlob(type, 0.65);
+                if (blob && blob.type) type = blob.type;
+            }
             if (!blob || blob.size > 4 * 1024 * 1024) throw new Error('حجم تصویر برش‌خورده هنوز بیشتر از ۴ مگابایت است.');
             const extension = type === 'image/webp' ? '.webp' : '.jpg';
             const name = cropQueue[cropIndex].name.replace(/\.[^.]+$/, '') + extension;

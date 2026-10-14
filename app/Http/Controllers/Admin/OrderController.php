@@ -101,6 +101,7 @@ class OrderController
         $baseQuery = fn () => $variantModel::query()
             ->with('product')
             ->where('is_active', true)
+            ->where('stock', '>', 0)
             ->whereHas('product', fn ($productQuery) => $productQuery->where('is_active', true));
 
         $selectedVariants = $selectedIds->isEmpty()

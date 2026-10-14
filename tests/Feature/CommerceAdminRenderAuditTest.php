@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Media;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -111,6 +112,46 @@ class CommerceAdminRenderAuditTest extends TestCase
         foreach ($paths as $path) {
             $this->get($path)->assertOk();
         }
+    }
+
+    public function test_product_editor_uses_crop_preview_grouped_prices_and_valid_form_structure(): void
+    {
+        $admin = $this->makeAdmin();
+        $product = Product::query()->create([
+            'name' => 'Crop Preview Product',
+            'slug' => 'crop-preview-product',
+            'is_active' => true,
+        ]);
+        $product->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => 'products/crop-preview-product.webp',
+            'original_name' => 'product.webp',
+            'mime_type' => 'image/webp',
+            'size' => 100,
+            'alt_text' => $product->name,
+            'sort_order' => 0,
+        ]);
+
+        $html = $this->actingAs($admin)
+            ->get(route('commerce-admin.products.edit', $product->getKey()))
+            ->assertOk()
+            ->assertSee('data-crop-modal', false)
+            ->assertSee('data-money-input', false)
+            ->assertSee('form="delete-product-media-', false)
+            ->assertDontSee('بارکد')
+            ->getContent();
+
+        $formStart = strpos($html, '<form id="productForm"');
+        $this->assertNotFalse($formStart);
+        $formOpenLength = strlen('<form id="productForm"');
+        $formEnd = strpos($html, '</form>', $formStart + $formOpenLength);
+        $this->assertNotFalse($formEnd);
+        $this->assertStringNotContainsString('<form', substr(
+            $html,
+            $formStart + $formOpenLength,
+            $formEnd - ($formStart + $formOpenLength)
+        ));
     }
 
     public function test_form_requests_reject_invalid_product_order_inventory_and_login_input(): void

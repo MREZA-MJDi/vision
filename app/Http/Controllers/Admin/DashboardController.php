@@ -114,8 +114,8 @@ class DashboardController
             ->whereHas('order', fn ($query) => $query
                 ->where('payment_status', 'paid')
                 ->whereNotIn('status', ['cancelled', 'returned']))
-            ->select('product_name', DB::raw('SUM(quantity) as units_sold'), DB::raw('SUM(line_total) as gross_sales'))
-            ->groupBy('product_name')->orderByDesc('units_sold')->limit(5)->get();
+            ->select('product_id', 'product_name', DB::raw('SUM(quantity) as units_sold'), DB::raw('SUM(line_total) as gross_sales'))
+            ->groupBy('product_id', 'product_name')->orderByDesc('units_sold')->limit(5)->get();
 
         $lowStock = $variantModel::query()->with('product')
             ->where('is_active', true)->whereColumn('stock', '<=', 'low_stock_threshold')
@@ -209,7 +209,7 @@ class DashboardController
                                 ->whereBetween('created_at', [$anchor, $end]);
                         });
                 })
-                ->groupBy('month_bucket')
+                ->groupByRaw($monthExpression)
                 ->get()
                 ->keyBy('month_bucket');
         }

@@ -96,7 +96,8 @@ class ProductController
             'sales' => $orderItemModel::query()->whereHas('order', fn ($query) => $query
                 ->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']))->sum('line_total'),
             'customers' => $userModel::query()->where(config('commerce-admin.admin_flag_column', 'is_admin'), false)->count(),
-            'discount_total' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->sum('discount'),
+            'discount_total' => $orderModel::query()->where('payment_status', 'paid')
+                ->whereNotIn('status', ['cancelled', 'returned'])->sum('discount'),
             'discounted' => $variantModel::query()->whereNotNull('sale_price')
                 ->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price')->count(),
         ];
@@ -203,7 +204,7 @@ class ProductController
                 $baseSlug = $slug;
                 $suffix = 2;
                 $slugTaken = static function (string $candidate) use ($productModel, $product): bool {
-                    return $productModel::query()
+                    return $productModel::withTrashed()
                         ->where('slug', $candidate)
                         ->when(
                             $product->exists,
