@@ -33,9 +33,10 @@ class OrderController
     public function index(Request $request): View
     {
         $orderModel = $this->model('order', Order::class);
-        $orderItemModel = $this->model('order_item', OrderItem::class);
 
-        $query = $orderModel::query()->with(['user', 'items']);
+        $query = $orderModel::query()
+            ->with(['user', 'primaryItem'])
+            ->withSum('items as admin_total_quantity', 'quantity');
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
         $validStatusFilters = array_merge(['all', 'pending', 'shipped', 'cancelled'], Order::STATUSES);
@@ -72,12 +73,9 @@ class OrderController
             'shipped' => $orderModel::query()->whereIn('status', ['shipped', 'out_for_delivery'])->count(),
             'delivered' => $orderModel::query()->where('status', 'delivered')->count(),
             'cancelled' => $orderModel::query()->whereIn('status', ['cancelled', 'returned'])->count(),
-            'gross' => $orderItemModel::query()->sum('line_total'),
         ];
 
-        // The paginator already eager-loads order items, so the table stays query-bounded.
-
-
+        // Load one item snapshot and a SQL aggregate instead of hydrating every order item.
         return view('commerce-admin::orders.index', compact('orders', 'stats', 'search', 'status'));
     }
 

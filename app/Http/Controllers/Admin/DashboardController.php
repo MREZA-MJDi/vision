@@ -23,7 +23,6 @@ class DashboardController
     public function index(): View
     {
         $orderModel = $this->model('order', Order::class);
-        $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
         $userModel = $this->model('user', User::class);
         $adminFlag = (string) config('commerce-admin.admin_flag_column', 'is_admin');
@@ -35,8 +34,6 @@ class DashboardController
 
         $orderCount = (clone $orders)->count();
         $pendingOrders = (clone $orders)->whereIn('status', ['pending', 'confirmed', 'preparing'])->count();
-        $productsCount = $productModel::query()->count();
-        $activeProducts = $productModel::query()->where('is_active', true)->count();
         $lowStockCount = $variantModel::query()->where('is_active', true)
             ->whereColumn('stock', '<=', 'low_stock_threshold')->count();
         $customersCount = $userModel::query()->where($adminFlag, false)->count();
@@ -51,8 +48,6 @@ class DashboardController
             'revenue',
             'orderCount',
             'pendingOrders',
-            'productsCount',
-            'activeProducts',
             'lowStockCount',
             'customersCount',
             'series',
