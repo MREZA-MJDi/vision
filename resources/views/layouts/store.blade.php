@@ -41,7 +41,11 @@
                 <form class="store-search" action="{{ route('shop.index') }}" method="GET" role="search">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg>
                     <input type="search" name="q" value="{{ request('q', $search ?? '') }}" placeholder="جست‌وجو" aria-label="جست‌وجوی محصولات">
-                    @if(($sort ?? request('sort', 'newest')) !== 'newest')<input type="hidden" name="sort" value="{{ $sort ?? request('sort', 'newest') }}">@endif
+                    @foreach(request()->query() as $key => $value)
+                        @if($key !== 'q' && $key !== 'page' && is_scalar($value))
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
+                    @endforeach
                     <button type="submit" aria-label="اجرای جست‌وجو">↵</button>
                 </form>
 
