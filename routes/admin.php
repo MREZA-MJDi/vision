@@ -15,7 +15,7 @@ use App\Http\Middleware\Admin\EnsureAdmin;
 
 Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
     // Compatibility endpoints point to the one shared storefront authentication flow.
-    Route::get('/login', fn () => redirect()->route('login'))->name('login');
+    Route::redirect('/login', '/login')->name('login');
     Route::post('/login', [CustomerAuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
     Route::post('/logout', [CustomerAuthController::class, 'destroy'])->middleware(EnsureAdmin::class)->name('logout');
 
