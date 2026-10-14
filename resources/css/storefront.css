@@ -2002,3 +2002,9 @@ body.storefront-body {
     .home-hero__product-label { inset-inline: 9px; bottom: 9px; padding: 10px; }
     .home-hero__product-label strong { font-size: 11px; }
 }
+
+/* Author display rules must not override the native hidden attribute. */
+.fitting-room[hidden],
+.fitting-room-reopen[hidden] {
+    display: none !important;
+}
