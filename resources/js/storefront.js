@@ -457,8 +457,37 @@
             if (addButton) addButton.disabled = stock < 1;
         };
 
-        select.addEventListener('change', refreshVariant);
+        const colorButtons = $('[data-variant-color-pick]', select.closest('.store-product-detail__info') || root);
+        const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
+        const syncColorButtons = () => {
+            const selectedColor = normalizeColor(select.selectedOptions?.[0]?.dataset.color);
+            colorButtons.forEach((button) => {
+                const isSelected = normalizeColor(button.dataset.variantColorPick) === selectedColor;
+                button.classList.toggle('is-selected', isSelected);
+                button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+            });
+        };
+
+        colorButtons.forEach((button) => button.addEventListener('click', () => {
+            const requestedColor = normalizeColor(button.dataset.variantColorPick);
+            const matches = Array.from(select.options).filter((option) =>
+                normalizeColor(option.dataset.color) === requestedColor
+            );
+            const selectedSize = select.selectedOptions?.[0]?.dataset.size || '';
+            const candidate = matches.find((option) => !option.disabled && option.dataset.size === selectedSize)
+                || matches.find((option) => !option.disabled);
+
+            if (!candidate) return;
+            select.value = candidate.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+        }));
+
+        select.addEventListener('change', () => {
+            refreshVariant();
+            syncColorButtons();
+        });
         refreshVariant();
+        syncColorButtons();
     });
 
     root.querySelector('[data-store-language]')?.addEventListener('click', () => {
