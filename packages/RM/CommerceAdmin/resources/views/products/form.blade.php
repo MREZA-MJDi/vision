@@ -77,9 +77,24 @@
                     <div class="ak-variant-list" data-variant-list>
                         @php $formVariants = old('variants', $variants); @endphp
                         @foreach($formVariants as $index => $variant)
+                            @php
+                                $variantId = data_get($variant, 'id');
+                                $variantImage = data_get($variant, 'primaryGalleryMedia.url');
+                                if (! $variantImage && $variantId && $product) {
+                                    $variantImage = $product->variants->firstWhere('id', (int) $variantId)?->primaryGalleryMedia?->url;
+                                }
+                            @endphp
                             <div class="ak-variant-card" data-variant-row>
                                 <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>{{ $loop->iteration }}</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="حذف تنوع" {{ $loop->first ? 'disabled' : '' }}>×</button></div>
                                 @if(data_get($variant, 'id'))<input type="hidden" name="variants[{{ $index }}][id]" value="{{ data_get($variant, 'id') }}">@endif
+                                <div class="ak-variant-image-field">
+                                    @if($variantImage)
+                                        <img class="ak-variant-image-preview" src="{{ $variantImage }}" alt="{{ $product?->name }} {{ data_get($variant, 'color') }}" data-variant-image-preview>
+                                    @else
+                                        <img class="ak-variant-image-preview" src="" alt="" data-variant-image-preview hidden>
+                                    @endif
+                                    <label class="ak-field"><span>تصویر مخصوص این تنوع</span><input type="file" name="variants[{{ $index }}][image]" accept="image/jpeg,image/png,image/webp" data-variant-image-input><small>با انتخاب این رنگ، تصویر همین تنوع در صفحهٔ محصول نمایش داده می‌شود. حداکثر ۴ مگابایت.</small></label>
+                                </div>
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>
                                     <label class="ak-field"><span>اندازه / گزینه</span><input name="variants[{{ $index }}][size]" value="{{ old('variants.'.$index.'.size', data_get($variant, 'size')) }}" maxlength="50" placeholder="مثلاً M یا ۲۵۶ گیگابایت"></label>
@@ -97,6 +112,10 @@
                     <template id="variant-row-template">
                         <div class="ak-variant-card" data-variant-row>
                             <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>__NUMBER__</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="Remove variant">×</button></div>
+                            <div class="ak-variant-image-field">
+                                <img class="ak-variant-image-preview" src="" alt="" data-variant-image-preview hidden>
+                                <label class="ak-field"><span>تصویر مخصوص این تنوع</span><input type="file" name="variants[__INDEX__][image]" accept="image/jpeg,image/png,image/webp" data-variant-image-input><small>تصویر این رنگ در صفحهٔ محصول نمایش داده می‌شود. حداکثر ۴ مگابایت.</small></label>
+                            </div>
                             <div class="ak-variant-grid">
                                 <label class="ak-field"><span>SKU</span><input name="variants[__INDEX__][sku]" maxlength="100" placeholder="SKU-001"></label>
                                 <label class="ak-field"><span>اندازه / گزینه</span><input name="variants[__INDEX__][size]" maxlength="50" placeholder="مثلاً M یا ۲۵۶ گیگابایت"></label>
