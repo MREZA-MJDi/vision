@@ -25,7 +25,7 @@ class StorefrontController extends Controller
                 // Load at most one active, photo-ready product per category.
                 // The bounded eager load provides a useful fallback when a category
                 // has no dedicated cover image, without introducing an N+1 query.
-                'products' => fn (Builder $query) => $query
+                'products' => fn ($query) => $query
                     ->active()
                     ->whereHas('activeVariants')
                     ->with([
