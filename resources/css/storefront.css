@@ -3052,7 +3052,7 @@ body.storefront-home-body .store-shell > .store-header {
 .home-hero__description, .home-hero__eyebrow, .home-hero__price-label, .home-hero__stock, .home-hero__image-caption { color: color-mix(in srgb, var(--hero-ink) 76%, transparent); }
 .home-hero__image-stage { isolation: isolate; }
 .home-hero__image-stage::before { position: absolute; z-index: -1; inset: 12% 10%; border-radius: 50%; background: color-mix(in srgb, var(--hero-soft) 58%, transparent); content: ''; filter: blur(42px); opacity: .72; }
-.home-hero__image-stage img { max-height: min(62vh, 590px); object-fit: contain; filter: drop-shadow(0 30px 22px rgb(30 12 4 / 35%)); transform: translateY(0) scale(1); transition: opacity 180ms ease, transform 360ms cubic-bezier(.2,.8,.2,1); }
+.home-hero__image-stage img { position: relative; top: auto; left: auto; max-height: min(62vh, 590px); object-fit: contain; object-position: center; filter: drop-shadow(0 30px 22px rgb(30 12 4 / 35%)); transform: translateY(0) scale(1); transition: opacity 180ms ease, transform 360ms cubic-bezier(.2,.8,.2,1); }
 .home-hero.is-transitioning .home-hero__image-stage img { transform: translateY(-5px) scale(1.018); }
 .home-hero__variant-picker { margin-top: 20px; }
 .home-hero__variant { color: var(--hero-ink); }
