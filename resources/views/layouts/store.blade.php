@@ -20,6 +20,7 @@
     <div class="store-atmosphere" aria-hidden="true"></div>
 
     <div class="store-shell" data-storefront
+         data-currency-symbol="{{ config('commerce-admin.currency_symbol', 'تومان') }}"
          data-cart-url="{{ route('cart.index') }}"
          data-cart-summary-url="{{ route('cart.summary') }}"
          data-cart-add-url="{{ route('cart.items.store') }}"
