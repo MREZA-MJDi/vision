@@ -124,7 +124,7 @@ class BrandController
         $model = $this->model();
         $record = $model::query()->findOrFail($brand);
 
-        if ($record->products()->exists()) {
+        if ($record->products()->withTrashed()->exists()) {
             $record->forceFill(['is_active' => false])->save();
 
             return redirect()->route('commerce-admin.brands.index')
