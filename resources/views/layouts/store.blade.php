@@ -35,7 +35,7 @@
                 <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog" class="store-nav__link {{ request()->boolean('sale') ? 'is-current' : '' }}">تخفیف‌ها</a>
             </nav>
 
-            <a class="store-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION store home">STORE</a>
+            <a class="store-wordmark" href="{{ route('storefront.index') }}" aria-label="صفحهٔ اصلی فروشگاه VISION">VISION</a>
 
             <div class="store-header__actions">
                 <form class="store-search" action="{{ route('shop.index') }}" method="GET" role="search">
