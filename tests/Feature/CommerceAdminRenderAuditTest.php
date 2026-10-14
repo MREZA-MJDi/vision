@@ -520,11 +520,11 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('New Homepage Hero')
-            ->assertSee('home-hero__product-link', false);
+            ->assertSee('home-hero__price-panel', false);
 
         $this->get('/products')
             ->assertOk()
-            ->assertDontSee('home-hero__product-link', false);
+            ->assertDontSee('home-hero__price-panel', false);
     }
 
     public function test_order_variant_search_is_bounded_and_excludes_inactive_catalog_records(): void
