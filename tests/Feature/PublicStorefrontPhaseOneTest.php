@@ -22,8 +22,16 @@ class PublicStorefrontPhaseOneTest extends TestCase
         $response->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
             ->assertSee('VISION — فروشگاه پوشاک')
+            ->assertSee('VISION')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
-            ->assertSee('دسته‌بندی‌ها')
+            ->assertSee('انتخاب بر اساس استایل')
+            ->assertSee('home-hero__frame', false)
+            ->assertSee('home-category-card__image', false)
+            ->assertSee('home-featured', false)
+            ->assertSee('home-brand-story', false)
+            ->assertSee('home-benefits', false)
+            ->assertSee('store-footer__column', false)
+            ->assertSee('data-cart-add', false)
             ->assertDontSee('data-fitting-room', false)
             ->assertSee('images.unsplash.com');
     }
@@ -111,6 +119,63 @@ class PublicStorefrontPhaseOneTest extends TestCase
             $smallCatalogQueries + 3,
             $largeCatalogQueries,
             'Shop query count should remain bounded as more products are rendered; a growing difference may indicate N+1 queries.'
+        );
+    }
+
+
+    public function test_homepage_query_count_stays_bounded_as_the_catalog_grows(): void
+    {
+        $this->seed(CommerceDemoSeeder::class);
+
+        $category = \\App\\Models\\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
+        $brand = \\App\\Models\\Brand::query()->where('slug', 'vision-demo')->firstOrFail();
+        $queryCount = 0;
+
+        DB::listen(function () use (&$queryCount): void {
+            $queryCount++;
+        });
+
+        $beforeSmallCatalog = $queryCount;
+        $this->get('/')->assertOk();
+        $smallHomepageQueries = $queryCount - $beforeSmallCatalog;
+
+        for ($index = 1; $index <= 15; $index++) {
+            $product = \\App\\Models\\Product::query()->create([
+                'category_id' => $category->getKey(),
+                'brand_id' => $brand->getKey(),
+                'name' => 'Homepage n-plus-one audit product ' . $index,
+                'slug' => 'homepage-n-plus-one-audit-product-' . $index,
+                'short_description' => 'Homepage eager-load regression test',
+                'is_active' => true,
+                'is_featured' => false,
+                'is_hero' => false,
+                'is_taxable' => false,
+                'sort_order' => $index + 100,
+            ]);
+
+            \\App\\Models\\ProductVariant::query()->create([
+                'product_id' => $product->getKey(),
+                'sku' => 'HOME-N1-AUDIT-' . $index,
+                'size' => 'M',
+                'color' => 'مشکی',
+                'color_code' => '#17191C',
+                'price' => 100000,
+                'sale_price' => null,
+                'stock' => 5,
+                'low_stock_threshold' => 1,
+                'is_active' => true,
+                'sort_order' => 0,
+            ]);
+        }
+
+        $beforeLargeCatalog = $queryCount;
+        $this->get('/')->assertOk();
+        $largeHomepageQueries = $queryCount - $beforeLargeCatalog;
+
+        $this->assertLessThanOrEqual(
+            $smallHomepageQueries + 4,
+            $largeHomepageQueries,
+            'Homepage query count should remain bounded as more products are added; a growing difference may indicate N+1 queries.'
         );
     }
 
