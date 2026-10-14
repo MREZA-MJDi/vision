@@ -130,9 +130,11 @@ class PublicStorefrontPhaseOneTest extends TestCase
         $category = \App\Models\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
         $brand = \App\Models\Brand::query()->where('slug', 'vision-demo')->firstOrFail();
         $queryCount = 0;
+        $sqlLog = [];
 
-        DB::listen(function () use (&$queryCount): void {
+        DB::listen(function ($query) use (&$queryCount, &$sqlLog): void {
             $queryCount++;
+            $sqlLog[] = $query->sql;
         });
 
         $beforeSmallCatalog = $queryCount;
@@ -169,13 +171,15 @@ class PublicStorefrontPhaseOneTest extends TestCase
         }
 
         $beforeLargeCatalog = $queryCount;
+        $beforeLargeSqlLog = count($sqlLog);
         $this->get('/')->assertOk();
         $largeHomepageQueries = $queryCount - $beforeLargeCatalog;
 
         $this->assertLessThanOrEqual(
             $smallHomepageQueries + 4,
             $largeHomepageQueries,
-            'Homepage query count should remain bounded as more products are added; a growing difference may indicate N+1 queries.'
+            'Homepage query count should remain bounded as more products are added; a growing difference may indicate N+1 queries. SQL: '
+                . implode(' | ', array_slice($sqlLog, $beforeLargeSqlLog))
         );
     }
 
