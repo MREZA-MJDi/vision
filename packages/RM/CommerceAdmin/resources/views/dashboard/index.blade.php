@@ -1,106 +1,139 @@
 @extends('commerce-admin::layout')
 
-@section('title', 'Dashboard')
+@section('title', 'Classic Dashboard')
 
 @section('content')
+    @php
+        $currency = config('commerce-admin.currency_symbol', '$');
+        $revenueMax = max(1, (float) collect($series)->max('value'));
+        $ordersMax = max(1, (int) collect($series)->max('orders_count'));
+        $revenuePoints = collect($series)->values()->map(fn ($point, $index) =>
+            round(10 + ($index * 340 / max(1, count($series) - 1)), 1).','.round(85 - (((float) $point['value'] / $revenueMax) * 66), 1)
+        )->implode(' ');
+        $revenueMiniPoints = collect($series)->values()->map(fn ($point, $index) =>
+            round(3 + ($index * 354 / max(1, count($series) - 1)), 1).','.round(52 - (((float) $point['value'] / $revenueMax) * 42), 1)
+        )->implode(' ');
+        $ordersPoints = collect($series)->values()->map(fn ($point, $index) =>
+            round(10 + ($index * 340 / max(1, count($series) - 1)), 1).','.round(85 - (((int) $point['orders_count'] / $ordersMax) * 58), 1)
+        )->implode(' ');
+    @endphp
+
     <div class="ak-page-heading">
-        <div><div class="ak-breadcrumb">Dashboards <span>/</span> Overview</div><h1>Dashboard</h1><p>Live snapshot of your store, catalog, inventory and orders.</p></div>
+        <div>
+            <div class="ak-breadcrumb">Dashboards <span>/</span> Classic Dashboard</div>
+            <h1>Dashboard</h1>
+            <p>Your store at a glance, with live figures from the commerce database.</p>
+        </div>
         <div class="ak-heading-actions">
             <span class="ak-date-chip"><span>◷</span> {{ now()->startOfMonth()->format('M d') }} – {{ now()->format('M d, Y') }}</span>
             <a class="ak-button ak-button-dark" href="{{ route('commerce-admin.analytics') }}">View analytics <span>↗</span></a>
         </div>
     </div>
 
-    <section class="ak-stat-grid ak-stat-grid-three">
-        <article class="ak-stat-card">
-            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-slate">♙</span><span class="ak-stat-kicker">CUSTOMERS</span><span class="ak-stat-menu">···</span></div>
-            <div class="ak-stat-value">{{ number_format($customersCount) }}</div>
-            <div class="ak-stat-footer"><span class="ak-stat-note">Real customer accounts</span><span class="ak-mini-badge">Live</span></div>
-            <div class="ak-stat-spark"><span style="height:28%"></span><span style="height:40%"></span><span style="height:34%"></span><span style="height:55%"></span><span style="height:45%"></span><span style="height:68%"></span><span style="height:61%"></span><span style="height:82%"></span></div>
+    <section class="ak-classic-top-grid">
+        <article class="ak-panel ak-team-panel">
+            <div class="ak-panel-heading">
+                <div><h2>Customers</h2><p>Recent customer accounts</p></div>
+                <span class="ak-count-chip">{{ number_format((int) $customersCount) }} total</span>
+            </div>
+            @forelse($recentCustomers as $customer)
+                <div class="ak-team-row">
+                    <span class="ak-avatar ak-team-avatar">{{ strtoupper(mb_substr($customer->name ?: $customer->email ?: 'C', 0, 1)) }}</span>
+                    <div class="ak-team-identity">
+                        <strong>{{ $customer->name ?: 'Customer' }}</strong>
+                        <small>{{ $customer->email ?: 'No email saved' }}</small>
+                    </div>
+                    <a class="ak-team-action" href="{{ route('commerce-admin.orders.index', ['q' => $customer->email ?: $customer->name]) }}">Orders</a>
+                </div>
+            @empty
+                <div class="ak-compact-empty">Registered customers will appear here when they join your store.</div>
+            @endforelse
+            <div class="ak-team-foot"><span>{{ number_format((int) $customersCount) }} customer accounts</span><a href="{{ route('commerce-admin.orders.index') }}">View orders ↗</a></div>
         </article>
-        <article class="ak-stat-card">
-            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-blue">▦</span><span class="ak-stat-kicker">PRODUCTS</span><span class="ak-stat-menu">···</span></div>
-            <div class="ak-stat-value">{{ number_format($productsCount) }}</div>
-            <div class="ak-stat-footer"><span class="ak-stat-note">{{ number_format($activeProducts) }} currently active</span><span class="ak-mini-badge">{{ number_format($lowStockCount) }} low stock</span></div>
-            <div class="ak-stat-progress"><span style="width:{{ $productsCount ? min(100, $activeProducts / $productsCount * 100) : 0 }}%"></span></div>
-        </article>
-        <article class="ak-stat-card">
-            <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-green">$</span><span class="ak-stat-kicker">PAID REVENUE</span><span class="ak-stat-menu">···</span></div>
-            <div class="ak-stat-value">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float) $revenue, 2) }}</div>
-            <div class="ak-stat-footer"><span class="ak-stat-note">Paid orders, excluding cancelled/returned</span><a class="ak-stat-link" href="{{ route('commerce-admin.analytics') }}">Details ↗</a></div>
-            <div class="ak-stat-line"><svg viewBox="0 0 260 48" preserveAspectRatio="none" role="img" aria-label="Monthly paid revenue trend"><polyline points="@php $maxValue = max(array_column($series, 'value')) ?: 1; $pts=[]; foreach ($series as $i=>$point) { $pts[] = round($i * (260 / max(1, count($series)-1)), 1).','.round(42 - ($point['value']/$maxValue)*34, 1); } echo e(implode(' ', $pts)); @endphp" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        </article>
-    </section>
 
-    <section class="ak-content-grid ak-content-grid-main">
-        <article class="ak-panel ak-revenue-panel">
-            <div class="ak-panel-heading"><div><h2>Revenue overview</h2><p>Paid order totals by month</p></div><a class="ak-text-link" href="{{ route('commerce-admin.analytics') }}">Full report ↗</a></div>
-            <div class="ak-chart-summary"><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float) $revenue, 2) }}</strong><span class="ak-stat-note">All-time paid revenue</span></div>
-            @php $maxValue = max(array_column($series, 'value')) ?: 1; @endphp
-            <div class="ak-bar-chart" role="img" aria-label="Monthly paid revenue bar chart">
-                @foreach ($series as $point)
-                    <div class="ak-bar-column">
-                        <span class="ak-bar-tooltip">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format($point['value'], 2) }}</span>
-                        <div class="ak-bar-track"><span style="height:{{ max(2, ($point['value'] / $maxValue) * 100) }}%"></span></div>
+        <article class="ak-panel ak-subscription-panel">
+            <div class="ak-panel-heading">
+                <div><h2>Orders</h2><p>Order volume over the last 12 months</p></div>
+                <a class="ak-icon-button" href="{{ route('commerce-admin.orders.index') }}" aria-label="View orders">↗</a>
+            </div>
+            <div class="ak-classic-metric">{{ number_format((int) $orderCount) }}</div>
+            <div class="ak-classic-change"><span class="ak-live-indicator"></span>{{ number_format((int) $pendingOrders) }} currently in progress</div>
+            <div class="ak-subscription-bars" role="img" aria-label="Monthly order counts">
+                @foreach($series as $point)
+                    <div class="ak-subscription-bar-column" title="{{ $point['full_label'] }}: {{ number_format((int) $point['orders_count']) }} orders">
+                        <span style="height:{{ max(4, ((int) $point['orders_count'] / $ordersMax) * 100) }}%"></span>
                         <small>{{ $point['label'] }}</small>
                     </div>
                 @endforeach
             </div>
-            <div class="ak-chart-legend"><span><i class="ak-legend-dot"></i> Paid revenue</span><span>Last 8 months · {{ config('commerce-admin.currency', 'USD') }}</span></div>
         </article>
 
-        <article class="ak-panel ak-orders-panel">
-            <div class="ak-panel-heading"><div><h2>Order activity</h2><p>Current workload</p></div><a class="ak-icon-button" href="{{ route('commerce-admin.orders.index') }}" aria-label="View all orders">↗</a></div>
-            <div class="ak-order-ring-wrap">
-                <div class="ak-ring" style="--ring-pct:{{ $orderCount ? min(100, ($pendingOrders / $orderCount) * 100) : 0 }}%"><div><strong>{{ number_format($orderCount) }}</strong><small>Total orders</small></div></div>
-                <div class="ak-ring-key"><span><i class="ak-dot ak-dot-blue"></i> In progress <strong>{{ number_format($pendingOrders) }}</strong></span><span><i class="ak-dot ak-dot-gray"></i> Other statuses <strong>{{ number_format(max(0, $orderCount - $pendingOrders)) }}</strong></span></div>
+        <article class="ak-panel ak-total-revenue-panel">
+            <div class="ak-panel-heading">
+                <div><h2>Total Revenue</h2><p>Paid orders only</p></div>
+                <a class="ak-icon-button" href="{{ route('commerce-admin.analytics') }}" aria-label="View revenue analytics">↗</a>
             </div>
-            <div class="ak-panel-bottom-link"><a href="{{ route('commerce-admin.orders.index', ['status' => 'pending']) }}">Review pending orders <span>→</span></a></div>
+            <div class="ak-classic-metric">{{ $currency }}{{ number_format((float) $revenue, 2) }}</div>
+            <div class="ak-classic-change"><span class="ak-live-indicator"></span>Excluding cancelled and returned orders</div>
+            <div class="ak-mini-line-chart" role="img" aria-label="Monthly revenue trend">
+                <svg viewBox="0 0 360 62" preserveAspectRatio="none" aria-hidden="true">
+                    <line x1="2" y1="54" x2="358" y2="54"></line>
+                    <polyline points="{{ $revenueMiniPoints }}"></polyline>
+                </svg>
+            </div>
         </article>
     </section>
 
-    <section class="ak-panel ak-table-panel">
-        <div class="ak-panel-heading"><div><h2>Recent orders</h2><p>Latest orders recorded in your database</p></div><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.orders.index') }}">View all orders <span>↗</span></a></div>
-        @if ($recentOrders->isEmpty())
-            <div class="ak-empty-state"><span>▤</span><strong>No orders yet</strong><p>New orders will appear here once they are saved in the store.</p><a class="ak-button ak-button-primary ak-button-sm" href="{{ route('commerce-admin.orders.create') }}">Create an order</a></div>
-        @else
-            <div class="ak-table-scroll"><table class="ak-table">
-                <thead><tr><th>Order</th><th>Customer</th><th>Placed</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                @foreach ($recentOrders as $order)
-                    <tr>
-                        <td><a class="ak-table-primary" href="{{ route('commerce-admin.orders.show', $order->getKey()) }}">#{{ $order->order_number }}</a></td>
-                        <td><div class="ak-customer-cell"><span class="ak-avatar ak-avatar-tiny">{{ strtoupper(substr($order->customer_name ?: 'C', 0, 1)) }}</span><span><strong>{{ $order->customer_name ?: $order->user?->name ?: 'Guest customer' }}</strong><small>{{ $order->customer_email ?: 'No email saved' }}</small></span></div></td>
-                        <td>{{ optional($order->placed_at ?: $order->created_at)->format('M d, Y') }}</td>
-                        <td>{{ $order->items->sum('quantity') }}</td>
-                        <td class="ak-table-primary">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float) $order->total, 2) }}</td>
-                        <td><span class="ak-status-pill status-{{ Str::slug($order->status) }}">{{ Str::headline($order->status) }}</span></td>
-                        <td><a class="ak-row-action" href="{{ route('commerce-admin.orders.show', $order->getKey()) }}" aria-label="Open order">···</a></td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table></div>
-        @endif
-    </section>
+    <section class="ak-classic-lower-grid">
+        <article class="ak-panel ak-activity-panel">
+            <div class="ak-panel-heading">
+                <div><h2>Store Activity</h2><p>Monthly revenue and order volume, based on saved orders</p></div>
+                <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.analytics.export') }}">Export CSV ↓</a>
+            </div>
+            <div class="ak-activity-summary">
+                <div><small>Total revenue</small><strong>{{ $currency }}{{ number_format((float) $revenue, 2) }}</strong></div>
+                <div><small>Total orders</small><strong>{{ number_format((int) $orderCount) }}</strong></div>
+                <div><small>Pending / in progress</small><strong>{{ number_format((int) $pendingOrders) }}</strong></div>
+            </div>
+            <div class="ak-classic-line-chart" role="img" aria-label="Revenue and order activity over the last 12 months">
+                <div class="ak-line-chart-labels"><span>{{ $series[0]['label'] ?? '' }}</span><span>{{ $series[3]['label'] ?? '' }}</span><span>{{ $series[6]['label'] ?? '' }}</span><span>{{ $series[9]['label'] ?? '' }}</span><span>{{ $series[11]['label'] ?? '' }}</span></div>
+                <svg viewBox="0 0 360 180" preserveAspectRatio="none" aria-hidden="true">
+                    <line x1="8" y1="22" x2="352" y2="22"></line>
+                    <line x1="8" y1="62" x2="352" y2="62"></line>
+                    <line x1="8" y1="102" x2="352" y2="102"></line>
+                    <line x1="8" y1="142" x2="352" y2="142"></line>
+                    <polyline class="ak-line-revenue" points="{{ $revenuePoints }}"></polyline>
+                    <polyline class="ak-line-orders" points="{{ $ordersPoints }}"></polyline>
+                </svg>
+            </div>
+            <div class="ak-chart-legend">
+                <span><i class="ak-legend-dot"></i> Revenue</span>
+                <span><i class="ak-legend-dot ak-legend-dot-light"></i> Orders</span>
+                <a href="{{ route('commerce-admin.analytics') }}">Full report →</a>
+            </div>
+        </article>
 
-    <section class="ak-panel ak-table-panel">
-        <div class="ak-panel-heading"><div><h2>Recently added products</h2><p>Latest catalog changes</p></div><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.products.index') }}">Product list <span>↗</span></a></div>
-        @if ($recentProducts->isEmpty())
-            <div class="ak-empty-state"><span>▦</span><strong>Your catalog is empty</strong><p>Add a product to start managing prices, variants and stock.</p><a class="ak-button ak-button-primary ak-button-sm" href="{{ route('commerce-admin.products.create') }}">Add product</a></div>
-        @else
-            <div class="ak-table-scroll"><table class="ak-table"><thead><tr><th>Product</th><th>Category</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody>
-            @foreach ($recentProducts as $item)
-                @php $variant = $item->variants->firstWhere('is_active', true) ?: $item->variants->first(); $asset = $item->galleryMedia->first(); @endphp
-                <tr>
-                    <td><div class="ak-product-cell">@if($asset?->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $item->name }}">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<a class="ak-table-primary" href="{{ route('commerce-admin.products.show', $item->getKey()) }}">{{ $item->name }}</a></div></td>
-                    <td>{{ $item->category?->name ?: 'Uncategorized' }}</td><td>{{ $variant?->sku ?: '—' }}</td>
-                    <td>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float) ($variant?->sale_price ?? $variant?->price ?? 0), 2) }}</td>
-                    <td>{{ number_format((int) $item->variants->sum('stock')) }}</td>
-                    <td><span class="ak-status-pill {{ $item->is_active ? 'status-active' : 'status-draft' }}">{{ $item->is_active ? 'Active' : 'Draft' }}</span></td>
-                    <td><a class="ak-row-action" href="{{ route('commerce-admin.products.show', $item->getKey()) }}">···</a></td>
-                </tr>
-            @endforeach
-            </tbody></table></div>
-        @endif
+        <article class="ak-panel ak-latest-orders-panel">
+            <div class="ak-panel-heading">
+                <div><h2>Latest Orders</h2><p>Recent transactions from your store</p></div>
+                <a class="ak-text-link" href="{{ route('commerce-admin.orders.index') }}">View all ↗</a>
+            </div>
+            @forelse($recentOrders as $order)
+                <a class="ak-latest-order-row" href="{{ route('commerce-admin.orders.show', $order->getKey()) }}">
+                    <span class="ak-latest-order-avatar">{{ strtoupper(mb_substr($order->customer_name ?: $order->user?->name ?: 'C', 0, 1)) }}</span>
+                    <span class="ak-latest-order-identity">
+                        <strong>{{ $order->customer_name ?: $order->user?->name ?: 'Guest customer' }}</strong>
+                        <small>#{{ $order->order_number }} · {{ optional($order->placed_at ?: $order->created_at)->format('M d') }}</small>
+                    </span>
+                    <span class="ak-latest-order-total">{{ $currency }}{{ number_format((float) $order->total, 2) }}<small class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($order->status) }}">{{ \Illuminate\Support\Str::headline($order->status) }}</small></span>
+                </a>
+            @empty
+                <div class="ak-compact-empty">New orders will be listed here as soon as they are saved.</div>
+            @endforelse
+            <div class="ak-latest-orders-foot">
+                <div><span class="ak-mini-status-dot"></span><span>{{ number_format((int) $lowStockCount) }} variants need stock attention</span></div>
+                <a href="{{ route('commerce-admin.products.index', ['status' => 'low_stock']) }}">Check inventory →</a>
+            </div>
+        </article>
     </section>
 @endsection

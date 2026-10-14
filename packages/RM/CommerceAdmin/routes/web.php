@@ -16,6 +16,7 @@ Route::middleware('web')->prefix('admin')->as('commerce-admin.')->group(function
     Route::middleware(EnsureAdmin::class)->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
+        Route::get('/analytics/export', [DashboardController::class, 'export'])->name('analytics.export');
 
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');

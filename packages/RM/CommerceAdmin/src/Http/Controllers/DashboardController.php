@@ -46,11 +46,38 @@ class DashboardController
             ->orderByDesc('created_at')->limit(7)->get();
         $recentProducts = $productModel::query()->with(['category', 'brand', 'variants', 'galleryMedia'])
             ->orderByDesc('created_at')->limit(5)->get();
+        $recentCustomers = $userModel::query()->where($adminFlag, false)
+            ->orderByDesc('created_at')->limit(4)->get();
 
         return view('commerce-admin::dashboard.index', compact(
             'revenue', 'orderCount', 'pendingOrders', 'productsCount', 'activeProducts',
-            'lowStockCount', 'customersCount', 'series', 'recentOrders', 'recentProducts'
+            'lowStockCount', 'customersCount', 'series', 'recentOrders', 'recentProducts',
+            'recentCustomers'
         ));
+    }
+
+    public function export()
+    {
+        $orderModel = $this->model('order', Order::class);
+        $series = $this->revenueSeries($orderModel);
+
+        return response()->streamDownload(function () use ($series): void {
+            $stream = fopen('php://output', 'w');
+            fwrite($stream, "\xEF\xBB\xBF");
+            fputcsv($stream, ['Month', 'Paid revenue', 'Orders']);
+
+            foreach ($series as $point) {
+                fputcsv($stream, [
+                    $point['full_label'],
+                    number_format((float) $point['value'], 2, '.', ''),
+                    (int) $point['orders_count'],
+                ]);
+            }
+
+            fclose($stream);
+        }, 'commerce-analytics.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function analytics(): View
@@ -102,37 +129,59 @@ class DashboardController
         $recentReviews = $reviewModel::query()->with(['product', 'user'])
             ->where('status', 'approved')->orderByDesc('created_at')->limit(5)->get();
 
+        $identifiedCustomers = (clone $orders)->whereNotNull('user_id')->distinct()->count('user_id')
+            + (clone $orders)->whereNull('user_id')->whereNotNull('customer_email')
+                ->where('customer_email', '<>', '')->distinct()->count('customer_email');
+
+        $repeatUserCustomers = $orderModel::query()->whereNotNull('user_id')
+            ->select('user_id')->groupBy('user_id')->havingRaw('COUNT(*) > 1')->get()->count();
+        $repeatEmailCustomers = $orderModel::query()->whereNull('user_id')
+            ->whereNotNull('customer_email')->where('customer_email', '<>', '')
+            ->selectRaw('LOWER(customer_email) as normalized_email')
+            ->groupByRaw('LOWER(customer_email)')->havingRaw('COUNT(*) > 1')->get()->count();
+        $returningRate = $identifiedCustomers > 0
+            ? round((($repeatUserCustomers + $repeatEmailCustomers) / $identifiedCustomers) * 100, 1)
+            : 0;
+
         return view('commerce-admin::dashboard.analytics', compact(
             'revenue', 'allTimeOrders', 'paidCount', 'cancelledCount', 'series',
             'byCity', 'paymentBreakdown', 'topProducts', 'lowStock', 'activeProducts',
-            'reviewsCount', 'reviewAverage', 'reviewDistribution', 'pendingReviews', 'recentReviews'
+            'reviewsCount', 'reviewAverage', 'reviewDistribution', 'pendingReviews', 'recentReviews',
+            'identifiedCustomers', 'returningRate'
         ));
     }
 
     /**
-     * Aggregate each month in a separate database query to keep this portable
+     * Aggregate monthly values in separate queries so this remains portable
      * across MySQL/MariaDB and SQLite test environments.
      */
     private function revenueSeries(string $orderModel): array
     {
         $points = [];
-        $anchor = Carbon::now()->startOfMonth()->subMonths(7);
+        $anchor = Carbon::now()->startOfMonth()->subMonths(11);
 
-        for ($i = 0; $i < 8; $i++) {
+        for ($i = 0; $i < 12; $i++) {
             $start = $anchor->copy()->addMonths($i)->startOfMonth();
             $end = $start->copy()->endOfMonth();
+            $range = [
+                $start->toDateTimeString(),
+                $end->toDateTimeString(),
+            ];
             $amount = $orderModel::query()
                 ->where('payment_status', 'paid')
                 ->whereNotIn('status', ['cancelled', 'returned'])
-                ->whereRaw('COALESCE(placed_at, created_at) >= ? AND COALESCE(placed_at, created_at) <= ?', [
-                    $start->toDateTimeString(),
-                    $end->toDateTimeString(),
-                ])->sum('total');
+                ->whereRaw('COALESCE(placed_at, created_at) >= ? AND COALESCE(placed_at, created_at) <= ?', $range)
+                ->sum('total');
+            $ordersCount = $orderModel::query()
+                ->whereNotIn('status', ['cancelled', 'returned'])
+                ->whereRaw('COALESCE(placed_at, created_at) >= ? AND COALESCE(placed_at, created_at) <= ?', $range)
+                ->count();
 
             $points[] = [
                 'label' => $start->format('M'),
                 'full_label' => $start->format('F Y'),
                 'value' => (float) $amount,
+                'orders_count' => (int) $ordersCount,
             ];
         }
 
