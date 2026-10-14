@@ -3242,37 +3242,6 @@ body.storefront-body.tiamir-intro-active {
     letter-spacing: .16em;
     pointer-events: none;
 }
-.tiamir-intro__replay {
-    position: fixed;
-    z-index: 9997;
-    top: 16px;
-    right: 18px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 28px;
-    padding: 5px 8px;
-    border: 1px solid rgb(255 255 255 / 11%);
-    border-radius: 999px;
-    background: rgb(10 9 12 / 52%);
-    color: rgb(255 255 255 / 48%);
-    font: 500 8px/1 'Space Grotesk', 'Vazirmatn', sans-serif;
-    letter-spacing: .08em;
-    opacity: .72;
-    cursor: pointer;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    transition: color 160ms ease, border-color 160ms ease, background 160ms ease, opacity 160ms ease;
-}
-.tiamir-intro__replay:hover,
-.tiamir-intro__replay:focus-visible {
-    color: #fff;
-    border-color: rgb(255 255 255 / 30%);
-    background: rgb(24 22 27 / 76%);
-    opacity: 1;
-}
-.tiamir-intro__replay:focus-visible { outline: 2px solid var(--store-orange-hot); outline-offset: 3px; }
-.tiamir-intro__replay[hidden] { display: none !important; }
 .tiamir-intro.has-signal-hit .tiamir-intro__logo--main { filter: brightness(1.14) contrast(1.05); }
 
 
@@ -3741,7 +3710,6 @@ body.storefront-body.tiamir-intro-active {
     .tiamir-intro__logo-wrap { width: min(420px, 82vw); min-height: 90px; }
     .tiamir-intro__signature { bottom: calc(30px + env(safe-area-inset-bottom, 0px)); font-size: 9px; letter-spacing: .16em; }
     .tiamir-intro__hint { top: 16px; left: 13px; font-size: 7px; }
-    .tiamir-intro__replay { top: 8px; right: 8px; min-height: 26px; padding: 5px 7px; font-size: 7px; }
 }
 
 @media (orientation: landscape) and (max-height: 480px) {
