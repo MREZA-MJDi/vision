@@ -16,7 +16,6 @@
         ];
         $step = $statusSteps[$model->status] ?? 0;
         $isTerminal = in_array($model->status, ['cancelled', 'returned'], true);
-        $currency = config('commerce-admin.currency_symbol', '$');
     @endphp
 
     <div class="ak-page-heading">
@@ -80,8 +79,8 @@
                                     </td>
                                     <td><span class="ak-mono">{{ $item->sku ?: '—' }}</span><small class="ak-table-subtext">{{ $item->variant_name ?: 'Default variant' }}</small></td>
                                     <td>{{ number_format((int) $item->quantity) }}</td>
-                                    <td>{{ $currency }}{{ number_format((float) $item->unit_price, 2) }}</td>
-                                    <td><strong>{{ $currency }}{{ number_format((float) $item->line_total, 2) }}</strong></td>
+                                    <td>@money($item->unit_price)</td>
+                                    <td><strong>@money($item->line_total)</strong></td>
                                 </tr>
                             @endforeach
                             </tbody>
@@ -99,11 +98,11 @@
                     </div>
                 @else
                     <div class="ak-delivery-steps">
-                        <div class="ak-delivery-step is-complete"><span>✓</span><div><strong>ثبت سفارش</strong><small>{{ optional($model->placed_at ?: $model->created_at)->format('M d, Y · H:i') }}</small></div></div>
+                        <div class="ak-delivery-step is-complete"><span>✓</span><div><strong>ثبت سفارش</strong><small>@jalali($model->placed_at ?: $model->created_at, 'j F Y · H:i')</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 1 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>{{ $model->shipped_at?->format('M d, Y · H:i') ?: 'هنوز ارسال نشده' }}</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 1 ? 'is-complete' : '' }}"><span>{{ $step >= 1 ? '✓' : '2' }}</span><div><strong>ارسال‌شده</strong><small>{{ $model->shipped_at ? \\App\\Support\\JalaliDate::format($model->shipped_at, 'j F Y · H:i') : 'هنوز ارسال نشده' }}</small></div></div>
                         <div class="ak-delivery-connector {{ $step >= 2 ? 'is-complete' : '' }}"></div>
-                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>{{ $model->delivered_at?->format('M d, Y · H:i') ?: 'در انتظار تحویل' }}</small></div></div>
+                        <div class="ak-delivery-step {{ $step >= 2 ? 'is-complete' : '' }}"><span>{{ $step >= 2 ? '✓' : '3' }}</span><div><strong>تحویل‌شده</strong><small>{{ $model->delivered_at ? \\App\\Support\\JalaliDate::format($model->delivered_at, 'j F Y · H:i') : 'در انتظار تحویل' }}</small></div></div>
                     </div>
                     <form method="POST" action="{{ route('commerce-admin.orders.status', $model->getKey()) }}" class="ak-inline-status-form">
                         @csrf @method('PATCH')
@@ -125,18 +124,18 @@
             <section class="ak-panel ak-aside-panel">
                 <div class="ak-panel-heading"><div><h2>خلاصهٔ سفارش</h2><p>مبالغ ذخیره‌شده در رکورد سفارش.</p></div></div>
                 <div class="ak-summary-lines">
-                    <div><span>جمع جزء</span><strong>{{ $currency }}{{ number_format((float) $model->subtotal, 2) }}</strong></div>
-                    <div><span>تخفیف</span><strong class="{{ (float) $model->discount > 0 ? 'ak-negative-value' : '' }}">−{{ $currency }}{{ number_format((float) $model->discount, 2) }}</strong></div>
-                    <div><span>Shipping</span><strong>{{ $currency }}{{ number_format((float) $model->shipping_cost, 2) }}</strong></div>
-                    <div><span>Tax</span><strong>{{ $currency }}{{ number_format((float) $model->tax, 2) }}</strong></div>
-                    <div class="ak-summary-total"><span>مبلغ کل</span><strong>{{ $currency }}{{ number_format((float) $model->total, 2) }}</strong></div>
+                    <div><span>جمع جزء</span><strong>@money($model->subtotal)</strong></div>
+                    <div><span>تخفیف</span><strong class="{{ (float) $model->discount > 0 ? 'ak-negative-value' : '' }}">−@money($model->discount)</strong></div>
+                    <div><span>Shipping</span><strong>@money($model->shipping_cost)</strong></div>
+                    <div><span>Tax</span><strong>@money($model->tax)</strong></div>
+                    <div class="ak-summary-total"><span>مبلغ کل</span><strong>@money($model->total)</strong></div>
                 </div>
                 <div class="ak-payment-detail">
                     <span class="ak-payment-icon" aria-hidden="true">▤</span>
                     <div><strong>روش پرداخت</strong><small>{{ \Illuminate\Support\Str::headline($model->payment_method ?: 'ثبت نشده') }}</small></div>
                     <span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($model->payment_status) }}">{{ config('commerce-admin.status_labels.' . $model->payment_status, config('commerce-admin.status_labels.' . $model->payment_status, \Illuminate\Support\Str::headline($model->payment_status))) }}</span>
                 </div>
-                @if($model->paid_at)<p class="ak-help-note">تاریخ پرداخت {{ $model->paid_at->format('M d, Y H:i') }}</p>@endif
+                @if($model->paid_at)<p class="ak-help-note">تاریخ پرداخت {{ \\App\\Support\\JalaliDate::format($model->paid_at, 'j F Y H:i') }}</p>@endif
                 <form method="POST" action="{{ route('commerce-admin.orders.payment', $model->getKey()) }}" class="ak-payment-form">
                     @csrf @method('PATCH')
                     <label class="ak-field">
@@ -154,7 +153,7 @@
                     <div class="ak-detail-list">
                         <span>سوابق پرداخت<strong>{{ $model->payments->count() }}</strong></span>
                         @foreach($model->payments as $payment)
-                            <span>{{ \Illuminate\Support\Str::headline($payment->gateway) }} · {{ \Illuminate\Support\Str::headline($payment->status) }}<strong>{{ $currency }}{{ number_format((float) $payment->amount, 2) }}</strong></span>
+                            <span>{{ \Illuminate\Support\Str::headline($payment->gateway) }} · {{ \Illuminate\Support\Str::headline($payment->status) }}<strong>@money($payment->amount)</strong></span>
                         @endforeach
                     </div>
                 @endif
@@ -164,7 +163,7 @@
                 <div class="ak-panel-heading"><div><h2>اطلاعات تکمیلی سفارش</h2></div></div>
                 <div class="ak-detail-list">
                     <span>سفارش ID<strong>#{{ $model->getKey() }}</strong></span>
-                    <span>ثبت شده<strong>{{ optional($model->placed_at ?: $model->created_at)->format('M d, Y') }}</strong></span>
+                    <span>ثبت شده<strong>@jalali($model->placed_at ?: $model->created_at, 'j F Y')</strong></span>
                     <span>به‌روزرسانی<strong>{{ $model->updated_at?->diffForHumans() ?: '—' }}</strong></span>
                     <span>کد رهگیری<strong>{{ $model->tracking_code ?: 'تخصیص داده نشده' }}</strong></span>
                 </div>
