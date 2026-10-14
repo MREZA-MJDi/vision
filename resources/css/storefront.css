@@ -2008,3 +2008,18 @@ body.storefront-body {
 .fitting-room-reopen[hidden] {
     display: none !important;
 }
+
+/* A missing product photo is shown as missing, never replaced by an invented garment illustration. */
+.product-art--empty {
+    background: #1a171d;
+    border: 1px dashed var(--store-line-strong);
+}
+.product-art--empty > span {
+    max-width: 78%;
+    color: var(--store-muted);
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.8;
+}
