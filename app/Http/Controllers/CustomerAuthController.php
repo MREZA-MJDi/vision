@@ -43,10 +43,11 @@ class CustomerAuthController extends Controller
         ]);
 
         $sessionId = $request->session()->getId();
+        // Authenticate through the shared storefront login. The trusted role flag
+        // determines the destination after credentials have been verified.
         $credentials = [
             'email' => Str::lower(trim($validated['email'])),
             'password' => $validated['password'],
-            'is_admin' => false,
         ];
 
         if (! Auth::attempt($credentials, (bool) ($validated['remember'] ?? false))) {
@@ -56,6 +57,13 @@ class CustomerAuthController extends Controller
         }
 
         $request->session()->regenerate();
+
+        // Administrators use the same email/password form as customers, but
+        // their server-side role sends them to the protected administration area.
+        if ((bool) Auth::user()->getAttribute('is_admin')) {
+            return redirect()->route('commerce-admin.dashboard');
+        }
+
         $this->mergeGuestCart((int) Auth::id(), $sessionId);
 
         return redirect()->intended(route('account.show'));
