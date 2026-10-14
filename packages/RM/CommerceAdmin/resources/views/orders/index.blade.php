@@ -15,10 +15,10 @@
         </div>
 
         <div class="ak-order-tabs" role="tablist" aria-label="فیلتر سفارش‌ها بر اساس وضعیت">
-            <a class="{{ $status === 'all' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index') }}">All <span>{{ number_format($stats['all']) }}</span></a>
-            <a class="{{ $status === 'pending' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index', ['status'=>'pending']) }}">Pending <span>{{ number_format($stats['pending']) }}</span></a>
-            <a class="{{ $status === 'shipped' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index', ['status'=>'shipped']) }}">Shipped <span>{{ number_format($stats['shipped']) }}</span></a>
-            <a class="{{ $status === 'delivered' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index', ['status'=>'delivered']) }}">Delivered <span>{{ number_format($stats['delivered']) }}</span></a>
+            <a class="{{ $status === 'all' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index') }}">همه <span>{{ number_format($stats['all']) }}</span></a>
+            <a class="{{ $status === 'pending' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index', ['status'=>'pending']) }}">در انتظار <span>{{ number_format($stats['pending']) }}</span></a>
+            <a class="{{ $status === 'shipped' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index', ['status'=>'shipped']) }}">ارسال‌شده <span>{{ number_format($stats['shipped']) }}</span></a>
+            <a class="{{ $status === 'delivered' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index', ['status'=>'delivered']) }}">تحویل‌شده <span>{{ number_format($stats['delivered']) }}</span></a>
             <a class="{{ $status === 'cancelled' ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index', ['status'=>'cancelled']) }}">لغوشده / مرجوع‌شده <span>{{ number_format($stats['cancelled']) }}</span></a>
         </div>
 
@@ -28,24 +28,24 @@
             <div class="ak-filter-actions"><button class="ak-button ak-button-dark ak-button-sm" type="submit">جست‌وجو</button><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.orders.index') }}">پاک‌کردن</a></div>
         </form>
 
-        <div class="ak-column-popover" data-columns-panel hidden><label><input type="checkbox" data-column-check="product" checked> Product</label><label><input type="checkbox" data-column-check="customer" checked> Customer</label><label><input type="checkbox" data-column-check="type" checked> Type</label><label><input type="checkbox" data-column-check="price" checked> Total</label><label><input type="checkbox" data-column-check="date" checked> Date</label><label><input type="checkbox" data-column-check="status" checked> وضعیت</label></div>
+        <div class="ak-column-popover" data-columns-panel hidden><label><input type="checkbox" data-column-check="product" checked> محصول</label><label><input type="checkbox" data-column-check="customer" checked> مشتری</label><label><input type="checkbox" data-column-check="type" checked> نوع</label><label><input type="checkbox" data-column-check="price" checked> مبلغ کل</label><label><input type="checkbox" data-column-check="date" checked> تاریخ</label><label><input type="checkbox" data-column-check="status" checked> وضعیت</label></div>
 
         @if($orders->isEmpty())
             <div class="ak-empty-state"><span>▤</span><strong>سفارشی پیدا نشد</strong><p>وضعیت یا عبارت جست‌وجو را تغییر دهید یا با موجودی قابل فروش سفارش جدیدی ثبت کنید.</p><a class="ak-button ak-button-primary ak-button-sm" href="{{ route('commerce-admin.orders.create') }}">ثبت سفارش</a></div>
         @else
             <div class="ak-table-scroll"><table class="ak-table ak-orders-table">
-                <thead><tr><th>Order</th><th data-column="product">Product</th><th data-column="customer">Customer</th><th data-column="type">Type</th><th data-column="price">قیمت</th><th data-column="date">Date</th><th data-column="status">وضعیت</th><th></th></tr></thead>
+                <thead><tr><th>سفارش</th><th data-column="product">محصول</th><th data-column="customer">مشتری</th><th data-column="type">نوع</th><th data-column="price">قیمت</th><th data-column="date">تاریخ</th><th data-column="status">وضعیت</th><th></th></tr></thead>
                 <tbody>
                 @foreach($orders as $order)
                     @php $firstItem = $order->admin_primary_item ?? $order->items->first(); @endphp
                     <tr>
                         <td><a class="ak-table-primary" href="{{ route('commerce-admin.orders.show', $order->getKey()) }}">#{{ $order->order_number }}</a><small class="ak-table-subtext">ID {{ $order->getKey() }}</small></td>
-                        <td data-column="product"><div class="ak-product-cell">@if($firstItem?->product_image)<img src="{{ $firstItem->product_image }}" alt="{{ $firstItem->product_name }}">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<div><strong>{{ $firstItem?->product_name ?: 'Order without item snapshot' }}</strong><small>{{ number_format((int)($order->admin_item_count ?? $order->items->sum('quantity'))) }} total units</small></div></div></td>
+                        <td data-column="product"><div class="ak-product-cell">@if($firstItem?->product_image)<img src="{{ $firstItem->product_image }}" alt="{{ $firstItem->product_name }}">@else<span class="ak-product-thumb-placeholder">▦</span>@endif<div><strong>{{ $firstItem?->product_name ?: 'سفارش without item snapshot' }}</strong><small>{{ number_format((int)($order->admin_item_count ?? $order->items->sum('quantity'))) }} واحد در مجموع</small></div></div></td>
                         <td data-column="customer"><div class="ak-customer-cell"><span class="ak-avatar ak-avatar-tiny">{{ strtoupper(substr($order->customer_name ?: 'C', 0, 1)) }}</span><span><strong>{{ $order->customer_name ?: $order->user?->name ?: 'Guest customer' }}</strong><small>{{ $order->customer_email ?: $order->customer_phone ?: 'No contact saved' }}</small></span></div></td>
-                        <td data-column="type"><span class="ak-type-label">{{ $order->status === 'returned' ? 'Return' : ($order->discount > 0 ? 'Discounted sale' : 'Sale') }}</span></td>
-                        <td data-column="price"><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$order->total, 2) }}</strong><small class="ak-table-subtext">{{ config('commerce-admin.status_labels.' . ($order->payment_status ?: 'pending'), \Illuminate\Support\Str::headline($order->payment_status ?: 'pending')) }}</small></td>
+                        <td data-column="type"><span class="ak-type-label">{{ $order->status === 'returned' ? 'Return' : ($order->discount > 0 ? 'تخفیفed sale' : 'Sale') }}</span></td>
+                        <td data-column="price"><strong>{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float)$order->total, 2) }}</strong><small class="ak-table-subtext">{{ config('commerce-admin.status_labels.' . ($order->payment_status ?: 'pending'), config('commerce-admin.status_labels.' . ($order->payment_status ?: 'pending'), \Illuminate\Support\Str::headline($order->payment_status ?: 'pending'))) }}</small></td>
                         <td data-column="date">{{ optional($order->placed_at ?: $order->created_at)->format('M d, Y') }}</td>
-                        <td data-column="status"><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($order->status) }}">{{ config('commerce-admin.status_labels.' . $order->status, \Illuminate\Support\Str::headline($order->status)) }}</span></td>
+                        <td data-column="status"><span class="ak-status-pill status-{{ \Illuminate\Support\Str::slug($order->status) }}">{{ config('commerce-admin.status_labels.' . $order->status, config('commerce-admin.status_labels.' . $order->status, \Illuminate\Support\Str::headline($order->status))) }}</span></td>
                         <td><a class="ak-row-action" href="{{ route('commerce-admin.orders.show', $order->getKey()) }}" aria-label="بازکردن جزئیات سفارش">···</a></td>
                     </tr>
                 @endforeach
