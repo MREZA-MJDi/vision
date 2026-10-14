@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\ProductVariant;
@@ -90,6 +91,7 @@ class DashboardController
         $productModel = $this->model('product', Product::class);
         $variantModel = $this->model('variant', ProductVariant::class);
         $orderItemModel = $this->model('order_item', OrderItem::class);
+        $paymentModel = $this->model('payment', Payment::class);
         $reviewModel = $this->model('review', ProductReview::class);
 
         $orders = $orderModel::query();
@@ -102,16 +104,21 @@ class DashboardController
 
         $byCity = $orderModel::query()
             ->select('shipping_city', DB::raw('COUNT(*) as orders_count'), DB::raw('SUM(total) as revenue_total'))
+            ->where('payment_status', 'paid')
+            ->whereNotIn('status', ['cancelled', 'returned'])
             ->whereNotNull('shipping_city')
             ->where('shipping_city', '<>', '')
             ->groupBy('shipping_city')
             ->orderByDesc('revenue_total')->limit(5)->get();
 
-        $paymentBreakdown = $orderModel::query()
-            ->select('payment_status', DB::raw('COUNT(*) as aggregate'))
-            ->groupBy('payment_status')->get();
+        $paymentBreakdown = $paymentModel::query()
+            ->select('status as payment_status', DB::raw('COUNT(*) as aggregate'))
+            ->groupBy('status')->get();
 
         $topProducts = $orderItemModel::query()
+            ->whereHas('order', fn ($query) => $query
+                ->where('payment_status', 'paid')
+                ->whereNotIn('status', ['cancelled', 'returned']))
             ->select('product_name', DB::raw('SUM(quantity) as units_sold'), DB::raw('SUM(line_total) as gross_sales'))
             ->groupBy('product_name')->orderByDesc('units_sold')->limit(5)->get();
 
@@ -133,13 +140,13 @@ class DashboardController
         $recentReviews = $reviewModel::query()->with(['product', 'user'])
             ->where('status', 'approved')->orderByDesc('created_at')->limit(5)->get();
 
-        $identifiedCustomers = (clone $orders)->whereNotNull('user_id')->distinct()->count('user_id')
-            + (clone $orders)->whereNull('user_id')->whereNotNull('customer_email')
+        $identifiedCustomers = (clone $paid)->whereNotNull('user_id')->distinct()->count('user_id')
+            + (clone $paid)->whereNull('user_id')->whereNotNull('customer_email')
                 ->where('customer_email', '<>', '')->distinct()->count('customer_email');
 
-        $repeatUserCustomers = $orderModel::query()->whereNotNull('user_id')
+        $repeatUserCustomers = (clone $paid)->whereNotNull('user_id')
             ->select('user_id')->groupBy('user_id')->havingRaw('COUNT(*) > 1')->get()->count();
-        $repeatEmailCustomers = $orderModel::query()->whereNull('user_id')
+        $repeatEmailCustomers = (clone $paid)->whereNull('user_id')
             ->whereNotNull('customer_email')->where('customer_email', '<>', '')
             ->selectRaw('LOWER(customer_email) as normalized_email')
             ->groupByRaw('LOWER(customer_email)')->havingRaw('COUNT(*) > 1')->get()->count();
