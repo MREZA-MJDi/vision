@@ -50,7 +50,7 @@ class ProductController
         $userModel = $this->model('user', User::class);
 
         $query = $productModel::query()
-            ->with(['category', 'brand', 'variants', 'galleryMedia'])
+            ->with(['category', 'brand', 'variants.primaryGalleryMedia', 'galleryMedia'])
             ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
             ->withCount('approvedReviews');
 
@@ -194,9 +194,10 @@ class ProductController
 
         $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
         $storedImagePaths = [];
+        $obsoleteImagePaths = [];
 
         try {
-            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, &$storedImagePaths): void {
+            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, &$storedImagePaths, &$obsoleteImagePaths): void {
             $requestedSlug = trim((string) ($validated['slug'] ?? ''));
             $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
 
@@ -260,7 +261,8 @@ class ProductController
             $keepIds = [];
             $seenSkus = [];
 
-            foreach (array_values($validated['variants']) as $index => $input) {
+            $variantPosition = 0;
+            foreach ($validated['variants'] as $index => $input) {
                 $variantId = $input['id'] ?? null;
                 $sku = trim((string) ($input['sku'] ?? ''));
 
@@ -309,7 +311,7 @@ class ProductController
                     'stock' => (int) $input['stock'],
                     'low_stock_threshold' => (int) $input['low_stock_threshold'],
                     'is_active' => (bool) $input['is_active'],
-                    'sort_order' => $index,
+                    'sort_order' => $variantPosition++,
                 ]);
                 $variant->save();
                 $keepIds[] = $variant->getKey();
@@ -327,6 +329,38 @@ class ProductController
                             ? 'Stock adjusted from the product editor.'
                             : 'Initial stock set from the product editor.',
                         'created_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+                }
+
+                // Each variant owns its primary image. Keep the DB replacement atomic and
+                // remove old files only after the transaction commits successfully.
+                $variantImage = $request->file("variants.{$index}.image");
+                if ($variantImage) {
+                    foreach ($variant->galleryMedia()->get() as $existingAsset) {
+                        if ($existingAsset->path && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
+                            $obsoleteImagePaths[] = [$existingAsset->disk ?: $mediaDisk, $existingAsset->path];
+                        }
+                        $existingAsset->delete();
+                    }
+
+                    $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
+                        . '/' . $product->getKey() . '/variants/' . $variant->getKey();
+                    $path = $variantImage->store($directory, $mediaDisk);
+                    if (! is_string($path) || $path === '') {
+                        throw new \\RuntimeException('ذخیره‌سازی تصویر تنوع انجام نشد.');
+                    }
+
+                    $storedImagePaths[] = $path;
+                    $variant->media()->create([
+                        'collection' => 'gallery',
+                        'disk' => $mediaDisk,
+                        'path' => $path,
+                        'original_name' => $variantImage->getClientOriginalName(),
+                        'mime_type' => $variantImage->getMimeType(),
+                        'size' => $variantImage->getSize(),
+                        'alt_text' => trim($product->name . ($variant->color ? ' - ' . $variant->color : '')),
+                        'sort_order' => 0,
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                     ]);
                 }
             }
@@ -371,6 +405,10 @@ class ProductController
             }
 
             throw $exception;
+        }
+
+        foreach ($obsoleteImagePaths as [$disk, $path]) {
+            Storage::disk($disk)->delete($path);
         }
 
         return redirect()->route('commerce-admin.products.show', $product->getKey())
