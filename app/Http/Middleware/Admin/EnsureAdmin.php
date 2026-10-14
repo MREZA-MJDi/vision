@@ -2,31 +2,27 @@
 
 namespace App\Http\Middleware\Admin;
 
+use App\Services\Auth\AuthenticatedUserRedirector;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $guard = config('commerce-admin.guard', 'web');
+        $guard = (string) config('commerce-admin.guard', 'web');
+        $user = Auth::guard($guard)->user();
 
-        if (! Auth::guard($guard)->check()) {
+        if (! $user) {
+            // The public storefront login also authenticates administrators.
+            // Keep the named admin-login route as a compatibility redirect.
             return redirect()->guest(route('commerce-admin.login'));
         }
 
-        $user = Auth::guard($guard)->user();
-        $flagColumn = config('commerce-admin.admin_flag_column', 'is_admin');
-
-        if (! $user || ! (bool) $user->getAttribute($flagColumn)) {
-            Auth::guard($guard)->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            abort(403, 'Administrator access is required.');
-        }
+        Gate::forUser($user)->authorize('access-commerce-admin');
 
         return $next($request);
     }
