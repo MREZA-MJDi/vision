@@ -1,9 +1,9 @@
 <?php
 
-namespace Rm\\CommerceAdmin;
+namespace Rm\CommerceAdmin;
 
-use Illuminate\\Support\\Facades\\Blade;
-use Illuminate\\Support\\ServiceProvider;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\ServiceProvider;
 
 class CommerceAdminServiceProvider extends ServiceProvider
 {
