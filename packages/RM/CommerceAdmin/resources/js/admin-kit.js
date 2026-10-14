@@ -76,6 +76,26 @@
         $$('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
     }, true);
 
+    // Image preview is only visual; Laravel validates and persists the uploaded file.
+    $('[data-category-cover-input]')?.addEventListener('change', (event) => {
+        const input = event.currentTarget;
+        const file = input.files?.[0];
+        const preview = $('[data-category-cover-preview]');
+        if (!file || !preview || !file.type.startsWith('image/')) return;
+
+        if (preview.dataset.objectUrl) URL.revokeObjectURL(preview.dataset.objectUrl);
+        const objectUrl = URL.createObjectURL(file);
+        preview.dataset.objectUrl = objectUrl;
+        preview.src = objectUrl;
+        preview.hidden = false;
+
+        const filename = $('[data-category-cover-filename]');
+        if (filename) filename.textContent = file.name;
+
+        const removeCheckbox = $('[data-remove-category-cover]');
+        if (removeCheckbox) removeCheckbox.checked = false;
+    });
+
     // Sidebar interactions (desktop expandable navigation + mobile drawer).
     $$('[data-nav-toggle]').forEach((button) => button.addEventListener('click', () => {
         const open = button.classList.toggle('is-open');
