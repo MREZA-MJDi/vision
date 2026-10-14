@@ -43,7 +43,7 @@
                         <label class="ak-field ak-field-full"><span>نشانی ارسال <b>*</b></span><textarea name="shipping_address" required rows="3" maxlength="2000" placeholder="خیابان، پلاک، واحد...">{{ old('shipping_address') }}</textarea></label>
                         <label class="ak-field"><span>شهر</span><input type="text" name="shipping_city" maxlength="100" value="{{ old('shipping_city') }}"></label>
                         <label class="ak-field"><span>استان</span><input type="text" name="shipping_province" maxlength="100" value="{{ old('shipping_province') }}"></label>
-                        <label class="ak-field"><span>کد پستی</span><input type="text" name="postal_code" maxlength="30" value="{{ old('postal_code') }}"></label>
+                        <label class="ak-field"><span>کد پستی</span><input type="text" name="postal_code" maxlength="20" value="{{ old('postal_code') }}"></label>
                     </div>
                 </section>
 
