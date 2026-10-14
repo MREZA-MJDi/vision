@@ -11,6 +11,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CommerceAdminManagementTest extends TestCase
@@ -67,6 +69,90 @@ class CommerceAdminManagementTest extends TestCase
             ->assertSessionHasErrors('parent_id');
 
         $this->assertNull($parent->fresh()->parent_id);
+    }
+
+    public function test_category_cover_image_is_saved_replaced_and_removed_from_the_public_storefront(): void
+    {
+        Storage::fake('public');
+        $admin = $this->makeAdmin('category-cover-admin@example.test');
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.categories.store'), [
+                'name' => 'پوشاک',
+                'slug' => 'clothing',
+                'status' => 'active',
+                'sort_order' => 1,
+                'cover_image' => UploadedFile::fake()->image('category-first.jpg', 800, 600),
+                'cover_alt' => 'تصویر دسته پوشاک',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('commerce-admin.categories.index'));
+
+        $category = Category::query()->where('slug', 'clothing')->firstOrFail();
+        $firstMedia = $category->coverMedia;
+        $this->assertNotNull($firstMedia);
+        $firstPath = (string) $firstMedia->path;
+        Storage::disk('public')->assertExists($firstPath);
+
+        $this->get(route('storefront.index'))->assertOk()
+            ->assertSee((string) $firstMedia->url, false);
+
+        $this->actingAs($admin)
+            ->put(route('commerce-admin.categories.update', $category->getKey()), [
+                'name' => 'پوشاک',
+                'slug' => 'clothing',
+                'status' => 'active',
+                'sort_order' => 1,
+                'cover_image' => UploadedFile::fake()->image('category-second.png', 1200, 800),
+                'cover_alt' => 'تصویر جدید دسته پوشاک',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('commerce-admin.categories.index'));
+
+        $secondMedia = $category->fresh()->coverMedia;
+        $this->assertNotNull($secondMedia);
+        $this->assertNotSame($firstPath, $secondMedia->path);
+        $this->assertSame('تصویر جدید دسته پوشاک', $secondMedia->alt_text);
+        Storage::disk('public')->assertMissing($firstPath);
+        Storage::disk('public')->assertExists($secondMedia->path);
+        $this->assertSame(1, $category->media()->where('collection', 'cover')->count());
+
+        $this->get(route('storefront.index'))->assertOk()
+            ->assertSee((string) $secondMedia->url, false);
+
+        $this->actingAs($admin)
+            ->put(route('commerce-admin.categories.update', $category->getKey()), [
+                'name' => 'پوشاک',
+                'slug' => 'clothing',
+                'status' => 'active',
+                'sort_order' => 1,
+                'remove_cover' => '1',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('commerce-admin.categories.index'));
+
+        $this->assertNull($category->fresh()->coverMedia);
+        $this->assertSame(0, $category->media()->where('collection', 'cover')->count());
+        Storage::disk('public')->assertMissing($secondMedia->path);
+    }
+
+    public function test_category_cover_upload_rejects_non_image_files_without_persisting_category(): void
+    {
+        Storage::fake('public');
+        $admin = $this->makeAdmin('category-invalid-cover-admin@example.test');
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.categories.create'))
+            ->post(route('commerce-admin.categories.store'), [
+                'name' => 'نامعتبر',
+                'slug' => 'invalid-cover',
+                'status' => 'active',
+                'cover_image' => UploadedFile::fake()->create('document.pdf', 10, 'application/pdf'),
+            ])
+            ->assertSessionHasErrors('cover_image');
+
+        $this->assertDatabaseMissing('categories', ['slug' => 'invalid-cover']);
+        $this->assertSame(0, \App\Models\Media::query()->count());
     }
 
     public function test_category_delete_is_soft_archived_when_products_still_use_it(): void
