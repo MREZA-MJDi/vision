@@ -85,14 +85,14 @@
             <div class="commerce-summary__products">
                 @foreach($items as $item)
                     @php($variant = $item->productVariant)
-                    <div><span>{{ $variant?->product?->name ?? 'Unavailable item' }} × {{ (int) $item->quantity }}</span><strong>{{ '$' }}{{ number_format((float) $item->display_line_total, 2) }}</strong></div>
+                    <div><span>{{ $variant?->product?->name ?? 'Unavailable item' }} × {{ (int) $item->quantity }}</span><strong>@money($item->display_line_total)</strong></div>
                 @endforeach
             </div>
             <div class="commerce-summary__lines">
-                <div><span>Subtotal</span><strong>{{ '$' }}{{ number_format((float) $summary['subtotal'], 2) }}</strong></div>
-                <div><span>Tax</span><strong>{{ '$' }}{{ number_format((float) $summary['tax'], 2) }}</strong></div>
-                <div><span>Shipping</span><strong>{{ '$' }}{{ number_format((float) $summary['shipping'], 2) }}</strong></div>
-                <div class="commerce-summary__total"><span>Total</span><strong>{{ '$' }}{{ number_format((float) $summary['total'], 2) }}</strong></div>
+                <div><span>Subtotal</span><strong>@money($summary['subtotal'])</strong></div>
+                <div><span>Tax</span><strong>@money($summary['tax'])</strong></div>
+                <div><span>Shipping</span><strong>@money($summary['shipping'])</strong></div>
+                <div class="commerce-summary__total"><span>Total</span><strong>@money($summary['total'])</strong></div>
             </div>
             <button class="commerce-button commerce-button--primary commerce-button--wide" type="submit" @disabled(!$summary['allAvailable'])>Place order securely ↗</button>
             <p class="commerce-muted">Clicking once creates the order and reserves stock in one database transaction. Prices and stock are recalculated server-side.</p>
