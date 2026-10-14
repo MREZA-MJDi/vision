@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\Product;
-use App\\Models\\ProductVariant;
-use Database\\Seeders\\CommerceDemoSeeder;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use Database\Seeders\CommerceDemoSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class PublicStorefrontPhaseOneTest extends TestCase
 {
