@@ -49,6 +49,8 @@ Tax rate is fractional: \`0.08\` means 8%. Shipping is a fixed per-order amount.
 
 Displayed product and variant prices use thousands separators and the configured currency symbol. The product form accepts grouped Persian/Arabic or Latin digits, normalizes them before validation, and stores numeric values without commas. Variant images are saved against each variant's own media relation; selecting a color on the product page swaps its image, price, and stock together.
 
+**Money-unit caution:** `COMMERCE_ADMIN_CURRENCY` and `COMMERCE_ADMIN_CURRENCY_SYMBOL` do not perform currency conversion. Product prices, shipping, tax, orders, payments, and ledger records must use one explicitly agreed unit end to end. The current sample uses ISO code `IRR` while displaying `تومان`; verify the intended unit and any existing production data before changing either setting or integrating a gateway.
+
 ### Optional demo catalog seeders
 
 The demo seeders create normal editable database records and version-controlled SVG product images under `storage/app/public/demo-products`. They include separate category, brand, product/variant, and inventory seeders. Run them only in a development or staging database:
@@ -63,6 +65,17 @@ php artisan db:seed --class=CommerceDemoSeeder
 ```
 
 The commands are idempotent and do not delete unrelated records. Demo categories, products, variants and images can be edited or archived through Commerce Admin. Inventory is adjusted through the Inventory screen; its movement ledger is intentionally retained as audit history.
+
+## Architecture and quality baseline
+
+- The active public entry point is `StorefrontController`: `/` renders `store.home`, while `/shop` and `/products` render `store.index`.
+- The canonical public layout is `resources/views/layouts/store.blade.php`. The unused Laravel welcome template and the former English storefront layout/catalog view are removed to avoid competing sources of truth.
+- Business-critical order transitions, stock restoration, payment status, and ledger posting live in shared services under `app/Services`; keep changes to these workflows covered by feature tests.
+- Check the homepage at 320, 360, 390, 430, 768, and desktop widths after changing campaign styles.
+- CI smoke-tests with PHP 8.2, runs the full suite on PHP 8.3, and uses `npm ci` for a lockfile-based production asset build.
+- Product images use real catalog media with graceful empty states. Do not run demo seeders on production databases.
+
+Before production release, verify the live currency unit against existing database values, confirm backups and migration status, configure HTTPS and production environment flags, publish storage links/assets, and confirm payment reconciliation rules match the actual business process.
 
 ## Local setup
 

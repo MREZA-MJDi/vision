@@ -21,6 +21,9 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $response->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
+            ->assertSee('property="og:locale" content="fa_IR"', false)
+            ->assertSee('property="og:type" content="website"', false)
+            ->assertSee('name="twitter:card" content="summary"', false)
             ->assertSee('VISION — فروشگاه پوشاک')
             ->assertSee('VISION')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
@@ -58,6 +61,8 @@ class PublicStorefrontPhaseOneTest extends TestCase
         $this->get('/products/demo-essential-cotton-tee')
             ->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
+            ->assertSee('property="og:type" content="product"', false)
+            ->assertSee('name="twitter:title"', false)
             ->assertSee('data-variant-select', false)
             ->assertSee('data-variant-color-pick', false)
             ->assertSee('افزودن به سبد خرید')

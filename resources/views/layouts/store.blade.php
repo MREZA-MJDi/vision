@@ -5,17 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0b090d">
-    <meta name="description" content="@yield('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.')">
-    <link rel="canonical" href="@yield('canonical', url()->current())">
-    <title>@yield('title', 'VISION — New Arrivals')</title>
+    <meta name="description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    <link rel="canonical" href="{{ $__env->yieldContent('canonical', url()->current()) }}">
+    <meta property="og:site_name" content="VISION">
+    <meta property="og:locale" content="fa_IR">
+    <meta property="og:type" content="{{ $__env->yieldContent('og-type', 'website') }}">
+    <meta property="og:title" content="{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}">
+    <meta property="og:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    <meta property="og:url" content="{{ $__env->yieldContent('canonical', url()->current()) }}">
+    @if (filled(trim($__env->yieldContent('og-image'))))
+        <meta property="og:image" content="{{ trim($__env->yieldContent('og-image')) }}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ trim($__env->yieldContent('og-image')) }}">
+    @else
+        <meta name="twitter:card" content="summary">
+    @endif
+    <meta name="twitter:title" content="{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}">
+    <meta name="twitter:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    <title>{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+    @unless (app()->environment('testing'))
         @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/js/storefront.js'])
-    @endif
+    @endunless
     @stack('styles')
 </head>
 <body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }}">
