@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware\Admin;
 
-use App\Services\Auth\AuthenticatedUserRedirector;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
