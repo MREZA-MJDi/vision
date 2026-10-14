@@ -51,6 +51,9 @@ class SaveProductRequest extends FormRequest
             'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
+            'attributes' => ['sometimes', 'array', 'max:30'],
+            'attributes.*.key' => ['required_with:attributes.*.value', 'string', 'max:80'],
+            'attributes.*.value' => ['required_with:attributes.*.key', 'string', 'max:500'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'is_featured' => ['sometimes', 'boolean'],
@@ -62,7 +65,9 @@ class SaveProductRequest extends FormRequest
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.size' => ['nullable', 'string', 'max:50'],
             'variants.*.color' => ['nullable', 'string', 'max:80'],
-            'variants.*.color_code' => ['nullable', 'string', 'max:20'],
+            'variants.*.color_code' => ['nullable', 'string', 'max:20', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'variants.*.images' => ['sometimes', 'array', 'max:4'],
+            'variants.*.images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'variants.*.price' => ['required', 'numeric', 'min:0'],
             'variants.*.sale_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.stock' => ['required', 'integer', 'min:0'],
@@ -103,6 +108,9 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock.min' => 'موجودی نمی‌تواند منفی باشد.',
             'images.*.image' => 'فایل انتخاب‌شده باید تصویر باشد.',
             'images.*.max' => 'اندازهٔ هر تصویر حداکثر ۴ مگابایت است.',
+            'variants.*.images.*.image' => 'تصویر هر تنوع باید یک فایل تصویری معتبر باشد.',
+            'variants.*.images.*.max' => 'اندازهٔ هر تصویر تنوع حداکثر ۴ مگابایت است.',
+            'variants.*.color_code.regex' => 'کد رنگ باید یک رنگ معتبر HEX مانند #171717 باشد.',
         ];
     }
 }
