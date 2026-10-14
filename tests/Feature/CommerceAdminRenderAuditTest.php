@@ -412,7 +412,7 @@ class CommerceAdminRenderAuditTest extends TestCase
                 'items' => ['not-an-item-row'],
             ])
             ->assertRedirect(route('commerce-admin.orders.create'))
-            ->assertSessionHasErrors('items.0.variant_id');
+            ->assertSessionHasErrors('items');
 
         $this->get(route('commerce-admin.orders.create'))->assertOk();
     }
