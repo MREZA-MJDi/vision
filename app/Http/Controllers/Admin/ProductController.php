@@ -192,7 +192,10 @@ class ProductController
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $validated = $request->validated();
 
-        DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel): void {
+        $storedFiles = [];
+
+        try {
+            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, &$storedFiles): void {
             $requestedSlug = trim((string) ($validated['slug'] ?? ''));
             $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
 
@@ -325,28 +328,47 @@ class ProductController
                     $variant->delete();
                 });
             }
-        });
 
-        if ($request->hasFile('images')) {
-            $mediaDisk = config('commerce-admin.media_disk', 'public');
-            foreach ($request->file('images', []) as $image) {
-                $path = $image->store(
-                    trim(config('commerce-admin.media_directory', 'products'), '/') . '/' . $product->getKey(),
-                    $mediaDisk
-                );
+            // Keep product, variant, stock-ledger, and media records in one DB transaction.
+            // Filesystem writes are compensated if any later DB operation fails.
+            if ($request->hasFile('images')) {
+                $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
+                $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/') . '/' . $product->getKey();
 
-                $product->media()->create([
-                    'collection' => 'gallery',
-                    'disk' => $mediaDisk,
-                    'path' => $path,
-                    'original_name' => $image->getClientOriginalName(),
-                    'mime_type' => $image->getMimeType(),
-                    'size' => $image->getSize(),
-                    'alt_text' => $product->name,
-                    'sort_order' => $product->galleryMedia()->count(),
-                    'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
-                ]);
+                foreach ($request->file('images', []) as $image) {
+                    $path = $image->store($directory, $mediaDisk);
+                    if (! is_string($path) || $path === '') {
+                        throw ValidationException::withMessages([
+                            'images' => 'ذخیره‌سازی یکی از تصاویر انجام نشد؛ هیچ تغییری ثبت نشد.',
+                        ]);
+                    }
+
+                    $storedFiles[] = [$mediaDisk, $path];
+
+                    $product->media()->create([
+                        'collection' => 'gallery',
+                        'disk' => $mediaDisk,
+                        'path' => $path,
+                        'original_name' => $image->getClientOriginalName(),
+                        'mime_type' => $image->getMimeType(),
+                        'size' => $image->getSize(),
+                        'alt_text' => $product->name,
+                        'sort_order' => $product->galleryMedia()->count(),
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+                }
             }
+            }, 3);
+        } catch (\\Throwable $exception) {
+            foreach ($storedFiles as [$disk, $path]) {
+                try {
+                    Storage::disk($disk)->delete($path);
+                } catch (\\Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
+
+            throw $exception;
         }
 
         return redirect()->route('commerce-admin.products.show', $product->getKey())
