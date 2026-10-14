@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Middleware\EnsureCommerceAdmin;
 
-Route::middleware('web')->prefix('admin')->as('commerce-admin.')->group(function (): void {
+Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
     Route::post('/logout', [AuthController::class, 'destroy'])->middleware(EnsureCommerceAdmin::class)->name('logout');
