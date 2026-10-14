@@ -39,12 +39,25 @@
                 </section>
 
                 <section class="ak-panel ak-form-panel">
-                    <div class="ak-panel-heading"><div><h2>تنوع‌ها و موجودی</h2><p>هر تنوع شناسه SKU، بارکد، قیمت و موجودی مستقل دارد.</p></div><button class="ak-button ak-button-light ak-button-sm" type="button" data-add-variant>＋ افزودن تنوع</button></div>
+                    <div class="ak-panel-heading"><div><h2>تنوع‌ها و موجودی</h2><p>هر تنوع قیمت، موجودی و تصویر اختصاصی خود را دارد؛ برای مثال رنگ مشکی عکس جداگانه خواهد داشت.</p></div><button class="ak-button ak-button-light ak-button-sm" type="button" data-add-variant>＋ افزودن تنوع</button></div>
                     <div class="ak-variant-list" data-variant-list>
                         @php $formVariants = old('variants', $variants); @endphp
                         @foreach($formVariants as $index => $variant)
                             <div class="ak-variant-card" data-variant-row>
                                 <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>{{ $loop->iteration }}</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="Remove variant" {{ $loop->first ? 'disabled' : '' }}>×</button></div>
+                                <div class="ak-variant-media-block">
+                                    <label class="ak-button ak-button-light ak-button-sm ak-variant-upload-trigger">＋ بارگذاری تصویر این تنوع<input type="file" name="variants[{{ $index }}][images][]" accept="image/jpeg,image/png,image/webp" multiple hidden data-variant-image-input></label>
+                                    @php $variantMedia = data_get($variant, 'galleryMedia', collect()); @endphp
+                                    @if($variantMedia && $variantMedia->isNotEmpty())
+                                        <div class="ak-image-grid ak-variant-existing-images">
+                                            @foreach($variantMedia as $asset)
+                                                <div class="ak-image-tile">@if($asset->url)<img src="{{ $asset->url }}" alt="{{ $asset->alt_text ?: $product?->name }}" loading="lazy" decoding="async">@endif<button type="submit" form="delete-product-media-{{ $asset->getKey() }}" aria-label="حذف تصویر تنوع">×</button><small>{{ $asset->original_name ?: 'تصویر تنوع' }}</small></div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                    <div class="ak-new-image-preview" data-variant-image-preview></div>
+                                    <small>برای این رنگ/تنوع حداکثر ۴ تصویر انتخاب کنید. تصویر انتخاب‌شده در صفحهٔ محصول مشتری قابل نمایش خواهد بود.</small>
+                                </div>
                                 @if(data_get($variant, 'id'))<input type="hidden" name="variants[{{ $index }}][id]" value="{{ data_get($variant, 'id') }}">@endif
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>
@@ -63,6 +76,11 @@
                     <template id="variant-row-template">
                         <div class="ak-variant-card" data-variant-row>
                             <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>__NUMBER__</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="Remove variant">×</button></div>
+                            <div class="ak-variant-media-block">
+                                <label class="ak-button ak-button-light ak-button-sm ak-variant-upload-trigger">＋ بارگذاری تصویر این تنوع<input type="file" name="variants[__INDEX__][images][]" accept="image/jpeg,image/png,image/webp" multiple hidden data-variant-image-input></label>
+                                <div class="ak-new-image-preview" data-variant-image-preview></div>
+                                <small>برای این رنگ/تنوع حداکثر ۴ تصویر انتخاب کنید.</small>
+                            </div>
                             <div class="ak-variant-grid">
                                 <label class="ak-field"><span>SKU</span><input name="variants[__INDEX__][sku]" maxlength="100" placeholder="SKU-001"></label>
                                 <label class="ak-field"><span>اندازه / گزینه</span><input name="variants[__INDEX__][size]" maxlength="50" placeholder="M / 256 GB"></label>
@@ -109,6 +127,11 @@
     @if($product)
         @foreach($product->galleryMedia as $asset)
             <form id="delete-product-media-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.media.destroy', [$product->getKey(), $asset->getKey()]) }}" data-confirm="این تصویر از محصول حذف شود؟">@csrf @method('DELETE')</form>
+        @endforeach
+        @foreach($product->variants as $variant)
+            @foreach($variant->galleryMedia as $asset)
+                <form id="delete-product-media-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.media.destroy', [$product->getKey(), $asset->getKey()]) }}" data-confirm="تصویر اختصاصی این تنوع حذف شود؟">@csrf @method('DELETE')</form>
+            @endforeach
         @endforeach
     @endif
 @endsection
