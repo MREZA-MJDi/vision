@@ -49,7 +49,7 @@
                         <td>@jalali($item->updated_at, 'j F Y')</td>
                         <td><div class="ak-toolbar">
                             <a class="ak-button ak-button-light ak-button-sm" href="{{ route($routePrefix . '.edit', $item->getKey()) }}">ویرایش</a>
-                            <form method="POST" action="{{ route($routePrefix . '.destroy', $item->getKey()) }}" onsubmit="return confirm('حذف یا غیرفعال‌کردن این رکورد انجام شود؟')">@csrf @method('DELETE')<button class="ak-button ak-button-light ak-button-sm" type="submit">حذف</button></form>
+                            <form method="POST" action="{{ route($routePrefix . '.destroy', $item->getKey()) }}" data-confirm="حذف یا غیرفعال‌کردن این رکورد انجام شود؟">@csrf @method('DELETE')<button class="ak-button ak-button-light ak-button-sm" type="submit">حذف</button></form>
                         </div></td>
                     </tr>
                 @endforeach
