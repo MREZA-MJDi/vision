@@ -11,8 +11,9 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        // Launch data is real application data: it is editable in Commerce
-        // Admin and respects any later edit, archive, or media deletion.
-        $this->call([AdminSeeder::class, StorefrontLaunchSeeder::class]);
+        // Production-safe by default: only bootstrap an admin when credentials
+        // were explicitly provided. Optional catalog/demo seeders are run on
+        // purpose, never as a side effect of the normal database seed command.
+        $this->call(AdminSeeder::class);
     }
 }
