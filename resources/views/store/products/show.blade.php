@@ -1,7 +1,9 @@
 @extends('layouts.store')
 
 @section('title', $product->meta_title ?: $product->name . ' — VISION')
-@section('meta-description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?: $product->description ?: 'Discover the latest VISION edit.'), 155))
+@section('description', \\App\\Support\\SeoDefaults::description($product->name, $product->meta_description, [$product->short_description, $product->description]))
+
+@section('canonical', route('products.show', ['product' => $product->slug]))
 
 @section('content')
 @php

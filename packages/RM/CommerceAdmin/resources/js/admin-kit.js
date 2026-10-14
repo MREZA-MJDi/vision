@@ -19,13 +19,13 @@
         return decimals ? grouped + '.' + decimals : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
-    $('[data-money-input]').forEach((input) => {
+    $$('[data-money-input]').forEach((input) => {
         input.value = formatMoneyInput(input.value);
         input.addEventListener('focus', () => { input.value = cleanMoneyInput(input.value); });
         input.addEventListener('blur', () => { input.value = formatMoneyInput(input.value); });
     });
     document.addEventListener('submit', (event) => {
-        $('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
+        $$('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
     }, true);
 
     // Sidebar interactions (desktop expandable navigation + mobile drawer).
@@ -87,7 +87,7 @@
         checkbox.addEventListener('change', apply);
         apply();
     });
-    const rowCheckboxes = $('[data-row-select]');
+    const rowCheckboxes = $$('[data-row-select]');
     const bulkArchiveButton = $('[data-bulk-archive-button]');
     const updateBulkArchiveButton = () => {
         const selectedCount = rowCheckboxes.filter((checkbox) => checkbox.checked).length;
@@ -303,8 +303,15 @@
             if (button) { button.disabled = false; button.textContent = 'تأیید برش و ادامه'; }
         }
     });
-    $('[data-crop-skip]')?.addEventListener('click', () => continueWithImage(cropQueue[cropIndex]));
-    $('[data-crop-cancel]').forEach((button) => button.addEventListener('click', () => {
+    $('[data-crop-skip]')?.addEventListener('click', () => {
+        const file = cropQueue[cropIndex];
+        if (file && file.size > 4 * 1024 * 1024) {
+            window.alert('این تصویر بیشتر از ۴ مگابایت است؛ برای ارسال، آن را برش دهید تا فشرده شود.');
+            return;
+        }
+        if (file) continueWithImage(file);
+    });
+    $$('[data-crop-cancel]').forEach((button) => button.addEventListener('click', () => {
         cropQueue = [];
         cropResults = [];
         cropIndex = 0;
@@ -415,7 +422,7 @@
         if (totalEl) totalEl.textContent = money(subtotal + shipping);
     };
     const updateOrderVariantOptions = (items) => {
-        $('[data-order-variant]', orderList || document).forEach((select) => {
+        $$('[data-order-variant]', orderList || document).forEach((select) => {
             const selectedValue = select.value || select.dataset.initialValue || '';
             const selectedOption = select.selectedOptions?.[0]?.cloneNode(true);
             select.replaceChildren(new Option('ابتدا محصول را جست‌وجو کنید', ''));
@@ -442,7 +449,7 @@
         else url.searchParams.delete('q');
         const selectedIds = [...new Set([
             ...pendingInitialVariantIds,
-            ...$('[data-order-variant]', orderList || document).map((select) => select.value || select.dataset.initialValue).filter(Boolean),
+            ...$$('[data-order-variant]', orderList || document).map((select) => select.value || select.dataset.initialValue).filter(Boolean),
         ])];
         selectedIds.forEach((id) => url.searchParams.append('ids[]', id));
         try {
