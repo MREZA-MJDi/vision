@@ -38,7 +38,7 @@ class CommerceDemoSeederTest extends TestCase
         $this->assertSame('demo-essential-cotton-tee', $black->product->slug);
         $this->assertSame('مشکی', $black->color);
         $this->assertSame(
-            'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=max&w=1200&q=85',
+            'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&fm=jpg&q=85&w=1200',
             $black->primaryGalleryMedia->path
         );
         $this->assertSame('image/jpeg', $black->primaryGalleryMedia->mime_type);
@@ -58,7 +58,7 @@ class CommerceDemoSeederTest extends TestCase
             ->assertOk()
             ->assertSee('data-variant-pick', false)
             ->assertSee('data-image=', false)
-            ->assertSee('photo-1618354691373-d851c5c3a990')
+            ->assertSee('photo-1583743814966-8936f5b7be1a')
             ->assertSee('1,290,000 تومان')
             ->assertSee('1,090,000 تومان');
     }
@@ -109,7 +109,7 @@ class CommerceDemoSeederTest extends TestCase
         $this->seed(CommerceDemoSeeder::class);
 
         $this->assertSame(
-            'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=max&w=1200&q=85',
+            'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&fm=jpg&q=85&w=1200',
             $black->primaryGalleryMedia()->firstOrFail()->path
         );
         $this->assertSame(
