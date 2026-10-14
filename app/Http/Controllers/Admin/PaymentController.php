@@ -16,6 +16,7 @@ class PaymentController
     public function index(Request $request): View
     {
         $model = $this->model();
+        $paymentStatuses = Payment::STATUSES;
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'all');
         $query = $model::query()->with('order');
@@ -50,6 +51,6 @@ class PaymentController
             'paid_total' => $model::query()->where('status', 'paid')->sum('amount'),
         ];
 
-        return view('commerce-admin::payments.index', compact('payments', 'search', 'status', 'stats'));
+        return view('commerce-admin::payments.index', compact('payments', 'search', 'status', 'stats', 'paymentStatuses'));
     }
 }
