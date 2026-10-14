@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\ProductReview;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\UpdateReviewStatusRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ReviewController
@@ -53,12 +53,10 @@ class ReviewController
         return view('commerce-admin::reviews.index', compact('reviews', 'stats', 'search', 'status', 'reviewStatuses'));
     }
 
-    public function updateStatus(Request $request, int $review): RedirectResponse
+    public function updateStatus(UpdateReviewStatusRequest $request, int $review): RedirectResponse
     {
         $reviewModel = $this->model();
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(ProductReview::STATUSES)],
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function () use ($reviewModel, $review, $validated): void {
             $row = $reviewModel::query()->whereKey($review)->lockForUpdate()->firstOrFail();

@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\SaveCategoryRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CategoryController
@@ -68,11 +67,11 @@ class CategoryController
         return $this->formView(new $model(), false);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveCategoryRequest $request): RedirectResponse
     {
         $model = $this->model();
         $record = new $model();
-        $data = $this->validated($request, $record, false);
+        $data = $request->validated();
 
         DB::transaction(function () use ($record, $data, $model): void {
             $record->fill([
@@ -100,11 +99,11 @@ class CategoryController
         return $this->formView($record, true);
     }
 
-    public function update(Request $request, int $category): RedirectResponse
+    public function update(SaveCategoryRequest $request, int $category): RedirectResponse
     {
         $model = $this->model();
         $record = $model::query()->findOrFail($category);
-        $data = $this->validated($request, $record, true);
+        $data = $request->validated();
 
         DB::transaction(function () use ($record, $data, $model): void {
             $record->fill([
@@ -160,49 +159,6 @@ class CategoryController
             'parents' => $parents,
             'showParent' => true,
         ]);
-    }
-
-    private function validated(Request $request, object $record, bool $updating): array
-    {
-        $model = $this->model();
-        $table = (new $model())->getTable();
-        $id = $updating ? $record->getKey() : null;
-
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique($table, 'slug')->ignore($id)],
-            'parent_id' => ['nullable', 'integer', Rule::exists($table, 'id')->whereNull('deleted_at')],
-            'description' => ['nullable', 'string', 'max:5000'],
-            'meta_title' => ['nullable', 'string', 'max:255'],
-            'meta_description' => ['nullable', 'string', 'max:500'],
-            'sort_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'status' => ['required', Rule::in(['active', 'draft'])],
-        ]);
-
-        if (! empty($data['parent_id'])) {
-            $parentId = (int) $data['parent_id'];
-            $model = $this->model();
-            $current = $model::query()->find($parentId);
-            $seen = [];
-
-            while ($current && $current->getKey()) {
-                $currentId = (int) $current->getKey();
-
-                if ($record->getKey() && $currentId === (int) $record->getKey()) {
-                    throw ValidationException::withMessages([
-                        'parent_id' => 'یک دسته‌بندی نمی‌تواند والد خودش یا یکی از والدهایش باشد.',
-                    ]);
-                }
-                if (isset($seen[$currentId])) {
-                    break;
-                }
-
-                $seen[$currentId] = true;
-                $current = $current->parent;
-            }
-        }
-
-        return $data;
     }
 
     private function resolveSlug(string $model, string $requestedSlug, string $name, ?int $ignoreId = null, ?string $currentSlug = null): string

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\AdminLoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -25,13 +26,9 @@ class AuthController
         return view('commerce-admin::auth.login');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(AdminLoginRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'string', 'max:255'],
-            'remember' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $guardName = config('commerce-admin.guard', 'web');
         $adminColumn = config('commerce-admin.admin_flag_column', 'is_admin');

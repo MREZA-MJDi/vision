@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Brand;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\SaveBrandRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class BrandController
@@ -67,11 +67,11 @@ class BrandController
         return $this->formView(new $model(), false);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveBrandRequest $request): RedirectResponse
     {
         $model = $this->model();
         $record = new $model();
-        $data = $this->validated($request, $record, false);
+        $data = $request->validated();
 
         DB::transaction(function () use ($record, $data, $model): void {
             $record->fill([
@@ -97,11 +97,11 @@ class BrandController
         return $this->formView($record, true);
     }
 
-    public function update(Request $request, int $brand): RedirectResponse
+    public function update(SaveBrandRequest $request, int $brand): RedirectResponse
     {
         $model = $this->model();
         $record = $model::query()->findOrFail($brand);
-        $data = $this->validated($request, $record, true);
+        $data = $request->validated();
 
         DB::transaction(function () use ($record, $data, $model): void {
             $record->fill([
@@ -147,22 +147,6 @@ class BrandController
             'routePrefix' => 'commerce-admin.brands',
             'parents' => collect(),
             'showParent' => false,
-        ]);
-    }
-
-    private function validated(Request $request, object $record, bool $updating): array
-    {
-        $model = $this->model();
-        $table = (new $model())->getTable();
-        $id = $updating ? $record->getKey() : null;
-
-        return $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique($table, 'slug')->ignore($id)],
-            'description' => ['nullable', 'string', 'max:5000'],
-            'meta_title' => ['nullable', 'string', 'max:255'],
-            'meta_description' => ['nullable', 'string', 'max:500'],
-            'status' => ['required', Rule::in(['active', 'draft'])],
         ]);
     }
 

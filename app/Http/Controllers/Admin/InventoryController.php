@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\InventoryMovement;
 use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\AdjustInventoryRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,12 +66,9 @@ class InventoryController
         ));
     }
 
-    public function adjust(Request $request, int $variant): RedirectResponse
+    public function adjust(AdjustInventoryRequest $request, int $variant): RedirectResponse
     {
-        $validated = $request->validate([
-            'adjustment' => ['required', 'integer', 'min:-100000', 'max:100000'],
-            'note' => ['required', 'string', 'min:3', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $delta = (int) $validated['adjustment'];
         if ($delta === 0) {

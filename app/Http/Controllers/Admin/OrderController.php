@@ -11,11 +11,13 @@ use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\Admin\StoreAdminOrderRequest;
+use App\Http\Requests\Admin\UpdateOrderPaymentRequest;
+use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -83,7 +85,7 @@ class OrderController
         return view('commerce-admin::orders.create', compact('variants'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreAdminOrderRequest $request): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
         $itemModel = $this->model('order_item', OrderItem::class);
@@ -92,20 +94,7 @@ class OrderController
         $userModel = $this->model('user', User::class);
         $paymentModel = $this->model('payment', Payment::class);
 
-        $validated = $request->validate([
-            'customer_name' => ['required', 'string', 'max:255'],
-            'customer_email' => ['nullable', 'email', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:30'],
-            'shipping_address' => ['nullable', 'string', 'max:2000'],
-            'shipping_province' => ['nullable', 'string', 'max:100'],
-            'shipping_city' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:30'],
-            'payment_method' => ['required', Rule::in(['cash_on_delivery', 'bank_transfer', 'manual'])],
-            'shipping_cost' => ['required', 'numeric', 'min:0'],
-            'items' => ['required', 'array', 'min:1', 'max:50'],
-            'items.*.variant_id' => ['required', 'integer', 'distinct', 'exists:product_variants,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $order = DB::transaction(function () use (
             $validated,
@@ -295,12 +284,10 @@ class OrderController
         ));
     }
 
-    public function updateStatus(Request $request, int $order, OrderService $orderService): RedirectResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, int $order, OrderService $orderService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(Order::STATUSES)],
-        ]);
+        $validated = $request->validated();
 
         $record = $orderModel::query()->findOrFail($order);
         if (! $record instanceof Order) {
@@ -321,12 +308,10 @@ class OrderController
             ->with('status', 'وضعیت سفارش ذخیره شد.');
     }
 
-    public function updatePayment(Request $request, int $order, PaymentService $paymentService): RedirectResponse
+    public function updatePayment(UpdateOrderPaymentRequest $request, int $order, PaymentService $paymentService): RedirectResponse
     {
         $orderModel = $this->model('order', Order::class);
-        $validated = $request->validate([
-            'payment_status' => ['required', Rule::in(Payment::STATUSES)],
-        ]);
+        $validated = $request->validated();
 
         $record = $orderModel::query()->findOrFail($order);
         if (! $record instanceof Order) {
