@@ -18,7 +18,8 @@ class ExampleTest extends TestCase
             ->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
             ->assertSee('home-hero__frame', false)
-            ->assertSee('انتخاب دقیق‌تر. شلوغی کمتر.')
+            ->assertSee('متفاوت باش،<br>بدون تلاش اضافه', false)
+            ->assertSee('data-home-hero-variant', false)
             ->assertDontSee('data-fitting-room', false);
     }
 
