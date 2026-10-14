@@ -339,7 +339,7 @@ class ProductController
                     $path = $image->store($directory, $mediaDisk);
 
                     if (! is_string($path) || $path === '') {
-                        throw new \\RuntimeException('ذخیره‌سازی تصویر محصول انجام نشد.');
+                        throw new \RuntimeException('ذخیره‌سازی تصویر محصول انجام نشد.');
                     }
 
                     $storedImagePaths[] = $path;
@@ -357,7 +357,7 @@ class ProductController
                 }
             }
             }, 1);
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             foreach ($storedImagePaths as $path) {
                 Storage::disk($mediaDisk)->delete($path);
             }
