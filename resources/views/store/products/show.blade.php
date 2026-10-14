@@ -121,8 +121,8 @@
             <div class="commerce-related-grid">
                 @foreach($relatedProducts as $related)
                     @php
-                        $relatedVariant = $related->primaryActiveVariant;
-                        $relatedImage = $related->primaryGalleryMedia?->url ?? $relatedVariant?->primaryGalleryMedia?->url;
+                        $relatedVariant = $related->primaryAvailableVariant ?? $related->primaryActiveVariant;
+                        $relatedImage = $relatedVariant?->primaryGalleryMedia?->url ?? $related->primaryGalleryMedia?->url;
                     @endphp
                     <a class="commerce-related-card" href="{{ route('products.show', ['product' => $related->slug]) }}">
                         @if($relatedImage)<img src="{{ $relatedImage }}" alt="{{ $related->name }}" loading="lazy">@else<div class="commerce-related-card__empty">V.</div>@endif
