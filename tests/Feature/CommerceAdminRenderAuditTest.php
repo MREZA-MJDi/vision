@@ -212,6 +212,43 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->assertStringContainsString($blackMedia->url, $html);
     }
 
+    public function test_product_store_rejects_soft_deleted_category_and_brand_ids(): void
+    {
+        $admin = $this->makeAdmin();
+        $category = Category::query()->create([
+            'name' => 'Archived Category',
+            'slug' => 'archived-category',
+            'is_active' => true,
+        ]);
+        $brand = Brand::query()->create([
+            'name' => 'Archived Brand',
+            'slug' => 'archived-brand',
+            'is_active' => true,
+        ]);
+        $category->delete();
+        $brand->delete();
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.products.create'))
+            ->post(route('commerce-admin.products.store'), [
+                'name' => 'Invalid Taxonomy Product',
+                'status' => 'active',
+                'category_id' => $category->getKey(),
+                'brand_id' => $brand->getKey(),
+                'variants' => [[
+                    'sku' => 'INVALID-TAXONOMY-001',
+                    'price' => '1000',
+                    'stock' => '1',
+                    'low_stock_threshold' => '0',
+                    'is_active' => '1',
+                ]],
+            ])
+            ->assertRedirect(route('commerce-admin.products.create'))
+            ->assertSessionHasErrors(['category_id', 'brand_id']);
+
+        $this->assertDatabaseMissing('products', ['slug' => 'invalid-taxonomy-product']);
+    }
+
     public function test_form_requests_reject_invalid_product_order_inventory_and_login_input(): void
     {
         $admin = $this->makeAdmin();
