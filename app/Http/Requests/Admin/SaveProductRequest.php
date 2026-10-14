@@ -47,8 +47,8 @@ class SaveProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($productTable, 'slug')->ignore($this->route('product'))],
-            'category_id' => ['nullable', 'integer', Rule::exists($categoryTable, 'id')],
-            'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')],
+            'category_id' => ['nullable', 'integer', Rule::exists($categoryTable, 'id')->whereNull('deleted_at')],
+            'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')->whereNull('deleted_at')],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'attributes' => ['sometimes', 'array', 'max:50'],
@@ -71,6 +71,9 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock' => ['required', 'integer', 'min:0'],
             'variants.*.low_stock_threshold' => ['required', 'integer', 'min:0'],
             'variants.*.is_active' => ['required', 'boolean'],
+            'variants.*.image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'variants.*.images' => ['sometimes', 'array', 'max:4'],
+            'variants.*.images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'images' => ['sometimes', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ];
@@ -129,6 +132,10 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock.min' => 'موجودی نمی‌تواند منفی باشد.',
             'images.*.image' => 'فایل انتخاب‌شده باید تصویر باشد.',
             'images.*.max' => 'اندازهٔ هر تصویر حداکثر ۴ مگابایت است.',
+            'variants.*.image.image' => 'تصویر تنوع باید یک فایل تصویری معتبر باشد.',
+            'variants.*.image.max' => 'اندازهٔ تصویر هر تنوع حداکثر ۴ مگابایت است.',
+            'variants.*.images.*.image' => 'تصویر هر تنوع باید یک فایل تصویری معتبر باشد.',
+            'variants.*.images.*.max' => 'اندازهٔ هر تصویر تنوع حداکثر ۴ مگابایت است.',
         ];
     }
 }

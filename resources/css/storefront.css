@@ -1780,3 +1780,14 @@ body.storefront-body button { color: inherit; }
 .store-product-attributes>div{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid #e8e3dc}
 .store-product-attributes dt{color:#7b756d;font-size:.88rem}
 .store-product-attributes dd{margin:0;color:inherit;font-size:.9rem;text-align:end;overflow-wrap:anywhere}
+
+
+/* Accessible variant color swatches, synchronized with the real variant selector. */
+.store-variant-colors{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.store-variant-colors__label{font-size:.88rem;color:var(--store-muted,#777)}
+.store-variant-colors__options{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.store-variant-color{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:7px 11px;border:1px solid var(--store-border,#ddd);border-radius:999px;background:transparent;color:inherit;font:inherit;cursor:pointer;transition:border-color .18s,box-shadow .18s,opacity .18s}
+.store-variant-color__swatch{width:18px;height:18px;flex:0 0 18px;border:1px solid rgb(0 0 0 / 18%);border-radius:50%;background:var(--variant-color,#888);box-shadow:inset 0 0 0 1px rgb(255 255 255 / 18%)}
+.store-variant-color.is-selected{border-color:currentColor;box-shadow:0 0 0 1px currentColor}
+.store-variant-color:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.store-variant-color:disabled{opacity:.42;cursor:not-allowed}

@@ -10,7 +10,7 @@
     @endif
     @stack('head')
 </head>
-<body class="admin-kit" data-currency-symbol="{{ config('commerce-admin.currency_symbol', '$') }}">
+<body class="admin-kit" data-currency-symbol="{{ config('commerce-admin.currency_symbol', 'تومان') }}">
 <div class="ak-app" data-sidebar-root>
     <aside class="ak-sidebar" id="adminSidebar">
         <a class="ak-brand" href="{{ route('commerce-admin.dashboard') }}" aria-label="{{ config('commerce-admin.brand_name', 'VISION Commerce') }} dashboard">
@@ -32,7 +32,7 @@
 <div class="ak-nav-submenu" data-nav-submenu>
 <a class="{{ request()->routeIs('commerce-admin.analytics') ? 'is-active' : '' }}" href="{{ route('commerce-admin.analytics') }}">گزارش فروشگاه</a>
 <a class="{{ request()->routeIs('commerce-admin.products.index') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.index') }}">فهرست محصولات</a>
-<a class="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? url()->current() : route('commerce-admin.products.index') }}">جزئیات محصول</a>
+<a class="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.products.show','commerce-admin.products.edit') ? route('commerce-admin.products.show', request()->route('product')) : route('commerce-admin.products.index') }}">جزئیات محصول</a>
 <a class="{{ request()->routeIs('commerce-admin.products.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.create') }}">افزودن محصول</a>
 <a class="{{ request()->routeIs('commerce-admin.categories.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.categories.index') }}">دسته‌بندی‌ها</a>
 <a class="{{ request()->routeIs('commerce-admin.brands.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.brands.index') }}">برندها</a>

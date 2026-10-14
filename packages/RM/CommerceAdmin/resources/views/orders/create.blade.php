@@ -32,7 +32,7 @@
                     <div class="ak-form-grid">
                         <label class="ak-field"><span>نام مشتری <b>*</b></span><input type="text" name="customer_name" required maxlength="255" value="{{ old('customer_name') }}" placeholder="نام و نام خانوادگی"></label>
                         <label class="ak-field"><span>نشانی ایمیل</span><input type="email" name="customer_email" maxlength="255" value="{{ old('customer_email') }}" placeholder="customer@example.com"></label>
-                        <label class="ak-field"><span>تلفن</span><input type="text" name="customer_phone" maxlength="30" value="{{ old('customer_phone') }}" placeholder="شماره تلفن"></label>
+                        <label class="ak-field"><span>تلفن <b>*</b></span><input type="text" name="customer_phone" required maxlength="30" value="{{ old('customer_phone') }}" placeholder="شماره تلفن"></label>
                         <label class="ak-field"><span>روش پرداخت <b>*</b></span><select name="payment_method" required><option value="cash_on_delivery" @selected(old('payment_method','cash_on_delivery')==='cash_on_delivery')>پرداخت در محل</option><option value="bank_transfer" @selected(old('payment_method')==='bank_transfer')>واریز بانکی</option><option value="manual" @selected(old('payment_method')==='manual')>پرداخت دستی / خارج از سامانه</option></select></label>
                     </div>
                 </section>
@@ -40,10 +40,10 @@
                 <section class="ak-panel ak-form-panel">
                     <div class="ak-panel-heading"><div><h2>اطلاعات ارسال</h2><p>اطلاعات نشانی در رکورد سفارش ذخیره می‌شود.</p></div></div>
                     <div class="ak-form-grid">
-                        <label class="ak-field ak-field-full"><span>نشانی ارسال</span><textarea name="shipping_address" rows="3" maxlength="2000" placeholder="خیابان، پلاک، واحد...">{{ old('shipping_address') }}</textarea></label>
+                        <label class="ak-field ak-field-full"><span>نشانی ارسال <b>*</b></span><textarea name="shipping_address" required rows="3" maxlength="2000" placeholder="خیابان، پلاک، واحد...">{{ old('shipping_address') }}</textarea></label>
                         <label class="ak-field"><span>شهر</span><input type="text" name="shipping_city" maxlength="100" value="{{ old('shipping_city') }}"></label>
                         <label class="ak-field"><span>استان</span><input type="text" name="shipping_province" maxlength="100" value="{{ old('shipping_province') }}"></label>
-                        <label class="ak-field"><span>کد پستی</span><input type="text" name="postal_code" maxlength="30" value="{{ old('postal_code') }}"></label>
+                        <label class="ak-field"><span>کد پستی</span><input type="text" name="postal_code" maxlength="20" value="{{ old('postal_code') }}"></label>
                     </div>
                 </section>
 

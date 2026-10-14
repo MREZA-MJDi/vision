@@ -86,7 +86,6 @@ final class PaymentService
                 'paid_at' => $status === 'paid'
                     ? ($order->paid_at ?? now())
                     : $order->paid_at,
-                'payment_method' => $resolvedGateway,
             ]);
 
             return $payment->fresh();

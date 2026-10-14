@@ -67,8 +67,10 @@
                 <tbody>
                 @foreach($products as $item)
                     @php
-                        $variant = $item->variants->firstWhere('is_active', true) ?: $item->variants->first();
-                        $asset = $item->galleryMedia->first();
+                        $variant = $item->variants->first(fn ($row) => $row->is_active && (int) $row->stock > 0)
+                            ?: $item->variants->firstWhere('is_active', true)
+                            ?: $item->variants->first();
+                        $asset = $item->galleryMedia->first() ?: $item->variants->firstWhere('is_active', true)?->primaryGalleryMedia;
                         $stock = (int) $item->variants->where('is_active', true)->sum('stock');
                         $isLow = $item->variants->contains(fn($row) => $row->is_active && $row->stock <= $row->low_stock_threshold);
                         $onSale = $item->variants->contains(fn($row) => $row->sale_price !== null && $row->sale_price < $row->price);

@@ -14,14 +14,14 @@
         <div class="commerce-summary__lines">
             <div><span>Order status</span><strong>{{ \Illuminate\Support\Str::headline($order->status) }}</strong></div>
             <div><span>Payment</span><strong>{{ \Illuminate\Support\Str::headline($order->payment_status) }}</strong></div>
-            <div><span>Subtotal</span><strong>{{ '$' }}{{ number_format((float) $order->subtotal, 2) }}</strong></div>
-            <div><span>Tax</span><strong>{{ '$' }}{{ number_format((float) $order->tax, 2) }}</strong></div>
-            <div><span>Shipping</span><strong>{{ '$' }}{{ number_format((float) $order->shipping_cost, 2) }}</strong></div>
-            <div class="commerce-summary__total"><span>Total</span><strong>{{ '$' }}{{ number_format((float) $order->total, 2) }}</strong></div>
+            <div><span>Subtotal</span><strong>@money($order->subtotal)</strong></div>
+            <div><span>Tax</span><strong>@money($order->tax)</strong></div>
+            <div><span>Shipping</span><strong>@money($order->shipping_cost)</strong></div>
+            <div class="commerce-summary__total"><span>Total</span><strong>@money($order->total)</strong></div>
         </div>
         <div class="commerce-complete__items">
             @foreach($order->items as $item)
-                <div><span>{{ $item->product_name }} × {{ (int) $item->quantity }}</span><strong>{{ '$' }}{{ number_format((float) $item->line_total, 2) }}</strong></div>
+                <div><span>{{ $item->product_name }} × {{ (int) $item->quantity }}</span><strong>@money($item->line_total)</strong></div>
             @endforeach
         </div>
         @if($order->payment_method === 'bank_transfer')

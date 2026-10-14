@@ -157,6 +157,7 @@ class CommerceAdminWorkflowTest extends TestCase
         $order = Order::query()->create([
             'order_number' => 'VS-DELIVERY-MILESTONE-0001',
             'customer_name' => 'Delivery Test Buyer',
+            'customer_phone' => '555-0197',
             'shipping_address' => '4 Test Road',
             'status' => 'shipped',
             'payment_status' => 'pending',
@@ -256,6 +257,7 @@ class CommerceAdminWorkflowTest extends TestCase
             ->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
         $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertSame('cash_on_delivery', $order->fresh()->payment_method);
         $this->assertNotNull($order->fresh()->paid_at);
 
         $payment = Payment::query()->where('order_id', $order->getKey())->firstOrFail();
@@ -268,6 +270,7 @@ class CommerceAdminWorkflowTest extends TestCase
         ])->assertRedirect(route('commerce-admin.orders.show', $order->getKey()));
 
         $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame('cash_on_delivery', $order->fresh()->payment_method);
         $this->assertSame('refunded', $payment->fresh()->status);
     }
 
