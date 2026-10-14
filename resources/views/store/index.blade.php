@@ -202,7 +202,7 @@
                                 <button class="product-card__cart" type="button"
                                     data-cart-add="{{ $variant?->id ?? '' }}"
                                     data-cart-name="{{ $product->name }}"
-                                    data-cart-price="{{ $effectivePrice !== null ? $formatPrice($effectivePrice) : 'Price unavailable' }}"
+                                    data-cart-price="{{ $effectivePrice !== null ? $formatPrice($effectivePrice) : 'قیمت نامشخص' }}"
                                     aria-label="افزودن {{ $product->name }} به سبد خرید" title="افزودن به سبد خرید" @disabled(!$variant || (int) $variant->stock < 1)>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2M12 12v4m-2-2h4"></path></svg>
                                 </button>
