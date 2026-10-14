@@ -325,6 +325,7 @@ class ProductController
                 // swap to the selected variant's photo instead of the product default.
                 $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
                 $variantImages = $request->file('variants.' . $index . '.images', []);
+                $imageSortStart = (int) $variant->galleryMedia()->count();
                 foreach (is_array($variantImages) ? $variantImages : [] as $imageOffset => $image) {
                     if (! $image || ! $image->isValid()) {
                         continue;
@@ -351,7 +352,7 @@ class ProductController
                         'width' => $dimensions[0] ?? null,
                         'height' => $dimensions[1] ?? null,
                         'alt_text' => trim(implode(' ', array_filter([$product->name, $variant->color, $variant->size]))),
-                        'sort_order' => (int) $variant->galleryMedia()->count() + (int) $imageOffset,
+                        'sort_order' => $imageSortStart + (int) $imageOffset,
                         'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                     ]);
                 }
