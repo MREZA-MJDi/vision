@@ -146,7 +146,7 @@ class CategoryController
     {
         $model = $this->model();
         $parents = $model::query()
-            ->whereKeyNot($record->getKey() ?? 0)
+            ->when($record->getKey(), fn ($query) => $query->where($record->getKeyName(), '<>', $record->getKey()))
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
@@ -181,7 +181,8 @@ class CategoryController
 
         if (! empty($data['parent_id'])) {
             $parentId = (int) $data['parent_id'];
-            $current = $record;
+            $model = $this->model();
+            $current = $model::query()->find($parentId);
             $seen = [];
 
             while ($current && $current->getKey()) {
