@@ -26,9 +26,9 @@
                     <div class="commerce-cart-row__details">
                         <div class="commerce-cart-row__title">
                             <div><h3>{{ $item->product_name }}</h3><p>{{ $item->variant_name ?: $item->sku ?: 'Standard option' }} · Qty {{ (int) $item->quantity }}</p></div>
-                            <strong>{{ '$' }}{{ number_format((float) $item->line_total, 2) }}</strong>
+                            <strong>@money($item->line_total)</strong>
                         </div>
-                        <p class="commerce-muted">{{ '$' }}{{ number_format((float) $item->unit_price, 2) }} per item</p>
+                        <p class="commerce-muted">@money($item->unit_price) per item</p>
                     </div>
                 </article>
             @endforeach
@@ -38,11 +38,11 @@
             <div class="commerce-panel-heading"><h2>Order summary</h2><span>{{ \Illuminate\Support\Str::headline($model->status) }}</span></div>
             <div class="commerce-summary__lines">
                 <div><span>Payment status</span><strong>{{ \Illuminate\Support\Str::headline($model->payment_status) }}</strong></div>
-                <div><span>Subtotal</span><strong>{{ '$' }}{{ number_format((float) $model->subtotal, 2) }}</strong></div>
-                <div><span>Discount</span><strong>−{{ '$' }}{{ number_format((float) $model->discount, 2) }}</strong></div>
-                <div><span>Tax</span><strong>{{ '$' }}{{ number_format((float) $model->tax, 2) }}</strong></div>
-                <div><span>Shipping</span><strong>{{ '$' }}{{ number_format((float) $model->shipping_cost, 2) }}</strong></div>
-                <div class="commerce-summary__total"><span>Total</span><strong>{{ '$' }}{{ number_format((float) $model->total, 2) }}</strong></div>
+                <div><span>Subtotal</span><strong>@money($model->subtotal)</strong></div>
+                <div><span>Discount</span><strong>−@money($model->discount)</strong></div>
+                <div><span>Tax</span><strong>@money($model->tax)</strong></div>
+                <div><span>Shipping</span><strong>@money($model->shipping_cost)</strong></div>
+                <div class="commerce-summary__total"><span>Total</span><strong>@money($model->total)</strong></div>
             </div>
             <p class="commerce-muted">Delivery address: {{ $model->shipping_address }}@if($model->shipping_city), {{ $model->shipping_city }}@endif</p>
         </aside>
