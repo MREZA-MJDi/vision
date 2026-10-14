@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -14,9 +14,10 @@ use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Middleware\Admin\EnsureAdmin;
 
 Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
-    Route::get('/login', [AuthController::class, 'create'])->name('login');
-    Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
-    Route::post('/logout', [AuthController::class, 'destroy'])->middleware(EnsureAdmin::class)->name('logout');
+    // Compatibility endpoints point to the one shared storefront authentication flow.
+    Route::get('/login', fn () => redirect()->route('login'))->name('login');
+    Route::post('/login', [CustomerAuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
+    Route::post('/logout', [CustomerAuthController::class, 'destroy'])->middleware(EnsureAdmin::class)->name('logout');
 
     Route::middleware(EnsureAdmin::class)->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
