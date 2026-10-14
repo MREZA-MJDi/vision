@@ -12,7 +12,7 @@ class EnsureAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $guard = (string) config('commerce-admin.guard', 'web');
+        $guard = (string) config('auth.defaults.guard', 'web');
         $user = Auth::guard($guard)->user();
 
         if (! $user) {
