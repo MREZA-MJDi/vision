@@ -290,6 +290,41 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertJsonPath('data.0.label', 'Searchable Active Shoe · SEARCH-ACTIVE-001');
     }
 
+    public function test_order_create_preserves_selected_variants_after_validation_redirect(): void
+    {
+        $admin = $this->makeAdmin();
+        $product = Product::query()->create([
+            'name' => 'Old Input Product',
+            'slug' => 'old-input-product',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'OLD-INPUT-001',
+            'price' => 15,
+            'stock' => 3,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.orders.create'))
+            ->post(route('commerce-admin.orders.store'), [
+                'customer_name' => 'Invalid Email Order',
+                'customer_email' => 'invalid-email',
+                'payment_method' => 'cash_on_delivery',
+                'shipping_cost' => 0,
+                'items' => [['variant_id' => $variant->getKey(), 'quantity' => 2]],
+            ])
+            ->assertRedirect(route('commerce-admin.orders.create'))
+            ->assertSessionHasErrors('customer_email');
+
+        $this->get(route('commerce-admin.orders.create'))
+            ->assertOk()
+            ->assertSee('data-order-initial-variant-ids="' . $variant->getKey() . '"', false)
+            ->assertSee('name="items[0][quantity]" value="2"', false);
+    }
+
     private function makeAdmin(): User
     {
         $admin = User::query()->create([

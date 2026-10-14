@@ -194,7 +194,9 @@
     const shippingInput = $('[data-shipping-cost]');
     const orderVariantSearch = $('[data-order-variant-search]');
     const orderVariantResults = $('[data-order-variant-results]');
-    const orderVariantSearchUrl = $('#orderCreateForm')?.dataset.orderVariantSearchUrl;
+    const orderForm = $('#orderCreateForm');
+    const orderVariantSearchUrl = orderForm?.dataset.orderVariantSearchUrl;
+    let pendingInitialVariantIds = (orderForm?.dataset.orderInitialVariantIds || '').split(',').filter(Boolean);
     let lastVariantResults = [];
     let variantSearchTimer = null;
     let variantSearchSequence = 0;
@@ -223,7 +225,7 @@
     };
     const updateOrderVariantOptions = (items) => {
         $('[data-order-variant]', orderList || document).forEach((select) => {
-            const selectedValue = select.value;
+            const selectedValue = select.value || select.dataset.initialValue || '';
             const selectedOption = select.selectedOptions?.[0]?.cloneNode(true);
             select.replaceChildren(new Option('ابتدا محصول را جست‌وجو کنید', ''));
             items.forEach((item) => {
@@ -236,6 +238,7 @@
                 select.append(selectedOption);
             }
             select.value = selectedValue;
+            delete select.dataset.initialValue;
         });
         recalculateOrder();
     };
@@ -246,6 +249,11 @@
         const url = new URL(orderVariantSearchUrl, window.location.origin);
         if (search.trim() !== '') url.searchParams.set('q', search.trim());
         else url.searchParams.delete('q');
+        const selectedIds = [...new Set([
+            ...pendingInitialVariantIds,
+            ...$('[data-order-variant]', orderList || document).map((select) => select.value || select.dataset.initialValue).filter(Boolean),
+        ])];
+        selectedIds.forEach((id) => url.searchParams.append('ids[]', id));
         try {
             const response = await fetch(url.toString(), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
             if (!response.ok) throw new Error('Variant search failed');
@@ -253,6 +261,7 @@
             if (sequence !== variantSearchSequence) return;
             lastVariantResults = Array.isArray(payload.data) ? payload.data : [];
             updateOrderVariantOptions(lastVariantResults);
+            pendingInitialVariantIds = [];
             orderVariantResults.textContent = lastVariantResults.length === 0
                 ? 'با این عبارت محصول فعالی پیدا نشد.'
                 : `${lastVariantResults.length} گزینهٔ قابل فروش${payload.has_more ? ' — نتایج بیشتر است؛ جست‌وجو را دقیق‌تر کنید.' : ''}`;

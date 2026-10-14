@@ -96,11 +96,20 @@ class OrderController
     {
         $variantModel = $this->model('variant', ProductVariant::class);
         $search = trim((string) $request->validated('q', ''));
-        $query = $variantModel::query()
+        $selectedIds = collect($request->validated('ids', []))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+        $baseQuery = fn () => $variantModel::query()
             ->with('product')
             ->where('is_active', true)
             ->whereHas('product', fn ($productQuery) => $productQuery->where('is_active', true));
 
+        $selectedVariants = $selectedIds->isEmpty()
+            ? collect()
+            : $baseQuery()->whereKey($selectedIds)->get();
+
+        $query = $baseQuery();
         if ($search !== '') {
             $query->where(function ($builder) use ($search): void {
                 $term = '%' . $search . '%';
@@ -112,9 +121,12 @@ class OrderController
             });
         }
 
-        $results = $query->orderByDesc('updated_at')->orderByDesc('id')->limit(31)->get();
-        $hasMore = $results->count() > 30;
-        $data = $results->take(30)->map(fn ($variant): array => [
+        $searchResults = $query->orderByDesc('updated_at')->orderByDesc('id')->limit(31)->get();
+        $hasMore = $searchResults->count() > 30;
+        $results = $selectedVariants->concat($searchResults->take(30))
+            ->unique(fn ($variant) => $variant->getKey())
+            ->values();
+        $data = $results->map(fn ($variant): array => [
             'id' => $variant->getKey(),
             'label' => implode(' · ', array_values(array_filter([
                 $variant->product?->name ?? 'محصول',

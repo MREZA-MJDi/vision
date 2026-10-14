@@ -3,12 +3,19 @@
 @section('title', 'ثبت سفارش')
 
 @section('content')
+    @php
+        $oldOrderItems = old('items', [['variant_id' => '', 'quantity' => 1]]);
+        if (! is_array($oldOrderItems) || $oldOrderItems === []) {
+            $oldOrderItems = [['variant_id' => '', 'quantity' => 1]];
+        }
+        $initialVariantIds = collect($oldOrderItems)->pluck('variant_id')->filter()->values()->implode(',');
+    @endphp
     <div class="ak-page-heading">
         <div><div class="ak-breadcrumb"><a href="{{ route('commerce-admin.orders.index') }}">سفارش‌ها</a> <span>/</span> ثبت سفارش</div><h1>ثبت سفارش</h1><p>سفارش واقعی ثبت می‌شود، موجودی رزرو و گردش انبار در تاریخچه ذخیره می‌شود.</p></div>
         <div class="ak-heading-actions"><a class="ak-button ak-button-light" href="{{ route('commerce-admin.orders.index') }}">انصراف</a><button class="ak-button ak-button-dark" type="submit" form="orderCreateForm">ثبت سفارش <span>✓</span></button></div>
     </div>
 
-    <form id="orderCreateForm" method="POST" action="{{ route('commerce-admin.orders.store') }}" data-order-variant-search-url="{{ route('commerce-admin.orders.variants.search') }}">
+    <form id="orderCreateForm" method="POST" action="{{ route('commerce-admin.orders.store') }}" data-order-variant-search-url="{{ route('commerce-admin.orders.variants.search') }}" data-order-initial-variant-ids="{{ $initialVariantIds }}">
         @csrf
         <div class="ak-form-layout ak-order-create-layout">
             <div class="ak-form-main">
@@ -33,21 +40,23 @@
                 </section>
 
                 <section class="ak-panel ak-form-panel">
-                    <div class="ak-panel-heading"><div><h2>اقلام سفارش</h2><p>فقط تنوع‌های فعال نمایش داده می‌شوند. پیش از ذخیره، تعداد بررسی و موجودی قفل می‌شود.</p></div><button class="ak-button ak-button-light ak-button-sm" type="button" data-add-order-item>＋ افزودن قلم</button></div>
+                    <div class="ak-panel-heading"><div><h2>اقلام سفارش</h2><p>فقط تنوع‌های فعال نمایش داده می‌شوند. پیش از ذخیره، تعداد بررسی و موجودی قفل می‌شود.</p></div><button class="ak-button ak-button-light ak-button-sm" type="button" data-add-order-item {{ ! $hasActiveVariants ? 'disabled' : '' }}>＋ افزودن قلم</button></div>
                     @if(! $hasActiveVariants)
                         <div class="ak-inline-empty"><strong>موجودی فعالی برای فروش نیست</strong><p>پیش از ثبت سفارش، محصولی بسازید و دست‌کم یک تنوع را فعال کنید.</p><a class="ak-text-link" href="{{ route('commerce-admin.products.create') }}">افزودن محصول ←</a></div>
                     @endif
                     <div class="ak-order-variant-search">
-                        <label class="ak-field"><span>جست‌وجوی محصول یا SKU</span><input type="search" data-order-variant-search maxlength="100" autocomplete="off" placeholder="نام محصول، SKU، بارکد، رنگ یا سایز"></label>
+                        <label class="ak-field"><span>جست‌وجوی محصول یا SKU</span><input type="search" data-order-variant-search maxlength="100" autocomplete="off" placeholder="نام محصول، SKU، بارکد، رنگ یا سایز" {{ ! $hasActiveVariants ? 'disabled' : '' }}></label>
                         <p class="ak-muted" data-order-variant-results role="status" aria-live="polite">در حال بارگذاری گزینه‌های قابل فروش…</p>
                     </div>
                     <div class="ak-order-item-list" data-order-items>
-                        <div class="ak-order-item-row" data-order-item-row>
-                            <div class="ak-order-item-field ak-order-product-select"><label class="ak-field"><span>تنوع محصول <b>*</b></span><select name="items[0][variant_id]" required data-order-variant><option value="">ابتدا محصول را جست‌وجو کنید</option></select></label></div>
-                            <div class="ak-order-qty-field"><label class="ak-field"><span>تعداد <b>*</b></span><input type="number" name="items[0][quantity]" value="1" min="1" max="1000" required data-order-quantity></label></div>
-                            <div class="ak-order-line-total"><small>مبلغ ردیف</small><strong data-line-total>{{ config('commerce-admin.currency_symbol', '$') }}0.00</strong></div>
-                            <button class="ak-icon-button ak-remove-order-item" type="button" data-remove-order-item aria-label="حذف قلم سفارش" disabled>×</button>
-                        </div>
+                        @foreach($oldOrderItems as $index => $oldItem)
+                            <div class="ak-order-item-row" data-order-item-row>
+                                <div class="ak-order-item-field ak-order-product-select"><label class="ak-field"><span>تنوع محصول <b>*</b></span><select name="items[{{ $index }}][variant_id]" data-initial-value="{{ $oldItem['variant_id'] ?? '' }}" required data-order-variant><option value="">ابتدا محصول را جست‌وجو کنید</option></select></label></div>
+                                <div class="ak-order-qty-field"><label class="ak-field"><span>تعداد <b>*</b></span><input type="number" name="items[{{ $index }}][quantity]" value="{{ $oldItem['quantity'] ?? 1 }}" min="1" max="1000" required data-order-quantity></label></div>
+                                <div class="ak-order-line-total"><small>مبلغ ردیف</small><strong data-line-total>{{ config('commerce-admin.currency_symbol', '$') }}0.00</strong></div>
+                                <button class="ak-icon-button ak-remove-order-item" type="button" data-remove-order-item aria-label="حذف قلم سفارش" {{ count($oldOrderItems) <= 1 ? 'disabled' : '' }}>×</button>
+                            </div>
+                        @endforeach
                     </div>
                     <template id="order-item-template"><div class="ak-order-item-row" data-order-item-row><div class="ak-order-item-field ak-order-product-select"><label class="ak-field"><span>تنوع محصول <b>*</b></span><select name="items[__INDEX__][variant_id]" required data-order-variant><option value="">ابتدا محصول را جست‌وجو کنید</option></select></label></div><div class="ak-order-qty-field"><label class="ak-field"><span>تعداد <b>*</b></span><input type="number" name="items[__INDEX__][quantity]" value="1" min="1" max="1000" required data-order-quantity></label></div><div class="ak-order-line-total"><small>مبلغ ردیف</small><strong data-line-total>{{ config('commerce-admin.currency_symbol', '$') }}0.00</strong></div><button class="ak-icon-button ak-remove-order-item" type="button" data-remove-order-item aria-label="حذف قلم سفارش">×</button></div></template>
                 </section>
