@@ -191,7 +191,7 @@ class CommerceAdminRenderAuditTest extends TestCase
             'is_active' => true,
             'sort_order' => 1,
         ]);
-        $photoUrl = 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990';
+        $photoUrl = 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a';
         $photoVariant->media()->create([
             'collection' => 'gallery',
             'disk' => 'public',
