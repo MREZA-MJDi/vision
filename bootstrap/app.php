@@ -10,6 +10,7 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withCommands([\App\Console\Commands\MakeAdminCommand::class])
     ->withMiddleware(function (Middleware $middleware): void {
         // Keep Laravel's default web middleware groups; no admin middleware aliases.
     })
