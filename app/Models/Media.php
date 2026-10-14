@@ -35,14 +35,24 @@ class Media extends Model
 
     public function getUrlAttribute(): ?string
     {
-        if (!$this->path) {
+        if (! $this->path) {
             return null;
         }
 
-        if (preg_match('/^https?:\/\//i', $this->path)) {
+        if (preg_match('/^https?:\\/\\//i', $this->path)) {
             return $this->path;
         }
 
-        return Storage::disk($this->disk ?: 'public')->url($this->path);
+        $disk = $this->disk ?: 'public';
+        $filesystem = Storage::disk($disk);
+
+        // Avoid emitting broken URLs for stale local media rows. Do not issue
+        // a filesystem/network existence check for remote disks.
+        if (config("filesystems.disks.{$disk}.driver") === 'local'
+            && ! $filesystem->exists($this->path)) {
+            return null;
+        }
+
+        return $filesystem->url($this->path);
     }
 }
