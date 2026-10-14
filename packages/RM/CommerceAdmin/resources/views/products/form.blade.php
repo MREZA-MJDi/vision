@@ -171,7 +171,7 @@
         @endforeach
         @foreach($product->variants as $existingVariant)
             @foreach($existingVariant->galleryMedia as $asset)
-                <form id="delete-variant-media-{{ $existingVariant->getKey() }}-{{ $product->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.variants.media.destroy', [$product->getKey(), $existingVariant->getKey(), $asset->getKey()]) }}" data-confirm="تصویر اختصاصی این تنوع حذف شود؟">@csrf @method('DELETE')</form>
+                <form id="delete-variant-media-{{ $existingVariant->getKey() }}-{{ $product->getKey() }}-{{ $asset->getKey() }}" class="ak-hidden-form" method="POST" action="{{ route('commerce-admin.products.variants.media.destroy', [$product->getKey(), $existingVariant->getKey(), $asset->getKey()]) }}" data-confirm="تصویر اختصاصی این تنوع حذف شود؟">@csrf @method('DELETE')</form>
             @endforeach
         @endforeach
     @endif
