@@ -58,7 +58,9 @@ class AdminDashboardTest extends TestCase
             'user_id' => $customer->getKey(),
             'order_number' => 'VS-DASHBOARD-0001',
             'customer_name' => $customer->name,
+            'customer_phone' => '555-0101',
             'customer_email' => $customer->email,
+            'shipping_address' => '۱ خیابان تست',
             'status' => 'pending',
             'payment_status' => 'pending',
             'payment_method' => 'cash_on_delivery',
@@ -74,7 +76,9 @@ class AdminDashboardTest extends TestCase
             'user_id' => $customer->getKey(),
             'order_number' => 'VS-DASHBOARD-0002',
             'customer_name' => $customer->name,
+            'customer_phone' => '555-0101',
             'customer_email' => $customer->email,
+            'shipping_address' => '۱ خیابان تست',
             'status' => 'delivered',
             'payment_status' => 'paid',
             'payment_method' => 'manual',
@@ -96,8 +100,8 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($admin)
             ->get(route('commerce-admin.dashboard'))
             ->assertOk()
-            ->assertSee('Total Revenue')
-            ->assertSee('Latest Orders')
+            ->assertSee('درآمد پرداخت‌شده')
+            ->assertSee('آخرین سفارش‌ها')
             ->assertSee('45.00');
 
         $this->assertCount(1, $groupedSeriesQueries, 'The 12-month chart should use one grouped aggregation query.');
@@ -120,7 +124,7 @@ class AdminDashboardTest extends TestCase
             ->get(route('commerce-admin.dashboard'))
             ->assertOk()
             ->assertSee('$0.00')
-            ->assertSee('New orders will be listed here');
+            ->assertSee('هنوز سفارشی ثبت نشده است.');
 
         $this->get(route('commerce-admin.analytics'))
             ->assertOk()
