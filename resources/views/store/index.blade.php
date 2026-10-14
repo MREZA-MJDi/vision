@@ -54,11 +54,6 @@
                 <div class="fitting-preview" data-fitting-preview>
                     <div class="fitting-preview__label"><span>استایل <b data-fitting-look-number>—</b></span><span class="fitting-preview__live"><i></i> پیش‌نمایش زنده</span></div>
                     <div class="fitting-preview__stage">
-                        <svg class="fitting-model" viewBox="0 0 180 240" aria-hidden="true">
-                            <circle cx="90" cy="34" r="19"></circle>
-                            <path d="M70 57c-11 6-19 17-22 34l-9 48 19 5 10-39 2 48-8 60h22l6-50 6 50h22l-8-60 2-48 10 39 19-5-9-48c-3-17-11-28-22-34l-13-5H83z"></path>
-                            <path d="M78 56 90 76l12-20M70 59l20 17 20-17M70 111l20 24 20-24" class="fitting-model__detail"></path>
-                        </svg>
                         <img class="fitting-preview__image" alt="پیش‌نمایش محصول انتخاب‌شده" data-fitting-image hidden>
                         <div class="fitting-preview__placeholder" data-fitting-placeholder>
                             <span class="fitting-preview__placeholder-mark">V</span>
@@ -172,9 +167,8 @@
                                     @if($image)
                                         <img class="product-card__image" src="{{ $image }}" alt="{{ $product->name }}" loading="lazy" decoding="async">
                                     @else
-                                        <div class="product-art product-art--{{ $loop->iteration % 4 }}" aria-label="تصویر محصول موجود نیست">
-                                            <svg viewBox="0 0 180 200" role="img" aria-hidden="true"><path d="M67 26c5-7 11-11 23-11s18 4 23 11l22 16-14 28-12-7 6 117H65l6-117-12 7-14-28z"></path><path d="M67 26c1 15 8 25 23 25s22-10 23-25M90 51v128M67 77l23 12 23-12"></path></svg>
-                                            <span>VISION<br>STUDIO</span>
+                                        <div class="product-art product-art--empty" aria-label="تصویر محصول موجود نیست">
+                                            <span>تصویر واقعی برای این محصول ثبت نشده است</span>
                                         </div>
                                     @endif
                                 </a>
