@@ -238,12 +238,14 @@ class ProductController
                 'brand_id' => $validated['brand_id'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
-                'attributes' => collect($validated['attributes'] ?? [])
-                    ->filter(fn ($attribute) => is_array($attribute)
-                        && trim((string) ($attribute['key'] ?? '')) !== ''
-                        && trim((string) ($attribute['value'] ?? '')) !== '')
-                    ->mapWithKeys(fn ($attribute) => [trim((string) $attribute['key']) => trim((string) $attribute['value'])])
-                    ->all() ?: null,
+                'attributes' => array_key_exists('attributes', $validated)
+                    ? (collect($validated['attributes'])
+                        ->filter(fn ($attribute) => is_array($attribute)
+                            && trim((string) ($attribute['key'] ?? '')) !== ''
+                            && trim((string) ($attribute['value'] ?? '')) !== '')
+                        ->mapWithKeys(fn ($attribute) => [trim((string) $attribute['key']) => trim((string) $attribute['value'])])
+                        ->all() ?: null)
+                    : $product->getAttribute('attributes'),
                 'meta_title' => SeoDefaults::title((string) $validated['name'], $validated['meta_title'] ?? null),
                 'meta_description' => SeoDefaults::description((string) $validated['name'], $validated['meta_description'] ?? null, [
                     $validated['short_description'] ?? null,
@@ -267,7 +269,8 @@ class ProductController
             $keepIds = [];
             $seenSkus = [];
 
-            foreach (array_values($validated['variants']) as $index => $input) {
+            foreach ($validated['variants'] as $index => $input) {
+                $sortOrder = count($keepIds);
                 $variantId = $input['id'] ?? null;
                 $sku = trim((string) ($input['sku'] ?? ''));
 
@@ -316,7 +319,7 @@ class ProductController
                     'stock' => (int) $input['stock'],
                     'low_stock_threshold' => (int) $input['low_stock_threshold'],
                     'is_active' => (bool) $input['is_active'],
-                    'sort_order' => $index,
+                    'sort_order' => $sortOrder,
                 ]);
                 $variant->save();
                 $keepIds[] = $variant->getKey();
