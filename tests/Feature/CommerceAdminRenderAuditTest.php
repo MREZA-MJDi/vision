@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class CommerceAdminRenderAuditTest extends TestCase
@@ -323,6 +324,97 @@ class CommerceAdminRenderAuditTest extends TestCase
             ->assertOk()
             ->assertSee('data-order-initial-variant-ids="' . $variant->getKey() . '"', false)
             ->assertSee('name="items[0][quantity]" value="2"', false);
+    }
+
+    public function test_order_list_query_count_stays_constant_as_order_count_grows(): void
+    {
+        $admin = $this->makeAdmin();
+        $customer = User::query()->create([
+            'name' => 'Query Count Customer',
+            'email' => 'query-count-customer@example.test',
+            'password' => 'customer-password-123',
+            'is_admin' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Query Count Product',
+            'slug' => 'query-count-product',
+            'is_active' => true,
+        ]);
+        $variant = ProductVariant::query()->create([
+            'product_id' => $product->getKey(),
+            'sku' => 'QUERY-COUNT-001',
+            'price' => 12,
+            'stock' => 20,
+            'low_stock_threshold' => 2,
+            'is_active' => true,
+        ]);
+
+        $createOrder = function (int $number) use ($customer, $product, $variant): void {
+            $order = Order::query()->create([
+                'user_id' => $customer->getKey(),
+                'order_number' => sprintf('VS-QUERY-%04d', $number),
+                'customer_name' => $customer->name,
+                'customer_email' => $customer->email,
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'payment_method' => 'cash_on_delivery',
+                'subtotal' => 12,
+                'discount' => 0,
+                'shipping_cost' => 0,
+                'tax' => 0,
+                'total' => 12,
+                'placed_at' => now(),
+            ]);
+
+            OrderItem::query()->create([
+                'order_id' => $order->getKey(),
+                'product_id' => $product->getKey(),
+                'product_variant_id' => $variant->getKey(),
+                'product_name' => $product->name,
+                'variant_name' => $variant->display_name,
+                'sku' => $variant->sku,
+                'unit_price' => 12,
+                'quantity' => 1,
+                'line_total' => 12,
+                'tax_amount' => 0,
+            ]);
+        };
+
+        $createOrder(1);
+        $connection = DB::connection();
+        $connection->enableQueryLog();
+
+        $this->actingAs($admin)->get(route('commerce-admin.orders.index'))->assertOk();
+        $singleOrderQueryCount = count($connection->getQueryLog());
+
+        for ($number = 2; $number <= 10; $number++) {
+            $createOrder($number);
+        }
+
+        $connection->flushQueryLog();
+        $this->get(route('commerce-admin.orders.index'))->assertOk();
+        $tenOrderQueryCount = count($connection->getQueryLog());
+        $connection->disableQueryLog();
+
+        $this->assertSame($singleOrderQueryCount, $tenOrderQueryCount);
+    }
+
+    public function test_malformed_old_order_items_do_not_break_order_form_rendering(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.orders.create'))
+            ->post(route('commerce-admin.orders.store'), [
+                'customer_name' => 'Malformed Items',
+                'payment_method' => 'cash_on_delivery',
+                'shipping_cost' => 0,
+                'items' => ['not-an-item-row'],
+            ])
+            ->assertRedirect(route('commerce-admin.orders.create'))
+            ->assertSessionHasErrors('items.0.variant_id');
+
+        $this->get(route('commerce-admin.orders.create'))->assertOk();
     }
 
     private function makeAdmin(): User

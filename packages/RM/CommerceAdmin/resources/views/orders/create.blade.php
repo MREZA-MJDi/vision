@@ -5,7 +5,15 @@
 @section('content')
     @php
         $oldOrderItems = old('items', [['variant_id' => '', 'quantity' => 1]]);
-        if (! is_array($oldOrderItems) || $oldOrderItems === []) {
+        $oldOrderItems = collect(is_array($oldOrderItems) ? $oldOrderItems : [])
+            ->filter(fn ($item) => is_array($item))
+            ->map(fn (array $item): array => [
+                'variant_id' => $item['variant_id'] ?? '',
+                'quantity' => $item['quantity'] ?? 1,
+            ])
+            ->values()
+            ->all();
+        if ($oldOrderItems === []) {
             $oldOrderItems = [['variant_id' => '', 'quantity' => 1]];
         }
         $initialVariantIds = collect($oldOrderItems)->pluck('variant_id')->filter()->values()->implode(',');
