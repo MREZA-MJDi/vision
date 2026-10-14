@@ -6,7 +6,7 @@
 
 @section('content')
 @php
-    $formatPrice = static fn ($amount) => \\App\\Support\\Money::format($amount);
+    $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
     $heroVariant = $heroProduct?->primaryAvailableVariant ?? $heroProduct?->primaryActiveVariant;
     $heroImage = $heroProduct?->primaryGalleryMedia?->url ?? $heroVariant?->primaryGalleryMedia?->url;
 @endphp
