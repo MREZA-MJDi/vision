@@ -16,6 +16,12 @@ class EnsureAdmin
         $user = Auth::guard($guard)->user();
 
         if (! $user) {
+            // Fetch/XHR consumers need a real 401 response when the session expires;
+            // redirecting them to an HTML login page breaks their JSON contract.
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], Response::HTTP_UNAUTHORIZED);
+            }
+
             // The public storefront login also authenticates administrators.
             // Keep the named admin-login route as a compatibility redirect.
             return redirect()->guest(route('commerce-admin.login'));
