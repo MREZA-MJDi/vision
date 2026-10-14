@@ -69,4 +69,4 @@ Route::get('/account/orders/{order}', [CustomerAccountController::class, 'order'
     ->whereNumber('order')
     ->name('account.orders.show');
 
-require __DIR__ . '/commerce-admin.php';
+require __DIR__ . '/admin.php';
