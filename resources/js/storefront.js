@@ -21,6 +21,7 @@
         const fallback = intro.querySelector('[data-tiamir-fallback]');
         const ghostLogos = intro.querySelectorAll('.tiamir-intro__logo--ghost');
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const replayButton = document.querySelector('[data-tiamir-replay]');
 
         let finishTimer = null;
         let fadeTimer = null;
@@ -35,6 +36,7 @@
         let finished = false;
         let lastTapAt = 0;
 
+        if (replayButton) replayButton.hidden = true;
         intro.style.setProperty('--tiamir-duration', duration + 'ms');
         intro.classList.add('is-visible');
         if (isReturning) intro.classList.add('is-returning');
@@ -66,7 +68,8 @@
             }
 
             const rect = canvas.getBoundingClientRect();
-            const resolution = Math.min(window.devicePixelRatio || 1, 1.25) * 0.42;
+            // Render the noise at a low internal resolution; the CSS layer scales it up.
+            const resolution = Math.min(window.devicePixelRatio || 1, 1.0) * 0.24;
             const width = Math.max(1, Math.floor(rect.width * resolution));
             const height = Math.max(1, Math.floor(rect.height * resolution));
 
@@ -85,7 +88,7 @@
             frameId = null;
             if (finished || document.hidden || reducedMotion || !canvas) return;
 
-            if (timestamp - lastFrame < 40) {
+            if (timestamp - lastFrame < 80) {
                 frameId = window.requestAnimationFrame(drawStatic);
                 return;
             }
@@ -95,7 +98,8 @@
             lastFrame = timestamp;
             const pixels = imageData.data;
             for (let index = 0; index < pixels.length; index += 4) {
-                const shade = Math.floor(Math.random() * 256);
+                // Keep the signal texture sparse instead of filling every pixel with white noise.
+                const shade = Math.random() < 0.14 ? (140 + Math.floor(Math.random() * 116)) : 0;
                 pixels[index] = shade;
                 pixels[index + 1] = shade;
                 pixels[index + 2] = shade;
@@ -149,13 +153,16 @@
             stopStatic();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             document.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('resize', handleResize);
 
             intro.classList.add('is-exiting');
 
             fadeTimer = window.setTimeout(() => {
-                intro.remove();
+                // Keep the intro node mounted so Replay can restart it without a page reload.
+                intro.classList.remove('is-visible');
                 document.body.classList.remove('tiamir-intro-active');
                 if (shell) shell.inert = false;
+                if (replayButton) replayButton.hidden = false;
                 if (fadeTimer !== null) window.clearTimeout(fadeTimer);
                 fadeTimer = null;
             }, exitDuration);
@@ -186,6 +193,45 @@
             }
         }
 
+        function replayIntro() {
+            if (fadeTimer !== null) window.clearTimeout(fadeTimer);
+            fadeTimer = null;
+            if (finishTimer !== null) window.clearTimeout(finishTimer);
+            finishTimer = null;
+            stopStatic();
+
+            finished = false;
+            remaining = Math.max(0, firstDuration - exitDuration);
+            lastFrame = 0;
+            intro.classList.remove('is-visible', 'is-exiting', 'is-revealing');
+            intro.style.setProperty('--tiamir-duration', firstDuration + 'ms');
+
+            // The hidden-state CSS disables animations; flush that state before restarting them.
+            void intro.offsetWidth;
+            intro.classList.add('is-visible');
+            document.body.classList.add('tiamir-intro-active');
+            if (shell) shell.inert = true;
+            if (replayButton) replayButton.hidden = true;
+
+            if (reducedMotion) {
+                window.requestAnimationFrame(() => intro.classList.add('is-revealing'));
+            }
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            window.addEventListener('resize', handleResize, { passive: true });
+            if (isReturning) document.addEventListener('keydown', handleKeyDown);
+
+            if (!document.hidden) {
+                scheduleFinish(remaining);
+                startStatic();
+            }
+        }
+
+        replayButton?.addEventListener('click', replayIntro);
+
+        function handleResize() {
+            if (!finished && !reducedMotion) prepareCanvas();
+        }
+
         if (isReturning) {
             intro.addEventListener('dblclick', () => finishIntro(false));
             intro.addEventListener('touchend', () => {
@@ -201,9 +247,7 @@
         }
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('resize', () => {
-            if (!finished && !reducedMotion) prepareCanvas();
-        }, { passive: true });
+        window.addEventListener('resize', handleResize, { passive: true });
 
         if (!document.hidden) {
             scheduleFinish(remaining);
