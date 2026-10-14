@@ -127,35 +127,30 @@ class PublicStorefrontPhaseOneTest extends TestCase
     {
         $this->seed(CommerceDemoSeeder::class);
 
-<<<<<<< HEAD
-        $category = \\App\\Models\\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
-        $brand = \\App\\Models\\Brand::query()->where('slug', 'vision-demo')->firstOrFail();
-        $queryCount = 0;
+        $category = \App\Models\Category::query()
+            ->where('slug', 'demo-apparel')
+            ->firstOrFail();
 
-        DB::listen(function () use (&$queryCount): void {
-            $queryCount++;
-=======
-        $category = \App\Models\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
-        $brand = \App\Models\Brand::query()->where('slug', 'vision-demo')->firstOrFail();
+        $brand = \App\Models\Brand::query()
+            ->where('slug', 'vision-demo')
+            ->firstOrFail();
+
         $queryCount = 0;
         $sqlLog = [];
 
         DB::listen(function ($query) use (&$queryCount, &$sqlLog): void {
             $queryCount++;
             $sqlLog[] = $query->sql;
->>>>>>> 7b153b04da3618bdb9b381fc0283f325d439072a
         });
 
         $beforeSmallCatalog = $queryCount;
+
         $this->get('/')->assertOk();
+
         $smallHomepageQueries = $queryCount - $beforeSmallCatalog;
 
         for ($index = 1; $index <= 15; $index++) {
-<<<<<<< HEAD
-            $product = \\App\\Models\\Product::query()->create([
-=======
             $product = \App\Models\Product::query()->create([
->>>>>>> 7b153b04da3618bdb9b381fc0283f325d439072a
                 'category_id' => $category->getKey(),
                 'brand_id' => $brand->getKey(),
                 'name' => 'Homepage n-plus-one audit product ' . $index,
@@ -168,11 +163,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
                 'sort_order' => $index + 100,
             ]);
 
-<<<<<<< HEAD
-            \\App\\Models\\ProductVariant::query()->create([
-=======
             \App\Models\ProductVariant::query()->create([
->>>>>>> 7b153b04da3618bdb9b381fc0283f325d439072a
                 'product_id' => $product->getKey(),
                 'sku' => 'HOME-N1-AUDIT-' . $index,
                 'size' => 'M',
@@ -188,22 +179,17 @@ class PublicStorefrontPhaseOneTest extends TestCase
         }
 
         $beforeLargeCatalog = $queryCount;
-<<<<<<< HEAD
-=======
         $beforeLargeSqlLog = count($sqlLog);
->>>>>>> 7b153b04da3618bdb9b381fc0283f325d439072a
+
         $this->get('/')->assertOk();
+
         $largeHomepageQueries = $queryCount - $beforeLargeCatalog;
 
         $this->assertLessThanOrEqual(
             $smallHomepageQueries + 4,
             $largeHomepageQueries,
-<<<<<<< HEAD
-            'Homepage query count should remain bounded as more products are added; a growing difference may indicate N+1 queries.'
-=======
             'Homepage query count should remain bounded as more products are added; a growing difference may indicate N+1 queries. SQL: '
                 . implode(' | ', array_slice($sqlLog, $beforeLargeSqlLog))
->>>>>>> 7b153b04da3618bdb9b381fc0283f325d439072a
         );
     }
 
