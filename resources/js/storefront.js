@@ -400,26 +400,28 @@
     root.querySelectorAll('[data-variant-select]').forEach((select) => {
         const priceDisplay = root.querySelector('[data-variant-price]');
         const stockDisplay = root.querySelector('[data-variant-stock]');
-        const imageDisplay = root.querySelector('[data-product-main-image]');
+        const mainImage = root.querySelector('[data-product-main-image]');
         const imagePlaceholder = root.querySelector('[data-product-image-placeholder]');
         const mainStage = root.querySelector('[data-product-main-stage]');
         const colorButtons = Array.from(root.querySelectorAll('[data-variant-color-pick]'));
-        const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
         const quantityInput = root.querySelector('[data-variant-quantity]');
         const addButton = root.querySelector('[data-product-add]');
-        const mainStage = root.querySelector('[data-product-main-stage]');
-        const mainImage = root.querySelector('[data-product-main-image]');
-        const imagePlaceholder = root.querySelector('[data-product-image-placeholder]');
-        const currencySymbol = root.dataset.currencySymbol || 'تومان';
-        const formatMoney = (value) => Number(value || 0).toLocaleString('en-US', {
+        const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
+        const currency = root.dataset.currencySymbol || 'تومان';
+        const formatVariantMoney = (value) => Number(value || 0).toLocaleString('en-US', {
             maximumFractionDigits: 0
-        }) + ' ' + currencySymbol;
+        }) + ' ' + currency;
 
         const refreshVariant = () => {
             const option = select.selectedOptions?.[0];
             if (!option) {
                 if (addButton) addButton.disabled = true;
                 if (stockDisplay) stockDisplay.textContent = 'Currently unavailable';
+                if (mainImage) {
+                    mainImage.removeAttribute('src');
+                    mainImage.hidden = true;
+                }
+                if (imagePlaceholder) imagePlaceholder.hidden = false;
                 return;
             }
 
@@ -428,48 +430,31 @@
             const onSale = option.dataset.sale === '1';
             const stock = Math.max(0, Number(option.dataset.stock) || 0);
 
-            // Use the selected variant image first. If it is missing, show only
-            // the shared product gallery fallback, never another variant's photo.
-            const imageUrl = option.dataset.image || mainStage?.dataset.baseImage || imageDisplay?.dataset.fallbackSrc || '';
-            if (imageDisplay) {
-                if (imageUrl) {
-                    imageDisplay.src = imageUrl;
-                    imageDisplay.alt = option.dataset.imageAlt || 'Product image';
-                    imageDisplay.hidden = false;
-                    if (imagePlaceholder) imagePlaceholder.hidden = true;
-                } else {
-                    imageDisplay.removeAttribute('src');
-                    imageDisplay.hidden = true;
-                    if (imagePlaceholder) imagePlaceholder.hidden = false;
-                }
-            }
-            const selectedColor = normalizeColor(option.dataset.color);
-            colorButtons.forEach((button) => {
-                const selected = selectedColor !== '' && normalizeColor(button.dataset.variantColorPick) === selectedColor;
-                button.classList.toggle('is-selected', selected);
-                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-            });
-
             if (priceDisplay && Number.isFinite(price)) {
                 priceDisplay.replaceChildren();
                 if (onSale && Number.isFinite(originalPrice)) {
-                    const del = document.createElement('del');
-                    del.textContent = formatMoney(originalPrice);
-                    priceDisplay.append(del);
+                    const original = document.createElement('del');
+                    original.textContent = formatVariantMoney(originalPrice);
+                    priceDisplay.append(original);
                 }
-                const strong = document.createElement('strong');
-                strong.textContent = formatMoney(price);
-                priceDisplay.append(strong);
+                const current = document.createElement('strong');
+                current.textContent = formatVariantMoney(price);
+                priceDisplay.append(current);
             }
 
-            // A variant image wins; otherwise fall back to the product gallery's
-            // first image. Price, availability and image are updated from one
-            // selected option so they cannot drift apart.
-            const imageUrl = option.dataset.image || mainStage?.dataset.baseImage || '';
+            // Prefer the selected variant's own photo; otherwise use the
+            // product gallery fallback, never a different variant's photo.
+            const imageUrl = option.dataset.image
+                || mainStage?.dataset.baseImage
+                || mainImage?.dataset.fallbackSrc
+                || '';
+
             if (mainImage) {
                 if (imageUrl) {
                     mainImage.src = imageUrl;
-                    mainImage.alt = option.dataset.imageAlt || select.closest('.store-product-detail__info')?.querySelector('h1')?.textContent?.trim() || 'Product image';
+                    mainImage.alt = option.dataset.imageAlt
+                        || select.closest('.store-product-detail__info')?.querySelector('h1')?.textContent?.trim()
+                        || 'Product image';
                     mainImage.hidden = false;
                 } else {
                     mainImage.removeAttribute('src');
@@ -478,12 +463,21 @@
             }
             if (imagePlaceholder) imagePlaceholder.hidden = Boolean(imageUrl);
 
-            root.querySelectorAll('[data-variant-pick]').forEach((button) => {
-                const selected = String(button.dataset.color || '') !== ''
-                    && button.dataset.color === String(option.dataset.color || '');
+            const selectedColor = normalizeColor(option.dataset.color);
+            colorButtons.forEach((button) => {
+                const selected = selectedColor !== ''
+                    && normalizeColor(button.dataset.variantColorPick) === selectedColor;
                 button.classList.toggle('is-selected', selected);
-                button.setAttribute('aria-pressed', String(selected));
+                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
             });
+
+            root.querySelectorAll('[data-variant-pick]').forEach((button) => {
+                if (button.hasAttribute('data-variant-color-pick')) return;
+                const selected = String(button.dataset.variantPick) === String(option.value);
+                button.classList.toggle('is-selected', selected);
+                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            });
+
             root.querySelectorAll('[data-gallery-image]').forEach((button) => {
                 button.classList.toggle('is-selected', button.dataset.galleryImage === imageUrl);
             });
@@ -508,8 +502,9 @@
                 normalizeColor(option.dataset.color) === requestedColor
             );
             const currentSize = normalizeColor(select.selectedOptions?.[0]?.dataset.size);
-            const nextOption = options.find((option) => !option.disabled && normalizeColor(option.dataset.size) === currentSize)
-                || options.find((option) => !option.disabled);
+            const nextOption = options.find((option) =>
+                !option.disabled && normalizeColor(option.dataset.size) === currentSize
+            ) || options.find((option) => !option.disabled);
 
             if (!nextOption) return;
             select.value = nextOption.value;
@@ -519,14 +514,15 @@
         select.addEventListener('change', refreshVariant);
         root.querySelectorAll('[data-variant-pick]').forEach((button) => {
             button.addEventListener('click', () => {
-                const matchingOption = Array.from(select.options).find((option) => option.value === button.dataset.variantPick);
-                if (!matchingOption) return;
+                const matchingOption = Array.from(select.options).find((option) =>
+                    option.value === button.dataset.variantPick
+                );
+                if (!matchingOption || matchingOption.disabled) return;
                 select.value = matchingOption.value;
                 select.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
         refreshVariant();
-        syncColorButtons();
     });
 
     root.querySelectorAll('[data-gallery-image]').forEach((button) => {

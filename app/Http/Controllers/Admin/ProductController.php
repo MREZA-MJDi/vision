@@ -316,42 +316,6 @@ class ProductController
                 $variant->save();
                 $keepIds[] = $variant->getKey();
 
-                // Every color/size option owns a gallery so the storefront can
-                // swap to the selected variant's photo instead of the product default.
-                $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
-                $variantImages = $request->file('variants.' . $index . '.images', []);
-                $imageSortStart = (int) $variant->galleryMedia()->count();
-                foreach (is_array($variantImages) ? $variantImages : [] as $imageOffset => $image) {
-                    if (! $image || ! $image->isValid()) {
-                        continue;
-                    }
-
-                    $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
-                        . '/' . $product->getKey() . '/variants/' . $variant->getKey();
-                    $path = $image->store($directory, $mediaDisk);
-                    if (! is_string($path) || $path === '') {
-                        throw ValidationException::withMessages([
-                            "variants.$index.images" => 'ذخیره تصویر این تنوع انجام نشد؛ هیچ تغییری ثبت نشد.',
-                        ]);
-                    }
-
-                    $storedFiles[] = [$mediaDisk, $path];
-                    $dimensions = @getimagesize($image->getRealPath()) ?: [];
-                    $variant->media()->create([
-                        'collection' => 'gallery',
-                        'disk' => $mediaDisk,
-                        'path' => $path,
-                        'original_name' => $image->getClientOriginalName(),
-                        'mime_type' => $image->getMimeType(),
-                        'size' => $image->getSize(),
-                        'width' => $dimensions[0] ?? null,
-                        'height' => $dimensions[1] ?? null,
-                        'alt_text' => trim(implode(' ', array_filter([$product->name, $variant->color, $variant->size]))),
-                        'sort_order' => $imageSortStart + (int) $imageOffset,
-                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
-                    ]);
-                }
-
                 $stockDelta = (int) $variant->stock - $previousStock;
                 if ($stockDelta !== 0) {
                     $inventoryModel::query()->create([
@@ -368,22 +332,33 @@ class ProductController
                     ]);
                 }
 
-                // A variant can retain a single primary upload from the editor or accept
-                // a small gallery from API/import clients. Replacing media is transactional;
-                // old physical files are removed only after the database commit succeeds.
+                // Support both the editor's single-image input and gallery uploads.
+                // Handle each upload exactly once to avoid deleting the newly stored file
+                // when the queued old-image cleanup runs after the transaction commits.
                 $variantImages = array_values(array_filter(array_merge(
                     [$request->file("variants.{$index}.image")],
                     (array) $request->file("variants.{$index}.images", [])
                 )));
+                $removeVariantImage = (bool) ($input['remove_image'] ?? false);
 
-                if ($variantImages !== []) {
+                if ($variantImages !== [] || $removeVariantImage) {
+                    // Delete old media rows inside the transaction; physical files are
+                    // removed only after commit so rollback never destroys live images.
                     foreach ($variant->galleryMedia()->get() as $existingAsset) {
-                        if ($existingAsset->path && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
+                        $normalizedPath = ltrim((string) $existingAsset->path, '/');
+                        $isVersionedDemoAsset = str_starts_with($normalizedPath, 'demo-products/');
+
+                        if ($existingAsset->path
+                            && ! $isVersionedDemoAsset
+                            && ! Str::startsWith($existingAsset->path, ['http://', 'https://'])) {
                             $obsoleteImagePaths[] = [$existingAsset->disk ?: $mediaDisk, $existingAsset->path];
                         }
+
                         $existingAsset->delete();
                     }
+                }
 
+                if ($variantImages !== []) {
                     $directory = trim((string) config('commerce-admin.media_directory', 'products'), '/')
                         . '/' . $product->getKey() . '/variants/' . $variant->getKey();
 
@@ -407,6 +382,7 @@ class ProductController
                         ]);
                     }
                 }
+
             }
 
             if ($updating) {
