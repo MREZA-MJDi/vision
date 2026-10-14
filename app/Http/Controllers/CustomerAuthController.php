@@ -118,7 +118,7 @@ class CustomerAuthController extends Controller
         $request->session()->regenerate();
         $this->mergeGuestCart((int) $user->getKey(), $sessionId);
 
-        return redirect()->intended(route('account.show'))
+        return $redirector->afterCustomerRegistration($request)
             ->with('status', 'Your account is ready.');
     }
 
