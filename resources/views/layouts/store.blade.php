@@ -5,10 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0b090d">
-    <meta name="description" content="@yield('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.')">
-    <link rel="canonical" href="@yield('canonical', url()->current())">
-    <title>@yield('title', 'VISION — New Arrivals')</title>
+    <meta name="description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    <link rel="canonical" href="{{ $__env->yieldContent('canonical', url()->current()) }}">
+    <meta property="og:site_name" content="VISION">
+    <meta property="og:locale" content="fa_IR">
+    <meta property="og:type" content="{{ $__env->yieldContent('og-type', 'website') }}">
+    <meta property="og:title" content="{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}">
+    <meta property="og:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    <meta property="og:url" content="{{ $__env->yieldContent('canonical', url()->current()) }}">
+    @if (filled(trim($__env->yieldContent('og-image'))))
+        <meta property="og:image" content="{{ trim($__env->yieldContent('og-image')) }}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ trim($__env->yieldContent('og-image')) }}">
+    @else
+        <meta name="twitter:card" content="summary">
+    @endif
+    <meta name="twitter:title" content="{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}">
+    <meta name="twitter:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    <title>{{ $__env->yieldContent('title', 'VISION — New Arrivals') }}</title>
 
+    @if (request()->routeIs('storefront.index'))
+        <link rel="preconnect" href="https://tiamir.com" crossorigin>
+        <link rel="preload" as="image" href="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png" fetchpriority="high">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,6 +39,32 @@
 </head>
 <body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }}">
     <div class="store-atmosphere" aria-hidden="true"></div>
+
+    @if (request()->routeIs('storefront.index'))
+        <div class="tiamir-intro" data-tiamir-intro data-first-duration="5000" data-return-duration="2500" aria-hidden="true">
+            <canvas class="tiamir-intro__static" data-tiamir-static></canvas>
+            <span class="tiamir-intro__grain" aria-hidden="true"></span>
+            <span class="tiamir-intro__scanlines" aria-hidden="true"></span>
+            <span class="tiamir-intro__scan-beam" aria-hidden="true"></span>
+
+            <div class="tiamir-intro__identity">
+                <span class="tiamir-intro__logo-wrap">
+                    <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-cyan"
+                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
+                         alt="" aria-hidden="true" loading="eager" decoding="async">
+                    <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-red"
+                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
+                         alt="" aria-hidden="true" loading="eager" decoding="async">
+                    <img class="tiamir-intro__logo tiamir-intro__logo--main"
+                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
+                         alt="" aria-hidden="true" data-tiamir-logo fetchpriority="high" loading="eager" decoding="async">
+                    <span class="tiamir-intro__fallback" data-tiamir-fallback hidden>TIAMIR</span>
+                </span>
+            </div>
+
+            <div class="tiamir-intro__signature">Created by R MAJIDI</div>
+        </div>
+    @endif
 
     <div class="store-shell" data-storefront
          data-currency-symbol="{{ config('commerce-admin.currency_symbol', 'تومان') }}"
