@@ -19,6 +19,7 @@ class ReviewController
     public function index(Request $request): View
     {
         $reviewModel = $this->model();
+        $reviewStatuses = ProductReview::STATUSES;
         $query = $reviewModel::query()->with(['product', 'user']);
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', 'pending');
@@ -49,7 +50,7 @@ class ReviewController
             'average' => round((float) $reviewModel::query()->where('status', 'approved')->avg('rating'), 2),
         ];
 
-        return view('commerce-admin::reviews.index', compact('reviews', 'stats', 'search', 'status'));
+        return view('commerce-admin::reviews.index', compact('reviews', 'stats', 'search', 'status', 'reviewStatuses'));
     }
 
     public function updateStatus(Request $request, int $review): RedirectResponse
