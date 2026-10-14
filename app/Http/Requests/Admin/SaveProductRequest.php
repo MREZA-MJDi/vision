@@ -71,6 +71,7 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock' => ['required', 'integer', 'min:0'],
             'variants.*.low_stock_threshold' => ['required', 'integer', 'min:0'],
             'variants.*.is_active' => ['required', 'boolean'],
+            'variants.*.image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'images' => ['sometimes', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ];
@@ -129,6 +130,8 @@ class SaveProductRequest extends FormRequest
             'variants.*.stock.min' => 'موجودی نمی‌تواند منفی باشد.',
             'images.*.image' => 'فایل انتخاب‌شده باید تصویر باشد.',
             'images.*.max' => 'اندازهٔ هر تصویر حداکثر ۴ مگابایت است.',
+            'variants.*.image.image' => 'تصویر تنوع باید یک فایل تصویری معتبر باشد.',
+            'variants.*.image.max' => 'اندازهٔ تصویر هر تنوع حداکثر ۴ مگابایت است.',
         ];
     }
 }
