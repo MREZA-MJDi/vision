@@ -47,8 +47,8 @@ class SaveProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($productTable, 'slug')->ignore($this->route('product'))],
-            'category_id' => ['nullable', 'integer', Rule::exists($categoryTable, 'id')],
-            'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')],
+            'category_id' => ['nullable', 'integer', Rule::exists($categoryTable, 'id')->whereNull('deleted_at')],
+            'brand_id' => ['nullable', 'integer', Rule::exists($brandTable, 'id')->whereNull('deleted_at')],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'attributes' => ['sometimes', 'array', 'max:50'],
