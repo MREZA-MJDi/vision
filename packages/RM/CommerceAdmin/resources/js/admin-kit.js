@@ -2,8 +2,30 @@
     'use strict';
     const $ = (selector, root = document) => root.querySelector(selector);
     const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-    const symbol = document.body && document.body.dataset.currencySymbol ? document.body.dataset.currencySymbol : '$';
-    const money = (value) => symbol + Number(value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const symbol = document.body && document.body.dataset.currencySymbol ? document.body.dataset.currencySymbol : 'تومان';
+    const money = (value) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' ' + symbol;
+    const cleanMoneyInput = (value) => String(value ?? '')
+        .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+        .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+        .replace(/[٬،,\\s]/g, '')
+        .replace(/٫/g, '.')
+        .replace(/[^0-9.]/g, '');
+    const formatMoneyInput = (value) => {
+        const clean = cleanMoneyInput(value);
+        if (!clean || !/^\\d*\\.?\\d*$/.test(clean)) return clean;
+        const [whole, ...fraction] = clean.split('.');
+        const grouped = whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+        return fraction.length ? grouped + '.' + fraction.join('') : grouped;
+    };
+    const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
+    $('[data-money-input]').forEach((input) => {
+        input.value = formatMoneyInput(input.value);
+        input.addEventListener('focus', () => { input.value = cleanMoneyInput(input.value); });
+        input.addEventListener('blur', () => { input.value = formatMoneyInput(input.value); });
+    });
+    document.addEventListener('submit', (event) => {
+        $('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
+    }, true);
 
     // Sidebar interactions (desktop expandable navigation + mobile drawer).
     $$('[data-nav-toggle]').forEach((button) => button.addEventListener('click', () => {
@@ -89,33 +111,202 @@
     $('[data-help-open]')?.addEventListener('click', () => $('[data-help-panel]')?.removeAttribute('hidden'));
     $('[data-help-close]')?.addEventListener('click', () => $('[data-help-panel]')?.setAttribute('hidden', ''));
 
-    // Image selection preview. Server-side MIME and size validation remains mandatory.
+    // Select, crop and preview new product images before they reach Laravel.
     const imageInput = $('[data-image-input]');
     const previewBox = $('[data-image-preview]');
+    const cropModal = $('[data-crop-modal]');
+    const cropCanvas = $('[data-crop-preview]');
+    const cropContext = cropCanvas?.getContext('2d');
+    const cropImage = new Image();
+    const cropRatio = $('[data-crop-ratio]');
+    const cropZoom = $('[data-crop-zoom]');
+    const cropX = $('[data-crop-x]');
+    const cropY = $('[data-crop-y]');
+    const cropCount = $('[data-crop-count]');
+    let cropQueue = [];
+    let cropResults = [];
+    let cropIndex = 0;
+    let cropObjectUrl = null;
+    let cropRect = null;
+    let previewUrls = [];
+
+    const revokePreviewUrls = () => {
+        previewUrls.forEach((url) => URL.revokeObjectURL(url));
+        previewUrls = [];
+    };
     const renderImages = (files) => {
         if (!previewBox) return;
+        revokePreviewUrls();
         previewBox.replaceChildren();
         Array.from(files || []).slice(0, 8).forEach((file) => {
             if (!file.type.startsWith('image/')) return;
+            const tile = document.createElement('div');
+            tile.className = 'ak-new-image-tile';
             const image = document.createElement('img');
             image.alt = file.name;
             image.src = URL.createObjectURL(file);
-            previewBox.appendChild(image);
+            previewUrls.push(image.src);
+            const name = document.createElement('small');
+            name.textContent = file.name;
+            tile.append(image, name);
+            previewBox.appendChild(tile);
         });
     };
-    $('[data-browse-images]')?.addEventListener('click', () => imageInput?.click());
-    imageInput?.addEventListener('change', () => {
-        if (imageInput.files.length > 8) {
-            window.alert('Upload up to 8 images per save.');
-            imageInput.value = '';
-            renderImages([]);
+    const currentCropRatio = () => {
+        if (cropRatio?.value === '1:1') return 1;
+        if (cropRatio?.value === '4:3') return 4 / 3;
+        if (cropRatio?.value === '3:4') return 3 / 4;
+        return cropImage.naturalWidth / Math.max(1, cropImage.naturalHeight);
+    };
+    const calculateCropRect = () => {
+        const width = cropImage.naturalWidth;
+        const height = cropImage.naturalHeight;
+        const ratio = currentCropRatio();
+        let cropWidth = Math.min(width, height * ratio);
+        let cropHeight = cropWidth / ratio;
+        const zoom = Math.max(1, Number(cropZoom?.value || 100) / 100);
+        cropWidth /= zoom;
+        cropHeight /= zoom;
+        const xSpace = Math.max(0, width - cropWidth);
+        const ySpace = Math.max(0, height - cropHeight);
+        return {
+            sx: xSpace * (Number(cropX?.value || 50) / 100),
+            sy: ySpace * (Number(cropY?.value || 50) / 100),
+            sw: cropWidth,
+            sh: cropHeight,
+            ratio,
+        };
+    };
+    const paintCropPreview = () => {
+        if (!cropContext || !cropCanvas || !cropImage.complete || !cropImage.naturalWidth) return;
+        cropRect = calculateCropRect();
+        const width = Math.min(640, Math.round(640 * Math.min(1, cropRect.ratio)));
+        const height = Math.max(1, Math.round(width / cropRect.ratio));
+        cropCanvas.width = width;
+        cropCanvas.height = height;
+        cropContext.clearRect(0, 0, width, height);
+        cropContext.drawImage(cropImage, cropRect.sx, cropRect.sy, cropRect.sw, cropRect.sh, 0, 0, width, height);
+        const zoomLabel = $('[data-crop-zoom-value]');
+        if (zoomLabel) zoomLabel.textContent = Number(cropZoom?.value || 100) + '٪';
+    };
+    const closeCropper = () => {
+        cropModal?.setAttribute('hidden', '');
+        if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+        cropObjectUrl = null;
+    };
+    const assignCroppedFiles = () => {
+        if (!imageInput) return;
+        const transfer = new DataTransfer();
+        cropResults.slice(0, 8).forEach((file) => transfer.items.add(file));
+        imageInput.files = transfer.files;
+        renderImages(imageInput.files);
+        closeCropper();
+    };
+    const showCropAtIndex = () => {
+        if (cropIndex >= cropQueue.length) {
+            assignCroppedFiles();
             return;
         }
-        if (Array.from(imageInput.files).some((file) => file.size > 4 * 1024 * 1024)) {
-            window.alert('Each image must be 4 MB or smaller. The server validates this too.');
+        const file = cropQueue[cropIndex];
+        if (cropCount) cropCount.textContent = 'تصویر ' + (cropIndex + 1) + ' از ' + cropQueue.length + ' · ' + file.name;
+        if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+        cropObjectUrl = URL.createObjectURL(file);
+        cropImage.onload = () => paintCropPreview();
+        cropImage.onerror = () => {
+            window.alert('این تصویر قابل خواندن نیست و از انتخاب حذف شد.');
+            cropIndex += 1;
+            showCropAtIndex();
+        };
+        cropImage.src = cropObjectUrl;
+        if (cropZoom) cropZoom.value = '100';
+        if (cropX) cropX.value = '50';
+        if (cropY) cropY.value = '50';
+        cropModal?.removeAttribute('hidden');
+    };
+    const startImageCropping = (fileList) => {
+        const files = Array.from(fileList || []);
+        if (!files.length) return;
+        if (files.length > 8) {
+            window.alert('در هر بار ذخیره حداکثر ۸ تصویر انتخاب کنید.');
+            if (imageInput) imageInput.value = '';
+            return;
         }
-        renderImages(imageInput.files);
+        const images = files.filter((file) => file.type.startsWith('image/'));
+        if (images.length !== files.length) window.alert('فقط فایل‌های تصویری پذیرفته می‌شوند.');
+        if (images.some((file) => file.size > 16 * 1024 * 1024)) {
+            window.alert('حجم فایل اصلی هر تصویر نباید بیشتر از ۱۶ مگابایت باشد.');
+            if (imageInput) imageInput.value = '';
+            return;
+        }
+        cropQueue = images;
+        cropResults = [];
+        cropIndex = 0;
+        if (imageInput) imageInput.value = '';
+        if (!cropModal || !cropCanvas || !cropContext) {
+            cropResults = images;
+            assignCroppedFiles();
+            return;
+        }
+        showCropAtIndex();
+    };
+    const continueWithImage = (file) => {
+        cropResults.push(file);
+        cropIndex += 1;
+        showCropAtIndex();
+    };
+    const cropCurrentImage = () => new Promise((resolve, reject) => {
+        if (!cropRect || !cropImage.naturalWidth) {
+            reject(new Error('تصویر برای برش آماده نیست.'));
+            return;
+        }
+        const scale = Math.min(1, 1200 / cropRect.sw, 1600 / cropRect.sh);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(cropRect.sw * scale));
+        canvas.height = Math.max(1, Math.round(cropRect.sh * scale));
+        const context = canvas.getContext('2d');
+        if (!context) {
+            reject(new Error('امکان آماده‌سازی تصویر وجود ندارد.'));
+            return;
+        }
+        context.drawImage(cropImage, cropRect.sx, cropRect.sy, cropRect.sw, cropRect.sh, 0, 0, canvas.width, canvas.height);
+        const makeBlob = (type, quality) => new Promise((done) => canvas.toBlob(done, type, quality));
+        (async () => {
+            let type = 'image/webp';
+            let blob = await makeBlob(type, 0.88);
+            if (!blob) {
+                type = 'image/jpeg';
+                blob = await makeBlob(type, 0.86);
+            }
+            if (blob && blob.size > 4 * 1024 * 1024) blob = await makeBlob(type, 0.65);
+            if (!blob || blob.size > 4 * 1024 * 1024) throw new Error('حجم تصویر برش‌خورده هنوز بیشتر از ۴ مگابایت است.');
+            const extension = type === 'image/webp' ? '.webp' : '.jpg';
+            const name = cropQueue[cropIndex].name.replace(/\.[^.]+$/, '') + extension;
+            resolve(new File([blob], name, { type, lastModified: Date.now() }));
+        })().catch(reject);
     });
+    $('[data-browse-images]')?.addEventListener('click', () => imageInput?.click());
+    imageInput?.addEventListener('change', () => startImageCropping(imageInput.files));
+    [cropRatio, cropZoom, cropX, cropY].forEach((control) => control?.addEventListener('input', paintCropPreview));
+    $('[data-crop-apply]')?.addEventListener('click', async () => {
+        const button = $('[data-crop-apply]');
+        if (button) { button.disabled = true; button.textContent = 'در حال آماده‌سازی…'; }
+        try {
+            continueWithImage(await cropCurrentImage());
+        } catch (error) {
+            window.alert(error.message || 'برش تصویر انجام نشد.');
+        } finally {
+            if (button) { button.disabled = false; button.textContent = 'تأیید برش و ادامه'; }
+        }
+    });
+    $('[data-crop-skip]')?.addEventListener('click', () => continueWithImage(cropQueue[cropIndex]));
+    $('[data-crop-cancel]').forEach((button) => button.addEventListener('click', () => {
+        cropQueue = [];
+        cropResults = [];
+        cropIndex = 0;
+        if (imageInput) imageInput.value = '';
+        renderImages([]);
+        closeCropper();
+    }));
     const dropZone = $('[data-image-drop]');
     if (dropZone) {
         ['dragenter', 'dragover'].forEach((name) => dropZone.addEventListener(name, (event) => {
@@ -127,12 +318,7 @@
             dropZone.classList.remove('is-dragging');
         }));
         dropZone.addEventListener('drop', (event) => {
-            const files = Array.from(event.dataTransfer?.files || []).filter((file) => file.type.startsWith('image/')).slice(0, 8);
-            if (!imageInput || !files.length) return;
-            const transfer = new DataTransfer();
-            files.forEach((file) => transfer.items.add(file));
-            imageInput.files = transfer.files;
-            renderImages(imageInput.files);
+            startImageCropping(event.dataTransfer?.files || []);
         });
     }
 
@@ -217,7 +403,7 @@
             const lineTotal = $('[data-line-total]', row);
             if (lineTotal) lineTotal.textContent = money(price * qty);
         });
-        const shipping = Number(shippingInput?.value || 0);
+        const shipping = parseMoneyInput(shippingInput?.value || 0);
         const subtotalEl = $('[data-order-subtotal]');
         const totalEl = $('[data-order-total]');
         if (subtotalEl) subtotalEl.textContent = money(subtotal);
