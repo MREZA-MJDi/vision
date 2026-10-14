@@ -5,8 +5,8 @@
 @section('content')
     @php
         $heroAsset = $model->galleryMedia->first();
-        $primaryVariant = $model->variants->firstWhere('is_active', true) ?: $model->variants->first();
-        $price = $primaryVariant?->sale_price ?? $primaryVariant?->price ?? 0;
+        $primaryتنوع = $model->variants->firstWhere('is_active', true) ?: $model->variants->first();
+        $price = $primaryتنوع?->sale_price ?? $primaryتنوع?->price ?? 0;
         $colors = $model->variants->pluck('color')->filter()->unique()->values();
         $sizes = $model->variants->pluck('size')->filter()->unique()->values();
         $currency = config('commerce-admin.currency_symbol', '$');
@@ -14,13 +14,13 @@
 
     <div class="ak-page-heading">
         <div>
-            <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">Product List</a> <span>/</span> جزئیات محصول</div>
+            <div class="ak-breadcrumb"><a href="{{ route('commerce-admin.products.index') }}">محصول List</a> <span>/</span> جزئیات محصول</div>
             <h1>{{ $model->name }}</h1>
-            <p>{{ $model->brand?->name ?: 'No brand' }} · Published {{ $model->created_at?->format('M d, Y') ?: 'date unavailable' }} · SKU {{ $primaryVariant?->sku ?: 'not assigned' }}</p>
+            <p>{{ $model->brand?->name ?: 'بدون برند' }} · تاریخ انتشار {{ $model->created_at?->format('M d, Y') ?: 'date unavailable' }} · شناسه SKU {{ $primaryتنوع?->sku ?: 'not assigned' }}</p>
         </div>
         <div class="ak-heading-actions">
             <a class="ak-button ak-button-light" href="{{ route('commerce-admin.products.edit', $model->getKey()) }}">✎ ویرایش</a>
-            <form method="POST" action="{{ route('commerce-admin.products.destroy', $model->getKey()) }}" data-confirm="Archive this product? Existing order history will be retained.">
+            <form method="POST" action="{{ route('commerce-admin.products.destroy', $model->getKey()) }}" data-confirm="این محصول بایگانی شود؟ سابقهٔ سفارش‌ها حفظ خواهد شد.">
                 @csrf
                 @method('DELETE')
                 <button class="ak-icon-button ak-danger-icon-button" type="submit" aria-label="بایگانی محصول" title="بایگانی محصول">⌫</button>
@@ -50,7 +50,7 @@
             @endif
             <div class="ak-gallery-caption">
                 <span>{{ $model->galleryMedia->count() }} product images</span>
-                <span class="ak-status-pill {{ $model->is_active ? 'status-active' : 'status-draft' }}">{{ $model->is_active ? 'Active' : 'Draft' }}</span>
+                <span class="ak-status-pill {{ $model->is_active ? 'status-active' : 'status-draft' }}">{{ $model->is_active ? 'فعال' : 'پیش‌نویس' }}</span>
             </div>
         </section>
 
@@ -59,7 +59,7 @@
                 <article class="ak-product-inline-stat">
                     <span>قیمت</span>
                     <strong>{{ $currency }}{{ number_format((float) $price, 2) }}</strong>
-                    <small>{{ $primaryVariant?->is_on_sale ? 'Sale price' : 'Base price' }}</small>
+                    <small>{{ $primaryتنوع?->is_on_sale ? 'قیمت فروش ویژه' : 'قیمت پایه' }}</small>
                 </article>
                 <article class="ak-product-inline-stat">
                     <span>تعداد سفارش</span>
@@ -84,8 +84,8 @@
                 <div class="ak-product-detail-divider"></div>
                 <div class="ak-attribute-grid">
                     <div><small>دسته‌بندی</small><strong>{{ $model->category?->name ?: 'Uncategorized' }}</strong></div>
-                    <div><small>برند</small><strong>{{ $model->brand?->name ?: 'No brand' }}</strong></div>
-                    <div><small>وضعیت محصول</small><strong>{{ $model->is_active ? 'Active' : 'Draft' }}</strong></div>
+                    <div><small>برند</small><strong>{{ $model->brand?->name ?: 'بدون برند' }}</strong></div>
+                    <div><small>وضعیت محصول</small><strong>{{ $model->is_active ? 'فعال' : 'پیش‌نویس' }}</strong></div>
                     <div><small>Tax</small><strong>{{ $model->is_taxable ? 'Taxable' : 'Not taxable' }}</strong></div>
                 </div>
                 @if($colors->isNotEmpty())
@@ -94,8 +94,8 @@
                         <div class="ak-color-swatches">
                             @foreach($colors as $color)
                                 @php
-                                    $colorVariant = $model->variants->firstWhere('color', $color);
-                                    $colorHex = $colorVariant?->color_code ?: '#d9dce2';
+                                    $colorتنوع = $model->variants->firstWhere('color', $color);
+                                    $colorHex = $colorتنوع?->color_code ?: '#d9dce2';
                                 @endphp
                                 <span class="ak-color-swatch" title="{{ $color }}" style="--product-color: {{ $colorHex }}"></span>
                             @endforeach
@@ -113,7 +113,7 @@
 
             <section class="ak-panel ak-product-variants-panel">
                 <div class="ak-panel-heading">
-                    <div><h2>تنوع‌ها و موجودی</h2><p>قیمتs, شناسه SKUs and stock levels from the product record.</p></div>
+                    <div><h2>تنوع‌ها و موجودی</h2><p>قیمتs, شناسه شناسه SKUs and stock levels from the product record.</p></div>
                     <a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.products.edit', $model->getKey()) }}">مدیریت تنوع‌ها ↗</a>
                 </div>
                 @if($model->variants->isEmpty())
@@ -121,7 +121,7 @@
                 @else
                     <div class="ak-table-scroll">
                         <table class="ak-table">
-                            <thead><tr><th>تنوع</th><th>شناسه شناسه SKU / بارکد</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
+                            <thead><tr><th>تنوع</th><th>شناسه شناسه شناسه SKU / بارکد</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th></tr></thead>
                             <tbody>
                             @foreach($model->variants as $variant)
                                 <tr>
@@ -134,7 +134,7 @@
                                     <td><span class="ak-mono">{{ $variant->sku ?: '—' }}</span><small class="ak-table-subtext">{{ $variant->barcode ?: 'No barcode' }}</small></td>
                                     <td><strong>{{ $currency }}{{ number_format((float) ($variant->sale_price ?? $variant->price ?? 0), 2) }}</strong></td>
                                     <td>{{ number_format((int) $variant->stock) }}</td>
-                                    <td><span class="ak-status-pill {{ $variant->is_active ? 'status-active' : 'status-draft' }}">{{ $variant->is_active ? 'Active' : 'Inactive' }}</span></td>
+                                    <td><span class="ak-status-pill {{ $variant->is_active ? 'status-active' : 'status-draft' }}">{{ $variant->is_active ? 'فعال' : 'غیرفعال' }}</span></td>
                                 </tr>
                             @endforeach
                             </tbody>
