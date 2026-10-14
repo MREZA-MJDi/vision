@@ -19,7 +19,7 @@ return [
         'review' => App\Models\ProductReview::class,
     ],
     'admin_flag_column' => 'is_admin',
-    'guard' => 'web',
+    // Storefront and admin share Laravel's default authentication guard.
     'login_throttle_attempts' => 5,
     'login_throttle_seconds' => 60,
     'currency' => env('COMMERCE_ADMIN_CURRENCY', 'USD'),
