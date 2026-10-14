@@ -19,7 +19,7 @@
         return decimals ? grouped + '.' + decimals : grouped;
     };
     const parseMoneyInput = (value) => Number(cleanMoneyInput(value) || 0);
-    $('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });
+    $$('[data-money-input]').forEach((input) => { input.value = formatMoneyInput(input.value); });
     document.addEventListener('focusin', (event) => {
         if (event.target.matches?.('[data-money-input]')) {
             event.target.value = cleanMoneyInput(event.target.value);
@@ -386,16 +386,16 @@
     const attributeList = $('[data-attribute-list]');
     const attributeTemplate = $('#attribute-row-template');
     const renumberAttributes = () => {
-        const rows = $('[data-attribute-row]', attributeList || document);
+        const rows = $$('[data-attribute-row]', attributeList || document);
         rows.forEach((row, index) => {
-            $('[name]', row).forEach((field) => {
+            $$('[name]', row).forEach((field) => {
                 field.name = field.name.replace(/attributes\[\d+\]/, 'attributes[' + index + ']');
             });
         });
     };
     $('[data-add-attribute]')?.addEventListener('click', () => {
         if (!attributeList || !attributeTemplate) return;
-        const index = $('[data-attribute-row]', attributeList).length;
+        const index = $$('[data-attribute-row]', attributeList).length;
         if (index >= 50) { window.alert('حداکثر ۵۰ مشخصه برای هر محصول مجاز است.'); return; }
         attributeList.insertAdjacentHTML('beforeend', attributeTemplate.innerHTML.replaceAll('__INDEX__', String(index)));
         renumberAttributes();
