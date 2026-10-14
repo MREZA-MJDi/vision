@@ -67,9 +67,6 @@
             <div class="tiamir-intro__signature">Created by R MAJIDI</div>
             <div class="tiamir-intro__hint" data-tiamir-hint aria-hidden="true">ANALOG SIGNAL / 01</div>
         </div>
-        <button class="tiamir-intro__replay" type="button" data-tiamir-replay aria-label="پخش دوبارهٔ اینترو" hidden>
-            پخش دوباره <span aria-hidden="true">↻</span>
-        </button>
     @endif
 
     <div class="store-shell" data-storefront
