@@ -71,12 +71,6 @@ class InventoryController
         $validated = $request->validated();
 
         $delta = (int) $validated['adjustment'];
-        if ($delta === 0) {
-            throw ValidationException::withMessages([
-                'adjustment' => 'برای اصلاح موجودی، عددی غیر از صفر وارد کنید.',
-            ]);
-        }
-
         $variantModel = $this->model('variant', ProductVariant::class);
         $movementModel = $this->model('inventory_movement', InventoryMovement::class);
         $guard = (string) config('commerce-admin.guard', 'web');

@@ -88,19 +88,13 @@ class ProductController
             ->withQueryString();
 
         $stats = [
-            'revenue' => $orderModel::query()->where('payment_status', 'paid')
-                ->whereNotIn('status', ['cancelled', 'returned'])->sum('total'),
             'orders' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->count(),
             'sales' => $orderItemModel::query()->whereHas('order', fn ($query) => $query
                 ->where('payment_status', 'paid')->whereNotIn('status', ['cancelled', 'returned']))->sum('line_total'),
             'customers' => $userModel::query()->where(config('commerce-admin.admin_flag_column', 'is_admin'), false)->count(),
             'discount_total' => $orderModel::query()->whereNotIn('status', ['cancelled', 'returned'])->sum('discount'),
-            'products' => $productModel::query()->count(),
-            'low_stock' => $variantModel::query()->where('is_active', true)
-                ->whereColumn('stock', '<=', 'low_stock_threshold')->count(),
             'discounted' => $variantModel::query()->whereNotNull('sale_price')
                 ->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price')->count(),
-            'units_sold' => $orderItemModel::query()->sum('quantity'),
         ];
 
         $categoryModel = $this->model('category', Category::class);

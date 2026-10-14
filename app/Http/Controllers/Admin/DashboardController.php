@@ -145,11 +145,13 @@ class DashboardController
                 ->where('customer_email', '<>', '')->distinct()->count('customer_email');
 
         $repeatUserCustomers = (clone $paid)->whereNotNull('user_id')
-            ->select('user_id')->groupBy('user_id')->havingRaw('COUNT(*) > 1')->get()->count();
+            ->select('user_id')->groupBy('user_id')->havingRaw('COUNT(*) > 1')
+            ->getQuery()->getCountForPagination();
         $repeatEmailCustomers = (clone $paid)->whereNull('user_id')
             ->whereNotNull('customer_email')->where('customer_email', '<>', '')
             ->selectRaw('LOWER(customer_email) as normalized_email')
-            ->groupByRaw('LOWER(customer_email)')->havingRaw('COUNT(*) > 1')->get()->count();
+            ->groupByRaw('LOWER(customer_email)')->havingRaw('COUNT(*) > 1')
+            ->getQuery()->getCountForPagination();
         $returningRate = $identifiedCustomers > 0
             ? round((($repeatUserCustomers + $repeatEmailCustomers) / $identifiedCustomers) * 100, 1)
             : 0;

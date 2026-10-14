@@ -27,7 +27,7 @@
         <article class="ak-stat-card">
             <div class="ak-stat-top"><span class="ak-stat-icon ak-icon-red">↘</span><span class="ak-stat-kicker">تخفیف‌ها</span></div>
             <div class="ak-stat-value">{{ config('commerce-admin.currency_symbol', '$') }}{{ number_format((float) $stats['discount_total'], 2) }}</div>
-            <div class="ak-stat-footer"><span class="ak-stat-note">تخفیف اعمال‌شده در سفارش‌های نهایی‌نشده</span><span class="ak-mini-badge">{{ number_format((int) $stats['discounted']) }} sale variants</span></div>
+            <div class="ak-stat-footer"><span class="ak-stat-note">تخفیف اعمال‌شده در سفارش‌های نهایی‌نشده</span><span class="ak-mini-badge">{{ number_format((int) $stats['discounted']) }} تنوع تخفیف‌دار</span></div>
         </article>
     </section>
 
@@ -41,7 +41,7 @@
             </div>
         </div>
         <form class="ak-filter-bar {{ $status !== 'all' || $categoryId || $search !== '' ? 'is-visible' : '' }}" method="GET" action="{{ route('commerce-admin.products.index') }}" data-filter-panel>
-            <label class="ak-inline-field"><span>جست‌وجو</span><input type="search" name="q" value="{{ $search }}" placeholder="نام محصول, SKU or barcode"></label>
+            <label class="ak-inline-field"><span>جست‌وجو</span><input type="search" name="q" value="{{ $search }}" placeholder="نام محصول، SKU یا بارکد"></label>
             <label class="ak-inline-field"><span>دسته‌بندی</span><select name="category_id"><option value="">همهٔ دسته‌بندی‌ها</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected((string)$categoryId === (string)$category->id)>{{ $category->name }}</option>@endforeach</select></label>
             <label class="ak-inline-field"><span>وضعیت</span><select name="status"><option value="all" @selected($status === 'all')>همهٔ محصولات</option><option value="active" @selected($status === 'active')>فعال</option><option value="draft" @selected(in_array($status, ['draft','inactive'], true))>پیش‌نویس / غیرفعال</option><option value="sale" @selected($status === 'sale')>تخفیف‌دار</option><option value="low_stock" @selected($status === 'low_stock')>موجودی کم</option></select></label>
             <div class="ak-filter-actions"><button class="ak-button ak-button-dark ak-button-sm" type="submit">اعمال فیلترها</button><a class="ak-button ak-button-light ak-button-sm" href="{{ route('commerce-admin.products.index') }}">پاک‌کردن</a></div>
@@ -78,7 +78,7 @@
                         <td data-column="stock"><span class="ak-stock-indicator {{ $stock <= 0 ? 'is-out' : ($isLow ? 'is-low' : 'is-ok') }}"><i></i>{{ number_format($stock) }}</span></td>
                         <td data-column="rating"><div class="ak-rating-cell"><span aria-hidden="true">★</span><strong>{{ number_format((float) ($item->approved_reviews_avg_rating ?? 0), 1) }}</strong><small>({{ number_format((int) $item->approved_reviews_count) }})</small></div></td>
                         <td data-column="status"><span class="ak-status-pill {{ $item->is_active ? 'status-active' : 'status-draft' }}">{{ $item->is_active ? 'فعال' : 'پیش‌نویس' }}</span></td>
-                        <td><div class="ak-row-menu"><a href="{{ route('commerce-admin.products.show', $item->getKey()) }}" title="View product">↗</a><a href="{{ route('commerce-admin.products.edit', $item->getKey()) }}" title="ویرایش product">✎</a><form method="POST" action="{{ route('commerce-admin.products.destroy', $item->getKey()) }}" data-confirm="Archive this product? Existing order history will be retained.">@csrf @method('DELETE')<button type="submit" title="بایگانی محصول" aria-label="بایگانی محصول">×</button></form></div></td>
+                        <td><div class="ak-row-menu"><a href="{{ route('commerce-admin.products.show', $item->getKey()) }}" title="مشاهده محصول">↗</a><a href="{{ route('commerce-admin.products.edit', $item->getKey()) }}" title="ویرایش product">✎</a><form method="POST" action="{{ route('commerce-admin.products.destroy', $item->getKey()) }}" data-confirm="این محصول بایگانی شود؟ سابقهٔ سفارش‌ها حفظ می‌شود.">@csrf @method('DELETE')<button type="submit" title="بایگانی محصول" aria-label="بایگانی محصول">×</button></form></div></td>
                     </tr>
                 @endforeach
                 </tbody>
