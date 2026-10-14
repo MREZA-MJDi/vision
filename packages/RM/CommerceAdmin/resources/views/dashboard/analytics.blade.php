@@ -28,7 +28,7 @@
 
     <div class="ak-page-heading">
         <div>
-            <div class="ak-breadcrumb">Dashboard <span>/</span> {{ request('panel') === 'payments' ? 'Payment Dashboard' : 'E-Commerce' }}</div>
+            <div class="ak-breadcrumb">داشبورد <span>/</span> {{ request('panel') === 'payments' ? 'Payment Dashboard' : 'E-Commerce' }}</div>
             <h1>{{ request('panel') === 'payments' ? 'Payment Dashboard' : 'E-Commerce Dashboard' }}</h1>
             <p>نمای زندهٔ درآمد، مشتریان بازگشتی، پرداخت‌ها و نظرات محصولات.</p>
         </div>
@@ -111,7 +111,7 @@
             </div>
             <div class="ak-source-chart">
                 <div class="ak-donut" style="background:conic-gradient({{ implode(', ', $segments) ?: '#edf0f4 0% 100%' }})">
-                    <div><strong>{{ number_format((int) $allTimeOrders) }}</strong><small>Orders</small></div>
+                    <div><strong>{{ number_format((int) $allTimeOrders) }}</strong><small>سفارش‌ها</small></div>
                 </div>
                 <div class="ak-donut-legend">
                     @forelse ($paymentBreakdown as $row)
@@ -154,7 +154,7 @@
                 <div class="ak-compact-empty">پس از ثبت سفارش دارای قلم کالا، آمار فروش محصولات نمایش داده می‌شود.</div>
             @else
                 <div class="ak-table-scroll"><table class="ak-table">
-                    <thead><tr><th>Product</th><th>تعداد فروش</th><th>مجموع فروش</th></tr></thead>
+                    <thead><tr><th>محصول</th><th>تعداد فروش</th><th>مجموع فروش</th></tr></thead>
                     <tbody>
                     @foreach ($topProducts as $item)
                         <tr><td class="ak-table-primary">{{ $item->product_name }}</td><td>{{ number_format((int) $item->units_sold) }}</td><td>{{ $currency }}{{ number_format((float) $item->gross_sales, 2) }}</td></tr>
