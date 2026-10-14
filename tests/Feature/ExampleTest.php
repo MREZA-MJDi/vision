@@ -39,6 +39,11 @@ class ExampleTest extends TestCase
         $this->assertTrue(Route::has('commerce-admin.products.index'));
         $this->assertTrue(Route::has('commerce-admin.orders.index'));
         $this->assertTrue(Route::has('commerce-admin.login'));
+        $this->assertTrue(Route::has('commerce-admin.categories.index'));
+        $this->assertTrue(Route::has('commerce-admin.brands.index'));
+        $this->assertTrue(Route::has('commerce-admin.customers.index'));
+        $this->assertTrue(Route::has('commerce-admin.payments.index'));
+        $this->assertTrue(Route::has('commerce-admin.inventory.index'));
     }
 
     public function test_an_administrator_can_render_the_database_backed_dashboard(): void
@@ -49,10 +54,10 @@ class ExampleTest extends TestCase
         $this->actingAs($administrator)
             ->get(route('commerce-admin.dashboard'))
             ->assertOk()
-            ->assertSee('Customers')
-            ->assertSee('Total Revenue')
-            ->assertSee('Store Activity')
-            ->assertSee('Latest Orders');
+            ->assertSee('مشتری‌های اخیر')
+            ->assertSee('درآمد پرداخت‌شده')
+            ->assertSee('روند فروشگاه')
+            ->assertSee('آخرین سفارش‌ها');
     }
 
     public function test_reference_commerce_screens_render_and_remain_connected_to_catalog_and_orders(): void
