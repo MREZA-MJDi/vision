@@ -30,7 +30,6 @@ class InventoryController
         if ($search !== '') {
             $query->where(fn ($variants) => $variants
                 ->where('sku', 'like', '%' . $search . '%')
-                ->orWhere('barcode', 'like', '%' . $search . '%')
                 ->orWhereHas('product', fn ($product) => $product->where('name', 'like', '%' . $search . '%')));
         }
 

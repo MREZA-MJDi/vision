@@ -40,7 +40,6 @@ class SaveProductRequest extends FormRequest
             'variants' => ['required', 'array', 'min:1', 'max:30'],
             'variants.*.id' => ['nullable', 'integer'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
-            'variants.*.barcode' => ['nullable', 'string', 'max:100'],
             'variants.*.size' => ['nullable', 'string', 'max:50'],
             'variants.*.color' => ['nullable', 'string', 'max:80'],
             'variants.*.color_code' => ['nullable', 'string', 'max:20'],

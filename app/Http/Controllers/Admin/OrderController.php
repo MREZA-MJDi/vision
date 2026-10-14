@@ -112,7 +112,6 @@ class OrderController
             $query->where(function ($builder) use ($search): void {
                 $term = '%' . $search . '%';
                 $builder->where('sku', 'like', $term)
-                    ->orWhere('barcode', 'like', $term)
                     ->orWhere('size', 'like', $term)
                     ->orWhere('color', 'like', $term)
                     ->orWhereHas('product', fn ($productQuery) => $productQuery->where('name', 'like', $term));

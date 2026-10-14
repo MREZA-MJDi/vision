@@ -65,8 +65,7 @@ class ProductController
                 $builder->where('name', 'like', '%' . $search . '%')
                     ->orWhere('slug', 'like', '%' . $search . '%')
                     ->orWhereHas('variants', fn ($variantQuery) => $variantQuery
-                        ->where('sku', 'like', '%' . $search . '%')
-                        ->orWhere('barcode', 'like', '%' . $search . '%'));
+                        ->where('sku', 'like', '%' . $search . '%'));
             });
         }
 
@@ -114,7 +113,7 @@ class ProductController
         return view('commerce-admin::products.form', array_merge(
             $this->formData(),
             ['product' => null, 'variants' => collect([(object) [
-                'id' => null, 'sku' => '', 'barcode' => '', 'size' => '', 'color' => '',
+                'id' => null, 'sku' => '', 'size' => '', 'color' => '',
                 'color_code' => '#171717', 'price' => null, 'sale_price' => null, 'stock' => 0,
                 'low_stock_threshold' => 5, 'is_active' => true,
             ]])]
@@ -164,7 +163,7 @@ class ProductController
         $variants = $model->variants->values();
         if ($variants->isEmpty()) {
             $variants = collect([(object) [
-                'id' => null, 'sku' => '', 'barcode' => '', 'size' => '', 'color' => '',
+                'id' => null, 'sku' => '', 'size' => '', 'color' => '',
                 'color_code' => '#171717', 'price' => null, 'sale_price' => null, 'stock' => 0,
                 'low_stock_threshold' => 5, 'is_active' => true,
             ]]);
@@ -243,12 +242,10 @@ class ProductController
 
             $keepIds = [];
             $seenSkus = [];
-            $seenBarcodes = [];
 
             foreach (array_values($validated['variants']) as $index => $input) {
                 $variantId = $input['id'] ?? null;
                 $sku = trim((string) ($input['sku'] ?? ''));
-                $barcode = trim((string) ($input['barcode'] ?? '')) ?: null;
 
                 // product_variants.sku is required and unique in the database.
                 // When the form leaves it blank, generate a stable-format SKU
@@ -258,7 +255,7 @@ class ProductController
                         $sku = 'VIS-' . Str::upper(Str::random(10));
                     } while (
                         in_array($sku, $seenSkus, true)
-                        || $variantModel::query()->where('sku', $sku)->exists()
+                        || $variantModel::withTrashed()->where('sku', $sku)->exists()
                     );
                 }
 
@@ -267,13 +264,8 @@ class ProductController
                         "variants.$index.sku" => 'Each variant must have a different SKU.',
                     ]);
                 }
-                if ($barcode !== null && in_array($barcode, $seenBarcodes, true)) {
-                    throw ValidationException::withMessages([
-                        "variants.$index.barcode" => 'Each variant must have a different barcode.',
-                    ]);
-                }
                 {
-                    $exists = $variantModel::query()->where('sku', $sku)
+                    $exists = $variantModel::withTrashed()->where('sku', $sku)
                         ->when($variantId, fn ($q) => $q->where('id', '<>', $variantId))->exists();
                     if ($exists) {
                         throw ValidationException::withMessages([
@@ -282,17 +274,6 @@ class ProductController
                     }
                     $seenSkus[] = $sku;
                 }
-                if ($barcode !== null) {
-                    $exists = $variantModel::query()->where('barcode', $barcode)
-                        ->when($variantId, fn ($q) => $q->where('id', '<>', $variantId))->exists();
-                    if ($exists) {
-                        throw ValidationException::withMessages([
-                            "variants.$index.barcode" => 'This barcode is already used by another product variant.',
-                        ]);
-                    }
-                    $seenBarcodes[] = $barcode;
-                }
-
                 if ($variantId) {
                     $variant = $product->variants()->whereKey($variantId)->firstOrFail();
                 } else {
@@ -303,7 +284,6 @@ class ProductController
 
                 $variant->fill([
                     'sku' => $sku,
-                    'barcode' => $barcode,
                     'size' => $input['size'] ?? null,
                     'color' => $input['color'] ?? null,
                     'color_code' => $input['color_code'] ?? null,

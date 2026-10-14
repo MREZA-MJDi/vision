@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -226,6 +227,24 @@ class CommerceAdminWorkflowTest extends TestCase
     }
 
 
+    public function test_product_variants_do_not_expose_or_require_barcode(): void
+    {
+        $this->assertFalse(Schema::hasColumn('product_variants', 'barcode'));
+
+        $admin = User::query()->create([
+            'name' => 'No Barcode Admin',
+            'email' => 'no-barcode-admin@example.test',
+            'password' => 'admin-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.products.create'))
+            ->assertOk()
+            ->assertDontSee('barcode')
+            ->assertDontSee('بارکد');
+    }
+
     public function test_admin_can_create_a_product_without_manual_sku_and_stock_is_audited(): void
     {
         $admin = User::query()->create([
@@ -244,7 +263,6 @@ class CommerceAdminWorkflowTest extends TestCase
                 'variants' => [
                     [
                         'sku' => '',
-                        'barcode' => '',
                         'size' => 'M',
                         'color' => 'Black',
                         'color_code' => '#000000',

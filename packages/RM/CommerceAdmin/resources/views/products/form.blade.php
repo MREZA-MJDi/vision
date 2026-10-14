@@ -48,7 +48,6 @@
                                 @if(data_get($variant, 'id'))<input type="hidden" name="variants[{{ $index }}][id]" value="{{ data_get($variant, 'id') }}">@endif
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>
-                                    <label class="ak-field"><span>بارکد</span><input name="variants[{{ $index }}][barcode]" value="{{ old('variants.'.$index.'.barcode', data_get($variant, 'barcode')) }}" maxlength="100" placeholder="Scan or enter barcode"></label>
                                     <label class="ak-field"><span>اندازه / گزینه</span><input name="variants[{{ $index }}][size]" value="{{ old('variants.'.$index.'.size', data_get($variant, 'size')) }}" maxlength="50" placeholder="M / 256 GB"></label>
                                     <label class="ak-field"><span>Color</span><input name="variants[{{ $index }}][color]" value="{{ old('variants.'.$index.'.color', data_get($variant, 'color')) }}" maxlength="80" placeholder="Black"></label>
                                     <label class="ak-field"><span>کد رنگ</span><div class="ak-color-code"><input type="color" name="variants[{{ $index }}][color_code]" value="{{ old('variants.'.$index.'.color_code', data_get($variant, 'color_code') ?: '#171717') }}" aria-label="کد رنگ"><input type="text" value="{{ old('variants.'.$index.'.color_code', data_get($variant, 'color_code') ?: '#171717') }}" maxlength="20" data-color-mirror></div></label>
@@ -66,7 +65,6 @@
                             <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>__NUMBER__</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="Remove variant">×</button></div>
                             <div class="ak-variant-grid">
                                 <label class="ak-field"><span>SKU</span><input name="variants[__INDEX__][sku]" maxlength="100" placeholder="SKU-001"></label>
-                                <label class="ak-field"><span>بارکد</span><input name="variants[__INDEX__][barcode]" maxlength="100" placeholder="Scan or enter barcode"></label>
                                 <label class="ak-field"><span>اندازه / گزینه</span><input name="variants[__INDEX__][size]" maxlength="50" placeholder="M / 256 GB"></label>
                                 <label class="ak-field"><span>Color</span><input name="variants[__INDEX__][color]" maxlength="80" placeholder="Black"></label>
                                 <label class="ak-field"><span>کد رنگ</span><div class="ak-color-code"><input type="color" name="variants[__INDEX__][color_code]" value="#171717" aria-label="کد رنگ"><input type="text" value="#171717" maxlength="20" data-color-mirror></div></label>

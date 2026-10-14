@@ -15,7 +15,7 @@ class ProductVariant extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_id','sku','barcode','size','color','color_code','price','sale_price','stock',
+        'product_id','sku','size','color','color_code','price','sale_price','stock',
         'low_stock_threshold','is_active','sort_order',
     ];
 
