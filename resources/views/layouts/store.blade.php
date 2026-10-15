@@ -37,6 +37,8 @@
         @if (request()->routeIs('try-on.index', 'products.show'))
             @vite(['resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
         @endif
+    @elseif (app()->environment('testing'))
+        {{-- Feature tests assert rendered storefront markup without requiring a Vite build. --}}
     @endif
     @stack('styles')
 </head>
