@@ -7,10 +7,6 @@
 @section('og-type', 'product')
 @section('og-image', $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0)?->primaryGalleryMedia?->url ?: $product->activeVariants->first()?->primaryGalleryMedia?->url ?: $product->primaryGalleryMedia?->url ?: $product->galleryMedia->first()?->url)
 
-@push('styles')
-    @vite(['resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
-@endpush
-
 @section('content')
 @php
     $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
