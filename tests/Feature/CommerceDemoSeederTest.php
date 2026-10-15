@@ -159,6 +159,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_reseeding_does_not_restore_a_demo_product_archived_in_admin(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
@@ -178,6 +179,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_normal_database_seeder_creates_idempotent_editable_launch_records_without_demo_or_phantom_media(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
