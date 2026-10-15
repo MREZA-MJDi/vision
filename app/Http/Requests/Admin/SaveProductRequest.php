@@ -113,7 +113,25 @@ class SaveProductRequest extends FormRequest
             }
 
             $audience = (string) $this->input('audience', '');
-            foreach ((array) $this->input('variants', []) as $index => $variant) {
+            $variants = (array) $this->input('variants', []);
+            $requestedMannequinIds = collect($variants)
+                ->map(fn ($variant) => is_array($variant) ? (int) ($variant['try_on_mannequin_id'] ?? 0) : 0)
+                ->filter(fn (int $id): bool => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+            $validMannequinIds = $requestedMannequinIds !== []
+                && in_array($audience, VirtualTryOnConfig::AUDIENCES, true)
+                    ? TryOnMannequin::query()
+                        ->active()
+                        ->whereIn('id', $requestedMannequinIds)
+                        ->where('audience', $audience)
+                        ->pluck('id')
+                        ->map(fn ($id): int => (int) $id)
+                        ->all()
+                    : [];
+
+            foreach ($variants as $index => $variant) {
                 if (! is_array($variant)) {
                     continue;
                 }
@@ -136,10 +154,7 @@ class SaveProductRequest extends FormRequest
                         $validator->errors()->add("variants.$index.try_on_image", 'پیش از بارگذاری تصویر لایه‌ای، مانکن و جایگاه را مشخص کنید.');
                     }
 
-                    if ($mannequinId > 0 && (
-                        ! in_array($audience, VirtualTryOnConfig::AUDIENCES, true)
-                        || ! TryOnMannequin::query()->active()->whereKey($mannequinId)->where('audience', $audience)->exists()
-                    )) {
+                    if ($mannequinId > 0 && ! in_array($mannequinId, $validMannequinIds, true)) {
                         $validator->errors()->add("variants.$index.try_on_mannequin_id", 'مانکن باید فعال و هم‌گروه با محصول باشد.');
                     }
                 } elseif ($removeLayerImage) {
