@@ -27,6 +27,7 @@ class StorefrontBrowseTest extends TestCase
 
     public function test_shop_contains_filters_and_links_to_the_shared_virtual_try_on(): void
     {
+        $this->withoutVite();
         $this->get('/shop')
             ->assertOk()
             ->assertSee('فیلترها')
