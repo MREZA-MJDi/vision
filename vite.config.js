@@ -8,6 +8,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/css/storefront.css',
+                'resources/css/home-hero.css',
                 'resources/js/app.js',
                 'resources/js/storefront.js',
                 'packages/RM/CommerceAdmin/resources/css/admin-kit.css',
