@@ -67,6 +67,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_demo_seeders_are_idempotent(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
@@ -85,6 +86,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_reseeding_replaces_only_legacy_demo_illustrations_and_preserves_admin_media_changes(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
