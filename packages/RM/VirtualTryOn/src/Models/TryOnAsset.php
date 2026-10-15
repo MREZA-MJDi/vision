@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TryOnAsset extends Model
 {
     protected $fillable = [
-        'product_variant_id', 'try_on_mannequin_id', 'media_id', 'slot', 'is_active',
+        'product_variant_id', 'try_on_mannequin_id', 'media_id', 'slot', 'is_active', 'is_default',
     ];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'is_default' => 'boolean'];
     }
 
     public function variant(): BelongsTo
