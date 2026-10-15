@@ -2566,8 +2566,8 @@ body.storefront-home-body .store-shell > .store-header {
     display: grid;
     place-items: center;
     box-sizing: border-box;
-    min-height: 100svh;
-    padding: 2.5svh clamp(8px, 2.4vw, 30px);
+    min-height: clamp(520px, 84svh, 760px);
+    padding: clamp(16px, 2.8svh, 28px) clamp(8px, 2.4vw, 30px);
     overflow: hidden;
     color: #fff;
     background: transparent;
@@ -2577,8 +2577,8 @@ body.storefront-home-body .store-shell > .store-header {
     isolation: isolate;
     box-sizing: border-box;
     width: min(100%, 1360px);
-    height: clamp(330px, 56svh, 650px);
-    min-height: 330px;
+    height: clamp(400px, 66svh, 650px);
+    min-height: 400px;
     overflow: hidden;
     border: 1px solid rgb(255 255 255 / 15%);
     border-radius: clamp(18px, 2.7vw, 34px);
@@ -3022,7 +3022,7 @@ body.storefront-home-body .store-shell > .store-header {
 }
 
 @media (max-width: 850px) {
-    .home-hero { min-height: 100svh; padding: 0 12px; }
+    .home-hero { min-height: clamp(500px, 82svh, 720px); padding: clamp(12px, 2svh, 18px) 12px; }
     .home-hero__frame { height: clamp(300px, 56svh, 580px); min-height: 300px; }
     .home-hero__nav { max-width: 54%; }
     .home-hero__nav-link { padding-inline: 7px; font-size: 8px; }
@@ -3061,7 +3061,7 @@ body.storefront-home-body .store-shell > .store-header {
     position: relative;
     inset: auto;
     display: block;
-    width: 100%;
+    width: auto;
     height: 100%;
     min-width: 0;
     min-height: 0;
@@ -3077,7 +3077,20 @@ body.storefront-home-body .store-shell > .store-header {
 .home-hero__variant { color: var(--hero-ink); }
 .home-hero__variant.is-selected { border-color: var(--hero-ink); box-shadow: 0 0 0 2px color-mix(in srgb, var(--hero-ink) 55%, transparent); }
 .home-hero__variant-dot { background: var(--home-hero-swatch); }
-@media (max-width: 720px) { .home-hero__frame { min-height: 680px; } .home-hero__image-stage img { max-height: 320px; } }
+@media (max-width: 720px) {
+    .home-hero__frame {
+        height: min(76svh, 620px);
+        min-height: min(560px, calc(100svh - 24px));
+    }
+    .home-hero__image-stage img {
+        width: auto;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        object-position: center;
+    }
+}
 
 
 
@@ -3496,7 +3509,7 @@ body.storefront-body.tiamir-intro-active {
         position: relative;
         inset: auto;
         display: block;
-        width: 100%;
+        width: auto;
         height: 100%;
         min-width: 0;
         min-height: 0;
