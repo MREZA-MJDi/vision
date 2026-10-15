@@ -64,7 +64,7 @@
     let previousDocumentOverflow = '';
     let inlineReturnFocus = null;
 
-    function setInlineOpen(open) {
+    function setInlineOpen(open, initialize = true) {
         if (!inlineMode) return;
         const currentlyOpen = root.classList.contains('is-open');
         if (currentlyOpen === open) return;
@@ -76,6 +76,12 @@
             root.classList.add('is-open');
             ui.launcher?.setAttribute('aria-expanded', 'true');
             window.requestAnimationFrame(() => ui.close?.focus({ preventScroll: true }));
+            if (initialize && !state.mannequin && !state.bootstrapController) {
+                loadBootstrap().catch((error) => {
+                    showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+                    showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+                });
+            }
             return;
         }
 
@@ -748,7 +754,7 @@
             const target = event.target instanceof Element ? event.target.closest('[data-vto-select-product]') : null;
             if (!target) return;
             event.preventDefault();
-            setInlineOpen(true);
+            setInlineOpen(true, false);
 
             const variantId = Number(target.dataset.vtoVariantId) || null;
             if (!variantId) {
@@ -939,8 +945,10 @@
         else loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
     });
 
-    loadBootstrap().catch((error) => {
-        showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
-        showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
-    });
+    if (!inlineMode) {
+        loadBootstrap().catch((error) => {
+            showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+            showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+        });
+    }
 })();
