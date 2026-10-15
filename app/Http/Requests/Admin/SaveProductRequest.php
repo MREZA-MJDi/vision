@@ -81,6 +81,7 @@ class SaveProductRequest extends FormRequest
             'variants.*.try_on_slot' => ['nullable', 'string', Rule::in(array_keys(VirtualTryOnConfig::SLOT_ORDER))],
             'variants.*.try_on_image' => ['sometimes', 'nullable', 'image', 'mimes:png,webp', 'dimensions:width=1024,height=1536', 'max:4096'],
             'variants.*.remove_try_on_image' => ['sometimes', 'boolean'],
+            'variants.*.try_on_default' => ['sometimes', 'boolean'],
             'images' => ['sometimes', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ];
@@ -131,6 +132,16 @@ class SaveProductRequest extends FormRequest
                         ->all()
                     : [];
 
+            $existingLayerVariantIds = $requestedVariantIds === []
+                ? []
+                : TryOnAsset::query()
+                    ->whereIn('product_variant_id', collect($variants)->pluck('id')->filter()->map(fn ($id) => (int) $id)->all())
+                    ->where('is_active', true)
+                    ->pluck('product_variant_id')
+                    ->map(fn ($id): int => (int) $id)
+                    ->all();
+            $seenDefaultSlots = [];
+
             foreach ($variants as $index => $variant) {
                 if (! is_array($variant)) {
                     continue;
@@ -140,8 +151,32 @@ class SaveProductRequest extends FormRequest
                 $mannequinId = (int) ($variant['try_on_mannequin_id'] ?? 0);
                 $hasLayerImage = $this->hasFile("variants.{$index}.try_on_image");
                 $removeLayerImage = (bool) ($variant['remove_try_on_image'] ?? false);
+                $makeDefault = (bool) ($variant['try_on_default'] ?? false);
+                $variantId = (int) ($variant['id'] ?? 0);
 
-                if (! ($removeLayerImage && ! $hasLayerImage) && ($hasLayerImage || $slot !== '' || $mannequinId > 0)) {
+                if ($makeDefault) {
+                    if ($slot === '' || $mannequinId < 1) {
+                        $validator->errors()->add("variants.$index.try_on_default", 'برای پیش‌فرض کردن لباس، مانکن و جایگاه را مشخص کن.');
+                    }
+
+                    if (! $hasLayerImage && ! in_array($variantId, $existingLayerVariantIds, true)) {
+                        $validator->errors()->add("variants.$index.try_on_default", 'ابتدا تصویر لایه‌ای معتبر این تنوع را ثبت کن.');
+                    }
+
+                    if ($removeLayerImage && ! $hasLayerImage) {
+                        $validator->errors()->add("variants.$index.try_on_default", 'نمی‌توان تصویر را حذف کرد و هم‌زمان همان لباس را پیش‌فرض نگه داشت.');
+                    }
+
+                    $defaultKey = $mannequinId . ':' . $slot;
+                    if (isset($seenDefaultSlots[$defaultKey])) {
+                        $validator->errors()->add("variants.$index.try_on_default", 'برای هر مانکن و جایگاه فقط یک لباس پیش‌فرض انتخاب کن.');
+                        $validator->errors()->add("variants.{$seenDefaultSlots[$defaultKey]}.try_on_default", 'برای هر مانکن و جایگاه فقط یک لباس پیش‌فرض انتخاب کن.');
+                    } else {
+                        $seenDefaultSlots[$defaultKey] = $index;
+                    }
+                }
+
+                if (! ($removeLayerImage && ! $hasLayerImage) && ($hasLayerImage || $slot !== '' || $mannequinId > 0 || $makeDefault)) {
                     if (! in_array($audience, VirtualTryOnConfig::AUDIENCES, true)) {
                         $validator->errors()->add('audience', 'برای استفاده از اتاق پرو ابتدا گروه زنانه یا مردانه را انتخاب کنید.');
                     }
