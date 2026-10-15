@@ -782,10 +782,16 @@
             const variantId = Number(target.dataset.vtoVariantId) || null;
             if (!variantId) {
                 showToast('برای این محصول واریانت فعالی ثبت نشده است.');
+                if (!state.mannequin && !state.bootstrapController) {
+                    loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.'));
+                }
                 return;
             }
             if (target.dataset.vtoReady !== '1') {
                 showToast('برای پرو این محصول، تصویر لایه‌ای معتبر را از مدیریت محصول ثبت کن.');
+                if (!state.mannequin && !state.bootstrapController) {
+                    loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.'));
+                }
                 return;
             }
 
