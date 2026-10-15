@@ -34,7 +34,7 @@
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/home-hero.css', 'resources/js/storefront.js'])
-        @if (request()->routeIs('try-on.index', 'products.show'))
+        @if (request()->routeIs('shop.index', 'products.index', 'try-on.index', 'products.show'))
             @vite(['resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
         @endif
     @elseif (app()->environment('testing'))
