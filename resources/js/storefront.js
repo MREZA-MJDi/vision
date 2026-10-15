@@ -435,13 +435,12 @@
         }) + ' ' + currency;
 
         const syncTryOnVariant = (option) => {
-            const fittingRoom = document.querySelector('[data-virtual-try-on]');
-            if (!fittingRoom) return;
-            fittingRoom.dispatchEvent(new CustomEvent('vto:select-variant', {
-                detail: {
-                    variantId: option ? Number(option.value) : null,
-                    audience: fittingRoom.dataset.initialAudience || '',
-                },
+            const tryOnWorkspace = document.querySelector('[data-virtual-try-on]');
+            if (!tryOnWorkspace) return;
+            tryOnWorkspace.dispatchEvent(new CustomEvent('vto:select-variant', {
+                // The fitting-room audience is user-controlled. A variant change
+                // updates its own slot without forcibly switching the mannequin.
+                detail: { variantId: option ? Number(option.value) : null },
             }));
         };
 
