@@ -41,7 +41,7 @@
     <div class="store-atmosphere" aria-hidden="true"></div>
 
     @if (request()->routeIs('storefront.index'))
-        <div class="tiamir-intro" data-tiamir-intro data-first-duration="5600" data-return-duration="2500" aria-hidden="true">
+        <div class="tiamir-intro" data-tiamir-intro data-first-duration="3200" data-return-duration="1900" aria-hidden="true">
             <canvas class="tiamir-intro__static" data-tiamir-static></canvas>
             <span class="tiamir-intro__grain" aria-hidden="true"></span>
             <span class="tiamir-intro__scanlines" aria-hidden="true"></span>
@@ -67,9 +67,6 @@
             <div class="tiamir-intro__signature">Created by R MAJIDI</div>
             <div class="tiamir-intro__hint" data-tiamir-hint aria-hidden="true">ANALOG SIGNAL / 01</div>
         </div>
-        <button class="tiamir-intro__replay" type="button" data-tiamir-replay aria-label="پخش دوبارهٔ اینترو" hidden>
-            پخش دوباره <span aria-hidden="true">↻</span>
-        </button>
     @endif
 
     <div class="store-shell" data-storefront

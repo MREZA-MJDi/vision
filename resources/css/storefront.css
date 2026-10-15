@@ -2807,14 +2807,19 @@ body.storefront-home-body .store-shell > .store-header {
     overflow: visible;
     pointer-events: none;
 }
+/* The stage owns the available box; the product image must always fit inside it. */
 .home-hero__image-stage img {
     position: relative;
     display: block;
     width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     object-position: center;
-    transform: translateY(-1%);
+    transform: none;
     filter: drop-shadow(0 20px 11px rgb(79 29 0 / 28%));
     mix-blend-mode: multiply;
     opacity: .98;
@@ -3052,8 +3057,22 @@ body.storefront-home-body .store-shell > .store-header {
 .home-hero__description, .home-hero__eyebrow, .home-hero__price-label, .home-hero__stock, .home-hero__image-caption { color: color-mix(in srgb, var(--hero-ink) 76%, transparent); }
 .home-hero__image-stage { isolation: isolate; }
 .home-hero__image-stage::before { position: absolute; z-index: -1; inset: 12% 10%; border-radius: 50%; background: color-mix(in srgb, var(--hero-soft) 58%, transparent); content: ''; filter: blur(42px); opacity: .72; }
-.home-hero__image-stage img { max-height: min(62vh, 590px); object-fit: contain; filter: drop-shadow(0 30px 22px rgb(30 12 4 / 35%)); transform: translateY(0) scale(1); transition: opacity 180ms ease, transform 360ms cubic-bezier(.2,.8,.2,1); }
-.home-hero.is-transitioning .home-hero__image-stage img { transform: translateY(-5px) scale(1.018); }
+.home-hero__image-stage img {
+    position: relative;
+    inset: auto;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    filter: drop-shadow(0 30px 22px rgb(30 12 4 / 35%));
+    transform: none;
+    transition: opacity 180ms ease;
+}
 .home-hero__variant-picker { margin-top: 20px; }
 .home-hero__variant { color: var(--hero-ink); }
 .home-hero__variant.is-selected { border-color: var(--hero-ink); box-shadow: 0 0 0 2px color-mix(in srgb, var(--hero-ink) 55%, transparent); }
@@ -3223,35 +3242,6 @@ body.storefront-body.tiamir-intro-active {
     letter-spacing: .16em;
     pointer-events: none;
 }
-.tiamir-intro__replay {
-    position: fixed;
-    z-index: 9997;
-    top: 16px;
-    right: 18px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 34px;
-    padding: 7px 11px;
-    border: 1px solid rgb(255 255 255 / 15%);
-    border-radius: 999px;
-    background: rgb(10 9 12 / 72%);
-    color: rgb(255 255 255 / 62%);
-    font: 600 9px/1 'Space Grotesk', 'Vazirmatn', sans-serif;
-    letter-spacing: .12em;
-    cursor: pointer;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-.tiamir-intro__replay:hover,
-.tiamir-intro__replay:focus-visible {
-    color: #fff;
-    border-color: rgb(255 255 255 / 38%);
-    background: rgb(24 22 27 / 92%);
-}
-.tiamir-intro__replay:focus-visible { outline: 2px solid var(--store-orange-hot); outline-offset: 3px; }
-.tiamir-intro__replay[hidden] { display: none !important; }
 .tiamir-intro.has-signal-hit .tiamir-intro__logo--main { filter: brightness(1.14) contrast(1.05); }
 
 
@@ -3398,9 +3388,9 @@ body.storefront-body.tiamir-intro-active {
 }
 
 @keyframes tiamir-signature-resolve {
-    0%, 69% { opacity: 0; transform: translateX(-50%) translateY(7px); filter: blur(3px); }
-    78% { opacity: .72; transform: translateX(-50%) translateY(0); filter: blur(0); }
-    84%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); filter: blur(0); }
+    0%, 38% { opacity: 0; transform: translateX(-50%) translateY(5px); filter: blur(2px); }
+    50% { opacity: .72; transform: translateX(-50%) translateY(0); filter: blur(0); }
+    60%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); filter: blur(0); }
 }
 
 @keyframes tiamir-signal-flash {
@@ -3418,9 +3408,13 @@ body.storefront-body.tiamir-intro-active {
 
 @keyframes tiamir-control-in { to { opacity: 1; } }
 
-/* The campaign hero uses a readable, touch-friendly composition on phones. */
-/* Phone layout: a clear product image, one compact detail panel, and a single CTA row. */
-@media (max-width: 600px) {
+/* The campaign hero uses a readable, touch-friendly composition on phones and narrow tablets. */
+/* Keep product, price and CTA in a dedicated responsive layout instead of squeezing desktop columns. */
+@media (max-width: 720px) {
+    body.storefront-home-body {
+        overflow-x: clip;
+    }
+
     body.storefront-home-body .store-shell {
         width: 100%;
         min-height: 0;
@@ -3436,8 +3430,11 @@ body.storefront-body.tiamir-intro-active {
     }
 
     body.storefront-home-body .home-hero__frame {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
         height: min(82svh, 710px);
-        min-height: 620px;
+        min-height: min(620px, calc(100svh - 20px));
         overflow: hidden;
         border-radius: 22px;
     }
@@ -3496,10 +3493,18 @@ body.storefront-body.tiamir-intro-active {
     }
 
     body.storefront-home-body .home-hero__image-stage img {
+        position: relative;
+        inset: auto;
+        display: block;
         width: 100%;
         height: 100%;
-        max-height: min(40svh, 355px);
+        min-width: 0;
+        min-height: 0;
+        max-width: 100%;
+        max-height: 100%;
         object-fit: contain;
+        object-position: center;
+        transform: none;
         mix-blend-mode: normal;
         filter: drop-shadow(0 18px 14px rgb(20 9 3 / 26%));
     }
@@ -3621,6 +3626,7 @@ body.storefront-body.tiamir-intro-active {
     body.storefront-home-body .home-hero__variant-initial { font-size: 8px; }
 
     body.storefront-home-body .home-hero__copy {
+        min-width: 0;
         top: auto;
         right: 12px;
         bottom: 14px;
@@ -3671,8 +3677,8 @@ body.storefront-body.tiamir-intro-active {
 
 @media (max-width: 380px) {
     body.storefront-home-body .home-hero__frame {
-        height: 650px;
-        min-height: 650px;
+        height: min(650px, calc(100svh - 20px));
+        min-height: min(650px, calc(100svh - 20px));
     }
 
     body.storefront-home-body .home-hero__nav-link {
@@ -3704,7 +3710,6 @@ body.storefront-body.tiamir-intro-active {
     .tiamir-intro__logo-wrap { width: min(420px, 82vw); min-height: 90px; }
     .tiamir-intro__signature { bottom: calc(30px + env(safe-area-inset-bottom, 0px)); font-size: 9px; letter-spacing: .16em; }
     .tiamir-intro__hint { top: 16px; left: 13px; font-size: 7px; }
-    .tiamir-intro__replay { top: 10px; right: 10px; min-height: 32px; padding: 7px 9px; }
 }
 
 @media (orientation: landscape) and (max-height: 480px) {
