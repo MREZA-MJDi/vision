@@ -1,6 +1,6 @@
 # RM Virtual Try-On module
 
-A Laravel feature module for layer-based garment previews over a fixed mannequin. The repository integration includes a storefront page, JSON API, Eloquent persistence, Commerce Admin product editor fields, a default mannequin seeder, migrations and regression tests.
+A Laravel feature module for layer-based garment previews over a fixed mannequin. The repository integration includes a shared workspace used by the /try-on page and product detail pages, a JSON API, Eloquent persistence, Commerce Admin product editor fields, a default mannequin seeder, migrations and regression tests. Product variants can preselect a matching layer; only the explicit expand control opens the workspace as a larger overlay. A product preview modal is not used.
 
 ## Supported behaviour
 
