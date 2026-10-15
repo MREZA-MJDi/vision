@@ -268,13 +268,18 @@ body.vto-workspace-expanded::before {
 /* Compact, Shop-embedded fitting room. It reuses the server-backed
    composition engine while leaving the product grid in place. */
 .vto-page--inline {
+    --vto-ink: #f1edf5;
+    --vto-muted: #aaa3b2;
+    --vto-line: #37313c;
+    --vto-paper: #211e26;
+    --vto-accent: #f28b55;
     position: fixed;
     z-index: 1200;
     top: auto;
     right: auto;
     bottom: 1rem;
     left: 1rem;
-    width: min(22rem, calc(100vw - 2rem));
+    width: min(17rem, calc(100vw - 2rem));
     max-width: none;
     max-height: calc(100dvh - 2rem);
     margin: 0;
@@ -282,10 +287,10 @@ body.vto-workspace-expanded::before {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-    border: 1px solid #ded7cb;
+    border: 1px solid #39323f;
     border-radius: 1rem;
-    background: #f7f4ee;
-    box-shadow: 0 24px 75px rgb(0 0 0 / 28%);
+    background: #1d1a22;
+    box-shadow: 0 24px 75px rgb(0 0 0 / 48%);
     color: var(--vto-ink);
     direction: rtl;
     visibility: hidden;
@@ -321,21 +326,32 @@ body.vto-workspace-expanded::before {
 .vto-page--inline .vto-preview-tools { width: 100%; justify-content: space-between; gap: .55rem; }
 .vto-page--inline .vto-expand-button { display: none; }
 .vto-page--inline .vto-live-indicator { font-size: .64rem; }
+.vto-inline-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .55rem;
+    margin: .05rem .1rem .65rem;
+}
+.vto-inline-header h2 { margin: 0; color: #f7f3f9; font-size: .88rem; font-weight: 700; }
+.vto-inline-header p { margin: .22rem 0 0; color: #aaa3b2; font-size: .61rem; line-height: 1.7; }
 .vto-inline-close {
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid #e1d9cc;
-    border-radius: 50%;
-    color: #615c52;
-    background: #fffdf9;
-    font-size: 1.3rem !important;
+    width: 1.7rem;
+    height: 1.7rem;
+    margin: -.15rem -.2rem 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: .45rem;
+    color: #bdb6c4;
+    background: transparent;
+    font-size: 1.25rem !important;
     line-height: 1;
     cursor: pointer;
 }
-.vto-inline-close:hover { color: #a94c22; border-color: #d1a18a; }
+.vto-inline-close:hover { color: #fff; background: #312a35; }
 .vto-page--inline .vto-stage-wrap { max-width: 100%; }
 .vto-page--inline .vto-stage {
     width: auto;
@@ -345,14 +361,14 @@ body.vto-workspace-expanded::before {
     border-radius: .7rem;
 }
 .vto-page--inline .vto-stage-caption { display: none; }
-.vto-page--inline .vto-stage-empty { bottom: .55rem; left: .55rem; right: .55rem; padding: .5rem; }
+.vto-page--inline .vto-stage-empty { bottom: .55rem; left: .55rem; right: .55rem; padding: .5rem; color: #28232a; }
 .vto-page--inline .vto-stage-empty small { display: none; }
 .vto-page--inline .vto-stage-empty p { font-size: .7rem; }
 .vto-page--inline .vto-selection-summary { margin-top: .65rem; padding-top: .65rem; border-top: 1px solid var(--vto-line); }
 .vto-page--inline .vto-selection-summary__head { margin-bottom: .5rem; }
 .vto-page--inline .vto-selection-summary__head .vto-step { display: none; }
-.vto-page--inline .vto-selection-summary__head h3 { margin: 0; font-size: .8rem; }
-.vto-page--inline .vto-selection-summary__head button { font-size: .68rem; }
+.vto-page--inline .vto-selection-summary__head h3 { margin: 0; color: #f1edf5; font-size: .8rem; }
+.vto-page--inline .vto-selection-summary__head button { color: #b9b1c0; font-size: .68rem; }
 .vto-page--inline .vto-total-line,
 .vto-page--inline .vto-preview-actions { display: none; }
 .vto-page--inline .vto-selected-list { display: flex; align-items: stretch; gap: .45rem; min-height: 1.5rem; overflow-x: auto; padding: .1rem .05rem .25rem; }
@@ -365,12 +381,12 @@ body.vto-workspace-expanded::before {
     gap: .25rem;
     min-width: 0;
     padding: .25rem;
-    border: 1px solid #e4ddd2;
+    border: 1px solid #39323f;
     border-radius: .6rem;
-    background: #fffdf9;
+    background: #29252e;
 }
-.vto-inline-pick img { width: 100%; height: 4.6rem; object-fit: contain; border-radius: .35rem; background: #f1eee7; }
-.vto-inline-pick__name { display: -webkit-box; overflow: hidden; min-height: 1.7rem; color: #4c493f; font-size: .58rem; line-height: 1.4; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.vto-inline-pick img { width: 100%; height: 4.6rem; object-fit: contain; border-radius: .35rem; background: #1b1820; }
+.vto-inline-pick__name { display: -webkit-box; overflow: hidden; min-height: 1.7rem; color: #e4dfe8; font-size: .58rem; line-height: 1.4; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .vto-inline-pick__remove {
     position: absolute;
     top: .35rem;
@@ -380,15 +396,15 @@ body.vto-workspace-expanded::before {
     width: 1.2rem;
     height: 1.2rem;
     padding: 0;
-    border: 1px solid rgb(255 255 255 / 85%);
+    border: 1px solid #4b424f;
     border-radius: 50%;
-    color: #4f483f;
-    background: rgb(255 253 249 / 92%);
+    color: #f7f2f8;
+    background: rgb(29 26 34 / 92%);
     font-size: .9rem !important;
     line-height: 1;
     cursor: pointer;
 }
-.vto-inline-pick__remove:hover { color: #a94c22; background: white; }
+.vto-inline-pick__remove:hover { color: #1f1712; background: #f28b55; border-color: #f28b55; }
 .vto-inline-launcher {
     position: fixed;
     z-index: 1199;
