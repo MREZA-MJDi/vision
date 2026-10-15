@@ -263,3 +263,171 @@ body.vto-workspace-expanded::before {
     .vto-page.is-expanded { animation: none !important; }
     .vto-expand-button { transition: none !important; }
 }
+
+
+/* Compact, Shop-embedded fitting room. It reuses the server-backed
+   composition engine while leaving the product grid in place. */
+.vto-page--inline {
+    position: fixed;
+    z-index: 1200;
+    top: auto;
+    right: auto;
+    bottom: 1rem;
+    left: 1rem;
+    width: min(22rem, calc(100vw - 2rem));
+    max-width: none;
+    max-height: calc(100dvh - 2rem);
+    margin: 0;
+    padding: .65rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid #ded7cb;
+    border-radius: 1rem;
+    background: #f7f4ee;
+    box-shadow: 0 24px 75px rgb(0 0 0 / 28%);
+    color: var(--vto-ink);
+    direction: rtl;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(calc(-100% - 1.5rem));
+    transition: transform .28s cubic-bezier(.2,.7,.2,1), opacity .18s ease, visibility .18s ease;
+}
+.vto-page--inline.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+.vto-page--inline .vto-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+.vto-page--inline .vto-workspace { display: block; }
+.vto-page--inline .vto-panel,
+.vto-page--inline .vto-tip { display: none !important; }
+.vto-page--inline .vto-preview-column { width: 100%; display: block; }
+.vto-page--inline .vto-preview-card { padding: .65rem; border-radius: .85rem; box-shadow: none; }
+.vto-page--inline .vto-preview-topline { align-items: center; padding: 0 0 .55rem; }
+.vto-page--inline .vto-preview-topline > div:last-child { display: none; }
+.vto-page--inline .vto-preview-tools { width: 100%; justify-content: space-between; gap: .55rem; }
+.vto-page--inline .vto-expand-button { display: none; }
+.vto-page--inline .vto-live-indicator { font-size: .64rem; }
+.vto-inline-close {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid #e1d9cc;
+    border-radius: 50%;
+    color: #615c52;
+    background: #fffdf9;
+    font-size: 1.3rem !important;
+    line-height: 1;
+    cursor: pointer;
+}
+.vto-inline-close:hover { color: #a94c22; border-color: #d1a18a; }
+.vto-page--inline .vto-stage-wrap { max-width: 100%; }
+.vto-page--inline .vto-stage {
+    width: auto;
+    height: min(42dvh, 350px);
+    max-width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: .7rem;
+}
+.vto-page--inline .vto-stage-caption { display: none; }
+.vto-page--inline .vto-stage-empty { bottom: .55rem; left: .55rem; right: .55rem; padding: .5rem; }
+.vto-page--inline .vto-stage-empty small { display: none; }
+.vto-page--inline .vto-stage-empty p { font-size: .7rem; }
+.vto-page--inline .vto-selection-summary { margin-top: .65rem; padding-top: .65rem; border-top: 1px solid var(--vto-line); }
+.vto-page--inline .vto-selection-summary__head { margin-bottom: .5rem; }
+.vto-page--inline .vto-selection-summary__head .vto-step { display: none; }
+.vto-page--inline .vto-selection-summary__head h3 { margin: 0; font-size: .8rem; }
+.vto-page--inline .vto-selection-summary__head button { font-size: .68rem; }
+.vto-page--inline .vto-total-line,
+.vto-page--inline .vto-preview-actions { display: none; }
+.vto-page--inline .vto-selected-list { display: flex; align-items: stretch; gap: .45rem; min-height: 1.5rem; overflow-x: auto; padding: .1rem .05rem .25rem; }
+.vto-inline-picks-empty { margin: 0; padding: .45rem .1rem; color: #8e8679; font-size: .69rem; }
+.vto-inline-pick {
+    position: relative;
+    display: flex;
+    flex: 0 0 4.15rem;
+    flex-direction: column;
+    gap: .25rem;
+    min-width: 0;
+    padding: .25rem;
+    border: 1px solid #e4ddd2;
+    border-radius: .6rem;
+    background: #fffdf9;
+}
+.vto-inline-pick img { width: 100%; height: 4.6rem; object-fit: contain; border-radius: .35rem; background: #f1eee7; }
+.vto-inline-pick__name { display: -webkit-box; overflow: hidden; min-height: 1.7rem; color: #4c493f; font-size: .58rem; line-height: 1.4; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.vto-inline-pick__remove {
+    position: absolute;
+    top: .35rem;
+    left: .35rem;
+    display: grid;
+    place-items: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 85%);
+    border-radius: 50%;
+    color: #4f483f;
+    background: rgb(255 253 249 / 92%);
+    font-size: .9rem !important;
+    line-height: 1;
+    cursor: pointer;
+}
+.vto-inline-pick__remove:hover { color: #a94c22; background: white; }
+.vto-inline-launcher {
+    position: fixed;
+    z-index: 1199;
+    bottom: 1rem;
+    left: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    min-height: 2.9rem;
+    padding: .55rem .9rem;
+    border: 1px solid rgb(242 139 85 / 42%);
+    border-radius: 999px;
+    color: #f4eee7;
+    background: #201c22;
+    box-shadow: 0 10px 34px rgb(0 0 0 / 28%);
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+.vto-inline-launcher:hover { transform: translateY(-2px); border-color: #f28b55; background: #2b2428; }
+.vto-inline-launcher__mark { color: #f28b55; font-size: 1rem; }
+.vto-inline-launcher__count { display: grid; place-items: center; min-width: 1.35rem; height: 1.35rem; padding: 0 .25rem; border-radius: 999px; color: #24150e; background: #f28b55; font-size: .68rem; font-variant-numeric: tabular-nums; }
+.vto-page--inline .vto-toast { z-index: 1210; }
+@media (max-width: 520px) {
+    .vto-page--inline {
+        left: .6rem;
+        bottom: .6rem;
+        width: min(21rem, calc(100vw - 1.2rem));
+        max-height: calc(100dvh - 1.2rem);
+        padding: .45rem;
+        border-radius: .85rem;
+    }
+    .vto-page--inline .vto-stage { height: min(39dvh, 300px); }
+    .vto-inline-launcher { left: .6rem; bottom: .6rem; min-height: 2.7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .vto-page--inline,
+    .vto-inline-launcher { transition: none !important; }
+}
