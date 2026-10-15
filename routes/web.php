@@ -4,6 +4,7 @@ use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\CustomerCommerceController;
 use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\VirtualTryOnPageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [StorefrontController::class, 'home'])->name('storefront.index');
 Route::get('/shop', [StorefrontController::class, 'index'])->name('shop.index');
 Route::get('/products', [StorefrontController::class, 'index'])->name('products.index');
+Route::get('/try-on', VirtualTryOnPageController::class)->name('try-on.index');
 Route::get('/products/{product:slug}', [StorefrontController::class, 'show'])
     ->where('product', '[a-z0-9-]+')
     ->name('products.show');
