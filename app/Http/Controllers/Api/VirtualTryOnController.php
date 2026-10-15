@@ -18,6 +18,7 @@ class VirtualTryOnController extends Controller
     {
         $validated = $request->validate([
             'audience' => ['required', Rule::in(VirtualTryOnConfig::AUDIENCES)],
+            'variant_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ]);
 
         $mannequinModel = (string) config('virtual-try-on.models.mannequin', TryOnMannequin::class);
@@ -31,11 +32,52 @@ class VirtualTryOnController extends Controller
             ->map(fn ($mannequin): array => $this->mannequinPayload($mannequin))
             ->values();
 
+        // Product detail pages can request an initial variant. Only return a
+        // preselection when its active asset is valid for this audience and
+        // follows the exact image contract used by the catalog endpoint.
+        $initialSelection = null;
+        $variantId = (int) ($validated['variant_id'] ?? 0);
+        if ($variantId > 0) {
+            $assetModel = (string) config('virtual-try-on.models.asset', TryOnAsset::class);
+            $asset = $assetModel::query()
+                ->active()
+                ->where('product_variant_id', $variantId)
+                ->whereIn('slot', array_keys(VirtualTryOnConfig::SLOT_ORDER))
+                ->whereHas('mannequin', fn ($query) => $query
+                    ->active()
+                    ->where('audience', $validated['audience']))
+                ->whereHas('media', function ($query): void {
+                    $query->where('collection', 'try-on-layer')
+                        ->whereNotNull('path')
+                        ->whereRaw("TRIM(path) <> ''")
+                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->where('width', 1024)
+                        ->where('height', 1536);
+                })
+                ->whereHas('variant', function ($query) use ($variantId, $validated): void {
+                    $query->whereKey($variantId)
+                        ->where('is_active', true)
+                        ->whereHas('product', fn ($productQuery) => $productQuery
+                            ->where('is_active', true)
+                            ->where('audience', $validated['audience']));
+                })
+                ->first();
+
+            if ($asset) {
+                $initialSelection = [
+                    'variant_id' => (int) $asset->product_variant_id,
+                    'mannequin_id' => (int) $asset->try_on_mannequin_id,
+                    'slot' => $asset->slot,
+                ];
+            }
+        }
+
         return response()->json([
             'data' => [
                 'audience' => $validated['audience'],
                 'slots' => VirtualTryOnConfig::slots(),
                 'mannequins' => $mannequins,
+                'initial_selection' => $initialSelection,
             ],
             'meta' => [
                 'ready' => $mannequins->isNotEmpty(),
@@ -56,6 +98,7 @@ class VirtualTryOnController extends Controller
             'mannequin_id' => ['required', 'integer', 'min:1'],
             'slot' => ['required', Rule::in(array_keys(VirtualTryOnConfig::SLOT_ORDER))],
             'page' => ['sometimes', 'integer', 'min:1'],
+            'variant_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ]);
 
         $mannequin = $this->activeMannequin((int) $validated['mannequin_id'], $validated['audience']);
@@ -85,6 +128,10 @@ class VirtualTryOnController extends Controller
                 'variant.product.primaryGalleryMedia',
                 'variant.product.category',
             ])
+            // When a product page opens the fitting room, keep its selected
+            // variant on the first page without changing normal catalog order.
+            ->when(! empty($validated['variant_id']), fn ($query) => $query
+                ->orderByRaw('CASE WHEN product_variant_id = ? THEN 0 ELSE 1 END', [(int) $validated['variant_id']]))
             ->orderBy('id')
             ->paginate((int) config('virtual-try-on.page_size', 24))
             ->through(fn ($asset): array => $this->catalogItemPayload($asset));
@@ -131,7 +178,10 @@ class VirtualTryOnController extends Controller
                 ->whereHas('media', function ($query): void {
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
-                        ->whereRaw("TRIM(path) <> ''");
+                        ->whereRaw("TRIM(path) <> ''")
+                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->where('width', 1024)
+                        ->where('height', 1536);
                 })
                 ->whereHas('variant', function ($variantQuery) use ($variantId, $audience): void {
                     $variantQuery->whereKey((int) $variantId)
