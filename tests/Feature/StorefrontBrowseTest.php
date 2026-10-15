@@ -86,6 +86,7 @@ class StorefrontBrowseTest extends TestCase
 
     public function test_product_catalog_lists_active_products_and_hides_inactive_products(): void
     {
+        $this->withoutVite();
         $category = Category::create([
             'name' => 'Shoes',
             'slug' => 'shoes',
