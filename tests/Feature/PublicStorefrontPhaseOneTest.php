@@ -47,6 +47,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_shop_has_real_catalog_controls_and_the_bounded_product_grid(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $response = $this->get('/shop?sort=price_asc');
