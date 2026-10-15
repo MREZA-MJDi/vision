@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
 
     public function test_the_public_homepage_renders_without_authentication(): void
     {
+        $this->withoutVite();
         $this->get('/')
             ->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
@@ -23,14 +24,16 @@ class ExampleTest extends TestCase
             ->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_the_shop_route_owns_the_catalog_and_fitting_room_controls(): void
+    public function test_the_shop_route_owns_the_catalog_and_links_to_the_shared_fitting_room(): void
     {
+        $this->withoutVite();
         $this->get('/shop')
             ->assertOk()
             ->assertSee('فروشگاه محصولات')
-            ->assertSee('پیش‌نمایش استایل')
             ->assertSee('فیلترها')
-            ->assertSee('data-fitting-room', false);
+            ->assertSee('اتاق پرو مجازی')
+            ->assertSee('store-tryon-link', false)
+            ->assertDontSee('data-fitting-room', false);
     }
 
     public function test_admin_kit_routes_exist_and_protect_private_pages(): void

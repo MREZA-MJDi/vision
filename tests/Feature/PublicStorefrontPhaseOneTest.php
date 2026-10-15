@@ -15,6 +15,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_homepage_is_persian_rtl_and_separate_from_the_shop_fitting_room(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $response = $this->get('/');
@@ -39,22 +40,23 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertDontSee('home-brand-story', false)
             ->assertDontSee('home-benefits', false)
             ->assertSee('store-footer__column', false)
-            ->assertDontSee('home-product-card', false)
+            ->assertDontSee('data-cart-add=', false)
             ->assertDontSee('data-fitting-room', false)
             ->assertSee('images.unsplash.com');
     }
 
     public function test_shop_has_real_catalog_controls_and_the_bounded_product_grid(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $response = $this->get('/shop?sort=price_asc');
 
         $response->assertOk()
             ->assertDontSee('data-tiamir-intro', false)
-            ->assertSee('data-fitting-room', false)
-            ->assertSee('data-fitting-expand', false)
-            ->assertSee('data-fitting-selected-name', false)
+            ->assertDontSee('data-fitting-room', false)
+            ->assertSee('store-tryon-link', false)
+            ->assertSee('اتاق پرو مجازی')
             ->assertSee('data-store-sort', false)
             ->assertSee('data-product-grid', false)
             ->assertSee('مرتب‌سازی')
@@ -64,6 +66,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_product_detail_uses_the_real_variant_selector_and_persian_metadata(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $this->get('/products/demo-essential-cotton-tee')
@@ -73,9 +76,10 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('property="og:image"', false)
             ->assertSee('data-variant-select', false)
             ->assertSee('data-variant-color-pick', false)
-            ->assertSee('data-variant-preview-open', false)
-            ->assertSee('data-variant-preview-modal', false)
-            ->assertSee('data-variant-preview-image', false)
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-expand', false)
+            ->assertSee('data-initial-variant-id', false)
+            ->assertDontSee('data-variant-preview-modal', false)
             ->assertSee('افزودن به سبد خرید')
             ->assertSee('محصولات منتخب')
             ->assertSee('قهوه‌ای')
@@ -84,6 +88,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_product_detail_variant_media_queries_remain_bounded_as_variant_count_grows(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $product = Product::query()
@@ -128,6 +133,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_shop_query_count_does_not_grow_linearly_with_catalog_card_count(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $category = \App\Models\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
@@ -185,6 +191,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_homepage_query_count_stays_bounded_as_the_catalog_grows(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $category = \App\Models\Category::query()
@@ -256,6 +263,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_sale_and_price_filters_use_the_displayed_active_variant_when_all_variants_are_sold_out(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $product = Product::query()

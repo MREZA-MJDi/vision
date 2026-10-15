@@ -16,6 +16,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_opt_in_seed_creates_real_catalog_variants_images_and_inventory_history(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.currency_symbol' => 'تومان',
             'commerce-admin.bootstrap_admin.email' => null,
@@ -66,6 +67,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_demo_seeders_are_idempotent(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
@@ -84,6 +86,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_reseeding_replaces_only_legacy_demo_illustrations_and_preserves_admin_media_changes(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
@@ -126,6 +129,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_reseeding_preserves_admin_edits_and_does_not_rewrite_inventory_history(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
@@ -155,6 +159,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_reseeding_does_not_restore_a_demo_product_archived_in_admin(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
@@ -174,6 +179,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_normal_database_seeder_creates_idempotent_editable_launch_records_without_demo_or_phantom_media(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,

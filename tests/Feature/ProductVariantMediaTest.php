@@ -17,6 +17,7 @@ class ProductVariantMediaTest extends TestCase
 
     public function test_admin_can_save_separate_images_for_each_variant_and_storefront_links_the_correct_image(): void
     {
+        $this->withoutVite();
         Storage::fake('public');
 
         $admin = User::query()->create([

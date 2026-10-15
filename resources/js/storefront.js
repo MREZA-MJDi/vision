@@ -264,39 +264,7 @@
     const filterToggle = root.querySelector('[data-store-filter-toggle]');
     const backdrop = root.querySelector('[data-store-filter-backdrop]');
     const toast = root.querySelector('[data-store-toast]');
-    const fittingImage = root.querySelector('[data-fitting-image]');
-    const fittingPlaceholder = root.querySelector('[data-fitting-placeholder]');
-    const fittingLookNumber = root.querySelector('[data-fitting-look-number]');
-    const fittingCanvasCount = root.querySelector('[data-fitting-canvas-count]');
-    const fittingPicks = root.querySelector('[data-fitting-picks]');
-    const fittingPickCount = root.querySelector('[data-fitting-pick-count]');
-    const fittingAction = root.querySelector('[data-fitting-action]');
-    const fittingPreview = root.querySelector('[data-fitting-preview]');
-    const fittingRoom = root.querySelector('[data-fitting-room]');
-    const fittingClose = root.querySelector('[data-fitting-close]');
-    const fittingExpand = root.querySelector('[data-fitting-expand]');
-    const fittingReopen = root.querySelector('[data-fitting-reopen]');
-    const fittingSelectedName = root.querySelector('[data-fitting-selected-name]');
-    const fittingSelectedDescription = root.querySelector('[data-fitting-selected-description]');
-    const fittingSelectedPrice = root.querySelector('[data-fitting-selected-price]');
-    const fittingLocationMarker = fittingRoom ? document.createComment('fitting-room-location') : null;
-    if (fittingRoom && fittingLocationMarker) fittingRoom.parentNode?.insertBefore(fittingLocationMarker, fittingRoom);
-    const maxPicks = 5;
-    const picks = new Map();
-    let currentSelection = null;
     let toastTimer = null;
-    let fittingTransitionTimer = null;
-    let fittingReturnFocus = null;
-
-    function readProductData(element) {
-        return {
-            id: String(element.dataset.productId || ''),
-            name: element.dataset.productName || 'محصول انتخاب‌شده',
-            price: element.dataset.productPrice || 'قیمت نامشخص',
-            image: element.dataset.productImage || '',
-            description: element.dataset.productDescription || ''
-        };
-    }
 
     function showToast(message) {
         if (!toast) return;
@@ -313,74 +281,6 @@
         filterToggle.setAttribute('aria-expanded', String(open));
         filterToggle.setAttribute('aria-label', open ? 'بستن فیلترها' : 'باز کردن فیلترها');
         document.documentElement.style.overflow = open ? 'hidden' : '';
-    }
-
-    function restoreFittingRoomLocation() {
-        if (fittingRoom && fittingLocationMarker?.parentNode) {
-            fittingLocationMarker.parentNode.insertBefore(fittingRoom, fittingLocationMarker.nextSibling);
-        }
-    }
-
-    function setFittingRoomOpen(open, expand = false) {
-        if (!fittingRoom) return;
-
-        if (fittingTransitionTimer !== null) {
-            window.clearTimeout(fittingTransitionTimer);
-            fittingTransitionTimer = null;
-        }
-
-        if (open && expand) {
-            if (!fittingRoom.classList.contains('is-expanded')) {
-                fittingReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-                // Portal the existing panel out of the transformed mobile filter drawer.
-                // This preserves one source of truth and lets fixed positioning cover the viewport.
-                document.body.append(fittingRoom);
-                fittingRoom.hidden = false;
-                if (fittingReopen) fittingReopen.hidden = true;
-                if (window.matchMedia('(max-width: 720px)').matches) setFiltersOpen(false);
-                window.requestAnimationFrame(() => {
-                    fittingRoom.classList.remove('is-collapsing');
-                    fittingRoom.classList.add('is-expanded');
-                    document.body.classList.add('fitting-room-expanded');
-                    document.documentElement.style.overflow = 'hidden';
-                    fittingExpand?.setAttribute('aria-expanded', 'true');
-                    fittingExpand?.setAttribute('aria-label', 'بازگرداندن اتاق پرو به ستون فروشگاه');
-                    fittingClose?.focus({ preventScroll: true });
-                });
-            }
-            return;
-        }
-
-        if (fittingRoom.classList.contains('is-expanded')) {
-            document.body.classList.remove('fitting-room-expanded');
-            document.documentElement.style.overflow = sidebar?.classList.contains('is-open') ? 'hidden' : '';
-            fittingExpand?.setAttribute('aria-expanded', 'false');
-            fittingExpand?.setAttribute('aria-label', 'بزرگ‌نمایی اتاق پرو');
-            fittingRoom.classList.remove('is-expanded');
-            fittingRoom.classList.add('is-collapsing');
-
-            if (open && window.matchMedia('(max-width: 720px)').matches) setFiltersOpen(true);
-
-            fittingTransitionTimer = window.setTimeout(() => {
-                fittingRoom.classList.remove('is-collapsing');
-                restoreFittingRoomLocation();
-                fittingRoom.hidden = !open;
-                if (fittingReopen) fittingReopen.hidden = open;
-                fittingTransitionTimer = null;
-
-                if (open) {
-                    fittingRoom.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    fittingReturnFocus?.focus?.({ preventScroll: true });
-                    fittingReturnFocus = null;
-                }
-            }, 220);
-            return;
-        }
-
-        fittingRoom.hidden = !open;
-        if (fittingReopen) fittingReopen.hidden = open;
-        if (open) fittingRoom.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function updateCartCount(count = 0) {
@@ -430,195 +330,10 @@
         }
     }
 
-    function updateFittingCopy(product) {
-        if (fittingSelectedName) fittingSelectedName.textContent = product?.name || 'هنوز محصولی انتخاب نشده است';
-        if (fittingSelectedDescription) fittingSelectedDescription.textContent = product?.description || 'تصویر و مشخصات بر اساس دادهٔ واقعی محصول نمایش داده می‌شود.';
-        if (fittingSelectedPrice) fittingSelectedPrice.textContent = product?.price || '—';
-    }
-
-    function updatePreviewImage(product) {
-        if (!fittingImage || !fittingPlaceholder) return;
-
-        if (!product?.image) {
-            fittingImage.removeAttribute('src');
-            fittingImage.hidden = true;
-            fittingPlaceholder.hidden = false;
-            fittingPreview?.classList.add('is-placeholder');
-            const caption = fittingPlaceholder.querySelector('span:last-child');
-            if (caption) caption.textContent = product?.name ? product.name + ' · تصویر در دسترس نیست' : 'برای شروع یک محصول انتخاب کن.';
-            return;
-        }
-
-        const caption = fittingPlaceholder.querySelector('span:last-child');
-        if (caption) caption.textContent = 'برای شروع یک محصول انتخاب کن.';
-
-        fittingImage.hidden = false;
-        fittingPlaceholder.hidden = true;
-        fittingPreview?.classList.remove('is-placeholder');
-        fittingImage.onerror = () => {
-            fittingImage.hidden = true;
-            fittingPlaceholder.hidden = false;
-            fittingPreview?.classList.add('is-placeholder');
-        };
-        fittingImage.onload = () => {
-            fittingImage.hidden = false;
-            fittingPlaceholder.hidden = true;
-            fittingPreview?.classList.remove('is-placeholder');
-        };
-        fittingImage.src = product.image;
-        fittingImage.alt = product.name;
-    }
-
-    function selectProduct(product, sourceButton = null) {
-        if (!product || !product.id) return;
-        currentSelection = product;
-        updatePreviewImage(product);
-        updateFittingCopy(product);
-
-        if (fittingLookNumber) fittingLookNumber.textContent = picks.size ? String(picks.size).padStart(2, '0') : '—';
-        if (fittingCanvasCount) fittingCanvasCount.textContent = String(picks.size).padStart(2, '0') + ' / 05';
-        if (fittingAction) {
-            fittingAction.disabled = false;
-            fittingAction.querySelector('span:first-child').textContent = 'افزودن محصول دیگر';
-        }
-
-        root.querySelectorAll('[data-fit-product]').forEach((button) => {
-            const active = button.dataset.productId === product.id;
-            button.classList.toggle('is-active', active);
-            button.setAttribute('aria-pressed', String(active));
-        });
-        root.querySelectorAll('[data-fitting-pick]').forEach((button) => {
-            button.classList.toggle('is-current', button.dataset.productId === product.id);
-        });
-
-        if (sourceButton) sourceButton.blur?.();
-    }
-
-    function renderPicks() {
-        if (!fittingPicks || !fittingPickCount) return;
-        fittingPicks.replaceChildren();
-        fittingPickCount.textContent = String(picks.size);
-
-        if (picks.size === 0) {
-            const empty = document.createElement('p');
-            empty.className = 'fitting-picks__empty';
-            empty.dataset.fittingPicksEmpty = '';
-            empty.textContent = 'هنوز محصولی انتخاب نشده است.';
-            fittingPicks.append(empty);
-        } else {
-            let index = 0;
-            picks.forEach((product) => {
-                index += 1;
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'fitting-pick';
-                button.classList.toggle('is-current', currentSelection?.id === product.id);
-                button.dataset.fittingPick = '';
-                button.dataset.productId = product.id;
-                button.dataset.productName = product.name;
-                button.dataset.productPrice = product.price;
-                button.dataset.productImage = product.image;
-                button.dataset.productDescription = product.description;
-                button.setAttribute('aria-label', 'انتخاب ' + product.name + ' یا حذف آن از فهرست');
-
-                const number = document.createElement('span');
-                number.className = 'fitting-pick__dot';
-                number.textContent = String(index).padStart(2, '0');
-
-                const thumb = document.createElement('span');
-                thumb.className = 'fitting-pick__thumb';
-                if (product.image) {
-                    const image = document.createElement('img');
-                    image.src = product.image;
-                    image.alt = '';
-                    image.loading = 'lazy';
-                    thumb.append(image);
-                } else {
-                    thumb.classList.add('fitting-pick__thumb--empty');
-                    thumb.textContent = 'V';
-                }
-
-                const name = document.createElement('span');
-                name.className = 'fitting-pick__name';
-                name.textContent = product.name;
-
-                const remove = document.createElement('span');
-                remove.className = 'fitting-pick__remove';
-                remove.setAttribute('aria-hidden', 'true');
-                remove.textContent = '×';
-
-                button.append(number, thumb, name, remove);
-                fittingPicks.append(button);
-            });
-        }
-
-        if (fittingLookNumber) fittingLookNumber.textContent = String(Math.max(1, picks.size)).padStart(2, '0');
-        if (fittingCanvasCount) fittingCanvasCount.textContent = String(picks.size).padStart(2, '0') + ' / 05';
-        if (fittingAction) {
-            fittingAction.disabled = !currentSelection;
-            fittingAction.querySelector('span:first-child').textContent = 'افزودن محصول دیگر';
-        }
-    }
-
     filterToggle?.addEventListener('click', () => setFiltersOpen(!sidebar?.classList.contains('is-open')));
     backdrop?.addEventListener('click', () => setFiltersOpen(false));
-    fittingClose?.addEventListener('click', () => {
-        setFittingRoomOpen(false);
-        if (window.matchMedia('(max-width: 720px)').matches) setFiltersOpen(false);
-    });
-    fittingExpand?.addEventListener('click', () => {
-        const expanded = fittingRoom?.classList.contains('is-expanded');
-        setFittingRoomOpen(true, !expanded);
-    });
-    fittingReopen?.addEventListener('click', () => setFittingRoomOpen(true));
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            setFiltersOpen(false);
-            if (fittingRoom?.classList.contains('is-expanded')) setFittingRoomOpen(false);
-        }
-    });
-
-    document.addEventListener('click', (event) => {
-        if (!document.body.classList.contains('fitting-room-expanded')) return;
-        if (event.target === document.body || event.target === document.documentElement) {
-            setFittingRoomOpen(false);
-        }
-    }, true);
-
-    root.querySelectorAll('[data-fit-product]').forEach((button) => {
-        button.setAttribute('aria-pressed', 'false');
-        button.addEventListener('click', () => {
-            const product = readProductData(button);
-            setFittingRoomOpen(true, true);
-
-            if (!picks.has(product.id)) {
-                if (picks.size >= maxPicks) {
-                    showToast('حداکثر ۵ محصول می‌توانی انتخاب کنی؛ ابتدا یکی را حذف کن.');
-                    return;
-                } else {
-                    picks.set(product.id, product);
-                    selectProduct(product, button);
-                    renderPicks();
-                    showToast('محصول به فهرست پیش‌نمایش اضافه شد.');
-                }
-            } else {
-                selectProduct(product, button);
-                renderPicks();
-            }
-
-        });
-    });
-
-    root.querySelectorAll('[data-card-preview]').forEach((link) => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            const card = link.closest('[data-product-card]');
-            const button = card?.querySelector('[data-fit-product]');
-            if (button) {
-                button.click();
-                root.querySelector('[data-fitting-room]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-        });
+        if (event.key === 'Escape') setFiltersOpen(false);
     });
 
     const sortSelect = root.querySelector('[data-store-sort]');
@@ -666,49 +381,6 @@
         });
     });
 
-    fittingAction?.addEventListener('click', () => {
-        if (!currentSelection) return;
-        setFittingRoomOpen(false);
-        if (window.matchMedia('(max-width: 720px)').matches) {
-            setFiltersOpen(false);
-        }
-        root.querySelector('[data-product-grid]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        const nextProductButton = [...root.querySelectorAll('[data-fit-product]')]
-            .find((button) => !picks.has(String(button.dataset.productId)));
-        nextProductButton?.focus({ preventScroll: true });
-        showToast(picks.size >= maxPicks
-            ? 'حداکثر ۵ محصول می‌توانی انتخاب کنی؛ ابتدا یکی را حذف کن.'
-            : 'برای ادامه، محصول دیگری از فهرست انتخاب کن.');
-    });
-
-    fittingPicks?.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-fitting-pick]');
-        if (!button) return;
-        const product = readProductData(button);
-        if (event.target.closest('.fitting-pick__remove')) {
-            picks.delete(product.id);
-            if (currentSelection?.id === product.id) {
-                currentSelection = picks.size ? [...picks.values()][picks.size - 1] : null;
-            }
-            if (currentSelection) {
-                selectProduct(currentSelection);
-            } else {
-                updatePreviewImage(null);
-                updateFittingCopy(null);
-                root.querySelectorAll('[data-fit-product]').forEach((fitButton) => {
-                    fitButton.classList.remove('is-active');
-                    fitButton.setAttribute('aria-pressed', 'false');
-                });
-            }
-            renderPicks();
-            showToast('فهرست پیش‌نمایش به‌روز شد.');
-            return;
-        }
-
-        selectProduct(product, button);
-    });
-
-
     root.querySelectorAll('[data-cart-add]').forEach((button) => {
         button.addEventListener('click', async () => {
             const variantId = Number(button.dataset.cartAdd || 0);
@@ -753,86 +425,26 @@
         const colorButtons = Array.from(root.querySelectorAll('[data-variant-color-pick]'));
         const quantityInput = root.querySelector('[data-variant-quantity]');
         const addButton = root.querySelector('[data-product-add]');
-        const previewDialog = root.querySelector('[data-variant-preview-modal]');
-        const previewOpenButton = root.querySelector('[data-variant-preview-open]');
-        const previewCloseButtons = Array.from(root.querySelectorAll('[data-variant-preview-close]'));
-        const previewImage = root.querySelector('[data-variant-preview-image]');
-        const previewPlaceholder = root.querySelector('[data-variant-preview-placeholder]');
-        const previewChoice = root.querySelector('[data-variant-preview-choice]');
-        const previewPrice = root.querySelector('[data-variant-preview-price]');
-        const previewStock = root.querySelector('[data-variant-preview-stock]');
         const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
         const currency = root.dataset.currencySymbol || 'تومان';
         const formatVariantMoney = (value) => Number(value || 0).toLocaleString('en-US', {
             maximumFractionDigits: 0
         }) + ' ' + currency;
 
-        const updateVariantPreview = (option) => {
-            if (!previewDialog) return;
-
-            const imageUrl = option?.dataset.image || '';
-            const productName = select.closest('.store-product-detail__info')?.querySelector('h1')?.textContent?.trim() || 'تصویر محصول';
-            const variantLabel = [option?.dataset.size, option?.dataset.color].filter((value) => String(value || '').trim() !== '').join(' / ') || 'معمولی';
-            const price = Number(option?.dataset.price || 0);
-            const originalPrice = Number(option?.dataset.originalPrice || 0);
-            const stock = Math.max(0, Number(option?.dataset.stock) || 0);
-
-            if (previewImage) {
-                previewImage.alt = [productName, option?.dataset.color, option?.dataset.size].filter(Boolean).join(' ');
-                previewImage.dataset.requestedImage = imageUrl;
-                previewImage.onerror = () => {
-                    if (previewImage.dataset.requestedImage !== imageUrl) return;
-                    previewImage.hidden = true;
-                    if (previewPlaceholder) {
-                        previewPlaceholder.hidden = false;
-                        const message = previewPlaceholder.querySelector('strong');
-                        if (message) message.textContent = 'تصویر این وریانت بارگذاری نشد.';
-                    }
-                };
-                previewImage.onload = () => {
-                    if (previewImage.dataset.requestedImage !== imageUrl) return;
-                    previewImage.hidden = false;
-                    if (previewPlaceholder) previewPlaceholder.hidden = true;
-                };
-
-                if (imageUrl) {
-                    previewImage.src = imageUrl;
-                    previewImage.hidden = false;
-                    if (previewPlaceholder) previewPlaceholder.hidden = true;
-                } else {
-                    previewImage.removeAttribute('src');
-                    previewImage.hidden = true;
-                    if (previewPlaceholder) {
-                        previewPlaceholder.hidden = false;
-                        const message = previewPlaceholder.querySelector('strong');
-                        if (message) message.textContent = 'برای این وریانت تصویری ثبت نشده است.';
-                    }
-                }
-            }
-
-            if (previewChoice) previewChoice.textContent = variantLabel;
-            if (previewPrice) {
-                previewPrice.replaceChildren();
-                if (option?.dataset.sale === '1' && Number.isFinite(originalPrice)) {
-                    const original = document.createElement('del');
-                    original.textContent = formatVariantMoney(originalPrice);
-                    previewPrice.append(original);
-                }
-                const current = document.createElement('strong');
-                current.textContent = formatVariantMoney(price);
-                previewPrice.append(current);
-            }
-            if (previewStock) {
-                previewStock.textContent = stock > 0
-                    ? stock.toLocaleString('fa-IR') + ' عدد موجود'
-                    : 'فعلاً موجود نیست';
-            }
+        const syncTryOnVariant = (option) => {
+            const tryOnWorkspace = document.querySelector('[data-virtual-try-on]');
+            if (!tryOnWorkspace) return;
+            tryOnWorkspace.dispatchEvent(new CustomEvent('vto:select-variant', {
+                // The fitting-room audience is user-controlled. A variant change
+                // updates its own slot without forcibly switching the mannequin.
+                detail: { variantId: option ? Number(option.value) : null },
+            }));
         };
 
         const refreshVariant = () => {
             const option = select.selectedOptions?.[0];
             if (!option) {
-                updateVariantPreview(null);
+                syncTryOnVariant(null);
                 if (addButton) addButton.disabled = true;
                 if (stockDisplay) stockDisplay.textContent = 'فعلاً موجود نیست';
                 if (mainImage) {
@@ -912,28 +524,8 @@
                 }
             }
             if (addButton) addButton.disabled = stock < 1;
-            updateVariantPreview(option);
+            syncTryOnVariant(option);
         };
-
-        previewOpenButton?.addEventListener('click', () => {
-            updateVariantPreview(select.selectedOptions?.[0] || null);
-            if (previewDialog && typeof previewDialog.showModal === 'function') {
-                previewDialog.showModal();
-                previewCloseButtons[0]?.focus({ preventScroll: true });
-            }
-        });
-
-        previewCloseButtons.forEach((button) => button.addEventListener('click', () => {
-            if (previewDialog?.open) previewDialog.close();
-        }));
-
-        previewDialog?.addEventListener('click', (event) => {
-            if (event.target === previewDialog) previewDialog.close();
-        });
-
-        previewDialog?.addEventListener('close', () => {
-            previewOpenButton?.focus({ preventScroll: true });
-        });
 
         colorButtons.forEach((button) => button.addEventListener('click', () => {
             const requestedColor = normalizeColor(button.dataset.variantColorPick);
@@ -1084,18 +676,5 @@
 
     updateCartCount(0);
     syncCartCount();
-
-    root.querySelector('[data-fitting-reset]')?.addEventListener('click', () => {
-        picks.clear();
-        currentSelection = null;
-        updatePreviewImage(null);
-        updateFittingCopy(null);
-        root.querySelectorAll('[data-fit-product]').forEach((button) => {
-            button.classList.remove('is-active');
-            button.setAttribute('aria-pressed', 'false');
-        });
-        renderPicks();
-        showToast('فهرست پیش‌نمایش پاک شد.');
-    });
 
 })();

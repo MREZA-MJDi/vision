@@ -22,6 +22,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_all_admin_tabs_and_primary_record_views_render_from_database_records(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $customer = User::query()->create([
             'name' => 'Render Audit Customer',
@@ -118,6 +119,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_product_editor_uses_crop_preview_grouped_prices_and_valid_form_structure(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $product = Product::query()->create([
             'name' => 'Crop Preview Product',
@@ -158,6 +160,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_admin_product_list_details_and_editor_render_variant_photo_when_first_variant_has_none(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $product = Product::query()->create([
             'name' => 'Variant Photo Visibility Product',
@@ -226,6 +229,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_product_variants_store_separate_images_and_publish_their_image_urls(): void
     {
+        $this->withoutVite();
         Storage::fake('public');
         $admin = $this->makeAdmin();
 
@@ -305,6 +309,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_variant_image_can_be_removed_and_the_stored_file_is_deleted(): void
     {
+        $this->withoutVite();
         Storage::fake('public');
         $admin = $this->makeAdmin();
         $product = Product::query()->create([
@@ -347,6 +352,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_product_store_rejects_soft_deleted_category_and_brand_ids(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $category = Category::query()->create([
             'name' => 'Archived Category',
@@ -384,6 +390,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_form_requests_reject_invalid_product_order_inventory_and_login_input(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $category = Category::query()->create([
             'name' => 'Validation Category',
@@ -459,6 +466,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_bulk_archive_archives_only_selected_products_and_keeps_order_history(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $category = Category::query()->create([
             'name' => 'Bulk Archive Category',
@@ -491,6 +499,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_admin_hero_selection_adds_to_the_homepage_playlist(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $oldHero = Product::query()->create([
             'name' => 'Previous Hero',
@@ -538,6 +547,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_order_variant_search_is_bounded_and_excludes_inactive_catalog_records(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $activeProduct = Product::query()->create([
             'name' => 'Searchable Active Shoe',
@@ -584,6 +594,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_order_create_preserves_selected_variants_after_validation_redirect(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $product = Product::query()->create([
             'name' => 'Old Input Product',
@@ -619,6 +630,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_order_list_query_count_stays_constant_as_order_count_grows(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $customer = User::query()->create([
             'name' => 'Query Count Customer',
@@ -695,6 +707,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_malformed_old_order_items_do_not_break_order_form_rendering(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
 
         $this->actingAs($admin)
@@ -713,6 +726,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_product_update_persists_variant_image_and_renders_it_in_admin_list_and_homepage(): void
     {
+        $this->withoutVite();
         Storage::fake('public');
         $admin = $this->makeAdmin();
 
@@ -804,6 +818,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_variant_image_delete_button_targets_the_real_delete_form_and_endpoint(): void
     {
+        $this->withoutVite();
         Storage::fake('public');
         $admin = $this->makeAdmin();
         $product = Product::query()->create([
@@ -852,6 +867,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_invalid_product_update_shows_validation_errors_without_mutating_the_record(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $product = Product::query()->create([
             'name' => 'Validation Baseline Product',

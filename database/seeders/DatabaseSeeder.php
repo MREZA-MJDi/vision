@@ -13,6 +13,6 @@ class DatabaseSeeder extends Seeder
     {
         // Launch data is real application data: it is editable in Commerce
         // Admin and respects any later edit, archive, or media deletion.
-        $this->call([AdminSeeder::class, StorefrontLaunchSeeder::class]);
+        $this->call([AdminSeeder::class, StorefrontLaunchSeeder::class, VirtualTryOnMannequinSeeder::class]);
     }
 }
