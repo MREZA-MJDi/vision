@@ -41,57 +41,11 @@
 
             </section>
 
-            <section class="fitting-room" aria-labelledby="fitting-room-title" data-fitting-room>
-                <div class="fitting-room__header">
-                    <div>
-                        <p class="store-eyebrow"><span class="fitting-live-dot"></span> پیش‌نمایش استایل</p>
-                        <h2 id="fitting-room-title">اتاق استایل<span class="fitting-room__period">.</span></h2>
-                        <p class="fitting-room__instruction">یک محصول را انتخاب کن تا پیش‌نمایش آن را ببینی.</p>
-                    </div>
-                    <div class="fitting-room__header-actions">
-                        <button class="fitting-room__expand" type="button" data-fitting-expand aria-label="بزرگ‌نمایی اتاق پرو" title="بزرگ‌نمایی پیش‌نمایش" aria-expanded="false">↗</button>
-                        <button class="fitting-room__close" type="button" data-fitting-close aria-label="بستن پیش‌نمایش" title="بستن پیش‌نمایش">×</button>
-                    </div>
-                </div>
-
-                <div class="fitting-preview" data-fitting-preview>
-                    <div class="fitting-preview__label"><span>استایل <b data-fitting-look-number>—</b></span><span class="fitting-preview__live"><i></i> پیش‌نمایش زنده</span></div>
-                    <div class="fitting-preview__stage">
-                        <img class="fitting-preview__image" alt="پیش‌نمایش محصول انتخاب‌شده" data-fitting-image hidden>
-                        <div class="fitting-preview__placeholder" data-fitting-placeholder>
-                            <span class="fitting-preview__placeholder-mark">V</span>
-                            <span>برای شروع، یک محصول<br>انتخاب کن</span>
-                        </div>
-                    </div>
-                    <div class="fitting-preview__footer"><span>پیش‌نمایش شما</span><span data-fitting-canvas-count>00 / 05</span></div>
-                </div>
-
-                <div class="fitting-room__copy" data-fitting-copy aria-live="polite">
-                    <p class="fitting-room__selected-label">محصول انتخاب‌شده</p>
-                    <h3 data-fitting-selected-name>هنوز محصولی انتخاب نشده است</h3>
-                    <p data-fitting-selected-description>با انتخاب محصول، تصویر و مشخصات آن اینجا نمایش داده می‌شود.</p>
-                    <div class="fitting-room__price" data-fitting-selected-price>—</div>
-                </div>
-
-                <div class="fitting-picks">
-                    <div class="fitting-picks__heading"><span>انتخاب‌های شما</span><span><b data-fitting-pick-count>0</b> از ۵ محصول</span></div>
-                    <div class="fitting-picks__list" data-fitting-picks>
-                        <p class="fitting-picks__empty" data-fitting-picks-empty>هنوز محصولی انتخاب نشده است.</p>
-                    </div>
-                </div>
-
-                <button class="fitting-room__action" type="button" data-fitting-action disabled>
-                    <span>افزودن محصول دیگر</span><span class="fitting-room__action-icon" aria-hidden="true">↗</span>
-                </button>
-                <p class="fitting-room__note">محصول‌های انتخاب‌شده را کنار هم بررسی کن.</p>
-                <div class="fitting-room__footer-actions">
-                    <button type="button" data-fitting-reset>شروع دوباره <span aria-hidden="true">↻</span></button>
-                </div>
-            </section>
-
-            <button class="fitting-room-reopen" type="button" data-fitting-reopen hidden>
-                <span aria-hidden="true">◉</span> پیش‌نمایش استایل <span aria-hidden="true">↗</span>
-            </button>
+            <a class="store-tryon-link" href="{{ route('try-on.index') }}">
+                <span class="store-tryon-link__mark" aria-hidden="true">✳</span>
+                <span class="store-tryon-link__copy"><strong>اتاق پرو مجازی</strong><small>محصولات را روی یک مانکن ترکیب کن.</small></span>
+                <span class="store-tryon-link__arrow" aria-hidden="true">↗</span>
+            </a>
 
             <section class="filter-panel filter-panel--details" aria-label="فیلترهای محصولات">
                 <form class="filter-search" action="{{ route('shop.index') }}" method="GET">
@@ -173,7 +127,7 @@
                         @endphp
                         <article class="product-card" data-product-card>
                             <div class="product-card__visual">
-                                <a class="product-card__image-link" href="#catalog" aria-label="پیش‌نمایش {{ $product->name }}" data-card-preview>
+                                <a class="product-card__image-link" href="{{ route('products.show', ['product' => $product->slug]) }}" aria-label="مشاهدهٔ {{ $product->name }}">
                                     @if($image)
                                         <img class="product-card__image" src="{{ $image }}" alt="{{ $product->name }}" loading="lazy" decoding="async">
                                     @else
@@ -193,15 +147,11 @@
                                     </span>
                                 @endif
 
-                                <button class="product-card__quickfit" type="button" data-fit-product
-                                    data-product-id="{{ $product->id }}"
-                                    data-product-name="{{ $product->name }}"
-                                    data-product-price="{{ $effectivePrice !== null ? $formatPrice($effectivePrice) : 'قیمت نامشخص' }}"
-                                    data-product-image="{{ $image ?? '' }}"
-                                    data-product-description="{{ $product->short_description ?? '' }}"
-                                    aria-label="افزودن {{ $product->name }} به پیش‌نمایش استایل" title="پیش‌نمایش استایل">
+                                <a class="product-card__quickfit"
+                                    href="{{ route('products.show', ['product' => $product->slug]) }}#vto-title"
+                                    aria-label="امتحان {{ $product->name }} در اتاق پرو مجازی" title="امتحان روی مانکن">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M4 15l8-5 8 5M6 14v5h12v-5"></path></svg>
-                                </button>
+                                </a>
 
                                 <button class="product-card__cart" type="button"
                                     data-cart-add="{{ $variant?->id ?? '' }}"
