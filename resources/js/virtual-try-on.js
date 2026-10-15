@@ -399,7 +399,13 @@
             if (version !== state.requestVersion || Number(payload.data.revision) !== revision) return;
 
             const layers = Array.isArray(payload.data.layers) ? payload.data.layers : [];
+            const existingBySlot = new Map(
+                Array.from(ui.layers.querySelectorAll('.vto-layer'))
+                    .map((image) => [image.dataset.vtoSlot, image])
+            );
             const fragment = document.createDocumentFragment();
+            const enteringImages = [];
+
             layers.forEach((layer) => {
                 const variantId = Number(layer.variant_id);
                 const previous = state.itemsByVariant.get(variantId) || {};
@@ -413,26 +419,51 @@
                     slot: layer.slot,
                     layer_url: layer.layer_url,
                 });
-                const image = document.createElement('img');
-                image.className = 'vto-layer is-entering';
-                image.src = layer.layer_url;
-                image.alt = '';
-                image.decoding = 'async';
-                image.loading = 'eager';
-                image.style.zIndex = String(Math.max(1, Math.min(100, Number(layer.z_index) || 1)));
-                image.onerror = () => {
-                    image.remove();
-                    if (!ui.layers.querySelector('.vto-layer')) ui.stageEmpty.hidden = false;
-                    showToast('بارگذاری یکی از لایه‌ها انجام نشد؛ تصویر آن را در مدیریت محصول بررسی کن.');
-                };
-                fragment.append(image);
-                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                    window.requestAnimationFrame(() => image.classList.remove('is-entering'));
+
+                const existingImage = existingBySlot.get(layer.slot);
+                const sameLayer = existingImage
+                    && Number(existingImage.dataset.variantId) === variantId
+                    && existingImage.dataset.layerUrl === layer.layer_url;
+                let image;
+
+                if (sameLayer) {
+                    // Reuse unchanged DOM nodes so selecting trousers does not
+                    // replay the shirt animation or flash the entire outfit.
+                    image = existingImage;
+                    existingBySlot.delete(layer.slot);
                 } else {
-                    image.classList.remove('is-entering');
+                    image = document.createElement('img');
+                    image.className = 'vto-layer is-entering';
+                    image.src = layer.layer_url;
+                    image.alt = '';
+                    image.decoding = 'async';
+                    image.loading = 'eager';
+                    image.dataset.vtoSlot = layer.slot;
+                    image.dataset.variantId = String(variantId);
+                    image.dataset.layerUrl = layer.layer_url;
+                    image.onerror = () => {
+                        if (!image.isConnected) return;
+                        image.remove();
+                        if (!ui.layers.querySelector('.vto-layer')) ui.stageEmpty.hidden = false;
+                        showToast('بارگذاری یکی از لایه‌ها انجام نشد؛ تصویر آن را در مدیریت محصول بررسی کن.');
+                    };
+                    enteringImages.push(image);
                 }
+
+                image.style.zIndex = String(Math.max(1, Math.min(100, Number(layer.z_index) || 1)));
+                fragment.append(image);
             });
+
+            // Replace children once to enforce the server-supplied layer order.
+            // Unmatched old nodes are dropped; matched nodes keep their loaded image.
             ui.layers.replaceChildren(fragment);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                window.requestAnimationFrame(() => {
+                    enteringImages.forEach((image) => image.classList.remove('is-entering'));
+                });
+            } else {
+                enteringImages.forEach((image) => image.classList.remove('is-entering'));
+            }
             ui.stageEmpty.hidden = layers.length > 0;
             const validIds = new Set(layers.map((layer) => Number(layer.variant_id)));
             Object.entries(state.selected).forEach(([slot, id]) => {
