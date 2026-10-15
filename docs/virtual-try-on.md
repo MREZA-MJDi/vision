@@ -1,6 +1,8 @@
 # Virtual Try-On
 
-The feature is available at /try-on. Only adult women and men mannequins are supported; the module deliberately has no third or unisex audience.
+The fitting room is available at /try-on and is also embedded on product detail pages. A product page passes its currently selected variant to the same workspace; changing color or size updates that product's compatible layer in the mannequin preview. Other slot selections remain in place. The preview stays inline; only the explicit “بزرگ‌نمایی اتاق پرو” button expands it. No customer photo upload is part of this workflow.
+
+Only adult women and men mannequins are supported; the module deliberately has no third or unisex audience.
 
 ## Setup
 
@@ -21,8 +23,8 @@ A neutral, faceless silhouette is rendered when a custom base image is not confi
 
 ## API
 
-- GET /api/virtual-try-on/bootstrap?audience=women or men
-- GET /api/virtual-try-on/catalog?audience=women&mannequin_id=1&slot=top&page=1
+- GET /api/virtual-try-on/bootstrap?audience=women or men (optional `variant_id` preselection is accepted when a valid matching layer exists)
+- GET /api/virtual-try-on/catalog?audience=women&mannequin_id=1&slot=top&page=1 (optional `variant_id` promotes the current product variant on the first page)
 - POST /api/virtual-try-on/preview with audience, mannequin_id, revision and a selections map keyed by slot.
 
 The browser submits selected variant IDs only. The server resolves the active product, compatible mannequin, trusted layer URL, price and stock. Preview is stateless: selection clicks do not create database rows. Requests are rate-limited, the catalog is paginated to 24 cards and relationships are eager-loaded. The browser aborts superseded requests and checks revisions to prevent stale responses replacing a newer selection.
