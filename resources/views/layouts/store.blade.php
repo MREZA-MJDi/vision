@@ -33,7 +33,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/js/storefront.js', 'resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
+        @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/js/storefront.js'])
+        @if (request()->routeIs('try-on.index', 'products.show'))
+            @vite(['resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
+        @endif
     @endif
     @stack('styles')
 </head>
