@@ -44,6 +44,7 @@
         currentProductSlot: null,
         mannequins: [],
         mannequin: null,
+        defaultMannequinId: null,
         slot: 'top',
         catalog: [],
         itemsByVariant: new Map(),
@@ -216,22 +217,25 @@
             button.addEventListener('click', () => {
                 if (Number(state.mannequin && state.mannequin.id) === Number(mannequin.id)) return;
                 state.mannequin = mannequin;
+                state.defaultMannequinId = null;
                 state.selected = {};
                 state.itemsByVariant.clear();
                 state.catalog = [];
+                state.requestedVariantId = null;
                 state.pendingInitialVariantId = null;
                 state.currentProductVariantId = null;
                 state.currentProductSlot = null;
                 if (state.catalogController) state.catalogController.abort();
                 if (state.previewController) state.previewController.abort();
+                if (state.bootstrapController) state.bootstrapController.abort();
                 state.requestVersion++;
+                state.bootstrapVersion++;
                 ui.layers.replaceChildren();
                 renderMannequins();
                 updateMannequinStage();
                 renderSlots();
                 renderSummary(0);
-                loadCatalog(true);
-                refreshPreview();
+                loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
             });
             ui.mannequins.append(button);
         });
@@ -638,6 +642,7 @@
         const url = endpoint(root.dataset.bootstrapUrl, {
             audience: state.audience,
             variant_id: state.requestedVariantId,
+            mannequin_id: state.mannequin?.id,
         });
 
         let payload;
@@ -685,6 +690,24 @@
                 state.itemsByVariant.clear();
                 state.mannequin = state.mannequins[0] || null;
             }
+        }
+
+        const activeMannequinId = Number(state.mannequin && state.mannequin.id) || 0;
+        if (activeMannequinId > 0 && Number(state.defaultMannequinId) !== activeMannequinId) {
+            // Default layers are an initial outfit only. Once a shopper starts
+            // changing pieces, subsequent selections must not re-apply defaults.
+            state.selected = {};
+            state.itemsByVariant.clear();
+            const defaults = data.default_selections && typeof data.default_selections === 'object'
+                ? data.default_selections
+                : {};
+            Object.entries(defaults).forEach(([slot, item]) => {
+                const variantId = Number(item && item.variant_id) || null;
+                if (!Object.prototype.hasOwnProperty.call(labels, slot) || !variantId || !item.layer_url) return;
+                state.selected[slot] = variantId;
+                state.itemsByVariant.set(variantId, { ...item, slot, variant_id: variantId });
+            });
+            state.defaultMannequinId = activeMannequinId;
         }
 
         renderMannequins();
@@ -851,6 +874,7 @@
         if (audienceChanged) {
             state.audience = audience;
             state.mannequin = null;
+            state.defaultMannequinId = null;
             state.selected = {};
             state.itemsByVariant.clear();
             state.catalog = [];
@@ -884,6 +908,7 @@
             const audience = button.dataset.vtoAudience;
             if (audience === state.audience) return;
             state.audience = audience;
+            state.defaultMannequinId = null;
             // Keep the current product variant as a candidate for a later return
             // to its compatible audience; clear layers because they are audience-bound.
             state.pendingInitialVariantId = null;
