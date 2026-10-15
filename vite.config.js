@@ -10,6 +10,8 @@ export default defineConfig({
                 'resources/css/storefront.css',
                 'resources/js/app.js',
                 'resources/js/storefront.js',
+                'resources/css/virtual-try-on.css',
+                'resources/js/virtual-try-on.js',
                 'packages/RM/CommerceAdmin/resources/css/admin-kit.css',
                 'packages/RM/CommerceAdmin/resources/js/admin-kit.js',
             ],
