@@ -127,6 +127,13 @@
                 state.mannequin = mannequin;
                 state.selected = {};
                 state.itemsByVariant.clear();
+                state.catalog = [];
+                state.pendingInitialVariantId = null;
+                state.currentProductVariantId = null;
+                state.currentProductSlot = null;
+                if (state.catalogController) state.catalogController.abort();
+                if (state.previewController) state.previewController.abort();
+                state.requestVersion++;
                 ui.layers.replaceChildren();
                 renderMannequins();
                 updateMannequinStage();
@@ -262,6 +269,9 @@
         if (state.catalogController) state.catalogController.abort();
         const controller = new AbortController();
         state.catalogController = controller;
+        const requestVersion = state.bootstrapVersion;
+        const selectedSlot = state.slot;
+        const selectedMannequinId = Number(state.mannequin.id);
         if (reset) {
             state.page = 1;
             state.nextPage = null;
@@ -280,6 +290,12 @@
                 variant_id: reset ? state.pendingInitialVariantId : null,
             });
             const payload = await fetchJson(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+            // Abort is advisory; generation checks protect against late responses
+            // from old slot/audience/mannequin requests.
+            if (state.catalogController !== controller
+                || requestVersion !== state.bootstrapVersion
+                || selectedSlot !== state.slot
+                || selectedMannequinId !== Number(state.mannequin && state.mannequin.id)) return;
             const results = Array.isArray(payload.data) ? payload.data : [];
             results.forEach((item) => {
                 if (item.layer_url) state.itemsByVariant.set(Number(item.variant_id), item);
@@ -572,7 +588,11 @@
             document.body.append(root);
             document.body.classList.add('vto-workspace-expanded');
             document.documentElement.style.overflow = 'hidden';
-            window.requestAnimationFrame(() => root.classList.add('is-expanded'));
+            // Scroll lock must not shift the expanded panel off-screen on mobile.
+            window.requestAnimationFrame(() => {
+                root.classList.add('is-expanded');
+                ui.expand?.focus({ preventScroll: true });
+            });
             ui.expand?.setAttribute('aria-expanded', 'true');
             if (ui.expand) ui.expand.textContent = 'بازگشت به صفحه محصول ↙';
             ui.expand?.setAttribute('aria-label', 'بازگشت اتاق پرو به صفحه');
@@ -611,12 +631,17 @@
         if (variantId === state.requestedVariantId && !audienceChanged) return;
 
         if (audienceChanged) {
+            // Audience changes invalidate the mannequin and every layer because
+            // their asset contracts are audience-specific.
             state.audience = audience;
             state.mannequin = null;
             state.selected = {};
             state.itemsByVariant.clear();
+            state.catalog = [];
         } else if (state.currentProductVariantId && state.currentProductSlot
             && Number(state.selected[state.currentProductSlot]) === state.currentProductVariantId) {
+            // Only the slot controlled by the product-page variant selector changes.
+            // Keep independently selected trousers, shoes, accessories, etc.
             delete state.selected[state.currentProductSlot];
         }
 
@@ -638,7 +663,8 @@
             const audience = button.dataset.vtoAudience;
             if (audience === state.audience) return;
             state.audience = audience;
-            // Keep the product-page variant as a candidate so returning to its compatible audience restores it.
+            // Keep the current product variant as a candidate for a later return
+            // to its compatible audience; clear layers because they are audience-bound.
             state.pendingInitialVariantId = null;
             state.currentProductVariantId = null;
             state.currentProductSlot = null;
