@@ -71,43 +71,10 @@ class StorefrontController extends Controller
         // photo. This is a single bounded eager load for the highlighted product.
         $heroProduct?->loadMissing(['activeVariants.primaryGalleryMedia']);
 
-        $featuredProducts = $this->catalogProducts()
-            ->when($heroProduct, fn (Builder $query) => $query->where('id', '!=', $heroProduct->getKey()))
-            ->orderByDesc('is_featured')
-            ->orderBy('sort_order')
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->limit(8)
-            ->get();
-
-        $excludedStoryProductIds = $featuredProducts->modelKeys();
-        $brandStoryQuery = $this->catalogProducts();
-
-        if ($heroProduct) {
-            $brandStoryQuery->where('id', '!=', $heroProduct->getKey());
-        }
-
-        if ($excludedStoryProductIds !== []) {
-            $brandStoryQuery->whereNotIn('id', $excludedStoryProductIds);
-        }
-
-        $brandStoryProduct = $brandStoryQuery
-            ->orderByDesc('is_featured')
-            ->orderBy('sort_order')
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->first();
-
-        // Small catalogs may not have a separate campaign product. Reuse a real
-        // catalog record rather than inserting a fake image or hard-coded SKU.
-        $brandStoryProduct ??= $featuredProducts->last() ?? $heroProduct;
-
         return view('store.home', compact(
             'categories',
             'heroProduct',
             'heroProducts',
-            'featuredProducts',
-            'brandStoryProduct',
         ));
     }
 
