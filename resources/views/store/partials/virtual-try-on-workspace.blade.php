@@ -1,4 +1,5 @@
-<section class="vto-page {{ ($productPage ?? false) ? 'vto-page--product' : '' }}"
+<section class="vto-page {{ ($productPage ?? false) ? 'vto-page--product' : '' }} {{ ($inline ?? false) ? 'vto-page--inline' : '' }}"
+      @if($inline ?? false) id="vto-inline-workspace" data-vto-inline="true" inert aria-hidden="true" tabindex="-1" @endif
       data-virtual-try-on
       data-bootstrap-url="{{ route('api.virtual-try-on.bootstrap') }}"
       data-catalog-url="{{ route('api.virtual-try-on.catalog') }}"
@@ -54,7 +55,7 @@
 
         <section class="vto-preview-column" aria-label="پیش‌نمایش ترکیب">
             <div class="vto-preview-card">
-                <div class="vto-preview-topline"><div class="vto-preview-tools"><button class="vto-expand-button" type="button" data-vto-expand aria-expanded="false" aria-controls="vto-stage-wrap">بزرگ‌نمایی اتاق پرو ↗</button><span class="vto-live-indicator"><i></i> پیش‌نمایش زنده</span></div><div><p class="vto-step">LIVE PREVIEW / 01</p><h2>نمای ترکیب</h2></div></div>
+                <div class="vto-preview-topline"><div class="vto-preview-tools"><button class="vto-expand-button" type="button" data-vto-expand aria-expanded="false" aria-controls="vto-stage-wrap">بزرگ‌نمایی اتاق پرو ↗</button><span class="vto-live-indicator"><i></i> پیش‌نمایش زنده</span>@if($inline ?? false)<button class="vto-inline-close" type="button" data-vto-close aria-label="بستن اتاق پرو" title="بستن">×</button>@endif</div><div><p class="vto-step">LIVE PREVIEW / 01</p><h2>نمای ترکیب</h2></div></div>
                 <div class="vto-stage-wrap" id="vto-stage-wrap">
                     <div class="vto-stage" data-vto-stage style="aspect-ratio: 2 / 3;" role="img" aria-label="مانکن و لایه‌های لباس انتخاب‌شده">
                         <div class="vto-stage-glow" aria-hidden="true"></div>
@@ -93,3 +94,10 @@
     </section>
     <div class="vto-toast" data-vto-toast role="status" aria-live="polite"></div>
 </section>
+@if($inline ?? false)
+    <button class="vto-inline-launcher" type="button" data-vto-launcher aria-controls="vto-inline-workspace" aria-expanded="false">
+        <span class="vto-inline-launcher__mark" aria-hidden="true">✳</span>
+        <span>اتاق پرو</span>
+        <span class="vto-inline-launcher__count" data-vto-launcher-count>۰</span>
+    </button>
+@endif
