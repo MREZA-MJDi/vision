@@ -78,11 +78,14 @@ class VirtualTryOnController extends Controller
         // for the selected mannequin. Each default is a real, valid layer, not
         // an inferred image or a product-gallery thumbnail pretending to be a fit.
         $requestedMannequinId = (int) ($validated['mannequin_id'] ?? 0);
-        $defaultMannequinId = (int) (
-            $initialSelection['mannequin_id']
-                ?? ($mannequins->firstWhere('id', $requestedMannequinId)['id'] ?? 0)
-                ?: ($mannequins->first()['id'] ?? 0)
-        );
+        $defaultMannequinId = (int) ($initialSelection['mannequin_id'] ?? 0);
+        if ($defaultMannequinId < 1 && $requestedMannequinId > 0) {
+            $requestedMannequin = $mannequins->firstWhere('id', $requestedMannequinId);
+            $defaultMannequinId = (int) ($requestedMannequin['id'] ?? 0);
+        }
+        if ($defaultMannequinId < 1) {
+            $defaultMannequinId = (int) ($mannequins->first()['id'] ?? 0);
+        }
         $defaultSelections = [];
 
         if ($defaultMannequinId > 0) {
