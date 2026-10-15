@@ -71,6 +71,28 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonPath('data.initial_selection', null);
     }
 
+    public function test_bootstrap_returns_only_valid_configured_default_layers_for_the_chosen_mannequin(): void
+    {
+        $mannequin = $this->mannequin('women');
+        $top = $this->variant('women', 'vto-default-top');
+        $shoes = $this->variant('women', 'vto-default-shoes');
+        $invalid = $this->variant('women', 'vto-invalid-default-bottom');
+
+        $this->asset($top, $mannequin, 'top', 'women/default-top.webp')->update(['is_default' => true]);
+        $this->asset($shoes, $mannequin, 'shoes', 'women/default-shoes.webp')->update(['is_default' => true]);
+        $invalidAsset = $this->asset($invalid, $mannequin, 'bottom', 'women/invalid-default-bottom.webp');
+        $invalidAsset->update(['is_default' => true]);
+        $invalidAsset->media()->update(['width' => 500]);
+
+        $this->getJson('/api/virtual-try-on/bootstrap?audience=women&mannequin_id='.$mannequin->id)
+            ->assertOk()
+            ->assertJsonPath('data.default_mannequin_id', $mannequin->id)
+            ->assertJsonPath('data.default_selections.top.variant_id', $top->id)
+            ->assertJsonPath('data.default_selections.shoes.variant_id', $shoes->id)
+            ->assertJsonCount(2, 'data.default_selections')
+            ->assertJsonMissingPath('data.default_selections.bottom');
+    }
+
     public function test_catalog_returns_only_active_layer_assets_matching_audience_and_slot(): void
     {
         $womenMannequin = $this->mannequin('women');
