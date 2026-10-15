@@ -126,6 +126,7 @@ class StorefrontBrowseTest extends TestCase
 
     public function test_catalog_quick_add_uses_an_in_stock_variant_when_the_first_variant_is_sold_out(): void
     {
+        $this->withoutVite();
         $product = Product::query()->create([
             'name' => 'Mixed Stock Product',
             'slug' => 'mixed-stock-product',
