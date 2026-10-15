@@ -45,8 +45,6 @@
     $heroVariantChoices = $heroChoiceMode === 'color'
         ? $heroColors
         : ($heroSizes->isNotEmpty() ? $heroSizes : $heroColors);
-    $brandStoryVariant = $brandStoryProduct?->primaryAvailableVariant ?? $brandStoryProduct?->primaryActiveVariant;
-    $brandStoryImage = $brandStoryVariant?->primaryGalleryMedia?->url ?? $brandStoryProduct?->primaryGalleryMedia?->url;
 @endphp
 
 <main class="store-main store-home">
@@ -67,6 +65,8 @@
                        href="{{ route('products.show', ['product' => $heroProduct->slug]) }}" data-home-hero-product-link>محصول ویژه</a>
                 @endif
                 <a class="home-hero__nav-link" href="{{ route('shop.index') }}">همهٔ محصولات</a>
+                <a class="home-hero__nav-link" href="#home-categories">دسته‌بندی‌ها</a>
+                <a class="home-hero__nav-link" href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
             </nav>
 
             <div class="home-hero__top-actions">
@@ -190,6 +190,7 @@
             <div class="home-hero__bottom">
                 <a href="#home-categories">دسته‌بندی‌ها</a>
                 <span aria-hidden="true">—</span>
+                <a href="{{ route('shop.index') }}">همهٔ محصولات</a>
             </div>
         </div>
     </section>
@@ -233,7 +234,6 @@
             </div>
         </section>
     @endif
-
 
 </main>
 @endsection
