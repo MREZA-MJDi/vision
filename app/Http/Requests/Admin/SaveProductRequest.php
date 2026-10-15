@@ -132,10 +132,16 @@ class SaveProductRequest extends FormRequest
                         ->all()
                     : [];
 
-            $existingLayerVariantIds = $requestedVariantIds === []
+            $variantIds = collect($variants)
+                ->pluck('id')
+                ->filter()
+                ->map(fn ($id): int => (int) $id)
+                ->values()
+                ->all();
+            $existingLayerVariantIds = $variantIds === []
                 ? []
                 : TryOnAsset::query()
-                    ->whereIn('product_variant_id', collect($variants)->pluck('id')->filter()->map(fn ($id) => (int) $id)->all())
+                    ->whereIn('product_variant_id', $variantIds)
                     ->where('is_active', true)
                     ->pluck('product_variant_id')
                     ->map(fn ($id): int => (int) $id)
