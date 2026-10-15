@@ -24,6 +24,7 @@ class VirtualTryOnTest extends TestCase
 
     public function test_page_is_public_persian_rtl_and_has_both_audience_controls(): void
     {
+        $this->withoutVite();
         $this->get('/try-on')
             ->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
