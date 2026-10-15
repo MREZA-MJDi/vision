@@ -51,6 +51,26 @@ class VirtualTryOnTest extends TestCase
             ->assertUnprocessable();
     }
 
+    public function test_bootstrap_returns_the_selected_variant_only_when_its_layer_is_valid_for_the_audience(): void
+    {
+        $mannequin = $this->mannequin('women');
+        $variant = $this->variant('women', 'vto-initial-variant');
+        $this->asset($variant, $mannequin, 'bottom', 'women/initial.webp');
+
+        $this->getJson('/api/virtual-try-on/bootstrap?audience=women&variant_id='.$variant->id)
+            ->assertOk()
+            ->assertJsonPath('data.initial_selection.variant_id', $variant->id)
+            ->assertJsonPath('data.initial_selection.mannequin_id', $mannequin->id)
+            ->assertJsonPath('data.initial_selection.slot', 'bottom');
+
+        TryOnAsset::query()->where('product_variant_id', $variant->id)->firstOrFail()
+            ->media()->update(['width' => 500]);
+
+        $this->getJson('/api/virtual-try-on/bootstrap?audience=women&variant_id='.$variant->id)
+            ->assertOk()
+            ->assertJsonPath('data.initial_selection', null);
+    }
+
     public function test_catalog_returns_only_active_layer_assets_matching_audience_and_slot(): void
     {
         $womenMannequin = $this->mannequin('women');
@@ -66,6 +86,19 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonPath('data.0.variant_id', $womenVariant->id)
             ->assertJsonPath('data.0.slot', 'top')
             ->assertJsonPath('meta.per_page', 24);
+    }
+
+    public function test_catalog_prioritizes_the_current_product_variant_without_changing_other_results(): void
+    {
+        $mannequin = $this->mannequin('women');
+        $first = $this->variant('women', 'vto-first-catalog-item');
+        $selected = $this->variant('women', 'vto-current-product-item');
+        $this->asset($first, $mannequin, 'top', 'women/first.webp');
+        $this->asset($selected, $mannequin, 'top', 'women/selected.webp');
+
+        $this->getJson('/api/virtual-try-on/catalog?audience=women&mannequin_id='.$mannequin->id.'&slot=top&variant_id='.$selected->id)
+            ->assertOk()
+            ->assertJsonPath('data.0.variant_id', $selected->id);
     }
 
     public function test_catalog_excludes_layer_assets_with_wrong_format_or_canvas_size(): void
@@ -101,6 +134,20 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonPath('data.summary.total_price', 370000)
             ->assertJsonPath('data.selections.top', $top->id)
             ->assertJsonPath('data.selections.shoes', $shoes->id);
+    }
+
+    public function test_preview_rejects_assets_with_an_invalid_image_contract(): void
+    {
+        $mannequin = $this->mannequin('women');
+        $variant = $this->variant('women', 'vto-invalid-preview-layer');
+        $asset = $this->asset($variant, $mannequin, 'top', 'women/invalid-preview.webp');
+        $asset->media()->update(['mime_type' => 'image/jpeg', 'width' => 500, 'height' => 500]);
+
+        $this->postJson('/api/virtual-try-on/preview', [
+            'audience' => 'women',
+            'mannequin_id' => $mannequin->id,
+            'selections' => ['top' => $variant->id],
+        ])->assertUnprocessable();
     }
 
     public function test_preview_accepts_an_empty_selection_map_without_writing_asset_rows(): void
