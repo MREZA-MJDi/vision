@@ -237,6 +237,6 @@
         </section>
     @endif
 
-    {{-- Section 2: the same active, eager-loaded catalog data used by the public shop. --}}
+
 </main>
 @endsection
