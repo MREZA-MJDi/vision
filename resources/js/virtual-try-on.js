@@ -312,7 +312,7 @@
                 showCatalogEmpty('هنوز لایهٔ آماده‌ای برای این بخش وجود ندارد.', 'در مدیریت محصول گروه مناسب و تصویر شفاف این جایگاه را ثبت کن.');
             } else {
                 ui.catalogNote.textContent = state.requestedVariantId && !state.initialVariantHasLayer
-                    ? 'این واریانت هنوز تصویر لایه‌ای اتاق پرو ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.'
+                    ? 'این واریانت برای مانکن انتخاب‌شده لایهٔ سازگار ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.'
                     : 'هر گزینه فقط همین بخش را تغییر می‌دهد؛ انتخاب‌های دیگر حفظ می‌شوند.';
                 renderProductCards();
             }
@@ -554,7 +554,7 @@
         await loadCatalog(true);
         if (version !== state.bootstrapVersion) return;
         if (state.requestedVariantId && !state.initialVariantHasLayer) {
-            ui.catalogNote.textContent = 'این واریانت هنوز تصویر لایه‌ای اتاق پرو ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.';
+            ui.catalogNote.textContent = 'این واریانت برای مانکن انتخاب‌شده لایهٔ سازگار ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.';
         }
         await refreshPreview();
         if (state.bootstrapController === controller) state.bootstrapController = null;
