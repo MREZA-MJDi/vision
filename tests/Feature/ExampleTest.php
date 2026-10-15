@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
 
     public function test_the_public_homepage_renders_without_authentication(): void
     {
+        $this->withoutVite();
         $this->get('/')
             ->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
@@ -25,6 +26,7 @@ class ExampleTest extends TestCase
 
     public function test_the_shop_route_owns_the_catalog_and_links_to_the_shared_fitting_room(): void
     {
+        $this->withoutVite();
         $this->get('/shop')
             ->assertOk()
             ->assertSee('فروشگاه محصولات')
