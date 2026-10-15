@@ -3,15 +3,23 @@
       data-bootstrap-url="{{ route('api.virtual-try-on.bootstrap') }}"
       data-catalog-url="{{ route('api.virtual-try-on.catalog') }}"
       data-preview-url="{{ route('api.virtual-try-on.preview') }}"
-      data-currency="{{ config('commerce-admin.currency_symbol', 'تومان') }}"\n      data-initial-variant-id="{{ $tryOnInitialVariantId ?? '' }}"\n      data-initial-audience="{{ $tryOnInitialAudience ?? '' }}"
+      data-currency="{{ config('commerce-admin.currency_symbol', 'تومان') }}"
+      data-initial-variant-id="{{ $tryOnInitialVariantId ?? '' }}"
+      data-initial-audience="{{ $tryOnInitialAudience ?? '' }}"
       aria-labelledby="vto-title">
     <header class="vto-heading">
         <div>
             <p class="vto-eyebrow"><span aria-hidden="true"></span> VISION / FITTING ROOM</p>
-            @if($productPage ?? false)\n            <h1 id="vto-title">این محصول را روی مانکن <em>امتحان کن.</em></h1>\n            <p class="vto-heading__intro">رنگ یا واریانت همین محصول را انتخاب کن و بعد لباس‌های دیگر را هم روی همین مانکن ترکیب کن.</p>\n        @else\n            <h1 id="vto-title">استایل خودت را <em>بساز.</em></h1>\n        @endif
-            <p class="vto-heading__intro">هر تکه را انتخاب کن؛ لباس‌ها روی یک مانکن ثابت به‌روزرسانی می‌شوند، بدون اینکه انتخاب‌های دیگر به‌هم بخورند.</p>
+            @if($productPage ?? false)
+            <h1 id="vto-title">این محصول را روی مانکن <em>امتحان کن.</em></h1>
+            <p class="vto-heading__intro">رنگ یا واریانت همین محصول را انتخاب کن و بعد لباس‌های دیگر را هم روی همین مانکن ترکیب کن.</p>
+        @else
+            <h1 id="vto-title">استایل خودت را <em>بساز.</em></h1>
+        @endif
         </div>
-        @if(!($productPage ?? false))\n            <a class="vto-back-link" href="{{ route('shop.index') }}">بازگشت به فروشگاه <span aria-hidden="true">↗</span></a>\n        @endif
+        @if(!($productPage ?? false))
+            <a class="vto-back-link" href="{{ route('shop.index') }}">بازگشت به فروشگاه <span aria-hidden="true">↗</span></a>
+        @endif
     </header>
 
     <section class="vto-workspace" aria-label="اتاق پرو و انتخاب پوشاک">
