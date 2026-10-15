@@ -295,6 +295,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_sale_and_price_filters_use_the_displayed_active_variant_when_all_variants_are_sold_out(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $product = Product::query()
