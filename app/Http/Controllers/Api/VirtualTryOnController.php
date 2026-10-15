@@ -190,7 +190,7 @@ class VirtualTryOnController extends Controller
                             ->where('is_active', true)
                             ->where('audience', $audience));
                 })
-                ->with(['media', 'variant.product'])
+                ->with(['media', 'variant.primaryGalleryMedia', 'variant.product.primaryGalleryMedia'])
                 ->first();
 
             if (! $asset || ! $asset->media?->url) {
@@ -211,6 +211,7 @@ class VirtualTryOnController extends Controller
                 'product_url' => route((string) config('virtual-try-on.routes.product_detail', 'products.show'), ['product' => $product->slug]),
                 'label' => $variant->display_name,
                 'layer_url' => $asset->media->url,
+                'thumbnail_url' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
                 'price' => (int) round((float) $variant->effective_price),
                 'stock' => (int) $variant->stock,
             ];
