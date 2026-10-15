@@ -22,6 +22,7 @@ class CommerceAdminRenderAuditTest extends TestCase
 
     public function test_all_admin_tabs_and_primary_record_views_render_from_database_records(): void
     {
+        $this->withoutVite();
         $admin = $this->makeAdmin();
         $customer = User::query()->create([
             'name' => 'Render Audit Customer',
