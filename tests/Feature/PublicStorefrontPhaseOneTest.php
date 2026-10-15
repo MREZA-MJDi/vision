@@ -52,9 +52,10 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $response->assertOk()
             ->assertDontSee('data-tiamir-intro', false)
-            ->assertSee('data-fitting-room', false)
-            ->assertSee('data-fitting-expand', false)
-            ->assertSee('data-fitting-selected-name', false)
+            ->assertDontSee('data-fitting-room', false)
+            ->assertSee('store-tryon-link', false)
+            ->assertSee('اتاق پرو مجازی')
+            ->assertSee('#vto-title')
             ->assertSee('data-store-sort', false)
             ->assertSee('data-product-grid', false)
             ->assertSee('مرتب‌سازی')
