@@ -12,6 +12,9 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Support\SeoDefaults;
+use Rm\VirtualTryOn\Models\TryOnAsset;
+use Rm\VirtualTryOn\Models\TryOnMannequin;
+use Rm\VirtualTryOn\Support\VirtualTryOnConfig;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\Admin\BulkArchiveProductsRequest;
 use App\Http\Requests\Admin\SaveProductRequest;
@@ -38,6 +41,7 @@ class ProductController
         return [
             'categories' => $categoryModel::query()->orderBy('name')->get(),
             'brands' => $brandModel::query()->orderBy('name')->get(),
+            'tryOnMannequins' => TryOnMannequin::query()->active()->orderBy('audience')->orderBy('sort_order')->get(),
         ];
     }
 
@@ -159,7 +163,7 @@ class ProductController
     {
         $productModel = $this->model('product', Product::class);
         $model = $productModel::query()
-            ->with(['category', 'brand', 'variants.galleryMedia', 'variants.primaryGalleryMedia', 'galleryMedia', 'primaryGalleryMedia'])
+            ->with(['category', 'brand', 'variants.galleryMedia', 'variants.primaryGalleryMedia', 'variants.tryOnAssets.media', 'variants.tryOnAssets.mannequin', 'galleryMedia', 'primaryGalleryMedia'])
             ->findOrFail($product);
 
         $variants = $model->variants->values();
@@ -228,6 +232,7 @@ class ProductController
                 'slug' => $slug,
                 'category_id' => $validated['category_id'] ?? null,
                 'brand_id' => $validated['brand_id'] ?? null,
+                'audience' => $validated['audience'] ?? null,
                 'short_description' => $validated['short_description'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'attributes' => collect($validated['attributes'] ?? [])
@@ -256,6 +261,11 @@ class ProductController
 
             $keepIds = [];
             $seenSkus = [];
+            $existingTryOnAssets = TryOnAsset::query()
+                ->whereHas('variant', fn ($query) => $query->where('product_id', $product->getKey()))
+                ->with(['media', 'mannequin'])
+                ->get()
+                ->keyBy('product_variant_id');
 
             $variantPosition = 0;
             foreach ($validated['variants'] as $index => $input) {
@@ -379,6 +389,84 @@ class ProductController
                     }
                 }
 
+                $currentTryOnAsset = $existingTryOnAssets->get($variant->getKey());
+                $tryOnImage = $request->file("variants.{$index}.try_on_image");
+                $removeTryOnImage = (bool) ($input['remove_try_on_image'] ?? false);
+                $tryOnSlot = trim((string) ($input['try_on_slot'] ?? ''));
+                $tryOnMannequinId = (int) ($input['try_on_mannequin_id'] ?? 0);
+
+                // Try-on overlays are separate from the normal product gallery.
+                if ($tryOnImage || $removeTryOnImage) {
+                    if ($currentTryOnAsset) {
+                        $oldLayerMedia = $currentTryOnAsset->media;
+                        $currentTryOnAsset->delete();
+
+                        if ($oldLayerMedia) {
+                            if ($oldLayerMedia->path
+                                && ! Str::startsWith($oldLayerMedia->path, ['http://', 'https://'])) {
+                                $obsoleteImagePaths[] = [$oldLayerMedia->disk ?: $mediaDisk, $oldLayerMedia->path];
+                            }
+                            $oldLayerMedia->delete();
+                        }
+
+                        $existingTryOnAssets->forget($variant->getKey());
+                    }
+                }
+
+                if ($tryOnImage) {
+                    $mannequin = TryOnMannequin::query()->active()
+                        ->whereKey($tryOnMannequinId)
+                        ->where('audience', $product->audience)
+                        ->first();
+
+                    if (! $mannequin || ! VirtualTryOnConfig::isSlot($tryOnSlot)) {
+                        throw ValidationException::withMessages([
+                            "variants.$index.try_on_image" => 'مانکن و جایگاه انتخاب‌شده برای این تصویر معتبر نیست.',
+                        ]);
+                    }
+
+                    $path = $tryOnImage->store('virtual-try-on/layers/' . $variant->getKey(), $mediaDisk);
+                    if (! is_string($path) || $path === '') {
+                        throw new \RuntimeException('ذخیره‌سازی تصویر لایه‌ای انجام نشد.');
+                    }
+
+                    $storedImagePaths[] = $path;
+                    $layerMedia = $variant->media()->create([
+                        'collection' => 'try-on-layer',
+                        'disk' => $mediaDisk,
+                        'path' => $path,
+                        'original_name' => $tryOnImage->getClientOriginalName(),
+                        'mime_type' => $tryOnImage->getMimeType(),
+                        'size' => $tryOnImage->getSize(),
+                        'width' => 1024,
+                        'height' => 1536,
+                        'alt_text' => trim($product->name . ($variant->color ? ' - ' . $variant->color : '')),
+                        'sort_order' => 0,
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+
+                    $asset = TryOnAsset::query()->create([
+                        'product_variant_id' => $variant->getKey(),
+                        'try_on_mannequin_id' => $mannequin->getKey(),
+                        'media_id' => $layerMedia->getKey(),
+                        'slot' => $tryOnSlot,
+                        'is_active' => true,
+                    ]);
+                    $existingTryOnAssets->put($variant->getKey(), $asset);
+                } elseif (! $removeTryOnImage && $currentTryOnAsset) {
+                    $sameMannequin = (int) $currentTryOnAsset->try_on_mannequin_id === $tryOnMannequinId;
+                    $sameSlot = (string) $currentTryOnAsset->slot === $tryOnSlot;
+
+                    if (! $sameMannequin || ! $sameSlot || $product->audience !== $currentTryOnAsset->mannequin?->audience) {
+                        throw ValidationException::withMessages([
+                            "variants.$index.try_on_image" => 'برای تغییر مانکن یا جایگاه، لایهٔ جدید و هم‌تراز را بارگذاری کن.',
+                        ]);
+                    }
+                } elseif (! $removeTryOnImage && ($tryOnSlot !== '' || $tryOnMannequinId > 0)) {
+                    throw ValidationException::withMessages([
+                        "variants.$index.try_on_image" => 'برای ثبت این جایگاه، تصویر لایه‌ای PNG یا WebP را بارگذاری کن.',
+                    ]);
+                }
             }
 
             if ($updating) {
