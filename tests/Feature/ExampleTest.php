@@ -24,15 +24,17 @@ class ExampleTest extends TestCase
             ->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_the_shop_route_owns_the_catalog_and_links_to_the_shared_fitting_room(): void
+    public function test_the_shop_route_mounts_the_shared_inline_fitting_room(): void
     {
         $this->withoutVite();
         $this->get('/shop')
             ->assertOk()
             ->assertSee('فروشگاه محصولات')
             ->assertSee('فیلترها')
-            ->assertSee('اتاق پرو مجازی')
-            ->assertSee('store-tryon-link', false)
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-inline="true"', false)
+            ->assertSee('data-vto-launcher', false)
+            ->assertDontSee('store-tryon-link', false)
             ->assertDontSee('data-fitting-room', false);
     }
 
