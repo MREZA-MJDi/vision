@@ -394,6 +394,7 @@ class ProductController
                 $removeTryOnImage = (bool) ($input['remove_try_on_image'] ?? false);
                 $tryOnSlot = trim((string) ($input['try_on_slot'] ?? ''));
                 $tryOnMannequinId = (int) ($input['try_on_mannequin_id'] ?? 0);
+                $tryOnIsDefault = (bool) ($input['try_on_default'] ?? false);
 
                 // Try-on overlays are separate from the normal product gallery.
                 if ($tryOnImage || $removeTryOnImage) {
@@ -451,8 +452,17 @@ class ProductController
                         'media_id' => $layerMedia->getKey(),
                         'slot' => $tryOnSlot,
                         'is_active' => true,
+                        'is_default' => $tryOnIsDefault,
                     ]);
                     $existingTryOnAssets->put($variant->getKey(), $asset);
+
+                    if ($tryOnIsDefault) {
+                        TryOnAsset::query()
+                            ->where('try_on_mannequin_id', $asset->try_on_mannequin_id)
+                            ->where('slot', $asset->slot)
+                            ->where('id', '<>', $asset->getKey())
+                            ->update(['is_default' => false]);
+                    }
                 } elseif (! $removeTryOnImage && $currentTryOnAsset) {
                     $sameMannequin = (int) $currentTryOnAsset->try_on_mannequin_id === $tryOnMannequinId;
                     $sameSlot = (string) $currentTryOnAsset->slot === $tryOnSlot;
@@ -462,7 +472,18 @@ class ProductController
                             "variants.$index.try_on_image" => 'برای تغییر مانکن یا جایگاه، لایهٔ جدید و هم‌تراز را بارگذاری کن.',
                         ]);
                     }
-                } elseif (! $removeTryOnImage && ($tryOnSlot !== '' || $tryOnMannequinId > 0)) {
+
+                    $currentTryOnAsset->is_default = $tryOnIsDefault;
+                    $currentTryOnAsset->save();
+
+                    if ($tryOnIsDefault) {
+                        TryOnAsset::query()
+                            ->where('try_on_mannequin_id', $currentTryOnAsset->try_on_mannequin_id)
+                            ->where('slot', $currentTryOnAsset->slot)
+                            ->where('id', '<>', $currentTryOnAsset->getKey())
+                            ->update(['is_default' => false]);
+                    }
+                } elseif ($tryOnIsDefault || (! $removeTryOnImage && ($tryOnSlot !== '' || $tryOnMannequinId > 0))) {
                     throw ValidationException::withMessages([
                         "variants.$index.try_on_image" => 'برای ثبت این جایگاه، تصویر لایه‌ای PNG یا WebP را بارگذاری کن.',
                     ]);
