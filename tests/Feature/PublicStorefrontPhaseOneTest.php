@@ -133,6 +133,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_shop_query_count_does_not_grow_linearly_with_catalog_card_count(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $category = \App\Models\Category::query()->where('slug', 'demo-apparel')->firstOrFail();
