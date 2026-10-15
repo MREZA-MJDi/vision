@@ -359,6 +359,8 @@
     async function loadCatalog(reset) {
         if (!state.mannequin) {
             state.catalog = [];
+            state.page = 1;
+            state.nextPage = null;
             showCatalogEmpty('مانکن فعالی برای این گروه تعریف نشده است.', 'ابتدا پیکربندی مانکن را بررسی کن.');
             return;
         }
@@ -429,9 +431,20 @@
                 renderProductCards();
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                showCatalogEmpty('دریافت محصولات انجام نشد.', error.message || 'اتصال را بررسی کن و دوباره تلاش کن.');
-                showToast(error.message || 'دریافت محصولات ناموفق بود.');
+            const isCurrentRequest = state.catalogController === controller
+                && requestVersion === state.bootstrapVersion
+                && selectedSlot === state.slot
+                && selectedMannequinId === Number(state.mannequin && state.mannequin.id);
+
+            if (error.name !== 'AbortError' && isCurrentRequest) {
+                const message = error.message || 'اتصال را بررسی کن و دوباره تلاش کن.';
+                if (reset || state.catalog.length === 0) {
+                    showCatalogEmpty('دریافت محصولات انجام نشد.', message);
+                } else {
+                    ui.catalogNote.textContent = 'دریافت گزینه‌های بیشتر ناموفق بود؛ دوباره تلاش کن.';
+                    ui.loadMore.hidden = !state.nextPage;
+                }
+                showToast(message);
             }
         } finally {
             if (state.catalogController === controller) setBusy(ui.products, false);
@@ -637,7 +650,8 @@
         state.bootstrapController = controller;
         const version = ++state.bootstrapVersion;
 
-        renderAudienceButtons();
+        try {
+            renderAudienceButtons();
         ui.catalogNote.textContent = 'در حال آماده‌سازی مانکن…';
         const url = endpoint(root.dataset.bootstrapUrl, {
             audience: state.audience,
@@ -724,7 +738,9 @@
             ui.catalogNote.textContent = 'این واریانت برای مانکن انتخاب‌شده لایهٔ سازگار ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.';
         }
         await refreshPreview();
-        if (state.bootstrapController === controller) state.bootstrapController = null;
+        } finally {
+            if (state.bootstrapController === controller) state.bootstrapController = null;
+        }
     }
 
     function setExpanded(expanded) {
