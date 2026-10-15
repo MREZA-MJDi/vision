@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,15 +14,14 @@ use Rm\VirtualTryOn\Support\VirtualTryOnConfig;
 
 class VirtualTryOnController extends Controller
 {
-    private const PAGE_SIZE = 24;
-
     public function bootstrap(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'audience' => ['required', Rule::in(VirtualTryOnConfig::AUDIENCES)],
         ]);
 
-        $mannequins = TryOnMannequin::query()
+        $mannequinModel = (string) config('virtual-try-on.models.mannequin', TryOnMannequin::class);
+        $mannequins = $mannequinModel::query()
             ->active()
             ->where('audience', $validated['audience'])
             ->with('baseMedia')
@@ -62,7 +60,8 @@ class VirtualTryOnController extends Controller
 
         $mannequin = $this->activeMannequin((int) $validated['mannequin_id'], $validated['audience']);
 
-        $assets = TryOnAsset::query()
+        $assetModel = (string) config('virtual-try-on.models.asset', TryOnAsset::class);
+        $assets = $assetModel::query()
             ->active()
             ->where('try_on_mannequin_id', $mannequin->getKey())
             ->where('slot', $validated['slot'])
@@ -84,7 +83,7 @@ class VirtualTryOnController extends Controller
                 'variant.product.category',
             ])
             ->orderBy('id')
-            ->paginate(self::PAGE_SIZE)
+            ->paginate((int) config('virtual-try-on.page_size', 24))
             ->through(fn (TryOnAsset $asset): array => $this->catalogItemPayload($asset));
 
         return response()->json([
@@ -114,6 +113,7 @@ class VirtualTryOnController extends Controller
 
         $audience = $validated['audience'];
         $mannequin = $this->activeMannequin((int) $validated['mannequin_id'], $audience);
+        $assetModel = (string) config('virtual-try-on.models.asset', TryOnAsset::class);
         $requested = array_filter(
             $validated['selections'],
             static fn ($variantId): bool => $variantId !== null && $variantId !== ''
@@ -121,7 +121,7 @@ class VirtualTryOnController extends Controller
 
         $items = [];
         foreach ($requested as $slot => $variantId) {
-            $asset = TryOnAsset::query()
+            $asset = $assetModel::query()
                 ->active()
                 ->where('try_on_mannequin_id', $mannequin->getKey())
                 ->where('slot', $slot)
@@ -146,7 +146,7 @@ class VirtualTryOnController extends Controller
                 ]);
             }
 
-            /** @var ProductVariant $variant */
+            /** @var object $variant */
             $variant = $asset->variant;
             $product = $variant->product;
 
@@ -155,7 +155,7 @@ class VirtualTryOnController extends Controller
                 'audience' => $product->audience,
                 'variant_id' => $variant->getKey(),
                 'product_name' => $product->name,
-                'product_url' => route('products.show', ['product' => $product->slug]),
+                'product_url' => route((string) config('virtual-try-on.routes.product_detail', 'products.show'), ['product' => $product->slug]),
                 'label' => $variant->display_name,
                 'layer_url' => $asset->media->url,
                 'price' => (int) round((float) $variant->effective_price),
@@ -177,15 +177,16 @@ class VirtualTryOnController extends Controller
                     'items_count' => count($layers),
                     'total_price' => $totalPrice,
                     'all_in_stock' => ! collect($layers)->contains(fn (array $layer): bool => $layer['stock'] < 1),
-                    'currency' => 'IRT',
+                    'currency' => (string) config('virtual-try-on.currency_code', 'IRT'),
                 ],
             ],
         ]);
     }
 
-    private function activeMannequin(int $id, string $audience): TryOnMannequin
+    private function activeMannequin(int $id, string $audience)
     {
-        return TryOnMannequin::query()
+        $mannequinModel = (string) config('virtual-try-on.models.mannequin', TryOnMannequin::class);
+        return $mannequinModel::query()
             ->active()
             ->whereKey($id)
             ->where('audience', $audience)
@@ -193,7 +194,7 @@ class VirtualTryOnController extends Controller
             ->firstOrFail();
     }
 
-    private function mannequinPayload(TryOnMannequin $mannequin): array
+    private function mannequinPayload($mannequin): array
     {
         return [
             'id' => $mannequin->getKey(),
@@ -207,7 +208,7 @@ class VirtualTryOnController extends Controller
         ];
     }
 
-    private function catalogItemPayload(TryOnAsset $asset): array
+    private function catalogItemPayload($asset): array
     {
         $variant = $asset->variant;
         $product = $variant->product;
