@@ -202,39 +202,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->where('slug', 'vision-demo')
             ->firstOrFail();
 
-        // Keep the homepage's independent brand-story-product query active
-        // in both measurements. Without these baseline products, adding the
-        // audit products changes the rendering path and adds a fixed set of
-        // eager-load queries that is unrelated to N+1 growth.
-        for ($index = 1; $index <= 8; $index++) {
-            $product = \App\Models\Product::query()->create([
-                'category_id' => $category->getKey(),
-                'brand_id' => $brand->getKey(),
-                'name' => 'Homepage query baseline product ' . $index,
-                'slug' => 'homepage-query-baseline-product-' . $index,
-                'short_description' => 'Homepage query-count baseline fixture',
-                'is_active' => true,
-                'is_featured' => false,
-                'is_hero' => false,
-                'is_taxable' => false,
-                'sort_order' => 89 + $index,
-            ]);
-
-            \App\Models\ProductVariant::query()->create([
-                'product_id' => $product->getKey(),
-                'sku' => 'HOME-N1-BASELINE-' . $index,
-                'size' => 'M',
-                'color' => 'مشکی',
-                'color_code' => '#17191C',
-                'price' => 100000,
-                'sale_price' => null,
-                'stock' => 5,
-                'low_stock_threshold' => 1,
-                'is_active' => true,
-                'sort_order' => 0,
-            ]);
-        }
-
+        // The homepage now queries only the bounded hero playlist and category card media.
         $queryCount = 0;
         $sqlLog = [];
 
