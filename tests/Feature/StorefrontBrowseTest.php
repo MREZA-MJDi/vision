@@ -14,6 +14,7 @@ class StorefrontBrowseTest extends TestCase
 
     public function test_home_page_renders_public_storefront_without_authentication(): void
     {
+        $this->withoutVite();
         $response = $this->get('/');
 
         $response->assertOk();
