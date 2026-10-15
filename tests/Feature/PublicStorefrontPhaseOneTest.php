@@ -15,6 +15,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_homepage_is_persian_rtl_and_separate_from_the_shop_fitting_room(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $response = $this->get('/');
