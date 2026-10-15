@@ -25,7 +25,7 @@ class TryOnAsset extends Model
 
     public function mannequin(): BelongsTo
     {
-        return $this->belongsTo(TryOnMannequin::class, 'try_on_mannequin_id');
+        return $this->belongsTo(config('virtual-try-on.models.mannequin', TryOnMannequin::class), 'try_on_mannequin_id');
     }
 
     public function media(): BelongsTo

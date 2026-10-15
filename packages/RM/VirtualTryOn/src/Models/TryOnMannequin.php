@@ -31,7 +31,7 @@ class TryOnMannequin extends Model
 
     public function assets(): HasMany
     {
-        return $this->hasMany(TryOnAsset::class, 'try_on_mannequin_id');
+        return $this->hasMany(config('virtual-try-on.models.asset', TryOnAsset::class), 'try_on_mannequin_id');
     }
 
     public function scopeActive($query)

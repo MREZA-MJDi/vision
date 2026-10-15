@@ -28,7 +28,7 @@ class VirtualTryOnController extends Controller
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
-            ->map(fn (TryOnMannequin $mannequin): array => $this->mannequinPayload($mannequin))
+            ->map(fn ($mannequin): array => $this->mannequinPayload($mannequin))
             ->values();
 
         return response()->json([
@@ -84,7 +84,7 @@ class VirtualTryOnController extends Controller
             ])
             ->orderBy('id')
             ->paginate((int) config('virtual-try-on.page_size', 24))
-            ->through(fn (TryOnAsset $asset): array => $this->catalogItemPayload($asset));
+            ->through(fn ($asset): array => $this->catalogItemPayload($asset));
 
         return response()->json([
             'data' => $assets->items(),
