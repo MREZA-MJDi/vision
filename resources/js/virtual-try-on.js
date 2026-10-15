@@ -2,6 +2,8 @@
     const root = document.querySelector('[data-virtual-try-on]');
     if (!root) return;
 
+    const inlineMode = root.dataset.vtoInline === 'true';
+
     const ui = {
         audienceButtons: Array.from(root.querySelectorAll('[data-vto-audience]')),
         mannequins: root.querySelector('[data-vto-mannequins]'),
@@ -23,6 +25,9 @@
         clearAll: root.querySelector('[data-vto-clear-all]'),
         toast: root.querySelector('[data-vto-toast]'),
         expand: root.querySelector('[data-vto-expand]'),
+        close: root.querySelector('[data-vto-close]'),
+        launcher: document.querySelector('[data-vto-launcher]'),
+        launcherCount: document.querySelector('[data-vto-launcher-count]'),
     };
 
     const labels = { top: 'بالاپوش', outerwear: 'لایهٔ رویی', bottom: 'پایین‌تنه', shoes: 'کفش', accessory: 'اکسسوری' };
@@ -57,6 +62,85 @@
     let expansionMarker = null;
     let expansionReturnFocus = null;
     let previousDocumentOverflow = '';
+    let inlineReturnFocus = null;
+
+    function setInlineOpen(open) {
+        if (!inlineMode) return;
+        const currentlyOpen = root.classList.contains('is-open');
+        if (currentlyOpen === open) return;
+
+        if (open) {
+            inlineReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : ui.launcher;
+            root.inert = false;
+            root.setAttribute('aria-hidden', 'false');
+            root.classList.add('is-open');
+            ui.launcher?.setAttribute('aria-expanded', 'true');
+            window.requestAnimationFrame(() => ui.close?.focus({ preventScroll: true }));
+            return;
+        }
+
+        root.classList.remove('is-open');
+        root.inert = true;
+        root.setAttribute('aria-hidden', 'true');
+        ui.launcher?.setAttribute('aria-expanded', 'false');
+        const focusTarget = inlineReturnFocus?.isConnected && !root.contains(inlineReturnFocus)
+            ? inlineReturnFocus
+            : ui.launcher;
+        focusTarget?.focus?.({ preventScroll: true });
+        inlineReturnFocus = null;
+    }
+
+    function renderShopCardSelections() {
+        if (!inlineMode) return;
+        document.querySelectorAll('[data-vto-select-product]').forEach((button) => {
+            const variantId = Number(button.dataset.vtoVariantId) || null;
+            const slot = button.dataset.vtoSlot || '';
+            const selected = Boolean(variantId && slot && Number(state.selected[slot]) === variantId);
+            button.classList.toggle('is-active', selected);
+            button.setAttribute('aria-pressed', String(selected));
+            button.setAttribute('aria-label', selected
+                ? 'حذف ' + (button.dataset.productName || 'این محصول') + ' از اتاق پرو'
+                : (button.dataset.vtoReady === '1' ? 'امتحان روی مانکن' : 'تصویر پرو برای این محصول ثبت نشده است'));
+            button.title = selected ? 'حذف از اتاق پرو' : (button.dataset.vtoReady === '1' ? 'امتحان روی مانکن' : 'تصویر لایه‌ای اتاق پرو هنوز ثبت نشده است');
+        });
+
+        const count = Object.values(state.selected).filter(Boolean).length;
+        if (ui.launcherCount) ui.launcherCount.textContent = new Intl.NumberFormat('fa-IR').format(count);
+    }
+
+    function invalidatePendingRequests() {
+        if (state.catalogController) state.catalogController.abort();
+        if (state.previewController) state.previewController.abort();
+        if (state.bootstrapController) state.bootstrapController.abort();
+        state.catalogController = null;
+        state.previewController = null;
+        state.bootstrapController = null;
+        state.bootstrapVersion++;
+        state.requestVersion++;
+    }
+
+    function removeSelection(slot, variantId) {
+        if (!slot || Number(state.selected[slot]) !== Number(variantId)) return;
+        delete state.selected[slot];
+        if (state.currentProductVariantId === Number(variantId)) {
+            state.currentProductVariantId = null;
+            state.currentProductSlot = null;
+        }
+        if (Number(state.requestedVariantId) === Number(variantId)) {
+            state.requestedVariantId = null;
+            state.pendingInitialVariantId = null;
+        }
+        invalidatePendingRequests();
+        renderProductCards();
+        renderSlots();
+        renderSummary();
+        renderShopCardSelections();
+        if (state.mannequin) {
+            refreshPreview();
+        } else {
+            loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
+        }
+    }
 
     function formatPrice(value) {
         return new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }).format(Number(value || 0)) + ' ' + root.dataset.currency;
@@ -112,6 +196,7 @@
             const selectedItem = selectedId ? state.itemsByVariant.get(Number(selectedId)) : null;
             if (stateLabel) stateLabel.textContent = selectedId ? (selectedItem ? selectedItem.label : 'انتخاب شده') : 'انتخاب نشده';
         });
+        renderShopCardSelections();
     }
 
     function renderMannequins() {
@@ -243,6 +328,7 @@
 
         ui.resultCount.textContent = new Intl.NumberFormat('fa-IR').format(state.catalog.length) + ' گزینه';
         ui.loadMore.hidden = !state.nextPage;
+        renderShopCardSelections();
     }
 
     function showCatalogEmpty(title, message) {
