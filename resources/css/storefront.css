@@ -223,8 +223,7 @@ body.storefront-body button { color: inherit; }
 .store-overline__left { display: inline-flex; align-items: center; gap: 9px; }
 .store-overline__right { color: #625c67; letter-spacing: .16em; }
 .store-overline__slash { color: #504955; }
-.store-status-dot,
-.fitting-live-dot {
+.store-status-dot {
     display: inline-block;
     width: 5px;
     height: 5px;
@@ -508,8 +507,6 @@ body.storefront-body button { color: inherit; }
     .store-main { padding: 0 20px 36px; }
     .store-catalog-layout { grid-template-columns: minmax(200px, 225px) minmax(0, 1fr); gap: 18px; }
     .filter-panel { padding: 16px 13px; }
-    .fitting-room { padding: 16px 12px 13px; }
-    .fitting-preview__stage { min-height: 195px; }
     .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .product-card__visual { min-height: 190px; }
     .catalog-heading { align-items: flex-start; flex-direction: column; }
@@ -1611,11 +1608,6 @@ body.storefront-home-body .store-icon-button { border-color: rgba(255,255,255,.1
 }
 
 /* Author display rules must not override the native hidden attribute. */
-.fitting-room[hidden],
-.fitting-room-reopen[hidden] {
-    display: none !important;
-}
-
 /* A missing product photo is shown as missing, never replaced by an invented garment illustration. */
 .product-art--empty {
     background: #1a171d;
