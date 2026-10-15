@@ -238,16 +238,5 @@
     @endif
 
     {{-- Section 2: the same active, eager-loaded catalog data used by the public shop. --}}
-    <section class="home-section home-featured" id="home-featured" aria-labelledby="home-featured-title">
-        <div class="home-section__inner">
-            <div class="home-section__heading">
-                <div>
-                    <p class="store-eyebrow">انتخاب VISION</p>
-                    <h2 id="home-featured-title">انتخاب‌های VISION</h2>
-                    <p class="home-section__intro">ترکیبی از پوشاک و اکسسوری‌های قابل سفارش.</p>
-                </div>
-                <a class="home-section__link" href="{{ route('shop.index', ['sort' => 'featured']) }}">مشاهدهٔ همه <span aria-hidden="true">←</span></a>
-            </div>
-
-            </main>
+</main>
 @endsection
