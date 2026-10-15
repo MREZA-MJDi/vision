@@ -588,13 +588,12 @@
             document.body.append(root);
             document.body.classList.add('vto-workspace-expanded');
             document.documentElement.style.overflow = 'hidden';
-            // Scroll lock must not shift the expanded panel off-screen on mobile.
             window.requestAnimationFrame(() => {
                 root.classList.add('is-expanded');
                 ui.expand?.focus({ preventScroll: true });
             });
             ui.expand?.setAttribute('aria-expanded', 'true');
-            if (ui.expand) ui.expand.textContent = 'بازگشت به صفحه محصول ↙';
+            if (ui.expand) ui.expand.textContent = 'بازگشت به صفحه ↙';
             ui.expand?.setAttribute('aria-label', 'بازگشت اتاق پرو به صفحه');
         } else {
             root.classList.remove('is-expanded');
@@ -616,8 +615,33 @@
 
     ui.expand?.addEventListener('click', () => setExpanded(!root.classList.contains('is-expanded')));
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && root.classList.contains('is-expanded')) {
+        if (!root.classList.contains('is-expanded')) return;
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
             setExpanded(false);
+            return;
+        }
+
+        if (event.key === 'Tab') {
+            const focusable = Array.from(root.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )).filter((element) => !element.hidden && !element.closest('[hidden]'));
+            if (!focusable.length) {
+                event.preventDefault();
+                root.focus();
+                return;
+            }
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) {
+                event.preventDefault();
+                first.focus();
+            }
         }
     });
 
