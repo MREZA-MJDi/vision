@@ -572,8 +572,14 @@
 
     root.addEventListener('vto:select-variant', (event) => {
         const variantId = Number(event.detail?.variantId) || null;
-        const audience = event.detail?.audience;
-        if (audience && ['women', 'men'].includes(audience) && audience !== state.audience) {
+        const requestedAudience = event.detail?.audience;
+        const audience = ['women', 'men'].includes(requestedAudience) ? requestedAudience : state.audience;
+        const audienceChanged = audience !== state.audience;
+
+        // Ignore duplicate selector refreshes before removing any current layer.
+        if (variantId === state.requestedVariantId && !audienceChanged) return;
+
+        if (audienceChanged) {
             state.audience = audience;
             state.mannequin = null;
             state.selected = {};
@@ -583,7 +589,6 @@
             delete state.selected[state.currentProductSlot];
         }
 
-        if (variantId === state.requestedVariantId) return;
         state.requestedVariantId = variantId;
         state.pendingInitialVariantId = null;
         state.currentProductVariantId = null;
