@@ -7,6 +7,10 @@
 @section('og-type', 'product')
 @section('og-image', $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0)?->primaryGalleryMedia?->url ?: $product->activeVariants->first()?->primaryGalleryMedia?->url ?: $product->primaryGalleryMedia?->url ?: $product->galleryMedia->first()?->url)
 
+@push('styles')
+    @vite(['resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
+@endpush
+
 @section('content')
 @php
     $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
@@ -49,10 +53,6 @@
                 @endif
             @endforelse
 
-            <button class="store-product-detail__tryon-trigger" type="button" data-variant-preview-open aria-haspopup="dialog">
-                <span>پیش‌نمایش تصویر وریانت</span>
-                <span aria-hidden="true">↗</span>
-            </button>
         </div>
 
         <div class="store-product-detail__info">
@@ -156,6 +156,12 @@
         </div>
     </section>
 
+    @include('store.partials.virtual-try-on-workspace', [
+        'productPage' => true,
+        'tryOnInitialVariantId' => $defaultVariant?->getKey(),
+        'tryOnInitialAudience' => in_array($product->audience ?? '', ['women', 'men'], true) ? $product->audience : 'women',
+    ])
+
     @if($relatedProducts->isNotEmpty())
         <section class="commerce-related">
             <div class="commerce-page-heading"><div><p class="store-eyebrow">پیشنهادهای دیگر</p><h2>شاید این‌ها را هم بپسندی<span>.</span></h2></div><a class="commerce-text-link" href="{{ route('shop.index') }}">مشاهدهٔ همه ↗</a></div>
@@ -176,48 +182,6 @@
         </section>
     @endif
 
-    <dialog class="store-variant-preview" data-variant-preview-modal aria-labelledby="store-variant-preview-title">
-        <div class="store-variant-preview__panel">
-            <header class="store-variant-preview__header">
-                <div>
-                    <p class="store-eyebrow">اتاق پرو VISION</p>
-                    <h2 id="store-variant-preview-title">پیش‌نمایش مدل</h2>
-                </div>
-                <button class="store-variant-preview__close" type="button" data-variant-preview-close aria-label="بستن پیش‌نمایش">×</button>
-            </header>
-
-            <div class="store-variant-preview__body">
-                <div class="store-variant-preview__visual">
-                    <img
-                        data-variant-preview-image
-                        src="{{ $defaultVariant?->primaryGalleryMedia?->url ?? '' }}"
-                        alt="{{ trim(implode(' ', array_filter([$product->name, $defaultVariant?->color, $defaultVariant?->size]))) }}"
-                        @if(!$defaultVariant?->primaryGalleryMedia?->url) hidden @endif
-                    >
-                    <div class="store-variant-preview__placeholder" data-variant-preview-placeholder @if($defaultVariant?->primaryGalleryMedia?->url) hidden @endif>
-                        <span aria-hidden="true">V.</span>
-                        <strong>برای این وریانت تصویری ثبت نشده است.</strong>
-                        <p>تصویر مخصوص همین رنگ را در رسانه‌های وریانت در پنل مدیریت ثبت کن.</p>
-                    </div>
-                </div>
-
-                <aside class="store-variant-preview__details">
-                    <p class="store-variant-preview__eyebrow">محصول واقعی فروشگاه</p>
-                    <h3>{{ $product->name }}</h3>
-                    <p class="store-variant-preview__choice" data-variant-preview-choice>{{ implode(' / ', array_filter([$defaultVariant?->size, $defaultVariant?->color])) ?: 'معمولی' }}</p>
-                    <div class="store-variant-preview__price" data-variant-preview-price>
-                        @if($defaultVariant?->is_on_sale)<del>{{ $formatPrice($defaultVariant->price) }}</del>@endif
-                        <strong>{{ $formatPrice($defaultVariant?->effective_price ?? 0) }}</strong>
-                    </div>
-                    <p class="store-variant-preview__stock" data-variant-preview-stock>
-                        {{ (int) ($defaultVariant?->stock ?? 0) > 0 ? ((int) $defaultVariant->stock . ' عدد موجود') : 'فعلاً موجود نیست' }}
-                    </p>
-                    <p class="store-variant-preview__note">تصویر این بخش از رسانهٔ ثبت‌شده برای همین وریانت می‌آید؛ با انتخاب رنگ یا سایز، اطلاعات پیش‌نمایش با همان رکورد همگام می‌شود.</p>
-                    <button class="store-variant-preview__back" type="button" data-variant-preview-close>بازگشت به جزئیات محصول <span aria-hidden="true">↙</span></button>
-                </aside>
-            </div>
-        </div>
-    </dialog>
 
 </main>
 @endsection
