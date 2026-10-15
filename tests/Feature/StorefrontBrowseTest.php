@@ -24,17 +24,20 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_shop_contains_filters_and_fitting_room_ui(): void
+    public function test_shop_contains_filters_and_links_to_the_shared_virtual_try_on(): void
     {
         $this->get('/shop')
             ->assertOk()
-            ->assertSee('پیش‌نمایش استایل')
             ->assertSee('فیلترها')
-            ->assertSee('data-fitting-room', false);
+            ->assertSee('store-tryon-link', false)
+            ->assertSee('اتاق پرو مجازی')
+            ->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_shop_card_preview_and_product_detail_use_real_variant_media(): void
+    public function test_shop_cards_and_product_detail_use_real_variant_media_and_inline_try_on(): void
     {
+        $this->withoutVite();
+
         $product = Product::query()->create([
             'name' => 'Photo-backed Shop Product',
             'slug' => 'photo-backed-shop-product',
@@ -65,15 +68,18 @@ class StorefrontBrowseTest extends TestCase
         $this->get('/shop')
             ->assertOk()
             ->assertSee('src="' . $photoUrl . '"', false)
-            ->assertSee('data-product-image="' . $photoUrl . '"', false)
-            ->assertSee('data-card-preview', false)
-            ->assertSee('data-fit-product', false)
-            ->assertSee(route('products.show', ['product' => $product->slug]), false);
+            ->assertSee(route('products.show', ['product' => $product->slug]), false)
+            ->assertSee('store-tryon-link', false)
+            ->assertDontSee('data-card-preview', false)
+            ->assertDontSee('data-fit-product', false);
 
         $this->get(route('products.show', ['product' => $product->slug]))
             ->assertOk()
             ->assertSee('src="' . $photoUrl . '"', false)
-            ->assertSee('data-image="' . $photoUrl . '"', false);
+            ->assertSee('data-image="' . $photoUrl . '"', false)
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-expand', false)
+            ->assertDontSee('data-variant-preview-modal', false);
     }
 
     public function test_product_catalog_lists_active_products_and_hides_inactive_products(): void
@@ -151,6 +157,8 @@ class StorefrontBrowseTest extends TestCase
 
     public function test_product_detail_shows_variant_and_returns_404_for_inactive_product(): void
     {
+        $this->withoutVite();
+
         $category = Category::create([
             'name' => 'Bags',
             'slug' => 'bags',
