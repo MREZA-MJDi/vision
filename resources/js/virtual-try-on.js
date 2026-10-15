@@ -440,9 +440,40 @@
         ui.selected.replaceChildren();
         if (!items.length) {
             const empty = document.createElement('p');
-            empty.className = 'vto-selected-empty';
-            empty.textContent = 'هنوز لباسی انتخاب نشده است؛ اولین بخش را از فهرست انتخاب کن.';
+            empty.className = inlineMode ? 'vto-inline-picks-empty' : 'vto-selected-empty';
+            empty.textContent = inlineMode
+                ? 'لباس‌های انتخابی اینجا نمایش داده می‌شوند.'
+                : 'هنوز لباسی انتخاب نشده است؛ اولین بخش را از فهرست انتخاب کن.';
             ui.selected.append(empty);
+        } else if (inlineMode) {
+            items.forEach((item) => {
+                const tile = document.createElement('div');
+                tile.className = 'vto-inline-pick';
+                const image = document.createElement('img');
+                image.alt = item.name || 'محصول انتخاب‌شده';
+                image.loading = 'lazy';
+                image.decoding = 'async';
+                if (item.thumbnail_url) {
+                    image.src = item.thumbnail_url;
+                    image.onerror = () => image.remove();
+                } else {
+                    image.hidden = true;
+                }
+
+                const name = document.createElement('span');
+                name.className = 'vto-inline-pick__name';
+                name.textContent = item.name || 'محصول';
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'vto-inline-pick__remove';
+                remove.textContent = '×';
+                remove.setAttribute('aria-label', 'حذف ' + (item.name || 'محصول') + ' از اتاق پرو');
+                remove.addEventListener('click', () => removeSelection(item.slot, item.variant_id));
+
+                tile.append(image, name, remove);
+                ui.selected.append(tile);
+            });
         } else {
             items.forEach((item) => {
                 const row = document.createElement('div');
@@ -463,11 +494,14 @@
         }
 
         const estimated = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
-        ui.total.textContent = formatPrice(Number.isFinite(serverTotal) ? serverTotal : estimated);
-        ui.inventoryNote.textContent = items.some((item) => Number(item.stock) < 1)
-            ? 'حداقل یکی از انتخاب‌ها ناموجود است؛ موجودی نهایی هنگام خرید بررسی می‌شود.'
-            : 'قیمت و موجودی هنگام خرید دوباره بررسی می‌شوند.';
+        if (ui.total) ui.total.textContent = formatPrice(Number.isFinite(serverTotal) ? serverTotal : estimated);
+        if (ui.inventoryNote) {
+            ui.inventoryNote.textContent = items.some((item) => Number(item.stock) < 1)
+                ? 'حداقل یکی از انتخاب‌ها ناموجود است؛ موجودی نهایی هنگام خرید بررسی می‌شود.'
+                : 'قیمت و موجودی هنگام خرید دوباره بررسی می‌شوند.';
+        }
         ui.stageEmpty.hidden = items.length > 0;
+        renderShopCardSelections();
     }
 
     async function refreshPreview() {
@@ -520,6 +554,7 @@
                     stock: Number(layer.stock ?? previous.stock ?? 0),
                     slot: layer.slot,
                     layer_url: layer.layer_url,
+                    thumbnail_url: layer.thumbnail_url || previous.thumbnail_url,
                 });
 
                 const existingImage = existingBySlot.get(layer.slot);
@@ -573,6 +608,7 @@
             });
             renderSlots();
             renderSummary(Number(payload.data.summary && payload.data.summary.total_price));
+            renderShopCardSelections();
             if (payload.data.summary && payload.data.summary.all_in_stock === false) {
                 ui.inventoryNote.textContent = 'یک یا چند انتخاب فعلاً موجود نیست؛ پیش از خرید موجودی نهایی بررسی می‌شود.';
             }
@@ -700,7 +736,47 @@
     }
 
     ui.expand?.addEventListener('click', () => setExpanded(!root.classList.contains('is-expanded')));
+    ui.close?.addEventListener('click', () => setInlineOpen(false));
+    ui.launcher?.addEventListener('click', () => setInlineOpen(!root.classList.contains('is-open')));
+
+    if (inlineMode) {
+        root.inert = true;
+        root.setAttribute('aria-hidden', 'true');
+        ui.launcher?.setAttribute('aria-expanded', 'false');
+
+        document.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target.closest('[data-vto-select-product]') : null;
+            if (!target) return;
+            event.preventDefault();
+            setInlineOpen(true);
+
+            const variantId = Number(target.dataset.vtoVariantId) || null;
+            if (!variantId) {
+                showToast('برای این محصول واریانت فعالی ثبت نشده است.');
+                return;
+            }
+            if (target.dataset.vtoReady !== '1') {
+                showToast('برای پرو این محصول، تصویر لایه‌ای معتبر را از مدیریت محصول ثبت کن.');
+                return;
+            }
+
+            root.dispatchEvent(new CustomEvent('vto:select-variant', {
+                detail: {
+                    variantId,
+                    audience: target.dataset.vtoAudience,
+                    toggle: true,
+                    fromCatalog: true,
+                },
+            }));
+        });
+    }
+
     document.addEventListener('keydown', (event) => {
+        if (inlineMode && event.key === 'Escape' && root.classList.contains('is-open') && !root.classList.contains('is-expanded')) {
+            event.preventDefault();
+            setInlineOpen(false);
+            return;
+        }
         if (!root.classList.contains('is-expanded')) return;
 
         if (event.key === 'Escape') {
@@ -732,26 +808,52 @@
     });
 
     root.addEventListener('vto:select-variant', (event) => {
-        const variantId = Number(event.detail?.variantId) || null;
-        const requestedAudience = event.detail?.audience;
+        const detail = event.detail || {};
+        const variantId = Number(detail.variantId) || null;
+        const requestedAudience = detail.audience;
         const audience = ['women', 'men'].includes(requestedAudience) ? requestedAudience : state.audience;
         const audienceChanged = audience !== state.audience;
 
-        // Ignore duplicate selector refreshes before removing any current layer.
+        if (inlineMode) setInlineOpen(true);
+
+        const selectedEntry = variantId
+            ? Object.entries(state.selected).find(([, selectedId]) => Number(selectedId) === variantId)
+            : null;
+
+        // Hanger controls toggle selected pieces; do not swallow deselection as a duplicate.
+        if (detail.toggle && selectedEntry && !audienceChanged) {
+            removeSelection(selectedEntry[0], variantId);
+            return;
+        }
+
+        // A second tap while bootstrap is pending cancels that selection, so a late
+        // response cannot silently re-add an item the user tried to remove.
+        if (detail.toggle && variantId && Number(state.requestedVariantId) === variantId && !selectedEntry && !audienceChanged) {
+            state.requestedVariantId = null;
+            state.pendingInitialVariantId = null;
+            state.currentProductVariantId = null;
+            state.currentProductSlot = null;
+            invalidatePendingRequests();
+            renderShopCardSelections();
+            if (state.mannequin) refreshPreview();
+            else loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
+            return;
+        }
+
         if (variantId === state.requestedVariantId && !audienceChanged) return;
 
         if (audienceChanged) {
-            // Audience changes invalidate the mannequin and every layer because
-            // their asset contracts are audience-specific.
             state.audience = audience;
             state.mannequin = null;
             state.selected = {};
             state.itemsByVariant.clear();
             state.catalog = [];
-        } else if (state.currentProductVariantId && state.currentProductSlot
+            ui.layers.replaceChildren();
+            ui.stageEmpty.hidden = false;
+        } else if (!detail.fromCatalog && state.currentProductVariantId && state.currentProductSlot
             && Number(state.selected[state.currentProductSlot]) === state.currentProductVariantId) {
-            // Only the slot controlled by the product-page variant selector changes.
-            // Keep independently selected trousers, shoes, accessories, etc.
+            // The product detail selector owns one changing slot. Shop hanger clicks
+            // resolve the new slot first and replace only that slot.
             delete state.selected[state.currentProductSlot];
         }
 
@@ -765,7 +867,10 @@
         state.requestVersion++;
         state.bootstrapVersion++;
         ui.stageLoading.hidden = true;
-        loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
+        loadBootstrap().catch((error) => {
+            if (state.requestedVariantId === variantId) state.requestedVariantId = null;
+            showToast(error.message || 'آماده‌سازی مانکن انجام نشد.');
+        });
     });
 
     ui.audienceButtons.forEach((button) => {
@@ -820,10 +925,18 @@
 
     ui.clearAll.addEventListener('click', () => {
         state.selected = {};
+        state.requestedVariantId = null;
+        state.pendingInitialVariantId = null;
+        state.currentProductVariantId = null;
+        state.currentProductSlot = null;
+        state.initialVariantHasLayer = false;
+        invalidatePendingRequests();
         renderProductCards();
         renderSlots();
         renderSummary(0);
-        refreshPreview();
+        renderShopCardSelections();
+        if (state.mannequin) refreshPreview();
+        else loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
     });
 
     loadBootstrap().catch((error) => {
