@@ -68,6 +68,18 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonPath('meta.per_page', 24);
     }
 
+    public function test_catalog_excludes_layer_assets_with_wrong_format_or_canvas_size(): void
+    {
+        $mannequin = $this->mannequin('women');
+        $variant = $this->variant('women', 'vto-invalid-layer');
+        $asset = $this->asset($variant, $mannequin, 'top', 'women/invalid.webp');
+        $asset->media()->update(['mime_type' => 'image/jpeg', 'width' => 500, 'height' => 500]);
+
+        $this->getJson('/api/virtual-try-on/catalog?audience=women&mannequin_id='.$mannequin->id.'&slot=top')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
     public function test_preview_layers_are_ordered_by_server_and_price_is_resolved_from_database(): void
     {
         $mannequin = $this->mannequin('women');

@@ -362,6 +362,18 @@
             const layers = Array.isArray(payload.data.layers) ? payload.data.layers : [];
             const fragment = document.createDocumentFragment();
             layers.forEach((layer) => {
+                const variantId = Number(layer.variant_id);
+                const previous = state.itemsByVariant.get(variantId) || {};
+                state.itemsByVariant.set(variantId, {
+                    ...previous,
+                    variant_id: variantId,
+                    name: layer.product_name || previous.name,
+                    label: layer.label || previous.label,
+                    price: Number(layer.price ?? previous.price ?? 0),
+                    stock: Number(layer.stock ?? previous.stock ?? 0),
+                    slot: layer.slot,
+                    layer_url: layer.layer_url,
+                });
                 const image = document.createElement('img');
                 image.className = 'vto-layer is-entering';
                 image.src = layer.layer_url;
@@ -371,6 +383,7 @@
                 image.style.zIndex = String(Math.max(1, Math.min(100, Number(layer.z_index) || 1)));
                 image.onerror = () => {
                     image.remove();
+                    if (!ui.layers.querySelector('.vto-layer')) ui.stageEmpty.hidden = false;
                     showToast('بارگذاری یکی از لایه‌ها انجام نشد؛ تصویر آن را در مدیریت محصول بررسی کن.');
                 };
                 fragment.append(image);

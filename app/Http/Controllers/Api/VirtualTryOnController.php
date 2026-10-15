@@ -68,7 +68,10 @@ class VirtualTryOnController extends Controller
             ->whereHas('media', function ($query): void {
                 $query->where('collection', 'try-on-layer')
                     ->whereNotNull('path')
-                    ->whereRaw("TRIM(path) <> ''");
+                    ->whereRaw("TRIM(path) <> ''")
+                    ->whereIn('mime_type', ['image/png', 'image/webp'])
+                    ->where('width', 1024)
+                    ->where('height', 1536);
             })
             ->whereHas('variant', function ($variantQuery) use ($validated): void {
                 $variantQuery->where('is_active', true)
