@@ -191,6 +191,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_homepage_query_count_stays_bounded_as_the_catalog_grows(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $category = \App\Models\Category::query()
