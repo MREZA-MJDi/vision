@@ -129,6 +129,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_reseeding_preserves_admin_edits_and_does_not_rewrite_inventory_history(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.bootstrap_admin.email' => null,
             'commerce-admin.bootstrap_admin.password' => null,
