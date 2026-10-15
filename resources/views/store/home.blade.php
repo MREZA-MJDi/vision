@@ -67,8 +67,6 @@
                        href="{{ route('products.show', ['product' => $heroProduct->slug]) }}" data-home-hero-product-link>محصول ویژه</a>
                 @endif
                 <a class="home-hero__nav-link" href="{{ route('shop.index') }}">همهٔ محصولات</a>
-                <a class="home-hero__nav-link" href="#home-brand-story">داستان ما</a>
-                <a class="home-hero__nav-link" href="#home-benefits">مزایا</a>
             </nav>
 
             <div class="home-hero__top-actions">
@@ -192,7 +190,6 @@
             <div class="home-hero__bottom">
                 <a href="#home-categories">دسته‌بندی‌ها</a>
                 <span aria-hidden="true">—</span>
-                <a href="#home-featured">انتخاب‌های ویژه</a>
             </div>
         </div>
     </section>
