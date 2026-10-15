@@ -125,7 +125,7 @@
                                 return $asset->is_active
                                     && $mannequin?->is_active
                                     && $mannequin->audience === $product->audience
-                                    && \\Rm\\VirtualTryOn\\Support\\VirtualTryOnConfig::isSlot((string) $asset->slot)
+                                    && \Rm\VirtualTryOn\Support\VirtualTryOnConfig::isSlot((string) $asset->slot)
                                     && $media
                                     && $media->collection === 'try-on-layer'
                                     && trim((string) $media->path) !== ''
