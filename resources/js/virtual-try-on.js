@@ -638,7 +638,7 @@
             const audience = button.dataset.vtoAudience;
             if (audience === state.audience) return;
             state.audience = audience;
-            state.requestedVariantId = null;
+            // Keep the product-page variant as a candidate so returning to its compatible audience restores it.
             state.pendingInitialVariantId = null;
             state.currentProductVariantId = null;
             state.currentProductSlot = null;
