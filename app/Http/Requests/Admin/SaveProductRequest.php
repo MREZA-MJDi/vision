@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Support\NumericInput;
+use Rm\VirtualTryOn\Models\TryOnAsset;
 use Rm\VirtualTryOn\Models\TryOnMannequin;
 use Rm\VirtualTryOn\Support\VirtualTryOnConfig;
 use Illuminate\Foundation\Http\FormRequest;
