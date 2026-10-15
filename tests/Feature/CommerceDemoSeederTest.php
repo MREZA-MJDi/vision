@@ -16,6 +16,7 @@ class CommerceDemoSeederTest extends TestCase
 
     public function test_opt_in_seed_creates_real_catalog_variants_images_and_inventory_history(): void
     {
+        $this->withoutVite();
         config([
             'commerce-admin.currency_symbol' => 'تومان',
             'commerce-admin.bootstrap_admin.email' => null,
