@@ -39,7 +39,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertDontSee('home-brand-story', false)
             ->assertDontSee('home-benefits', false)
             ->assertSee('store-footer__column', false)
-            ->assertDontSee('data-cart-add', false)
+            ->assertDontSee('home-product-card', false)
             ->assertDontSee('data-fitting-room', false)
             ->assertSee('images.unsplash.com');
     }
