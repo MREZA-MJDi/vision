@@ -20,7 +20,7 @@ class TryOnAsset extends Model
 
     public function variant(): BelongsTo
     {
-        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+        return $this->belongsTo(config('virtual-try-on.models.variant', ProductVariant::class), 'product_variant_id');
     }
 
     public function mannequin(): BelongsTo
@@ -30,7 +30,7 @@ class TryOnAsset extends Model
 
     public function media(): BelongsTo
     {
-        return $this->belongsTo(Media::class);
+        return $this->belongsTo(config('virtual-try-on.models.media', Media::class));
     }
 
     public function scopeActive($query)

@@ -26,7 +26,7 @@ class TryOnMannequin extends Model
 
     public function baseMedia(): BelongsTo
     {
-        return $this->belongsTo(Media::class, 'base_media_id');
+        return $this->belongsTo(config('virtual-try-on.models.media', Media::class), 'base_media_id');
     }
 
     public function assets(): HasMany
