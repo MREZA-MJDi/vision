@@ -64,6 +64,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_product_detail_uses_the_real_variant_selector_and_persian_metadata(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $this->get('/products/demo-essential-cotton-tee')
@@ -73,9 +74,10 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('property="og:image"', false)
             ->assertSee('data-variant-select', false)
             ->assertSee('data-variant-color-pick', false)
-            ->assertSee('data-variant-preview-open', false)
-            ->assertSee('data-variant-preview-modal', false)
-            ->assertSee('data-variant-preview-image', false)
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-expand', false)
+            ->assertSee('data-initial-variant-id', false)
+            ->assertDontSee('data-variant-preview-modal', false)
             ->assertSee('افزودن به سبد خرید')
             ->assertSee('محصولات منتخب')
             ->assertSee('قهوه‌ای')
@@ -84,6 +86,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
     public function test_product_detail_variant_media_queries_remain_bounded_as_variant_count_grows(): void
     {
+        $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
 
         $product = Product::query()
