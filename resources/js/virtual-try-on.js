@@ -245,7 +245,8 @@
             return;
         }
         if (state.catalogController) state.catalogController.abort();
-        state.catalogController = new AbortController();
+        const controller = new AbortController();
+        state.catalogController = controller;
         if (reset) {
             state.page = 1;
             state.nextPage = null;
@@ -262,7 +263,7 @@
                 slot: state.slot,
                 page: state.page,
             });
-            const payload = await fetchJson(url, { signal: state.catalogController.signal, headers: { Accept: 'application/json' } });
+            const payload = await fetchJson(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
             const results = Array.isArray(payload.data) ? payload.data : [];
             results.forEach((item) => {
                 if (item.layer_url) state.itemsByVariant.set(Number(item.variant_id), item);
@@ -282,7 +283,7 @@
                 showToast(error.message || 'دریافت محصولات ناموفق بود.');
             }
         } finally {
-            setBusy(ui.products, false);
+            if (state.catalogController === controller) setBusy(ui.products, false);
         }
     }
 
@@ -431,6 +432,13 @@
             state.selected = {};
             state.itemsByVariant.clear();
             state.catalog = [];
+            if (state.catalogController) state.catalogController.abort();
+            state.catalogController = null;
+            if (state.previewController) state.previewController.abort();
+            state.previewController = null;
+            state.requestVersion++;
+            ui.stageLoading.hidden = true;
+            ui.products.replaceChildren();
             ui.layers.replaceChildren();
             ui.stageEmpty.hidden = false;
             renderAudienceButtons();

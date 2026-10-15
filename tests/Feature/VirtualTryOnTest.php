@@ -90,6 +90,24 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonPath('data.selections.shoes', $shoes->id);
     }
 
+    public function test_preview_accepts_an_empty_selection_map_without_writing_asset_rows(): void
+    {
+        $mannequin = $this->mannequin('women');
+        $before = TryOnAsset::query()->count();
+
+        $this->postJson('/api/virtual-try-on/preview', [
+            'audience' => 'women',
+            'mannequin_id' => $mannequin->id,
+            'selections' => [],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.layers', [])
+            ->assertJsonPath('data.summary.total_price', 0)
+            ->assertJsonPath('data.summary.items_count', 0);
+
+        $this->assertSame($before, TryOnAsset::query()->count());
+    }
+
     public function test_preview_rejects_a_variant_from_another_audience_or_without_a_valid_layer(): void
     {
         $womenMannequin = $this->mannequin('women');

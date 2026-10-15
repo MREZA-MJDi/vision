@@ -103,7 +103,7 @@ class VirtualTryOnController extends Controller
             'audience' => ['required', Rule::in(VirtualTryOnConfig::AUDIENCES)],
             'mannequin_id' => ['required', 'integer', 'min:1'],
             'revision' => ['sometimes', 'integer', 'min:0'],
-            'selections' => ['required', 'array:top,outerwear,bottom,shoes,accessory'],
+            'selections' => ['present', 'array:top,outerwear,bottom,shoes,accessory'],
             'selections.top' => ['nullable', 'integer', 'min:1'],
             'selections.outerwear' => ['nullable', 'integer', 'min:1'],
             'selections.bottom' => ['nullable', 'integer', 'min:1'],
@@ -229,7 +229,7 @@ class VirtualTryOnController extends Controller
             'stock' => (int) $variant->stock,
             'thumbnail_url' => $thumbnail,
             'layer_url' => $asset->media?->url,
-            'product_url' => route('products.show', ['product' => $product->slug]),
+            'product_url' => route((string) config('virtual-try-on.routes.product_detail', 'products.show'), ['product' => $product->slug]),
         ];
     }
 }
