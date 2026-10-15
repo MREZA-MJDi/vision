@@ -22,12 +22,21 @@
         inventoryNote: root.querySelector('[data-vto-inventory-note]'),
         clearAll: root.querySelector('[data-vto-clear-all]'),
         toast: root.querySelector('[data-vto-toast]'),
+        expand: root.querySelector('[data-vto-expand]'),
     };
 
     const labels = { top: 'بالاپوش', outerwear: 'لایهٔ رویی', bottom: 'پایین‌تنه', shoes: 'کفش', accessory: 'اکسسوری' };
     const order = { shoes: 10, bottom: 20, top: 30, outerwear: 40, accessory: 50 };
+    const initialAudience = ['women', 'men'].includes(root.dataset.initialAudience)
+        ? root.dataset.initialAudience
+        : 'women';
     const state = {
-        audience: 'women',
+        audience: initialAudience,
+        requestedVariantId: Number(root.dataset.initialVariantId) || null,
+        pendingInitialVariantId: null,
+        initialVariantHasLayer: false,
+        currentProductVariantId: null,
+        currentProductSlot: null,
         mannequins: [],
         mannequin: null,
         slot: 'top',
@@ -38,10 +47,16 @@
         nextPage: null,
         catalogController: null,
         previewController: null,
+        bootstrapController: null,
+        bootstrapVersion: 0,
         requestVersion: 0,
         revision: 0,
         toastTimer: null,
     };
+
+    let expansionMarker = null;
+    let expansionReturnFocus = null;
+    let previousDocumentOverflow = '';
 
     function formatPrice(value) {
         return new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }).format(Number(value || 0)) + ' ' + root.dataset.currency;
@@ -262,19 +277,43 @@
                 mannequin_id: state.mannequin.id,
                 slot: state.slot,
                 page: state.page,
+                variant_id: reset ? state.pendingInitialVariantId : null,
             });
             const payload = await fetchJson(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
             const results = Array.isArray(payload.data) ? payload.data : [];
             results.forEach((item) => {
                 if (item.layer_url) state.itemsByVariant.set(Number(item.variant_id), item);
             });
+
+            // Bootstrap promotes the product-page variant into the first catalog
+            // page. Apply it only after the server confirms a valid layer asset.
+            if (reset && state.pendingInitialVariantId) {
+                const initialItem = results.find((item) => Number(item.variant_id) === state.pendingInitialVariantId
+                    && item.slot === state.slot
+                    && Boolean(item.layer_url));
+                if (initialItem) {
+                    state.selected[state.slot] = Number(initialItem.variant_id);
+                    state.itemsByVariant.set(Number(initialItem.variant_id), initialItem);
+                    state.currentProductVariantId = Number(initialItem.variant_id);
+                    state.currentProductSlot = state.slot;
+                    state.initialVariantHasLayer = true;
+                } else {
+                    state.currentProductVariantId = null;
+                    state.currentProductSlot = null;
+                    state.initialVariantHasLayer = false;
+                }
+                state.pendingInitialVariantId = null;
+            }
+
             state.catalog = reset ? results.filter((item) => Boolean(item.layer_url)) : state.catalog.concat(results.filter((item) => Boolean(item.layer_url)));
             state.nextPage = payload.links ? payload.links.next_page : null;
 
             if (state.catalog.length === 0) {
                 showCatalogEmpty('هنوز لایهٔ آماده‌ای برای این بخش وجود ندارد.', 'در مدیریت محصول گروه مناسب و تصویر شفاف این جایگاه را ثبت کن.');
             } else {
-                ui.catalogNote.textContent = 'هر گزینه فقط همین بخش را تغییر می‌دهد؛ انتخاب‌های دیگر حفظ می‌شوند.';
+                ui.catalogNote.textContent = state.requestedVariantId && !state.initialVariantHasLayer
+                    ? 'این واریانت هنوز تصویر لایه‌ای اتاق پرو ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.'
+                    : 'هر گزینه فقط همین بخش را تغییر می‌دهد؛ انتخاب‌های دیگر حفظ می‌شوند.';
                 renderProductCards();
             }
         } catch (error) {
@@ -414,16 +453,65 @@
     }
 
     async function loadBootstrap() {
+        if (state.bootstrapController) state.bootstrapController.abort();
+        const controller = new AbortController();
+        state.bootstrapController = controller;
+        const version = ++state.bootstrapVersion;
+
         renderAudienceButtons();
         ui.catalogNote.textContent = 'در حال آماده‌سازی مانکن…';
-        const payload = await fetchJson(endpoint(root.dataset.bootstrapUrl, { audience: state.audience }), {
-            headers: { Accept: 'application/json' },
+        const url = endpoint(root.dataset.bootstrapUrl, {
+            audience: state.audience,
+            variant_id: state.requestedVariantId,
         });
+
+        let payload;
+        try {
+            payload = await fetchJson(url, {
+                signal: controller.signal,
+                headers: { Accept: 'application/json' },
+            });
+        } catch (error) {
+            if (error.name === 'AbortError' || version !== state.bootstrapVersion) return;
+            throw error;
+        }
+        if (version !== state.bootstrapVersion) return;
+
         const data = payload.data || {};
         state.mannequins = Array.isArray(data.mannequins) ? data.mannequins : [];
-        if (!state.mannequin || !state.mannequins.some((item) => Number(item.id) === Number(state.mannequin.id))) {
-            state.mannequin = state.mannequins[0] || null;
+        const initial = data.initial_selection;
+        const targetMannequin = initial
+            ? state.mannequins.find((item) => Number(item.id) === Number(initial.mannequin_id))
+            : null;
+
+        if (initial && targetMannequin
+            && Number(initial.variant_id) === Number(state.requestedVariantId)
+            && Object.prototype.hasOwnProperty.call(labels, initial.slot)) {
+            if (state.mannequin && Number(state.mannequin.id) !== Number(targetMannequin.id)) {
+                state.selected = {};
+                state.itemsByVariant.clear();
+            }
+            state.mannequin = targetMannequin;
+            state.slot = initial.slot;
+            state.pendingInitialVariantId = Number(initial.variant_id);
+            state.initialVariantHasLayer = true;
+        } else {
+            state.pendingInitialVariantId = null;
+            state.initialVariantHasLayer = false;
+            if (state.currentProductVariantId && state.currentProductSlot
+                && Number(state.selected[state.currentProductSlot]) === state.currentProductVariantId) {
+                delete state.selected[state.currentProductSlot];
+            }
+            state.currentProductVariantId = null;
+            state.currentProductSlot = null;
+
+            if (!state.mannequin || !state.mannequins.some((item) => Number(item.id) === Number(state.mannequin.id))) {
+                state.selected = {};
+                state.itemsByVariant.clear();
+                state.mannequin = state.mannequins[0] || null;
+            }
         }
+
         renderMannequins();
         renderSlots();
         updateMannequinStage();
@@ -433,14 +521,92 @@
             return;
         }
         await loadCatalog(true);
+        if (version !== state.bootstrapVersion) return;
+        if (state.requestedVariantId && !state.initialVariantHasLayer) {
+            ui.catalogNote.textContent = 'این واریانت هنوز تصویر لایه‌ای اتاق پرو ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.';
+        }
         await refreshPreview();
+        if (state.bootstrapController === controller) state.bootstrapController = null;
     }
+
+    function setExpanded(expanded) {
+        const currentlyExpanded = root.classList.contains('is-expanded');
+        if (expanded === currentlyExpanded) return;
+
+        if (expanded) {
+            expansionMarker = document.createComment('vto-workspace-position');
+            root.parentNode?.insertBefore(expansionMarker, root);
+            expansionReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            previousDocumentOverflow = document.documentElement.style.overflow;
+            document.body.append(root);
+            document.body.classList.add('vto-workspace-expanded');
+            document.documentElement.style.overflow = 'hidden';
+            window.requestAnimationFrame(() => root.classList.add('is-expanded'));
+            ui.expand?.setAttribute('aria-expanded', 'true');
+            if (ui.expand) ui.expand.textContent = 'بازگشت به صفحه محصول ↙';
+            ui.expand?.setAttribute('aria-label', 'بازگشت اتاق پرو به صفحه');
+        } else {
+            root.classList.remove('is-expanded');
+            document.body.classList.remove('vto-workspace-expanded');
+            document.documentElement.style.overflow = previousDocumentOverflow;
+            if (expansionMarker?.parentNode) {
+                expansionMarker.parentNode.insertBefore(root, expansionMarker.nextSibling);
+                expansionMarker.remove();
+            }
+            expansionMarker = null;
+            ui.expand?.setAttribute('aria-expanded', 'false');
+            if (ui.expand) ui.expand.textContent = 'بزرگ‌نمایی اتاق پرو ↗';
+            ui.expand?.setAttribute('aria-label', 'بزرگ‌نمایی اتاق پرو');
+            const focusTarget = expansionReturnFocus?.isConnected ? expansionReturnFocus : ui.expand;
+            focusTarget?.focus?.({ preventScroll: true });
+            expansionReturnFocus = null;
+        }
+    }
+
+    ui.expand?.addEventListener('click', () => setExpanded(!root.classList.contains('is-expanded')));
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && root.classList.contains('is-expanded')) {
+            setExpanded(false);
+        }
+    });
+
+    root.addEventListener('vto:select-variant', (event) => {
+        const variantId = Number(event.detail?.variantId) || null;
+        const audience = event.detail?.audience;
+        if (audience && ['women', 'men'].includes(audience) && audience !== state.audience) {
+            state.audience = audience;
+            state.mannequin = null;
+            state.selected = {};
+            state.itemsByVariant.clear();
+        } else if (state.currentProductVariantId && state.currentProductSlot
+            && Number(state.selected[state.currentProductSlot]) === state.currentProductVariantId) {
+            delete state.selected[state.currentProductSlot];
+        }
+
+        if (variantId === state.requestedVariantId) return;
+        state.requestedVariantId = variantId;
+        state.pendingInitialVariantId = null;
+        state.currentProductVariantId = null;
+        state.currentProductSlot = null;
+        if (state.catalogController) state.catalogController.abort();
+        if (state.previewController) state.previewController.abort();
+        if (state.bootstrapController) state.bootstrapController.abort();
+        state.requestVersion++;
+        state.bootstrapVersion++;
+        ui.stageLoading.hidden = true;
+        loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
+    });
 
     ui.audienceButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const audience = button.dataset.vtoAudience;
             if (audience === state.audience) return;
             state.audience = audience;
+            state.requestedVariantId = null;
+            state.pendingInitialVariantId = null;
+            state.currentProductVariantId = null;
+            state.currentProductSlot = null;
+            state.initialVariantHasLayer = false;
             state.mannequin = null;
             state.selected = {};
             state.itemsByVariant.clear();
@@ -449,6 +615,9 @@
             state.catalogController = null;
             if (state.previewController) state.previewController.abort();
             state.previewController = null;
+            if (state.bootstrapController) state.bootstrapController.abort();
+            state.bootstrapController = null;
+            state.bootstrapVersion++;
             state.requestVersion++;
             ui.stageLoading.hidden = true;
             ui.products.replaceChildren();
