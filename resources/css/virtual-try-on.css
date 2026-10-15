@@ -148,3 +148,118 @@
 @media (prefers-reduced-motion:reduce) {
     .vto-page *, .vto-page *::before, .vto-page *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 }
+
+/* Product-page placement: keep the workspace in normal document flow. */
+.vto-page--product {
+    margin-top: clamp(1.5rem, 4vw, 3rem);
+    padding: clamp(1rem, 2.6vw, 2rem);
+    border: 1px solid var(--vto-line);
+    border-radius: 1.35rem;
+    background: #f7f4ee;
+}
+.vto-page--product .vto-heading { margin-bottom: 1.25rem; }
+.vto-page--product .vto-heading h1 { font-size: clamp(1.65rem, 3vw, 2.6rem); }
+.vto-page--product .vto-heading__intro { max-width: 54rem; font-size: .82rem; }
+
+.vto-preview-topline { align-items: flex-start; }
+.vto-preview-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+}
+.vto-expand-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 2.35rem;
+    padding: .55rem .85rem;
+    border: 1px solid #d5cebf;
+    border-radius: 999px;
+    color: #38382f;
+    background: #f1eee6;
+    font-size: .72rem !important;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.vto-expand-button:hover { border-color: #899273; background: #e8ebdf; transform: translateY(-1px); }
+.vto-expand-button:focus-visible { outline: 3px solid #9da77d; outline-offset: 3px; }
+
+body.vto-workspace-expanded { overflow: hidden; }
+body.vto-workspace-expanded::before {
+    position: fixed;
+    z-index: 9990;
+    inset: 0;
+    content: "";
+    background: rgb(21 19 16 / 76%);
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+    animation: vto-backdrop-in .2s ease-out both;
+}
+.vto-page.is-expanded {
+    position: fixed !important;
+    z-index: 9991 !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: min(1440px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    margin: 0 !important;
+    padding: clamp(.85rem, 2vw, 1.8rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid #e0d9cb;
+    border-radius: 1.2rem;
+    background: #f7f4ee;
+    box-shadow: 0 32px 100px rgb(0 0 0 / 42%);
+    transform: translate(-50%, -50%);
+    animation: vto-workspace-open .32s cubic-bezier(.16, 1, .3, 1) both;
+}
+.vto-page.is-expanded .vto-heading { margin-bottom: .9rem; }
+.vto-page.is-expanded .vto-heading h1 { font-size: clamp(1.6rem, 3vw, 2.7rem); }
+.vto-page.is-expanded .vto-heading__intro { margin-top: .5rem; font-size: .78rem; }
+.vto-page.is-expanded .vto-workspace { grid-template-columns: minmax(18rem, .9fr) minmax(21rem, 1.1fr); gap: .8rem; }
+.vto-page.is-expanded .vto-stage-wrap { max-width: min(100%, 38rem); }
+.vto-page.is-expanded .vto-stage { width: min(100%, 34rem); }
+
+@keyframes vto-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vto-workspace-open {
+    0% { opacity: 0; transform: translate(-50%, -48%) scale(.975); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@media (max-width: 900px) {
+    .vto-page--product .vto-workspace,
+    .vto-page.is-expanded .vto-workspace {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+}
+@media (max-width: 720px) {
+    .vto-page--product { padding: .85rem; border-radius: 1rem; }
+    .vto-page--product .vto-heading { margin-bottom: .9rem; }
+    .vto-preview-topline { align-items: flex-start; }
+    .vto-preview-tools { flex-direction: column; align-items: flex-start; gap: .45rem; }
+    .vto-expand-button { min-height: 2rem; padding: .4rem .65rem; font-size: .66rem !important; }
+    .vto-page.is-expanded {
+        top: 50% !important;
+        left: 50% !important;
+        width: calc(100vw - 12px);
+        max-height: calc(100dvh - 12px);
+        padding: .7rem;
+        border-radius: .9rem;
+    }
+    .vto-page.is-expanded .vto-heading { gap: .35rem; margin-bottom: .65rem; }
+    .vto-page.is-expanded .vto-heading h1 { font-size: 1.45rem; }
+    .vto-page.is-expanded .vto-heading__intro { display: none; }
+    .vto-page.is-expanded .vto-workspace { display: flex; flex-direction: column; gap: .65rem; }
+    .vto-page.is-expanded .vto-preview-column { order: -1; }
+    .vto-page.is-expanded .vto-stage { width: min(100%, 25rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.vto-workspace-expanded::before,
+    .vto-page.is-expanded { animation: none !important; }
+    .vto-expand-button { transition: none !important; }
+}
