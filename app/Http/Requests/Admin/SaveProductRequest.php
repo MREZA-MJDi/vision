@@ -79,7 +79,7 @@ class SaveProductRequest extends FormRequest
             'variants.*.images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'variants.*.try_on_mannequin_id' => ['nullable', 'integer', 'min:1'],
             'variants.*.try_on_slot' => ['nullable', 'string', Rule::in(array_keys(VirtualTryOnConfig::SLOT_ORDER))],
-            'variants.*.try_on_image' => ['sometimes', 'nullable', 'image', 'mimes:png,webp', 'max:4096'],
+            'variants.*.try_on_image' => ['sometimes', 'nullable', 'image', 'mimes:png,webp', 'dimensions:width=1024,height=1536', 'max:4096'],
             'variants.*.remove_try_on_image' => ['sometimes', 'boolean'],
             'images' => ['sometimes', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
@@ -123,7 +123,7 @@ class SaveProductRequest extends FormRequest
                 $hasLayerImage = $this->hasFile("variants.{$index}.try_on_image");
                 $removeLayerImage = (bool) ($variant['remove_try_on_image'] ?? false);
 
-                if ($hasLayerImage || $slot !== '' || $mannequinId > 0) {
+                if (! ($removeLayerImage && ! $hasLayerImage) && ($hasLayerImage || $slot !== '' || $mannequinId > 0)) {
                     if (! in_array($audience, VirtualTryOnConfig::AUDIENCES, true)) {
                         $validator->errors()->add('audience', 'برای استفاده از اتاق پرو ابتدا گروه زنانه یا مردانه را انتخاب کنید.');
                     }
@@ -179,6 +179,7 @@ class SaveProductRequest extends FormRequest
             'variants.*.image.max' => 'اندازهٔ تصویر هر تنوع حداکثر ۴ مگابایت است.',
             'variants.*.try_on_image.image' => 'تصویر لایه‌ای باید یک تصویر PNG یا WebP معتبر باشد.',
             'variants.*.try_on_image.mimes' => 'برای لایهٔ مانکن فقط تصویر شفاف PNG یا WebP بارگذاری کن.',
+            'variants.*.try_on_image.dimensions' => 'اندازهٔ تصویر لایه‌ای باید دقیقاً ۱۰۲۴ در ۱۵۳۶ پیکسل باشد.',
             'variants.*.try_on_image.max' => 'حجم هر لایهٔ مانکن حداکثر ۴ مگابایت است.',
             'variants.*.images.*.image' => 'تصویر هر تنوع باید یک فایل تصویری معتبر باشد.',
             'variants.*.images.*.max' => 'اندازهٔ هر تصویر تنوع حداکثر ۴ مگابایت است.',
