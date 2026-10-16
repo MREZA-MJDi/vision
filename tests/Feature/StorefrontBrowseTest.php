@@ -31,15 +31,25 @@ class StorefrontBrowseTest extends TestCase
     public function test_shop_contains_filters_and_mounts_the_shared_inline_fitting_room(): void
     {
         $this->withoutVite();
-        $this->get('/shop')
+        $response = $this->get('/shop');
+        $response
             ->assertOk()
             ->assertSee('فیلترها')
             ->assertSee('data-virtual-try-on', false)
-            ->assertSee('data-vto-inline="true"', false)
+            ->assertSee('id="vto-inline-workspace" data-vto-inline="true" tabindex="-1"', false)
             ->assertSee('data-vto-launcher', false)
+            ->assertSee('data-vto-stage-loading', false)
             ->assertDontSee('store-tryon-link', false)
             ->assertSee('اتاق پرو')
             ->assertDontSee('data-fitting-room', false);
+
+        $html = (string) $response->getContent();
+        $workspacePosition = strpos($html, 'id="vto-inline-workspace"');
+        $catalogPosition = strpos($html, '<section class="store-catalog"');
+        $this->assertNotFalse($workspacePosition, 'The live fitting room must render on the Shop page.');
+        $this->assertNotFalse($catalogPosition, 'The Shop catalog must remain on the same page.');
+        $this->assertLessThan($catalogPosition, $workspacePosition, 'The fitting room should occupy the right-to-left first catalog column.');
+        $this->assertStringNotContainsString('data-vto-inline="true" inert', $html);
     }
 
     public function test_shop_cards_and_product_detail_use_real_variant_media_and_inline_try_on(): void
