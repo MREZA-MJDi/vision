@@ -97,6 +97,85 @@
         inlineReturnFocus = null;
     }
 
+    // The shop card owns the click target; this controller owns the drawer and
+    // the single source of truth for selection. Animate a decorative clone only.
+    function animateShopSelection(button, drawerAlreadyOpen = false) {
+        const thumbnail = button.closest('[data-product-card]')?.querySelector('.product-card__image');
+        if (!thumbnail || !ui.stage || !thumbnail.complete || !thumbnail.naturalWidth) return;
+
+        const source = thumbnail.getBoundingClientRect();
+        if (source.width < 1 || source.height < 1) return;
+
+        const clone = document.createElement('img');
+        clone.src = thumbnail.currentSrc || thumbnail.src;
+        clone.alt = '';
+        clone.setAttribute('aria-hidden', 'true');
+        clone.style.cssText = [
+            'position:fixed',
+            `left:${source.left}px`,
+            `top:${source.top}px`,
+            `width:${source.width}px`,
+            `height:${source.height}px`,
+            'max-width:none',
+            'object-fit:contain',
+            'pointer-events:none',
+            'z-index:1305',
+            'transform-origin:center center',
+            'filter:drop-shadow(0 12px 18px rgba(0,0,0,.36))',
+            'will-change:transform,opacity,filter',
+        ].join(';');
+        document.body.append(clone);
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reducedMotion || typeof clone.animate !== 'function') {
+            clone.remove();
+            return;
+        }
+
+        const waitForDrawer = () => new Promise((resolve) => {
+            if (drawerAlreadyOpen || !inlineMode || !root.classList.contains('is-open')) {
+                resolve();
+                return;
+            }
+
+            let settled = false;
+            let timer = null;
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                if (timer !== null) window.clearTimeout(timer);
+                root.removeEventListener('transitionend', onTransitionEnd);
+                resolve();
+            };
+            const onTransitionEnd = (event) => {
+                if (event.target === root && event.propertyName === 'transform') finish();
+            };
+
+            root.addEventListener('transitionend', onTransitionEnd);
+            // Also covers reduced CSS transitions and browsers that omit the event.
+            timer = window.setTimeout(finish, 360);
+        });
+
+        waitForDrawer().then(() => {
+            if (!clone.isConnected || !ui.stage.isConnected) return;
+            const target = ui.stage.getBoundingClientRect();
+            if (target.width < 1 || target.height < 1) return;
+
+            const dx = target.left + target.width / 2 - (source.left + source.width / 2);
+            const dy = target.top + target.height * .36 - (source.top + source.height / 2);
+            const animation = clone.animate([
+                { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1, filter: 'blur(0px) drop-shadow(0 12px 18px rgba(0,0,0,.36))' },
+                { offset: .58, transform: `translate(${dx * .58}px,${dy * .58 - 22}px) scale(.48) rotate(5deg)`, opacity: .94, filter: 'blur(1px) drop-shadow(0 8px 12px rgba(0,0,0,.24))' },
+                { transform: `translate(${dx}px,${dy}px) scale(.13) rotate(10deg)`, opacity: 0, filter: 'blur(4px) drop-shadow(0 0 0 rgba(0,0,0,0))' },
+            ], {
+                duration: 620,
+                easing: 'cubic-bezier(.16,1,.3,1)',
+                fill: 'forwards',
+            });
+            return animation.finished.catch(() => undefined);
+        }).catch(() => undefined).finally(() => clone.remove());
+    }
+
     function renderShopCardSelections() {
         if (!inlineMode) return;
         document.querySelectorAll('[data-vto-select-product]').forEach((button) => {
@@ -793,6 +872,7 @@
             const target = event.target instanceof Element ? event.target.closest('[data-vto-select-product]') : null;
             if (!target) return;
             event.preventDefault();
+            const drawerAlreadyOpen = root.classList.contains('is-open');
             setInlineOpen(true, false);
 
             const variantId = Number(target.dataset.vtoVariantId) || null;
@@ -810,6 +890,10 @@
                 }
                 return;
             }
+
+            const alreadySelected = Object.values(state.selected).some((id) => Number(id) === variantId);
+            const sameSelectionPending = Number(state.requestedVariantId) === variantId && !alreadySelected;
+            if (!alreadySelected && !sameSelectionPending) animateShopSelection(target, drawerAlreadyOpen);
 
             root.dispatchEvent(new CustomEvent('vto:select-variant', {
                 detail: {

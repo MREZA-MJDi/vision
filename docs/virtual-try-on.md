@@ -6,20 +6,21 @@ Only adult women and men mannequins are supported; the module deliberately has n
 
 ## Setup
 
-Run composer dump-autoload, php artisan migrate, and php artisan db:seed --class=VirtualTryOnMannequinSeeder. The regular DatabaseSeeder also creates the two default mannequin profiles.
+Run composer dump-autoload, php artisan migrate, and php artisan db:seed. The regular DatabaseSeeder creates the two mannequin profiles and preserves the existing launch catalog. To add the optional editable demo outfit, run php artisan db:seed --class=VirtualTryOnDemoSeeder after the mannequin seeder has run. This seeds a mannequin base, two photo-based outerwear layers, and SVG top/trouser layers; it does not alter the default launch catalog counts.
 
 Edit a product in Commerce Admin and select its audience. Leave the audience blank to keep it out of the fitting room. For each active variant intended for preview, choose a mannequin and a slot, then upload a transparent layer image.
 
 ## Layer contract
 
-- Exact canvas: 1024 × 1536 pixels (2:3).
-- Transparent PNG or WebP only, with no background.
+- Admin-upload contract: transparent PNG or WebP at exactly 1024 × 1536 pixels (2:3), with no background.
+- Storage-optimized photo layers may be 320 × 480 WebP. They retain the same full 2:3 canvas and alignment while avoiding unnecessarily large catalog assets.
+- The bundled demo also generates four transparent 320 × 480 SVG garment silhouettes (top and trousers) so the first outfit works without an external AI service. They are replaceable through Commerce Admin, but the admin upload input still accepts only PNG/WebP at 1024 × 1536.
 - Every layer must share the same canvas, pose, scale and alignment as the configured mannequin.
 - Do not use the ordinary product gallery image as an overlay. Gallery images are only thumbnails.
 - One try-on mapping is supported per variant in the first version.
 - Layer order is fixed by the server: shoes, bottom, top, outerwear, then accessory.
 
-A neutral, faceless silhouette is rendered when a custom base image is not configured. A custom base image can be connected to a mannequin through base_media_id using the existing Media table.
+The supplied demo mannequin base is connected to the women-front mannequin through base_media_id when the opt-in demo seeder runs. A neutral, faceless SVG silhouette is rendered when a mannequin has no base image (the seeded men-front profile uses this fallback). Base images are Media records on the public disk.
 
 ## API
 

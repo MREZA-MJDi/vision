@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Media;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Database\Seeders\VirtualTryOnDemoSeeder;
+use Database\Seeders\VirtualTryOnMannequinSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -245,6 +247,83 @@ class VirtualTryOnTest extends TestCase
             $largeQueries,
             'Catalog query count must remain bounded as try-on asset count grows.'
         );
+    }
+
+    public function test_demo_seed_builds_a_real_default_outfit_and_optimized_layers_preview(): void
+    {
+        foreach ([
+            'mannequin-neutral.webp',
+            'coat-chocolate.webp',
+            'coat-cream.webp',
+            'puffer-black.webp',
+        ] as $file) {
+            Storage::disk('public')->put('virtual-try-on/demo/'.$file, 'test-image');
+        }
+
+        $this->seed([
+            VirtualTryOnMannequinSeeder::class,
+            VirtualTryOnDemoSeeder::class,
+        ]);
+
+        $mannequin = TryOnMannequin::query()->where('code', 'women-front')->firstOrFail();
+        $this->assertNotNull($mannequin->base_media_id);
+
+        $bootstrap = $this->getJson('/api/virtual-try-on/bootstrap?audience=women&mannequin_id='.$mannequin->id)
+            ->assertOk()
+            ->assertJsonPath('data.default_mannequin_id', $mannequin->id)
+            ->assertJsonCount(3, 'data.default_selections');
+
+        $defaults = $bootstrap->json('data.default_selections');
+        $defaultSlots = array_keys($defaults);
+        sort($defaultSlots);
+        $this->assertSame(['bottom', 'outerwear', 'top'], $defaultSlots);
+
+        $selections = [];
+        foreach ($defaults as $slot => $item) {
+            $selections[$slot] = (int) $item['variant_id'];
+        }
+
+        $selectedAssets = TryOnAsset::query()
+            ->whereIn('product_variant_id', array_values($selections))
+            ->with('media')
+            ->get()
+            ->keyBy('slot');
+        $this->assertSame('image/svg+xml', $selectedAssets['top']->media->mime_type);
+        $this->assertSame('image/svg+xml', $selectedAssets['bottom']->media->mime_type);
+        $this->assertSame('image/webp', $selectedAssets['outerwear']->media->mime_type);
+
+        $this->postJson('/api/virtual-try-on/preview', [
+            'audience' => 'women',
+            'mannequin_id' => $mannequin->id,
+            'revision' => 1,
+            'selections' => $selections,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.summary.items_count', 3)
+            ->assertJsonPath('data.summary.total_price', 11870000)
+            ->assertJsonCount(3, 'data.layers');
+    }
+
+    public function test_catalog_and_preview_accept_storage_optimized_320_by_480_layers(): void
+    {
+        $mannequin = $this->mannequin('women');
+        $variant = $this->variant('women', 'vto-optimized-layer');
+        $asset = $this->asset($variant, $mannequin, 'top', 'women/optimized-layer.webp');
+        $asset->media()->update(['width' => 320, 'height' => 480]);
+
+        $this->getJson('/api/virtual-try-on/catalog?audience=women&mannequin_id='.$mannequin->id.'&slot=top')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.variant_id', $variant->id);
+
+        $this->postJson('/api/virtual-try-on/preview', [
+            'audience' => 'women',
+            'mannequin_id' => $mannequin->id,
+            'selections' => ['top' => $variant->id],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.layers.0.variant_id', $variant->id)
+            ->assertJsonPath('data.summary.items_count', 1);
     }
 
     private function mannequin(string $audience): TryOnMannequin
