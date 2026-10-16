@@ -1,5 +1,5 @@
 <section class="vto-page {{ ($productPage ?? false) ? 'vto-page--product' : '' }} {{ ($inline ?? false) ? 'vto-page--inline' : '' }}"
-      @if($inline ?? false) id="vto-inline-workspace" data-vto-inline="true" inert aria-hidden="true" tabindex="-1" @endif
+      @if($inline ?? false) id="vto-inline-workspace" data-vto-inline="true" hidden inert aria-hidden="true" tabindex="-1" @endif
       data-virtual-try-on
       data-bootstrap-url="{{ route('api.virtual-try-on.bootstrap') }}"
       data-catalog-url="{{ route('api.virtual-try-on.catalog') }}"
@@ -8,6 +8,7 @@
       data-initial-variant-id="{{ $tryOnInitialVariantId ?? '' }}"
       data-initial-audience="{{ $tryOnInitialAudience ?? '' }}"
       aria-labelledby="vto-title">
+    @if(!($inline ?? false))
     <header class="vto-heading">
         <div>
             <p class="vto-eyebrow"><span aria-hidden="true"></span> VISION / FITTING ROOM</p>
@@ -22,8 +23,10 @@
             <a class="vto-back-link" href="{{ route('shop.index') }}">بازگشت به فروشگاه <span aria-hidden="true">↗</span></a>
         @endif
     </header>
+    @endif
 
     <section class="vto-workspace" aria-label="اتاق پرو و انتخاب پوشاک">
+        @if(!($inline ?? false))
         <aside class="vto-controls">
             <section class="vto-panel" aria-labelledby="vto-audience-title">
                 <div class="vto-panel__heading"><div><p class="vto-step">مرحلهٔ ۰۱</p><h2 id="vto-audience-title">مانکن را انتخاب کن</h2></div><span class="vto-panel__index">01</span></div>
@@ -52,6 +55,7 @@
                 <button class="vto-load-more" data-vto-load-more type="button" hidden>نمایش گزینه‌های بیشتر <span>↓</span></button>
             </section>
         </aside>
+        @endif
 
         <section class="vto-preview-column" aria-label="پیش‌نمایش ترکیب">
             <div class="vto-preview-card">
@@ -93,21 +97,27 @@
                     <div class="vto-stage-caption"><span data-vto-mannequin-caption>مانکن زنانه · نمای روبه‌رو</span><span>CANVAS 2:3</span></div>
                 </div>
                 <div class="vto-selection-summary">
-                    <div class="vto-selection-summary__head"><div><p class="vto-step">YOUR LOOK / SUMMARY</p><h3>چیزهایی که انتخاب کردی</h3></div><button type="button" data-vto-clear-all>شروع دوباره ↺</button></div>
-                    <div class="vto-selected-list" data-vto-selected-list></div>
-                    <div class="vto-total-line"><span>جمع قیمت انتخاب‌ها <small>قیمت‌ها در مرحلهٔ خرید دوباره بررسی می‌شوند.</small></span><strong data-vto-total>۰ تومان</strong></div>
-                    <div class="vto-preview-actions"><a href="{{ route('shop.index') }}" class="vto-secondary-action">دیدن همهٔ محصولات</a><span class="vto-inventory-note" data-vto-inventory-note>قیمت و موجودی نهایی هنگام خرید تأیید می‌شود.</span></div>
+                    @if($inline ?? false)
+                        <div class="vto-inline-picks-heading">
+                            <h3>لباس‌های انتخاب‌شده</h3>
+                            <span data-vto-picks-count>۰ تکه</span>
+                        </div>
+                        <div class="vto-selected-list" data-vto-selected-list></div>
+                        <div class="vto-inline-footer">
+                            <button type="button" data-vto-clear-all>شروع دوباره ↺</button>
+                        </div>
+                    @else
+                        <div class="vto-selection-summary__head"><div><p class="vto-step">YOUR LOOK / SUMMARY</p><h3>چیزهایی که انتخاب کردی</h3></div><button type="button" data-vto-clear-all>شروع دوباره ↺</button></div>
+                        <div class="vto-selected-list" data-vto-selected-list></div>
+                        <div class="vto-total-line"><span>جمع قیمت انتخاب‌ها <small>قیمت‌ها در مرحلهٔ خرید دوباره بررسی می‌شوند.</small></span><strong data-vto-total>۰ تومان</strong></div>
+                        <div class="vto-preview-actions"><a href="{{ route('shop.index') }}" class="vto-secondary-action">دیدن همهٔ محصولات</a><span class="vto-inventory-note" data-vto-inventory-note>قیمت و موجودی نهایی هنگام خرید تأیید می‌شود.</span></div>
+                    @endif
                 </div>
             </div>
-            <div class="vto-tip"><span>✳</span><p><strong>راهنمای تصویر دقیق</strong> نتیجهٔ بهتر زمانی به‌دست می‌آید که هر لایه تصویر شفاف PNG/WebP با اندازهٔ یکسان و هم‌تراز با مانکن باشد.</p></div>
+            @if(!($inline ?? false))
+                <div class="vto-tip"><span>✳</span><p><strong>راهنمای تصویر دقیق</strong> نتیجهٔ بهتر زمانی به‌دست می‌آید که هر لایه تصویر شفاف PNG/WebP با اندازهٔ یکسان و هم‌تراز با مانکن باشد.</p></div>
+            @endif
         </section>
     </section>
     <div class="vto-toast" data-vto-toast role="status" aria-live="polite"></div>
 </section>
-@if($inline ?? false)
-    <button class="vto-inline-launcher" type="button" data-vto-launcher aria-controls="vto-inline-workspace" aria-expanded="false">
-        <span class="vto-inline-launcher__mark" aria-hidden="true">✳</span>
-        <span>اتاق پرو</span>
-        <span class="vto-inline-launcher__count" data-vto-launcher-count>۰</span>
-    </button>
-@endif
