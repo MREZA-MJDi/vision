@@ -716,7 +716,9 @@
             renderSummary(Number(payload.data.summary && payload.data.summary.total_price));
             renderShopCardSelections();
             if (payload.data.summary && payload.data.summary.all_in_stock === false) {
+                if (ui.inventoryNote) {
                 ui.inventoryNote.textContent = 'یک یا چند انتخاب فعلاً موجود نیست؛ پیش از خرید موجودی نهایی بررسی می‌شود.';
+            }
             }
         } catch (error) {
             if (error.name !== 'AbortError' && version === state.requestVersion) {
