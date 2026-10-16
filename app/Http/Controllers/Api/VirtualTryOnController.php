@@ -52,7 +52,7 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                         ->where('width', 1024)
                         ->where('height', 1536);
                 })
@@ -101,7 +101,7 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                         ->where('width', 1024)
                         ->where('height', 1536);
                 })
@@ -144,7 +144,7 @@ class VirtualTryOnController extends Controller
             'meta' => [
                 'ready' => $mannequins->isNotEmpty(),
                 'asset_contract' => [
-                    'format' => 'transparent PNG or WebP',
+                    'format' => 'transparent SVG, PNG or WebP',
                     'canvas_width' => 1024,
                     'canvas_height' => 1536,
                     'alignment' => 'Every layer shares one mannequin canvas and pose.',
@@ -174,7 +174,7 @@ class VirtualTryOnController extends Controller
                 $query->where('collection', 'try-on-layer')
                     ->whereNotNull('path')
                     ->whereRaw("TRIM(path) <> ''")
-                    ->whereIn('mime_type', ['image/png', 'image/webp'])
+                    ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                     ->where('width', 1024)
                     ->where('height', 1536);
             })
@@ -241,7 +241,7 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                         ->where('width', 1024)
                         ->where('height', 1536);
                 })
