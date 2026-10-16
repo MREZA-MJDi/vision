@@ -52,9 +52,11 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
-                        ->where('width', 1024)
-                        ->where('height', 1536);
+                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->where(function ($dimensions): void {
+                        $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
+                            ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
+                    });
                 })
                 ->whereHas('variant', function ($query) use ($variantId, $validated): void {
                     $query->whereKey($variantId)
@@ -101,9 +103,11 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
-                        ->where('width', 1024)
-                        ->where('height', 1536);
+                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->where(function ($dimensions): void {
+                        $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
+                            ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
+                    });
                 })
                 ->whereHas('variant', function ($variantQuery) use ($validated): void {
                     $variantQuery->where('is_active', true)
@@ -127,7 +131,7 @@ class VirtualTryOnController extends Controller
                     'price' => (int) round((float) $variant->effective_price),
                     'stock' => (int) $variant->stock,
                     'layer_url' => $asset->media->url,
-                    'thumbnail_url' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+                    'thumbnail_url' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url ?? $asset->media?->url,
                 ];
             }
         }
@@ -144,10 +148,12 @@ class VirtualTryOnController extends Controller
             'meta' => [
                 'ready' => $mannequins->isNotEmpty(),
                 'asset_contract' => [
-                    'format' => 'transparent SVG, PNG or WebP',
+                    'format' => 'transparent PNG or WebP',
                     'canvas_width' => 1024,
                     'canvas_height' => 1536,
-                    'alignment' => 'Every layer shares one mannequin canvas and pose.',
+                    'optimized_layer_width' => 320,
+                    'optimized_layer_height' => 480,
+                    'alignment' => 'Every layer shares the same 2:3 mannequin canvas and pose; 320×480 WebP layers are storage-optimized equivalents of the 1024×1536 canvas.',
                 ],
             ],
         ]);
@@ -174,9 +180,11 @@ class VirtualTryOnController extends Controller
                 $query->where('collection', 'try-on-layer')
                     ->whereNotNull('path')
                     ->whereRaw("TRIM(path) <> ''")
-                    ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
-                    ->where('width', 1024)
-                    ->where('height', 1536);
+                    ->whereIn('mime_type', ['image/png', 'image/webp'])
+                    ->where(function ($dimensions): void {
+                        $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
+                            ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
+                    });
             })
             ->whereHas('variant', function ($variantQuery) use ($validated): void {
                 $variantQuery->where('is_active', true)
@@ -241,9 +249,11 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
-                        ->where('width', 1024)
-                        ->where('height', 1536);
+                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->where(function ($dimensions): void {
+                        $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
+                            ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
+                    });
                 })
                 ->whereHas('variant', function ($variantQuery) use ($variantId, $audience): void {
                     $variantQuery->whereKey((int) $variantId)
