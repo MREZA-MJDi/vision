@@ -114,7 +114,7 @@
                     @foreach($products as $product)
                         @php
                             $variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant;
-                            $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
+                            $image = null; // Resolve after the compatible try-on layer is known.
                             $effectivePrice = $variant?->effective_price ?? $variant?->price;
                             $isOnSale = $variant?->is_on_sale ?? false;
                             $rating = $product->approved_reviews_avg_rating;
@@ -130,10 +130,11 @@
                                     && $media->collection === 'try-on-layer'
                                     && trim((string) $media->path) !== ''
                                     && $media->url
-                                    && in_array($media->mime_type, ['image/png', 'image/webp', 'image/svg+xml'], true)
-                                    && (int) $media->width === 1024
-                                    && (int) $media->height === 1536;
+                                    && in_array($media->mime_type, ['image/png', 'image/webp'], true)
+                                    && (((int) $media->width === 1024 && (int) $media->height === 1536)
+                                        || ((int) $media->width === 320 && (int) $media->height === 480));
                             });
+                            $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url ?? $tryOnAsset?->media?->url;
                             $tryOnAudience = $tryOnAsset?->mannequin?->audience ?? $product->audience ?? 'women';
                         @endphp
                         <article class="product-card" data-product-card>
