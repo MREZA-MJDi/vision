@@ -67,7 +67,6 @@
                             <h2>اتاق پرو</h2>
                             <p>روی چوب‌لباسی هر محصول بزن تا آن را روی مانکن ببینی.</p>
                         </div>
-                        <button class="vto-inline-close" type="button" data-vto-close aria-label="بستن اتاق پرو" title="بستن">×</button>
                     </div>
                 @else
                     <div class="vto-preview-topline"><div class="vto-preview-tools"><button class="vto-expand-button" type="button" data-vto-expand aria-expanded="false" aria-controls="vto-stage-wrap">بزرگ‌نمایی اتاق پرو ↗</button><span class="vto-live-indicator"><i></i> پیش‌نمایش زنده</span></div><div><p class="vto-step">LIVE PREVIEW / 01</p><h2>نمای ترکیب</h2></div></div>
