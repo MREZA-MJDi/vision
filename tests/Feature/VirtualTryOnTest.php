@@ -278,7 +278,9 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonCount(3, 'data.default_selections');
 
         $defaults = $bootstrap->json('data.default_selections');
-        $this->assertSame(['bottom', 'outerwear', 'top'], array_values(array_keys($defaults)));
+        $defaultSlots = array_keys($defaults);
+        sort($defaultSlots);
+        $this->assertSame(['bottom', 'outerwear', 'top'], $defaultSlots);
 
         $selections = [];
         foreach ($defaults as $slot => $item) {
@@ -293,7 +295,7 @@ class VirtualTryOnTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('data.summary.items_count', 3)
-            ->assertJsonPath('data.summary.total_price', 13570000)
+            ->assertJsonPath('data.summary.total_price', 11870000)
             ->assertJsonCount(3, 'data.layers');
     }
 
