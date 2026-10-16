@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   storefront-tests:
-    name: Storefront route tests
+    name: Storefront route tests (PHP 8.2)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -36,8 +36,14 @@ jobs:
         run: php artisan test tests/Feature/ExampleTest.php
 
   existing-suite:
-    name: Full existing test suite
+    name: Full test suite (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3']
+    env:
+      COLUMNS: 240
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -45,7 +51,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php-version }}
           extensions: bcmath, ctype, fileinfo, json, mbstring, openssl, pdo, pdo_sqlite, sqlite3, tokenizer, xml
           coverage: none
 
@@ -57,7 +63,7 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      - name: Run existing feature and unit tests
+      - name: Run full feature and unit test suite
         run: php artisan test
 
   frontend-build:
