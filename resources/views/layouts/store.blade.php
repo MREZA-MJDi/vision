@@ -42,7 +42,7 @@
     @endif
     @stack('styles')
 </head>
-<body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }}">
+<body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }} {{ request()->routeIs('shop.index', 'products.index') ? 'store-shop-body' : '' }}">
     <div class="store-atmosphere" aria-hidden="true"></div>
 
     @if (request()->routeIs('storefront.index'))
