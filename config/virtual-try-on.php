@@ -36,6 +36,6 @@ return [
     'canvas' => [
         'width' => 1024,
         'height' => 1536,
-        'formats' => ['svg', 'png', 'webp'],
+        'formats' => ['png', 'webp'],
     ],
 ];
