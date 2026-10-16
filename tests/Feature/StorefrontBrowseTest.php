@@ -28,14 +28,17 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_shop_contains_filters_and_links_to_the_shared_virtual_try_on(): void
+    public function test_shop_contains_filters_and_mounts_the_shared_inline_fitting_room(): void
     {
         $this->withoutVite();
         $this->get('/shop')
             ->assertOk()
             ->assertSee('فیلترها')
-            ->assertSee('store-tryon-link', false)
-            ->assertSee('اتاق پرو مجازی')
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-inline="true"', false)
+            ->assertSee('data-vto-launcher', false)
+            ->assertDontSee('store-tryon-link', false)
+            ->assertSee('اتاق پرو')
             ->assertDontSee('data-fitting-room', false);
     }
 
@@ -74,7 +77,8 @@ class StorefrontBrowseTest extends TestCase
             ->assertOk()
             ->assertSee('src="' . $photoUrl . '"', false)
             ->assertSee(route('products.show', ['product' => $product->slug]), false)
-            ->assertSee('store-tryon-link', false)
+            ->assertSee('data-vto-select-product', false)
+            ->assertDontSee('store-tryon-link', false)
             ->assertDontSee('data-card-preview', false)
             ->assertDontSee('data-fit-product', false);
 

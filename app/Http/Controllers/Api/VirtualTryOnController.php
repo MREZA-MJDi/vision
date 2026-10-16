@@ -19,6 +19,7 @@ class VirtualTryOnController extends Controller
         $validated = $request->validate([
             'audience' => ['required', Rule::in(VirtualTryOnConfig::AUDIENCES)],
             'variant_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'mannequin_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ]);
 
         $mannequinModel = (string) config('virtual-try-on.models.mannequin', TryOnMannequin::class);
@@ -32,13 +33,14 @@ class VirtualTryOnController extends Controller
             ->map(fn ($mannequin): array => $this->mannequinPayload($mannequin))
             ->values();
 
+        $assetModel = (string) config('virtual-try-on.models.asset', TryOnAsset::class);
+
         // Product detail pages can request an initial variant. Only return a
         // preselection when its active asset is valid for this audience and
         // follows the exact image contract used by the catalog endpoint.
         $initialSelection = null;
         $variantId = (int) ($validated['variant_id'] ?? 0);
         if ($variantId > 0) {
-            $assetModel = (string) config('virtual-try-on.models.asset', TryOnAsset::class);
             $asset = $assetModel::query()
                 ->active()
                 ->where('product_variant_id', $variantId)
@@ -72,12 +74,72 @@ class VirtualTryOnController extends Controller
             }
         }
 
+        // The Shop fitting room starts from the explicitly configured outfit
+        // for the selected mannequin. Each default is a real, valid layer, not
+        // an inferred image or a product-gallery thumbnail pretending to be a fit.
+        $requestedMannequinId = (int) ($validated['mannequin_id'] ?? 0);
+        $defaultMannequinId = (int) ($initialSelection['mannequin_id'] ?? 0);
+        if ($defaultMannequinId < 1 && $requestedMannequinId > 0) {
+            $requestedMannequin = $mannequins->firstWhere('id', $requestedMannequinId);
+            $defaultMannequinId = (int) ($requestedMannequin['id'] ?? 0);
+        }
+        if ($defaultMannequinId < 1) {
+            $defaultMannequinId = (int) ($mannequins->first()['id'] ?? 0);
+        }
+        $defaultSelections = [];
+
+        if ($defaultMannequinId > 0) {
+            $defaultAssets = $assetModel::query()
+                ->active()
+                ->where('is_default', true)
+                ->where('try_on_mannequin_id', $defaultMannequinId)
+                ->whereIn('slot', array_keys(VirtualTryOnConfig::SLOT_ORDER))
+                ->whereHas('mannequin', fn ($query) => $query
+                    ->active()
+                    ->where('audience', $validated['audience']))
+                ->whereHas('media', function ($query): void {
+                    $query->where('collection', 'try-on-layer')
+                        ->whereNotNull('path')
+                        ->whereRaw("TRIM(path) <> ''")
+                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->where('width', 1024)
+                        ->where('height', 1536);
+                })
+                ->whereHas('variant', function ($variantQuery) use ($validated): void {
+                    $variantQuery->where('is_active', true)
+                        ->whereHas('product', fn ($productQuery) => $productQuery
+                            ->where('is_active', true)
+                            ->where('audience', $validated['audience']));
+                })
+                ->with(['media', 'variant.primaryGalleryMedia', 'variant.product.primaryGalleryMedia', 'variant.product'])
+                ->orderBy('id')
+                ->get();
+
+            foreach ($defaultAssets as $asset) {
+                $variant = $asset->variant;
+                $product = $variant->product;
+
+                $defaultSelections[$asset->slot] = [
+                    'slot' => $asset->slot,
+                    'variant_id' => (int) $variant->getKey(),
+                    'name' => $product->name,
+                    'label' => $variant->display_name,
+                    'price' => (int) round((float) $variant->effective_price),
+                    'stock' => (int) $variant->stock,
+                    'layer_url' => $asset->media->url,
+                    'thumbnail_url' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+                ];
+            }
+        }
+
         return response()->json([
             'data' => [
                 'audience' => $validated['audience'],
                 'slots' => VirtualTryOnConfig::slots(),
                 'mannequins' => $mannequins,
                 'initial_selection' => $initialSelection,
+                'default_mannequin_id' => $defaultMannequinId ?: null,
+                'default_selections' => $defaultSelections,
             ],
             'meta' => [
                 'ready' => $mannequins->isNotEmpty(),
@@ -190,7 +252,7 @@ class VirtualTryOnController extends Controller
                             ->where('is_active', true)
                             ->where('audience', $audience));
                 })
-                ->with(['media', 'variant.product'])
+                ->with(['media', 'variant.primaryGalleryMedia', 'variant.product.primaryGalleryMedia'])
                 ->first();
 
             if (! $asset || ! $asset->media?->url) {
@@ -211,6 +273,7 @@ class VirtualTryOnController extends Controller
                 'product_url' => route((string) config('virtual-try-on.routes.product_detail', 'products.show'), ['product' => $product->slug]),
                 'label' => $variant->display_name,
                 'layer_url' => $asset->media->url,
+                'thumbnail_url' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
                 'price' => (int) round((float) $variant->effective_price),
                 'stock' => (int) $variant->stock,
             ];

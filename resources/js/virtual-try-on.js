@@ -2,6 +2,8 @@
     const root = document.querySelector('[data-virtual-try-on]');
     if (!root) return;
 
+    const inlineMode = root.dataset.vtoInline === 'true';
+
     const ui = {
         audienceButtons: Array.from(root.querySelectorAll('[data-vto-audience]')),
         mannequins: root.querySelector('[data-vto-mannequins]'),
@@ -23,6 +25,9 @@
         clearAll: root.querySelector('[data-vto-clear-all]'),
         toast: root.querySelector('[data-vto-toast]'),
         expand: root.querySelector('[data-vto-expand]'),
+        close: root.querySelector('[data-vto-close]'),
+        launcher: document.querySelector('[data-vto-launcher]'),
+        launcherCount: document.querySelector('[data-vto-launcher-count]'),
     };
 
     const labels = { top: 'بالاپوش', outerwear: 'لایهٔ رویی', bottom: 'پایین‌تنه', shoes: 'کفش', accessory: 'اکسسوری' };
@@ -39,6 +44,7 @@
         currentProductSlot: null,
         mannequins: [],
         mannequin: null,
+        defaultMannequinId: null,
         slot: 'top',
         catalog: [],
         itemsByVariant: new Map(),
@@ -57,6 +63,91 @@
     let expansionMarker = null;
     let expansionReturnFocus = null;
     let previousDocumentOverflow = '';
+    let inlineReturnFocus = null;
+
+    function setInlineOpen(open, initialize = true) {
+        if (!inlineMode) return;
+        const currentlyOpen = root.classList.contains('is-open');
+        if (currentlyOpen === open) return;
+
+        if (open) {
+            inlineReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : ui.launcher;
+            root.inert = false;
+            root.setAttribute('aria-hidden', 'false');
+            root.classList.add('is-open');
+            ui.launcher?.setAttribute('aria-expanded', 'true');
+            window.requestAnimationFrame(() => ui.close?.focus({ preventScroll: true }));
+            if (initialize && !state.mannequin && !state.bootstrapController) {
+                loadBootstrap().catch((error) => {
+                    showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+                    showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+                });
+            }
+            return;
+        }
+
+        root.classList.remove('is-open');
+        root.inert = true;
+        root.setAttribute('aria-hidden', 'true');
+        ui.launcher?.setAttribute('aria-expanded', 'false');
+        const focusTarget = inlineReturnFocus?.isConnected && !root.contains(inlineReturnFocus)
+            ? inlineReturnFocus
+            : ui.launcher;
+        focusTarget?.focus?.({ preventScroll: true });
+        inlineReturnFocus = null;
+    }
+
+    function renderShopCardSelections() {
+        if (!inlineMode) return;
+        document.querySelectorAll('[data-vto-select-product]').forEach((button) => {
+            const variantId = Number(button.dataset.vtoVariantId) || null;
+            const slot = button.dataset.vtoSlot || '';
+            const selected = Boolean(variantId && slot && Number(state.selected[slot]) === variantId);
+            button.classList.toggle('is-active', selected);
+            button.setAttribute('aria-pressed', String(selected));
+            button.setAttribute('aria-label', selected
+                ? 'حذف ' + (button.dataset.productName || 'این محصول') + ' از اتاق پرو'
+                : (button.dataset.vtoReady === '1' ? 'امتحان روی مانکن' : 'تصویر پرو برای این محصول ثبت نشده است'));
+            button.title = selected ? 'حذف از اتاق پرو' : (button.dataset.vtoReady === '1' ? 'امتحان روی مانکن' : 'تصویر لایه‌ای اتاق پرو هنوز ثبت نشده است');
+        });
+
+        const count = Object.values(state.selected).filter(Boolean).length;
+        if (ui.launcherCount) ui.launcherCount.textContent = new Intl.NumberFormat('fa-IR').format(count);
+    }
+
+    function invalidatePendingRequests() {
+        if (state.catalogController) state.catalogController.abort();
+        if (state.previewController) state.previewController.abort();
+        if (state.bootstrapController) state.bootstrapController.abort();
+        state.catalogController = null;
+        state.previewController = null;
+        state.bootstrapController = null;
+        state.bootstrapVersion++;
+        state.requestVersion++;
+    }
+
+    function removeSelection(slot, variantId) {
+        if (!slot || Number(state.selected[slot]) !== Number(variantId)) return;
+        delete state.selected[slot];
+        if (state.currentProductVariantId === Number(variantId)) {
+            state.currentProductVariantId = null;
+            state.currentProductSlot = null;
+        }
+        if (Number(state.requestedVariantId) === Number(variantId)) {
+            state.requestedVariantId = null;
+            state.pendingInitialVariantId = null;
+        }
+        invalidatePendingRequests();
+        renderProductCards();
+        renderSlots();
+        renderSummary();
+        renderShopCardSelections();
+        if (state.mannequin) {
+            refreshPreview();
+        } else {
+            loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
+        }
+    }
 
     function formatPrice(value) {
         return new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }).format(Number(value || 0)) + ' ' + root.dataset.currency;
@@ -112,6 +203,7 @@
             const selectedItem = selectedId ? state.itemsByVariant.get(Number(selectedId)) : null;
             if (stateLabel) stateLabel.textContent = selectedId ? (selectedItem ? selectedItem.label : 'انتخاب شده') : 'انتخاب نشده';
         });
+        renderShopCardSelections();
     }
 
     function renderMannequins() {
@@ -125,22 +217,25 @@
             button.addEventListener('click', () => {
                 if (Number(state.mannequin && state.mannequin.id) === Number(mannequin.id)) return;
                 state.mannequin = mannequin;
+                state.defaultMannequinId = null;
                 state.selected = {};
                 state.itemsByVariant.clear();
                 state.catalog = [];
+                state.requestedVariantId = null;
                 state.pendingInitialVariantId = null;
                 state.currentProductVariantId = null;
                 state.currentProductSlot = null;
                 if (state.catalogController) state.catalogController.abort();
                 if (state.previewController) state.previewController.abort();
+                if (state.bootstrapController) state.bootstrapController.abort();
                 state.requestVersion++;
+                state.bootstrapVersion++;
                 ui.layers.replaceChildren();
                 renderMannequins();
                 updateMannequinStage();
                 renderSlots();
                 renderSummary(0);
-                loadCatalog(true);
-                refreshPreview();
+                loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
             });
             ui.mannequins.append(button);
         });
@@ -243,6 +338,7 @@
 
         ui.resultCount.textContent = new Intl.NumberFormat('fa-IR').format(state.catalog.length) + ' گزینه';
         ui.loadMore.hidden = !state.nextPage;
+        renderShopCardSelections();
     }
 
     function showCatalogEmpty(title, message) {
@@ -263,6 +359,8 @@
     async function loadCatalog(reset) {
         if (!state.mannequin) {
             state.catalog = [];
+            state.page = 1;
+            state.nextPage = null;
             showCatalogEmpty('مانکن فعالی برای این گروه تعریف نشده است.', 'ابتدا پیکربندی مانکن را بررسی کن.');
             return;
         }
@@ -333,9 +431,20 @@
                 renderProductCards();
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                showCatalogEmpty('دریافت محصولات انجام نشد.', error.message || 'اتصال را بررسی کن و دوباره تلاش کن.');
-                showToast(error.message || 'دریافت محصولات ناموفق بود.');
+            const isCurrentRequest = state.catalogController === controller
+                && requestVersion === state.bootstrapVersion
+                && selectedSlot === state.slot
+                && selectedMannequinId === Number(state.mannequin && state.mannequin.id);
+
+            if (error.name !== 'AbortError' && isCurrentRequest) {
+                const message = error.message || 'اتصال را بررسی کن و دوباره تلاش کن.';
+                if (reset || state.catalog.length === 0) {
+                    showCatalogEmpty('دریافت محصولات انجام نشد.', message);
+                } else {
+                    ui.catalogNote.textContent = 'دریافت گزینه‌های بیشتر ناموفق بود؛ دوباره تلاش کن.';
+                    ui.loadMore.hidden = !state.nextPage;
+                }
+                showToast(message);
             }
         } finally {
             if (state.catalogController === controller) setBusy(ui.products, false);
@@ -354,9 +463,40 @@
         ui.selected.replaceChildren();
         if (!items.length) {
             const empty = document.createElement('p');
-            empty.className = 'vto-selected-empty';
-            empty.textContent = 'هنوز لباسی انتخاب نشده است؛ اولین بخش را از فهرست انتخاب کن.';
+            empty.className = inlineMode ? 'vto-inline-picks-empty' : 'vto-selected-empty';
+            empty.textContent = inlineMode
+                ? 'لباس‌های انتخابی اینجا نمایش داده می‌شوند.'
+                : 'هنوز لباسی انتخاب نشده است؛ اولین بخش را از فهرست انتخاب کن.';
             ui.selected.append(empty);
+        } else if (inlineMode) {
+            items.forEach((item) => {
+                const tile = document.createElement('div');
+                tile.className = 'vto-inline-pick';
+                const image = document.createElement('img');
+                image.alt = item.name || 'محصول انتخاب‌شده';
+                image.loading = 'lazy';
+                image.decoding = 'async';
+                if (item.thumbnail_url) {
+                    image.src = item.thumbnail_url;
+                    image.onerror = () => image.remove();
+                } else {
+                    image.hidden = true;
+                }
+
+                const name = document.createElement('span');
+                name.className = 'vto-inline-pick__name';
+                name.textContent = item.name || 'محصول';
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'vto-inline-pick__remove';
+                remove.textContent = '×';
+                remove.setAttribute('aria-label', 'حذف ' + (item.name || 'محصول') + ' از اتاق پرو');
+                remove.addEventListener('click', () => removeSelection(item.slot, item.variant_id));
+
+                tile.append(image, name, remove);
+                ui.selected.append(tile);
+            });
         } else {
             items.forEach((item) => {
                 const row = document.createElement('div');
@@ -377,11 +517,14 @@
         }
 
         const estimated = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
-        ui.total.textContent = formatPrice(Number.isFinite(serverTotal) ? serverTotal : estimated);
-        ui.inventoryNote.textContent = items.some((item) => Number(item.stock) < 1)
-            ? 'حداقل یکی از انتخاب‌ها ناموجود است؛ موجودی نهایی هنگام خرید بررسی می‌شود.'
-            : 'قیمت و موجودی هنگام خرید دوباره بررسی می‌شوند.';
+        if (ui.total) ui.total.textContent = formatPrice(Number.isFinite(serverTotal) ? serverTotal : estimated);
+        if (ui.inventoryNote) {
+            ui.inventoryNote.textContent = items.some((item) => Number(item.stock) < 1)
+                ? 'حداقل یکی از انتخاب‌ها ناموجود است؛ موجودی نهایی هنگام خرید بررسی می‌شود.'
+                : 'قیمت و موجودی هنگام خرید دوباره بررسی می‌شوند.';
+        }
         ui.stageEmpty.hidden = items.length > 0;
+        renderShopCardSelections();
     }
 
     async function refreshPreview() {
@@ -434,6 +577,7 @@
                     stock: Number(layer.stock ?? previous.stock ?? 0),
                     slot: layer.slot,
                     layer_url: layer.layer_url,
+                    thumbnail_url: layer.thumbnail_url || previous.thumbnail_url,
                 });
 
                 const existingImage = existingBySlot.get(layer.slot);
@@ -487,6 +631,7 @@
             });
             renderSlots();
             renderSummary(Number(payload.data.summary && payload.data.summary.total_price));
+            renderShopCardSelections();
             if (payload.data.summary && payload.data.summary.all_in_stock === false) {
                 ui.inventoryNote.textContent = 'یک یا چند انتخاب فعلاً موجود نیست؛ پیش از خرید موجودی نهایی بررسی می‌شود.';
             }
@@ -505,11 +650,13 @@
         state.bootstrapController = controller;
         const version = ++state.bootstrapVersion;
 
-        renderAudienceButtons();
+        try {
+            renderAudienceButtons();
         ui.catalogNote.textContent = 'در حال آماده‌سازی مانکن…';
         const url = endpoint(root.dataset.bootstrapUrl, {
             audience: state.audience,
             variant_id: state.requestedVariantId,
+            mannequin_id: state.mannequin?.id,
         });
 
         let payload;
@@ -559,6 +706,24 @@
             }
         }
 
+        const activeMannequinId = Number(state.mannequin && state.mannequin.id) || 0;
+        if (activeMannequinId > 0 && Number(state.defaultMannequinId) !== activeMannequinId) {
+            // Default layers are an initial outfit only. Once a shopper starts
+            // changing pieces, subsequent selections must not re-apply defaults.
+            state.selected = {};
+            state.itemsByVariant.clear();
+            const defaults = data.default_selections && typeof data.default_selections === 'object'
+                ? data.default_selections
+                : {};
+            Object.entries(defaults).forEach(([slot, item]) => {
+                const variantId = Number(item && item.variant_id) || null;
+                if (!Object.prototype.hasOwnProperty.call(labels, slot) || !variantId || !item.layer_url) return;
+                state.selected[slot] = variantId;
+                state.itemsByVariant.set(variantId, { ...item, slot, variant_id: variantId });
+            });
+            state.defaultMannequinId = activeMannequinId;
+        }
+
         renderMannequins();
         renderSlots();
         updateMannequinStage();
@@ -573,7 +738,9 @@
             ui.catalogNote.textContent = 'این واریانت برای مانکن انتخاب‌شده لایهٔ سازگار ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.';
         }
         await refreshPreview();
-        if (state.bootstrapController === controller) state.bootstrapController = null;
+        } finally {
+            if (state.bootstrapController === controller) state.bootstrapController = null;
+        }
     }
 
     function setExpanded(expanded) {
@@ -614,7 +781,53 @@
     }
 
     ui.expand?.addEventListener('click', () => setExpanded(!root.classList.contains('is-expanded')));
+    ui.close?.addEventListener('click', () => setInlineOpen(false));
+    ui.launcher?.addEventListener('click', () => setInlineOpen(!root.classList.contains('is-open')));
+
+    if (inlineMode) {
+        root.inert = true;
+        root.setAttribute('aria-hidden', 'true');
+        ui.launcher?.setAttribute('aria-expanded', 'false');
+
+        document.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target.closest('[data-vto-select-product]') : null;
+            if (!target) return;
+            event.preventDefault();
+            setInlineOpen(true, false);
+
+            const variantId = Number(target.dataset.vtoVariantId) || null;
+            if (!variantId) {
+                showToast('برای این محصول واریانت فعالی ثبت نشده است.');
+                if (!state.mannequin && !state.bootstrapController) {
+                    loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.'));
+                }
+                return;
+            }
+            if (target.dataset.vtoReady !== '1') {
+                showToast('برای پرو این محصول، تصویر لایه‌ای معتبر را از مدیریت محصول ثبت کن.');
+                if (!state.mannequin && !state.bootstrapController) {
+                    loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.'));
+                }
+                return;
+            }
+
+            root.dispatchEvent(new CustomEvent('vto:select-variant', {
+                detail: {
+                    variantId,
+                    audience: target.dataset.vtoAudience,
+                    toggle: true,
+                    fromCatalog: true,
+                },
+            }));
+        });
+    }
+
     document.addEventListener('keydown', (event) => {
+        if (inlineMode && event.key === 'Escape' && root.classList.contains('is-open') && !root.classList.contains('is-expanded')) {
+            event.preventDefault();
+            setInlineOpen(false);
+            return;
+        }
         if (!root.classList.contains('is-expanded')) return;
 
         if (event.key === 'Escape') {
@@ -646,26 +859,53 @@
     });
 
     root.addEventListener('vto:select-variant', (event) => {
-        const variantId = Number(event.detail?.variantId) || null;
-        const requestedAudience = event.detail?.audience;
+        const detail = event.detail || {};
+        const variantId = Number(detail.variantId) || null;
+        const requestedAudience = detail.audience;
         const audience = ['women', 'men'].includes(requestedAudience) ? requestedAudience : state.audience;
         const audienceChanged = audience !== state.audience;
 
-        // Ignore duplicate selector refreshes before removing any current layer.
+        if (inlineMode) setInlineOpen(true);
+
+        const selectedEntry = variantId
+            ? Object.entries(state.selected).find(([, selectedId]) => Number(selectedId) === variantId)
+            : null;
+
+        // Hanger controls toggle selected pieces; do not swallow deselection as a duplicate.
+        if (detail.toggle && selectedEntry && !audienceChanged) {
+            removeSelection(selectedEntry[0], variantId);
+            return;
+        }
+
+        // A second tap while bootstrap is pending cancels that selection, so a late
+        // response cannot silently re-add an item the user tried to remove.
+        if (detail.toggle && variantId && Number(state.requestedVariantId) === variantId && !selectedEntry && !audienceChanged) {
+            state.requestedVariantId = null;
+            state.pendingInitialVariantId = null;
+            state.currentProductVariantId = null;
+            state.currentProductSlot = null;
+            invalidatePendingRequests();
+            renderShopCardSelections();
+            if (state.mannequin) refreshPreview();
+            else loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
+            return;
+        }
+
         if (variantId === state.requestedVariantId && !audienceChanged) return;
 
         if (audienceChanged) {
-            // Audience changes invalidate the mannequin and every layer because
-            // their asset contracts are audience-specific.
             state.audience = audience;
             state.mannequin = null;
+            state.defaultMannequinId = null;
             state.selected = {};
             state.itemsByVariant.clear();
             state.catalog = [];
-        } else if (state.currentProductVariantId && state.currentProductSlot
+            ui.layers.replaceChildren();
+            ui.stageEmpty.hidden = false;
+        } else if (!detail.fromCatalog && state.currentProductVariantId && state.currentProductSlot
             && Number(state.selected[state.currentProductSlot]) === state.currentProductVariantId) {
-            // Only the slot controlled by the product-page variant selector changes.
-            // Keep independently selected trousers, shoes, accessories, etc.
+            // The product detail selector owns one changing slot. Shop hanger clicks
+            // resolve the new slot first and replace only that slot.
             delete state.selected[state.currentProductSlot];
         }
 
@@ -679,7 +919,10 @@
         state.requestVersion++;
         state.bootstrapVersion++;
         ui.stageLoading.hidden = true;
-        loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
+        loadBootstrap().catch((error) => {
+            if (state.requestedVariantId === variantId) state.requestedVariantId = null;
+            showToast(error.message || 'آماده‌سازی مانکن انجام نشد.');
+        });
     });
 
     ui.audienceButtons.forEach((button) => {
@@ -687,6 +930,7 @@
             const audience = button.dataset.vtoAudience;
             if (audience === state.audience) return;
             state.audience = audience;
+            state.defaultMannequinId = null;
             // Keep the current product variant as a candidate for a later return
             // to its compatible audience; clear layers because they are audience-bound.
             state.pendingInitialVariantId = null;
@@ -734,14 +978,24 @@
 
     ui.clearAll.addEventListener('click', () => {
         state.selected = {};
+        state.requestedVariantId = null;
+        state.pendingInitialVariantId = null;
+        state.currentProductVariantId = null;
+        state.currentProductSlot = null;
+        state.initialVariantHasLayer = false;
+        invalidatePendingRequests();
         renderProductCards();
         renderSlots();
         renderSummary(0);
-        refreshPreview();
+        renderShopCardSelections();
+        if (state.mannequin) refreshPreview();
+        else loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
     });
 
-    loadBootstrap().catch((error) => {
-        showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
-        showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
-    });
+    if (!inlineMode) {
+        loadBootstrap().catch((error) => {
+            showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+            showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+        });
+    }
 })();
