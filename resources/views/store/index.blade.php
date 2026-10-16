@@ -130,9 +130,9 @@
                                     && $media->collection === 'try-on-layer'
                                     && trim((string) $media->path) !== ''
                                     && $media->url
-                                    && in_array($media->mime_type, ['image/png', 'image/webp', 'image/svg+xml'], true)
-                                    && (((int) $media->width === 1024 && (int) $media->height === 1536)
-                                        || ((int) $media->width === 320 && (int) $media->height === 480));
+                                    && in_array($media->mime_type, ['image/png', 'image/webp'], true)
+                                    && (int) $media->width === 1024
+                                    && (int) $media->height === 1536;
                             });
                             $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url ?? $tryOnAsset?->media?->url;
                             $tryOnAudience = $tryOnAsset?->mannequin?->audience ?? $product->audience ?? 'women';
@@ -239,5 +239,6 @@
         'tryOnInitialVariantId' => null,
         'tryOnInitialAudience' => 'women',
     ])
+
 </main>
 @endsection

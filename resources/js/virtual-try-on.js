@@ -20,6 +20,7 @@
         stageLoading: root.querySelector('[data-vto-stage-loading]'),
         caption: root.querySelector('[data-vto-mannequin-caption]'),
         selected: root.querySelector('[data-vto-selected-list]'),
+        picksCount: root.querySelector('[data-vto-picks-count]'),
         total: root.querySelector('[data-vto-total]'),
         inventoryNote: root.querySelector('[data-vto-inventory-note]'),
         clearAll: root.querySelector('[data-vto-clear-all]'),
@@ -539,6 +540,9 @@
             .filter(Boolean)
             .sort((a, b) => (order[a.slot] || 99) - (order[b.slot] || 99));
 
+        if (ui.picksCount) {
+            ui.picksCount.textContent = new Intl.NumberFormat('fa-IR').format(items.length) + ' تکه';
+        }
         ui.selected.replaceChildren();
         if (!items.length) {
             const empty = document.createElement('p');
@@ -712,7 +716,9 @@
             renderSummary(Number(payload.data.summary && payload.data.summary.total_price));
             renderShopCardSelections();
             if (payload.data.summary && payload.data.summary.all_in_stock === false) {
+                if (ui.inventoryNote) {
                 ui.inventoryNote.textContent = 'یک یا چند انتخاب فعلاً موجود نیست؛ پیش از خرید موجودی نهایی بررسی می‌شود.';
+            }
             }
         } catch (error) {
             if (error.name !== 'AbortError' && version === state.requestVersion) {
