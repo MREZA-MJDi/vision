@@ -106,12 +106,6 @@
                     <span><strong>تخفیف‌دار</strong><small>محصولات دارای قیمت ویژه</small></span>
                     <span class="sale-filter__toggle" aria-hidden="true"><i></i></span>
                 </a>            </section>
-            @include('store.partials.virtual-try-on-workspace', [
-                'inline' => true,
-                'productPage' => false,
-                'tryOnInitialVariantId' => null,
-                'tryOnInitialAudience' => 'women',
-            ])
         </aside>
 
         <section class="store-catalog" id="catalog" aria-labelledby="catalog-title">
@@ -171,6 +165,7 @@
                                         data-vto-select-product
                                         data-vto-variant-id="{{ $variant->id }}"
                                         data-vto-slot="{{ $tryOnAsset->slot }}"
+                                        data-vto-ready="1"
                                         data-vto-audience="{{ $tryOnAudience }}"
                                         data-product-name="{{ $product->name }}"
                                         aria-pressed="false"
@@ -238,6 +233,13 @@
             @endif
         </section>
     </div>
+
+    @include('store.partials.virtual-try-on-workspace', [
+        'inline' => true,
+        'productPage' => false,
+        'tryOnInitialVariantId' => null,
+        'tryOnInitialAudience' => 'women',
+    ])
 
 </main>
 @endsection
