@@ -106,6 +106,12 @@
                     <span><strong>تخفیف‌دار</strong><small>محصولات دارای قیمت ویژه</small></span>
                     <span class="sale-filter__toggle" aria-hidden="true"><i></i></span>
                 </a>            </section>
+            @include('store.partials.virtual-try-on-workspace', [
+                'inline' => true,
+                'productPage' => false,
+                'tryOnInitialVariantId' => null,
+                'tryOnInitialAudience' => 'women',
+            ])
         </aside>
 
         <section class="store-catalog" id="catalog" aria-labelledby="catalog-title">
@@ -130,9 +136,9 @@
                                     && $media->collection === 'try-on-layer'
                                     && trim((string) $media->path) !== ''
                                     && $media->url
-                                    && in_array($media->mime_type, ['image/png', 'image/webp', 'image/svg+xml'], true)
-                                    && (((int) $media->width === 1024 && (int) $media->height === 1536)
-                                        || ((int) $media->width === 320 && (int) $media->height === 480));
+                                    && in_array($media->mime_type, ['image/png', 'image/webp'], true)
+                                    && (int) $media->width === 1024
+                                    && (int) $media->height === 1536;
                             });
                             $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url ?? $tryOnAsset?->media?->url;
                             $tryOnAudience = $tryOnAsset?->mannequin?->audience ?? $product->audience ?? 'women';
@@ -159,20 +165,20 @@
                                     </span>
                                 @endif
 
-                                <button class="product-card__quickfit {{ $tryOnAsset ? 'is-tryon-ready' : 'is-tryon-unavailable' }}"
-                                    type="button"
-                                    data-vto-select-product
-                                    data-vto-variant-id="{{ $variant?->id ?? '' }}"
-                                    data-vto-slot="{{ $tryOnAsset?->slot ?? '' }}"
-                                    data-vto-audience="{{ $tryOnAudience }}"
-                                    data-vto-ready="{{ $tryOnAsset ? '1' : '0' }}"
-                                    data-product-name="{{ $product->name }}"
-                                    aria-pressed="false"
-                                    aria-label="{{ $tryOnAsset ? 'امتحان ' . $product->name . ' روی مانکن' : 'تصویر اتاق پرو برای ' . $product->name . ' هنوز ثبت نشده است' }}"
-                                    title="{{ $tryOnAsset ? 'امتحان روی مانکن' : 'تصویر لایه‌ای اتاق پرو هنوز ثبت نشده است' }}"
-                                    @disabled(!$variant)>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M4 15l8-5 8 5M6 14v5h12v-5"></path></svg>
-                                </button>
+                                @if($tryOnAsset)
+                                    <button class="product-card__quickfit is-tryon-ready"
+                                        type="button"
+                                        data-vto-select-product
+                                        data-vto-variant-id="{{ $variant->id }}"
+                                        data-vto-slot="{{ $tryOnAsset->slot }}"
+                                        data-vto-audience="{{ $tryOnAudience }}"
+                                        data-product-name="{{ $product->name }}"
+                                        aria-pressed="false"
+                                        aria-label="امتحان {{ $product->name }} روی مانکن"
+                                        title="امتحان روی مانکن">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M4 15l8-5 8 5M6 14v5h12v-5"></path></svg>
+                                    </button>
+                                @endif
 
                                 <button class="product-card__cart" type="button"
                                     data-cart-add="{{ $variant?->id ?? '' }}"
@@ -233,11 +239,5 @@
         </section>
     </div>
 
-    @include('store.partials.virtual-try-on-workspace', [
-        'inline' => true,
-        'productPage' => false,
-        'tryOnInitialVariantId' => null,
-        'tryOnInitialAudience' => 'women',
-    ])
 </main>
 @endsection
