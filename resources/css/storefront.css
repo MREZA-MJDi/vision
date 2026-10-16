@@ -2074,3 +2074,68 @@ body.storefront-body.tiamir-intro-active {
 .store-tryon-link__arrow { color: var(--store-orange-hot); font-size: 16px; }
 @media (prefers-reduced-motion: reduce) { .store-tryon-link { transition: none; } }
 
+
+/* Shop: persistent fitting room on the right, live catalog in the center, filters on the left. */
+.store-catalog-layout {
+    width: min(100%, 1480px);
+    margin-inline: auto;
+    direction: rtl;
+    grid-template-columns: minmax(280px, 315px) minmax(0, 1fr) minmax(210px, 245px);
+    align-items: start;
+    gap: clamp(15px, 1.6vw, 26px);
+}
+.store-catalog-layout > .vto-page--inline {
+    grid-column: 1;
+    grid-row: 1;
+}
+.store-catalog-layout > .store-catalog {
+    grid-column: 2;
+    grid-row: 1;
+}
+.store-catalog-layout > .store-sidebar {
+    grid-column: 3;
+    grid-row: 1;
+}
+@media (max-width: 1240px) {
+    .store-catalog-layout {
+        grid-template-columns: minmax(245px, 285px) minmax(0, 1fr) minmax(185px, 220px);
+        gap: 14px;
+    }
+}
+@media (max-width: 1000px) {
+    .store-catalog-layout {
+        grid-template-columns: minmax(230px, 270px) minmax(0, 1fr);
+        gap: 18px;
+    }
+    .store-catalog-layout > .vto-page--inline {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .store-catalog-layout > .store-catalog {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .store-catalog-layout > .store-sidebar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+    .store-catalog-layout > .store-catalog .product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 720px) {
+    .store-catalog-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+    .store-catalog-layout > .vto-page--inline,
+    .store-catalog-layout > .store-catalog,
+    .store-catalog-layout > .store-sidebar {
+        grid-column: 1;
+        grid-row: auto;
+    }
+    .store-catalog-layout > .store-catalog .product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
