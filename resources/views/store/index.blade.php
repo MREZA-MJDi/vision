@@ -130,7 +130,7 @@
                                     && $media->collection === 'try-on-layer'
                                     && trim((string) $media->path) !== ''
                                     && $media->url
-                                    && in_array($media->mime_type, ['image/png', 'image/webp'], true)
+                                    && in_array($media->mime_type, ['image/png', 'image/webp', 'image/svg+xml'], true)
                                     && (((int) $media->width === 1024 && (int) $media->height === 1536)
                                         || ((int) $media->width === 320 && (int) $media->height === 480));
                             });
