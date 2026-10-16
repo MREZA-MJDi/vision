@@ -799,6 +799,7 @@
         renderSlots();
         updateMannequinStage();
         if (!state.mannequin) {
+            ui.stageLoading.hidden = true;
             showCatalogEmpty('مانکن فعالی برای این گروه تعریف نشده است.', 'پیکربندی پایهٔ مانکن را اجرا کن.');
             ui.stageEmpty.hidden = false;
             return;
@@ -993,6 +994,7 @@
         state.bootstrapVersion++;
         ui.stageLoading.hidden = true;
         loadBootstrap().catch((error) => {
+            ui.stageLoading.hidden = true;
             if (state.requestedVariantId === variantId) state.requestedVariantId = null;
             showToast(error.message || 'آماده‌سازی مانکن انجام نشد.');
         });
