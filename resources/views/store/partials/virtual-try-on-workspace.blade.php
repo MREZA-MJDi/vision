@@ -1,6 +1,6 @@
 <section class="vto-page {{ ($productPage ?? false) ? 'vto-page--product' : '' }} {{ ($inline ?? false) ? 'vto-page--inline' : '' }}"
       @if($inline ?? false)
-      id="vto-inline-workspace" data-vto-inline="true" inert aria-hidden="true" tabindex="-1" aria-label="اتاق پرو"
+      id="vto-inline-workspace" data-vto-inline="true" tabindex="-1" aria-label="اتاق پرو"
       @else
       aria-labelledby="vto-title"
       @endif
