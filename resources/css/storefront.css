@@ -2109,7 +2109,8 @@ body.store-shop-body .store-wordmark {
     direction: ltr;
     unicode-bidi: isolate;
     letter-spacing: .36em;
-    padding-inline: 0 0.36em;
+    padding-inline-start: 0.36em;
+    padding-inline-end: 0;
 }
 
 body.store-shop-body .store-titlebar,
