@@ -30,7 +30,6 @@
     @endif
 
     <section class="vto-workspace" aria-label="اتاق پرو و انتخاب پوشاک">
-        @if(!($inline ?? false))
         <aside class="vto-controls">
             <section class="vto-panel" aria-labelledby="vto-audience-title">
                 <div class="vto-panel__heading"><div><p class="vto-step">مرحلهٔ ۰۱</p><h2 id="vto-audience-title">مانکن را انتخاب کن</h2></div><span class="vto-panel__index">01</span></div>
@@ -59,7 +58,6 @@
                 <button class="vto-load-more" data-vto-load-more type="button" hidden>نمایش گزینه‌های بیشتر <span>↓</span></button>
             </section>
         </aside>
-        @endif
 
         <section class="vto-preview-column" aria-label="پیش‌نمایش ترکیب">
             <div class="vto-preview-card">
@@ -102,14 +100,11 @@
                 </div>
                 <div class="vto-selection-summary">
                     @if($inline ?? false)
-                        <div class="vto-inline-picks-heading">
-                            <h3>لباس‌های انتخاب‌شده</h3>
-                            <span data-vto-picks-count>۰ تکه</span>
-                        </div>
-                        <div class="vto-selected-list" data-vto-selected-list></div>
-                        <div class="vto-inline-footer">
+                        <div class="vto-selection-summary__head">
+                            <div><h3>لباس‌های انتخاب‌شده <span data-vto-picks-count>۰ تکه</span></h3></div>
                             <button type="button" data-vto-clear-all>شروع دوباره ↺</button>
                         </div>
+                        <div class="vto-selected-list" data-vto-selected-list></div>
                     @else
                         <div class="vto-selection-summary__head"><div><p class="vto-step">YOUR LOOK / SUMMARY</p><h3>چیزهایی که انتخاب کردی</h3></div><button type="button" data-vto-clear-all>شروع دوباره ↺</button></div>
                         <div class="vto-selected-list" data-vto-selected-list></div>
