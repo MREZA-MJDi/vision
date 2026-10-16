@@ -99,7 +99,7 @@
 
     // The shop card owns the click target; this controller owns the drawer and
     // the single source of truth for selection. Animate a decorative clone only.
-    function animateShopSelection(button) {
+    function animateShopSelection(button, drawerAlreadyOpen = false) {
         const thumbnail = button.closest('[data-product-card]')?.querySelector('.product-card__image');
         if (!thumbnail || !ui.stage || !thumbnail.complete || !thumbnail.naturalWidth) return;
 
@@ -133,7 +133,7 @@
         }
 
         const waitForDrawer = () => new Promise((resolve) => {
-            if (!inlineMode || !root.classList.contains('is-open')) {
+            if (drawerAlreadyOpen || !inlineMode || !root.classList.contains('is-open')) {
                 resolve();
                 return;
             }
@@ -872,6 +872,7 @@
             const target = event.target instanceof Element ? event.target.closest('[data-vto-select-product]') : null;
             if (!target) return;
             event.preventDefault();
+            const drawerAlreadyOpen = root.classList.contains('is-open');
             setInlineOpen(true, false);
 
             const variantId = Number(target.dataset.vtoVariantId) || null;
@@ -892,7 +893,7 @@
 
             const alreadySelected = Object.values(state.selected).some((id) => Number(id) === variantId);
             const sameSelectionPending = Number(state.requestedVariantId) === variantId && !alreadySelected;
-            if (!alreadySelected && !sameSelectionPending) animateShopSelection(target);
+            if (!alreadySelected && !sameSelectionPending) animateShopSelection(target, drawerAlreadyOpen);
 
             root.dispatchEvent(new CustomEvent('vto:select-variant', {
                 detail: {
