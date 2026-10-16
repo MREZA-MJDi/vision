@@ -1,5 +1,9 @@
 <section class="vto-page {{ ($productPage ?? false) ? 'vto-page--product' : '' }} {{ ($inline ?? false) ? 'vto-page--inline' : '' }}"
-      @if($inline ?? false) id="vto-inline-workspace" data-vto-inline="true" hidden inert aria-hidden="true" tabindex="-1" @endif
+      @if($inline ?? false)
+      id="vto-inline-workspace" data-vto-inline="true" inert aria-hidden="true" tabindex="-1" aria-label="اتاق پرو"
+      @else
+      aria-labelledby="vto-title"
+      @endif
       data-virtual-try-on
       data-bootstrap-url="{{ route('api.virtual-try-on.bootstrap') }}"
       data-catalog-url="{{ route('api.virtual-try-on.catalog') }}"
@@ -7,7 +11,7 @@
       data-currency="{{ config('commerce-admin.currency_symbol', 'تومان') }}"
       data-initial-variant-id="{{ $tryOnInitialVariantId ?? '' }}"
       data-initial-audience="{{ $tryOnInitialAudience ?? '' }}"
-      aria-labelledby="vto-title">
+      >
     @if(!($inline ?? false))
     <header class="vto-heading">
         <div>
@@ -121,3 +125,9 @@
     </section>
     <div class="vto-toast" data-vto-toast role="status" aria-live="polite"></div>
 </section>
+@if($inline ?? false)
+    <button class="vto-inline-launcher" type="button" data-vto-launcher aria-controls="vto-inline-workspace" aria-expanded="false">
+        <span class="vto-inline-launcher__mark" aria-hidden="true">✳</span>
+        <span>Try it on</span>
+    </button>
+@endif
