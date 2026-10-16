@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             StorefrontLaunchSeeder::class,
             VirtualTryOnMannequinSeeder::class,
-            VirtualTryOnDemoSeeder::class,
         ]);
     }
 }
