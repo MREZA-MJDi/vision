@@ -13,7 +13,8 @@ Edit a product in Commerce Admin and select its audience. Leave the audience bla
 ## Layer contract
 
 - Admin-upload contract: transparent PNG or WebP at exactly 1024 × 1536 pixels (2:3), with no background.
-- Storage-optimized demo layers may be 320 × 480 WebP. They retain the same full 2:3 canvas and alignment while avoiding unnecessarily large catalog assets.
+- Storage-optimized photo layers may be 320 × 480 WebP. They retain the same full 2:3 canvas and alignment while avoiding unnecessarily large catalog assets.
+- The bundled demo also generates four transparent 320 × 480 SVG garment silhouettes (top and trousers) so the first outfit works without an external AI service. They are replaceable through Commerce Admin, but the admin upload input still accepts only PNG/WebP at 1024 × 1536.
 - Every layer must share the same canvas, pose, scale and alignment as the configured mannequin.
 - Do not use the ordinary product gallery image as an overlay. Gallery images are only thumbnails.
 - One try-on mapping is supported per variant in the first version.
