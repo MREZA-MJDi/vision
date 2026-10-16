@@ -68,39 +68,22 @@
 
     function setInlineOpen(open, initialize = true) {
         if (!inlineMode) return;
-        const currentlyOpen = root.classList.contains('is-open');
-        if (currentlyOpen === open) return;
-
-        if (open) {
-            inlineReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : ui.launcher;
-            root.inert = false;
-            root.setAttribute('aria-hidden', 'false');
-            root.classList.add('is-open');
-            ui.launcher?.setAttribute('aria-expanded', 'true');
-            window.requestAnimationFrame(() => ui.close?.focus({ preventScroll: true }));
-            if (initialize && !state.mannequin && !state.bootstrapController) {
-                loadBootstrap().catch((error) => {
-                    showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
-                    showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
-                });
-            }
-            return;
+        // The Shop workspace lives in the page flow. "Open" now means reveal it,
+        // never launch a floating drawer or move focus into a modal-like surface.
+        root.classList.toggle('is-open', Boolean(open));
+        root.inert = !open;
+        root.setAttribute('aria-hidden', String(!open));
+        ui.launcher?.setAttribute('aria-expanded', String(Boolean(open)));
+        if (open && initialize && !state.mannequin && !state.bootstrapController) {
+            loadBootstrap().catch((error) => {
+                showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+                showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+            });
         }
-
-        root.classList.remove('is-open');
-        root.inert = true;
-        root.setAttribute('aria-hidden', 'true');
-        ui.launcher?.setAttribute('aria-expanded', 'false');
-        const focusTarget = inlineReturnFocus?.isConnected && !root.contains(inlineReturnFocus)
-            ? inlineReturnFocus
-            : ui.launcher;
-        focusTarget?.focus?.({ preventScroll: true });
-        inlineReturnFocus = null;
     }
 
-    // The shop card owns the click target; this controller owns the drawer and
-    // the single source of truth for selection. Animate a decorative clone only.
-    function animateShopSelection(button, drawerAlreadyOpen = false) {
+    // Keep the existing product-to-preview transition lightweight and in-page.
+    function animateShopSelection(button, workspaceVisible = false) {
         const thumbnail = button.closest('[data-product-card]')?.querySelector('.product-card__image');
         if (!thumbnail || !ui.stage || !thumbnail.complete || !thumbnail.naturalWidth) return;
 
@@ -134,7 +117,7 @@
         }
 
         const waitForDrawer = () => new Promise((resolve) => {
-            if (drawerAlreadyOpen || !inlineMode || !root.classList.contains('is-open')) {
+            if (workspaceVisible || !inlineMode || !root.classList.contains('is-open')) {
                 resolve();
                 return;
             }
@@ -870,15 +853,16 @@
     ui.launcher?.addEventListener('click', () => setInlineOpen(!root.classList.contains('is-open')));
 
     if (inlineMode) {
-        root.inert = true;
-        root.setAttribute('aria-hidden', 'true');
-        ui.launcher?.setAttribute('aria-expanded', 'false');
+        root.inert = false;
+        root.removeAttribute('aria-hidden');
+        root.classList.remove('is-open');
+        ui.launcher?.setAttribute('aria-expanded', 'true');
 
         document.addEventListener('click', (event) => {
             const target = event.target instanceof Element ? event.target.closest('[data-vto-select-product]') : null;
             if (!target) return;
             event.preventDefault();
-            const drawerAlreadyOpen = root.classList.contains('is-open');
+            const workspaceVisible = !root.inert;
             setInlineOpen(true, false);
 
             const variantId = Number(target.dataset.vtoVariantId) || null;
@@ -899,7 +883,7 @@
 
             const alreadySelected = Object.values(state.selected).some((id) => Number(id) === variantId);
             const sameSelectionPending = Number(state.requestedVariantId) === variantId && !alreadySelected;
-            if (!alreadySelected && !sameSelectionPending) animateShopSelection(target, drawerAlreadyOpen);
+            if (!alreadySelected && !sameSelectionPending) animateShopSelection(target, workspaceVisible);
 
             root.dispatchEvent(new CustomEvent('vto:select-variant', {
                 detail: {
