@@ -128,9 +128,9 @@ class VirtualTryOnController extends Controller
         $disk = (string) config('commerce-admin.media_disk', 'public');
         $storedPath = null;
         $obsoleteMedia = null;
-        $newMediaId = null;
 
-        DB::transaction(function () use ($request, $record, $asset, $mannequin, $validated, $disk, &$storedPath, &$obsoleteMedia, &$newMediaId): void {
+        try {
+        DB::transaction(function () use ($request, $record, $asset, $mannequin, $validated, $disk, &$storedPath, &$obsoleteMedia): void {
             if ($request->hasFile('layer_image')) {
                 $file = $request->file('layer_image');
                 $storedPath = $file->store('virtual-try-on/layers/' . $record->getKey(), $disk);
@@ -150,7 +150,6 @@ class VirtualTryOnController extends Controller
                     'sort_order' => 0,
                     'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                 ]);
-                $newMediaId = $media->getKey();
                 if ($asset) {
                     $obsoleteMedia = $asset->media;
                     $asset->media_id = $media->getKey();
