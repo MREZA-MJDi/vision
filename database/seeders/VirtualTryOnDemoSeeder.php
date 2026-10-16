@@ -255,6 +255,7 @@ class VirtualTryOnDemoSeeder extends Seeder
         });
 
         $this->command?->info('Virtual Try-On demo mannequin and seven transparent clothing layers are ready.');
+    }
 
     /**
      * Small, clean 2:3 transparent vector layers keep the demo usable without
@@ -325,6 +326,5 @@ SVG,
 SVG,
             default => throw new \InvalidArgumentException('Unsupported demo vector layer.'),
         };
-    }
     }
 }
