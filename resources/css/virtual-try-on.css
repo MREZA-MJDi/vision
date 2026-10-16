@@ -360,8 +360,9 @@ body.vto-workspace-expanded::before {
     transition: background .18s ease, color .18s ease, border-color .18s ease;
 }
 .vto-inline-close:hover { color: #20150f; background: #f28b55; border-color: #f28b55; }
-.vto-page--inline .vto-stage-wrap { max-width: 100%; }
+.vto-page--inline .vto-stage-wrap { display: grid; place-items: center; max-width: 100%; }
 .vto-page--inline .vto-stage {
+    justify-self: center;
     width: auto;
     height: min(49dvh, 510px);
     min-height: 280px;
