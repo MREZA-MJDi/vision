@@ -283,7 +283,7 @@ class VirtualTryOnController extends Controller
                 'product_url' => route((string) config('virtual-try-on.routes.product_detail', 'products.show'), ['product' => $product->slug]),
                 'label' => $variant->display_name,
                 'layer_url' => $asset->media->url,
-                'thumbnail_url' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+                'thumbnail_url' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url ?? $asset->media?->url,
                 'price' => (int) round((float) $variant->effective_price),
                 'stock' => (int) $variant->stock,
             ];
@@ -339,7 +339,8 @@ class VirtualTryOnController extends Controller
         $variant = $asset->variant;
         $product = $variant->product;
         $thumbnail = $variant->primaryGalleryMedia?->url
-            ?? $product->primaryGalleryMedia?->url;
+            ?? $product->primaryGalleryMedia?->url
+            ?? $asset->media?->url;
         $colorCode = (string) $variant->color_code;
 
         return [
