@@ -149,11 +149,13 @@
             const dx = target.left + target.width / 2 - (source.left + source.width / 2);
             const dy = target.top + target.height * .36 - (source.top + source.height / 2);
             const animation = clone.animate([
-                { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1, filter: 'blur(0px) drop-shadow(0 12px 18px rgba(0,0,0,.36))' },
-                { offset: .58, transform: `translate(${dx * .58}px,${dy * .58 - 22}px) scale(.48) rotate(5deg)`, opacity: .94, filter: 'blur(1px) drop-shadow(0 8px 12px rgba(0,0,0,.24))' },
-                { transform: `translate(${dx}px,${dy}px) scale(.13) rotate(10deg)`, opacity: 0, filter: 'blur(4px) drop-shadow(0 0 0 rgba(0,0,0,0))' },
+                { transform: 'translate(0,0) scale(1,1) rotate(0deg)', borderRadius: '8%', opacity: 1, filter: 'blur(0px) drop-shadow(0 12px 18px rgba(0,0,0,.36))' },
+                { offset: .26, transform: `translate(${dx * .26}px,${dy * .26 - 12}px) scale(.82,.68) rotate(110deg)`, borderRadius: '22%', opacity: 1, filter: 'blur(.35px) drop-shadow(0 9px 14px rgba(0,0,0,.3))' },
+                { offset: .52, transform: `translate(${dx * .52}px,${dy * .52 - 24}px) scale(.46,.56) rotate(300deg)`, borderRadius: '38%', opacity: .96, filter: 'blur(.8px) drop-shadow(0 6px 10px rgba(0,0,0,.22))' },
+                { offset: .78, transform: `translate(${dx * .78}px,${dy * .78 - 8}px) scale(.24,.3) rotate(520deg)`, borderRadius: '48%', opacity: .75, filter: 'blur(1.8px) drop-shadow(0 3px 6px rgba(0,0,0,.16))' },
+                { transform: `translate(${dx}px,${dy}px) scale(.08,.12) rotate(720deg)`, borderRadius: '50%', opacity: 0, filter: 'blur(4px) drop-shadow(0 0 0 rgba(0,0,0,0))' },
             ], {
-                duration: 620,
+                duration: 780,
                 easing: 'cubic-bezier(.16,1,.3,1)',
                 fill: 'forwards',
             });
@@ -801,7 +803,7 @@
             ui.stageEmpty.hidden = false;
             return;
         }
-        await loadCatalog(true);
+        if (!inlineMode) await loadCatalog(true);
         if (version !== state.bootstrapVersion) return;
         if (state.requestedVariantId && !state.initialVariantHasLayer) {
             ui.catalogNote.textContent = 'این واریانت برای مانکن انتخاب‌شده لایهٔ سازگار ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.';
@@ -979,6 +981,7 @@
             delete state.selected[state.currentProductSlot];
         }
 
+        ui.stageLoading.hidden = false;
         state.requestedVariantId = variantId;
         state.pendingInitialVariantId = null;
         state.currentProductVariantId = null;
@@ -1062,10 +1065,10 @@
         else loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
     });
 
-    if (!inlineMode) {
-        loadBootstrap().catch((error) => {
-            showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
-            showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
-        });
-    }
+    ui.stageLoading.hidden = false;
+    loadBootstrap().catch((error) => {
+        ui.stageLoading.hidden = true;
+        showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+        showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+    });
 })();
