@@ -2074,3 +2074,239 @@ body.storefront-body.tiamir-intro-active {
 .store-tryon-link__arrow { color: var(--store-orange-hot); font-size: 16px; }
 @media (prefers-reduced-motion: reduce) { .store-tryon-link { transition: none; } }
 
+
+
+/* -------------------------------------------------------------------------
+   VISION shop — true RTL layout adaptation for the supplied visual reference.
+   These rules are presentation-only: catalog queries and control handlers stay
+   untouched. Logical properties keep the layout correct across writing modes.
+   ------------------------------------------------------------------------- */
+body.store-shop-body {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    text-align: start;
+}
+
+body.store-shop-body .store-header {
+    direction: rtl;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+body.store-shop-body .store-nav {
+    direction: rtl;
+    justify-content: flex-start;
+}
+
+body.store-shop-body .store-nav__link {
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+body.store-shop-body .store-nav__link::after {
+    transform-origin: right;
+}
+
+body.store-shop-body .store-wordmark {
+    direction: ltr;
+    unicode-bidi: isolate;
+    letter-spacing: .36em;
+    padding-inline: 0 0.36em;
+}
+
+body.store-shop-body .store-titlebar,
+body.store-shop-body .store-catalog-layout {
+    width: min(100%, 1075px);
+    margin-inline: 0 auto;
+}
+
+body.store-shop-body .store-titlebar h1 {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: clamp(15px, 1.35vw, 18px);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.55;
+}
+
+body.store-shop-body .store-titlebar__left {
+    justify-content: flex-start;
+    text-align: start;
+}
+
+body.store-shop-body .store-titlebar .catalog-sort select {
+    padding-inline: 0 17px;
+    text-align: start;
+}
+
+body.store-shop-body .store-titlebar .catalog-sort svg {
+    right: auto;
+    left: auto;
+    inset-inline-end: 0;
+}
+
+body.store-shop-body .store-catalog-layout {
+    direction: rtl;
+    grid-template-columns: minmax(220px, 245px) minmax(0, 1fr);
+}
+
+body.store-shop-body .store-sidebar {
+    direction: rtl;
+    text-align: start;
+}
+
+body.store-shop-body .filter-panel__header,
+body.store-shop-body .filter-group__heading,
+body.store-shop-body .filter-option,
+body.store-shop-body .sale-filter {
+    text-align: start;
+}
+
+body.store-shop-body .product-grid {
+    direction: rtl;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.store-shop-body .product-card__visual {
+    aspect-ratio: 1.12 / 1;
+}
+
+body.store-shop-body .product-card__image {
+    object-fit: contain;
+    object-position: center;
+}
+
+body.store-shop-body .product-card__wishlist {
+    top: 9px;
+    left: auto;
+    right: auto;
+    inset-inline-start: 9px;
+    inset-inline-end: auto;
+}
+
+body.store-shop-body .product-card__quickfit {
+    top: 39px;
+    left: auto;
+    right: auto;
+    inset-inline-start: 9px;
+    inset-inline-end: auto;
+}
+
+body.store-shop-body .product-card__rating {
+    left: auto;
+    right: auto;
+    inset-inline-start: auto;
+    inset-inline-end: 9px;
+}
+
+body.store-shop-body .product-card__cart {
+    left: auto;
+    right: auto;
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+    padding-inline: 0 9px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 47px;
+    transform-origin: bottom left;
+}
+
+body.store-shop-body .product-card__details {
+    direction: rtl;
+    text-align: start;
+}
+
+body.store-shop-body .product-card__text h2 {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    letter-spacing: 0;
+    text-align: start;
+}
+
+body.store-shop-body .product-card__price {
+    justify-content: flex-start;
+    text-align: start;
+}
+
+body.store-shop-body .catalog-pagination {
+    direction: rtl;
+}
+
+body.store-shop-body .catalog-pagination__actions {
+    direction: rtl;
+}
+
+@media (max-width: 1240px) {
+    body.store-shop-body .store-titlebar,
+    body.store-shop-body .store-catalog-layout {
+        width: min(100%, 1095px);
+    }
+
+    body.store-shop-body .store-catalog-layout {
+        grid-template-columns: minmax(215px, 235px) minmax(0, 1fr);
+        gap: 25px;
+    }
+}
+
+@media (max-width: 980px) {
+    body.store-shop-body .store-catalog-layout {
+        grid-template-columns: minmax(200px, 220px) minmax(0, 1fr);
+        gap: 17px;
+    }
+
+    body.store-shop-body .product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    body.store-shop-body .store-titlebar,
+    body.store-shop-body .store-catalog-layout {
+        width: 100%;
+    }
+
+    body.store-shop-body .store-sidebar {
+        left: auto;
+        right: auto;
+        inset-inline-start: 0;
+        inset-inline-end: auto;
+        border-right: 0;
+        border-left: 0;
+        border-inline-end: 1px solid var(--store-line-strong);
+        transform: translateX(105%);
+    }
+
+    body.store-shop-body .store-sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    body.store-shop-body .product-card__visual {
+        aspect-ratio: 1.05 / 1;
+    }
+
+    body.store-shop-body .product-card__wishlist {
+        top: 7px;
+        inset-inline-start: 7px;
+    }
+
+    body.store-shop-body .product-card__quickfit {
+        top: 35px;
+        inset-inline-start: 7px;
+    }
+
+    body.store-shop-body .product-card__cart {
+        padding-inline: 0 7px;
+        border-top-right-radius: 40px;
+    }
+}
+
+@media (max-width: 390px) {
+    body.store-shop-body .product-grid {
+        gap: 7px;
+    }
+
+    body.store-shop-body .product-card__details {
+        padding: 7px 7px 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.store-shop-body .store-nav__link::after {
+        transition: none;
+    }
+}
