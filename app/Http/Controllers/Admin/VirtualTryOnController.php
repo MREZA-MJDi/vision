@@ -49,14 +49,17 @@ class VirtualTryOnController extends Controller
 
         $disk = (string) config('commerce-admin.media_disk', 'public');
         $obsolete = null;
+        $storedPath = null;
 
-        DB::transaction(function () use ($request, $record, $validated, $disk, &$obsolete): void {
+        try {
+        DB::transaction(function () use ($request, $record, $validated, $disk, &$obsolete, &$storedPath): void {
             $record->label = trim($validated['label']);
             $record->is_active = (bool) ($validated['is_active'] ?? false);
 
             if ($request->hasFile('base_image')) {
                 $file = $request->file('base_image');
                 $path = $file->store('virtual-try-on/mannequins/' . $record->getKey(), $disk);
+                $storedPath = $path;
                 if (! is_string($path) || $path === '') {
                     throw new \RuntimeException('ذخیره‌سازی تصویر مانکن انجام نشد.');
                 }
@@ -78,6 +81,10 @@ class VirtualTryOnController extends Controller
 
             $record->save();
         });
+        } catch (\\Throwable $exception) {
+            if ($storedPath) Storage::disk($disk)->delete($storedPath);
+            throw $exception;
+        }
 
         if ($obsolete) {
             $oldPath = $obsolete->path;
@@ -121,8 +128,9 @@ class VirtualTryOnController extends Controller
         $disk = (string) config('commerce-admin.media_disk', 'public');
         $storedPath = null;
         $obsoleteMedia = null;
+        $newMediaId = null;
 
-        DB::transaction(function () use ($request, $record, $asset, $mannequin, $validated, $disk, &$storedPath, &$obsoleteMedia): void {
+        DB::transaction(function () use ($request, $record, $asset, $mannequin, $validated, $disk, &$storedPath, &$obsoleteMedia, &$newMediaId): void {
             if ($request->hasFile('layer_image')) {
                 $file = $request->file('layer_image');
                 $storedPath = $file->store('virtual-try-on/layers/' . $record->getKey(), $disk);
@@ -142,6 +150,7 @@ class VirtualTryOnController extends Controller
                     'sort_order' => 0,
                     'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
                 ]);
+                $newMediaId = $media->getKey();
                 if ($asset) {
                     $obsoleteMedia = $asset->media;
                     $asset->media_id = $media->getKey();
@@ -172,10 +181,14 @@ class VirtualTryOnController extends Controller
                 TryOnAsset::query()
                     ->where('try_on_mannequin_id', $asset->try_on_mannequin_id)
                     ->where('slot', $asset->slot)
-                    ->whereKeyNot($asset->getKey())
+                    ->where('id', '<>', $asset->getKey())
                     ->update(['is_default' => false]);
             }
         });
+        } catch (\\Throwable $exception) {
+            if ($storedPath) Storage::disk($disk)->delete($storedPath);
+            throw $exception;
+        }
 
         if ($obsoleteMedia) {
             $path = $obsoleteMedia->path;
