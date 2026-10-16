@@ -850,7 +850,7 @@
 
     ui.expand?.addEventListener('click', () => setExpanded(!root.classList.contains('is-expanded')));
     ui.close?.addEventListener('click', () => setInlineOpen(false));
-    ui.launcher?.addEventListener('click', () => setInlineOpen(!root.classList.contains('is-open')));
+    ui.launcher?.addEventListener('click', () => setInlineOpen(true));
 
     if (inlineMode) {
         root.inert = false;
