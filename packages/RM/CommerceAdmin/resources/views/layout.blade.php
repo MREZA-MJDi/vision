@@ -41,7 +41,9 @@
 <a class="{{ request()->routeIs('commerce-admin.products.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.create') }}">افزودن محصول</a>
 <a class="{{ request()->routeIs('commerce-admin.categories.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.categories.index') }}">دسته‌بندی‌ها</a>
 <a class="{{ request()->routeIs('commerce-admin.brands.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.brands.index') }}">برندها</a>
+@if (\Illuminate\Support\Facades\Route::has('commerce-admin.try-on.index'))
 <a class="{{ request()->routeIs('commerce-admin.try-on.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.try-on.index') }}">مدیریت اتاق پرو</a>
+@endif
 <a class="{{ request()->routeIs('commerce-admin.orders.index','commerce-admin.orders.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index') }}">فهرست سفارش‌ها</a>
 <a class="{{ request()->routeIs('commerce-admin.orders.show') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.orders.show') ? url()->current() : route('commerce-admin.orders.index') }}">جزئیات سفارش</a>
 </div>
