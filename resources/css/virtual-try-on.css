@@ -398,6 +398,7 @@ body.vto-workspace-expanded::before {
 .vto-page--inline .vto-selection-summary__head { margin-bottom: .55rem; }
 .vto-page--inline .vto-selection-summary__head .vto-step { display: none; }
 .vto-page--inline .vto-selection-summary__head h3 { margin: 0; color: #f1edf5; font-size: .84rem; }
+.vto-page--inline .vto-selection-summary__head h3 span { color: #aaa3b2; font-size: .65rem; font-weight: 500; white-space: nowrap; }
 .vto-page--inline .vto-selection-summary__head button { color: #b9b1c0; font-size: .68rem; }
 .vto-page--inline .vto-total-line,
 .vto-page--inline .vto-preview-actions { display: none; }
