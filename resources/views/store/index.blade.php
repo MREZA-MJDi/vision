@@ -159,21 +159,20 @@
                                     </span>
                                 @endif
 
-                                @if($tryOnAsset)
-                                    <button class="product-card__quickfit is-tryon-ready"
-                                        type="button"
-                                        data-vto-select-product
-                                        data-vto-variant-id="{{ $variant->id }}"
-                                        data-vto-slot="{{ $tryOnAsset->slot }}"
-                                        data-vto-ready="1"
-                                        data-vto-audience="{{ $tryOnAudience }}"
-                                        data-product-name="{{ $product->name }}"
-                                        aria-pressed="false"
-                                        aria-label="امتحان {{ $product->name }} روی مانکن"
-                                        title="امتحان روی مانکن">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M4 15l8-5 8 5M6 14v5h12v-5"></path></svg>
-                                    </button>
-                                @endif
+                                <button class="product-card__quickfit {{ $tryOnAsset ? 'is-tryon-ready' : 'is-tryon-unavailable' }}"
+                                    type="button"
+                                    data-vto-select-product
+                                    data-vto-variant-id="{{ $variant?->id ?? '' }}"
+                                    data-vto-slot="{{ $tryOnAsset?->slot ?? '' }}"
+                                    data-vto-audience="{{ $tryOnAudience }}"
+                                    data-vto-ready="{{ $tryOnAsset ? '1' : '0' }}"
+                                    data-product-name="{{ $product->name }}"
+                                    aria-pressed="false"
+                                    aria-label="{{ $tryOnAsset ? 'امتحان ' . $product->name . ' روی مانکن' : 'تصویر اتاق پرو برای ' . $product->name . ' هنوز ثبت نشده است' }}"
+                                    title="{{ $tryOnAsset ? 'امتحان روی مانکن' : 'تصویر لایه‌ای اتاق پرو هنوز ثبت نشده است' }}"
+                                    @disabled(!$variant)>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M4 15l8-5 8 5M6 14v5h12v-5"></path></svg>
+                                </button>
 
                                 <button class="product-card__cart" type="button"
                                     data-cart-add="{{ $variant?->id ?? '' }}"
