@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\Admin\VirtualTryOnController;
 use App\Http\Middleware\Admin\EnsureAdmin;
 
 Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
