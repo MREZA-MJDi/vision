@@ -256,10 +256,6 @@ class VirtualTryOnTest extends TestCase
             'coat-chocolate.webp',
             'coat-cream.webp',
             'puffer-black.webp',
-            'shirt-white.webp',
-            'sweater-cream.webp',
-            'trousers-black.webp',
-            'trousers-cream.webp',
         ] as $file) {
             Storage::disk('public')->put('virtual-try-on/demo/'.$file, 'test-image');
         }
@@ -286,6 +282,15 @@ class VirtualTryOnTest extends TestCase
         foreach ($defaults as $slot => $item) {
             $selections[$slot] = (int) $item['variant_id'];
         }
+
+        $selectedAssets = TryOnAsset::query()
+            ->whereIn('product_variant_id', array_values($selections))
+            ->with('media')
+            ->get()
+            ->keyBy('slot');
+        $this->assertSame('image/svg+xml', $selectedAssets['top']->media->mime_type);
+        $this->assertSame('image/svg+xml', $selectedAssets['bottom']->media->mime_type);
+        $this->assertSame('image/webp', $selectedAssets['outerwear']->media->mime_type);
 
         $this->postJson('/api/virtual-try-on/preview', [
             'audience' => 'women',
