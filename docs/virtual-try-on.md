@@ -6,20 +6,20 @@ Only adult women and men mannequins are supported; the module deliberately has n
 
 ## Setup
 
-Run composer dump-autoload, php artisan migrate, and php artisan db:seed --class=VirtualTryOnMannequinSeeder. The regular DatabaseSeeder also creates the two default mannequin profiles.
+Run composer dump-autoload, php artisan migrate, and php artisan db:seed. The regular DatabaseSeeder creates the two mannequin profiles and seeds a small editable demo outfit with a mannequin base and seven transparent garment layers. To seed only the demo mappings on an existing install, run php artisan db:seed --class=VirtualTryOnDemoSeeder.
 
 Edit a product in Commerce Admin and select its audience. Leave the audience blank to keep it out of the fitting room. For each active variant intended for preview, choose a mannequin and a slot, then upload a transparent layer image.
 
 ## Layer contract
 
-- Exact canvas: 1024 × 1536 pixels (2:3).
-- Transparent PNG or WebP only, with no background.
+- Admin-upload contract: transparent PNG or WebP at exactly 1024 × 1536 pixels (2:3), with no background.
+- Storage-optimized demo layers may be 320 × 480 WebP. They retain the same full 2:3 canvas and alignment while avoiding unnecessarily large catalog assets.
 - Every layer must share the same canvas, pose, scale and alignment as the configured mannequin.
 - Do not use the ordinary product gallery image as an overlay. Gallery images are only thumbnails.
 - One try-on mapping is supported per variant in the first version.
 - Layer order is fixed by the server: shoes, bottom, top, outerwear, then accessory.
 
-A neutral, faceless silhouette is rendered when a custom base image is not configured. A custom base image can be connected to a mannequin through base_media_id using the existing Media table.
+The supplied demo mannequin base is connected to the women-front mannequin through base_media_id. A neutral, faceless SVG silhouette is rendered when a mannequin has no base image (the seeded men-front profile uses this fallback). Base images are Media records on the public disk.
 
 ## API
 
