@@ -28,85 +28,12 @@
     </div>
 
     <div class="store-catalog-layout">
-        <aside class="store-sidebar" id="store-sidebar" data-store-sidebar>
-                        <section class="filter-panel filter-panel--heading" aria-labelledby="filter-title">
-
-                <div class="filter-panel__header">
-                    <div>
-                        <p class="store-eyebrow">تنظیم نتایج</p>
-                        <h2 id="filter-title">فیلترها</h2>
-                    </div>
-                    <a class="text-action" href="{{ route('shop.index') }}">پاک‌کردن <span aria-hidden="true">↺</span></a>
-                </div>
-
-            </section>
-
-            <section class="filter-panel filter-panel--details" aria-label="فیلترهای محصولات">
-                <form class="filter-search" action="{{ route('shop.index') }}" method="GET">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg>
-                    <input type="search" name="q" value="{{ $search }}" placeholder="جست‌وجو در محصولات..." aria-label="جست‌وجو در محصولات">
-                    @foreach(request()->query() as $key => $value)
-                        @if($key !== 'q' && $key !== 'page' && is_scalar($value))
-                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                        @endif
-                    @endforeach
-                    <button type="submit" aria-label="جست‌وجو">↵</button>
-                </form>
-
-                <div class="filter-group">
-                    <div class="filter-group__heading"><h3>دسته‌بندی</h3><span>{{ $categories->count() }}</span></div>
-                    <div class="filter-options">
-                        <a href="{{ route('shop.index', array_merge(request()->query(), ['category_id' => null, 'page' => null])) }}" class="filter-option {{ !$selectedCategoryId ? 'is-selected' : '' }}">
-                            <span class="filter-option__label"><span class="filter-radio"></span>همهٔ محصولات</span>
-                            <span class="filter-option__count">{{ $products->total() }}</span>
-                        </a>
-                        @foreach($categories as $category)
-                            <a href="{{ request()->fullUrlWithQuery(['category_id' => (int) $selectedCategoryId === $category->id ? null : $category->id, 'page' => null]) }}" class="filter-option {{ (int) $selectedCategoryId === $category->id ? 'is-selected' : '' }}">
-                                <span class="filter-option__label"><span class="filter-radio"></span>{{ $category->name }}</span>
-                                <span class="filter-option__count">{{ $category->active_products_count }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-
-                @if($brands->isNotEmpty())
-                    <div class="filter-group">
-                        <div class="filter-group__heading"><h3>برند</h3><span>{{ $brands->count() }}</span></div>
-                        <div class="filter-options">
-                            <a href="{{ request()->fullUrlWithQuery(['brand_id' => null, 'page' => null]) }}" class="filter-option {{ !$selectedBrandId ? 'is-selected' : '' }}">
-                                <span class="filter-option__label"><span class="filter-checkbox"></span>همهٔ برندها</span>
-                                <span class="filter-option__count">{{ $brands->sum('active_products_count') }}</span>
-                            </a>
-                            @foreach($brands as $brand)
-                                <a href="{{ request()->fullUrlWithQuery(['brand_id' => (int) $selectedBrandId === $brand->id ? null : $brand->id, 'page' => null]) }}" class="filter-option {{ (int) $selectedBrandId === $brand->id ? 'is-selected' : '' }}">
-                                    <span class="filter-option__label"><span class="filter-checkbox"></span>{{ $brand->name }}</span>
-                                    <span class="filter-option__count">{{ $brand->active_products_count }}</span>
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                <div class="filter-group filter-group--price">
-                    <div class="filter-group__heading"><h3>محدودهٔ قیمت</h3><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span></div>
-                    <form class="price-filter" action="{{ route('shop.index') }}" method="GET">
-                        @foreach(request()->query() as $key => $value)
-                            @if(!in_array($key, ['price_min', 'price_max', 'page'], true) && is_scalar($value))
-                                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                            @endif
-                        @endforeach
-                        <label><span>حداقل</span><span class="price-input"><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span><input type="number" min="0" step="1" name="price_min" value="{{ $minPrice }}" placeholder="۰" aria-label="حداقل قیمت"></span></label>
-                        <label><span>حداکثر</span><span class="price-input"><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span><input type="number" min="0" step="1" name="price_max" value="{{ $maxPrice }}" placeholder="بدون سقف" aria-label="حداکثر قیمت"></span></label>
-                        <button type="submit" class="filter-apply">اعمال قیمت <span aria-hidden="true">↗</span></button>
-                    </form>
-                </div>
-
-                <a class="sale-filter {{ $saleOnly ? 'is-active' : '' }}" href="{{ request()->fullUrlWithQuery(['sale' => $saleOnly ? null : 1, 'page' => null]) }}">
-                    <span class="sale-filter__icon">%</span>
-                    <span><strong>تخفیف‌دار</strong><small>محصولات دارای قیمت ویژه</small></span>
-                    <span class="sale-filter__toggle" aria-hidden="true"><i></i></span>
-                </a>            </section>
-        </aside>
+        @include('store.partials.virtual-try-on-workspace', [
+            'inline' => true,
+            'productPage' => false,
+            'tryOnInitialVariantId' => null,
+            'tryOnInitialAudience' => 'women',
+        ])
 
         <section class="store-catalog" id="catalog" aria-labelledby="catalog-title">
             @if($products->count())
@@ -231,14 +158,87 @@
                 </div>
             @endif
         </section>
-    </div>
 
-    @include('store.partials.virtual-try-on-workspace', [
-        'inline' => true,
-        'productPage' => false,
-        'tryOnInitialVariantId' => null,
-        'tryOnInitialAudience' => 'women',
-    ])
+        <aside class="store-sidebar" id="store-sidebar" data-store-sidebar>
+                        <section class="filter-panel filter-panel--heading" aria-labelledby="filter-title">
+
+                <div class="filter-panel__header">
+                    <div>
+                        <p class="store-eyebrow">تنظیم نتایج</p>
+                        <h2 id="filter-title">فیلترها</h2>
+                    </div>
+                    <a class="text-action" href="{{ route('shop.index') }}">پاک‌کردن <span aria-hidden="true">↺</span></a>
+                </div>
+
+            </section>
+
+            <section class="filter-panel filter-panel--details" aria-label="فیلترهای محصولات">
+                <form class="filter-search" action="{{ route('shop.index') }}" method="GET">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg>
+                    <input type="search" name="q" value="{{ $search }}" placeholder="جست‌وجو در محصولات..." aria-label="جست‌وجو در محصولات">
+                    @foreach(request()->query() as $key => $value)
+                        @if($key !== 'q' && $key !== 'page' && is_scalar($value))
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
+                    @endforeach
+                    <button type="submit" aria-label="جست‌وجو">↵</button>
+                </form>
+
+                <div class="filter-group">
+                    <div class="filter-group__heading"><h3>دسته‌بندی</h3><span>{{ $categories->count() }}</span></div>
+                    <div class="filter-options">
+                        <a href="{{ route('shop.index', array_merge(request()->query(), ['category_id' => null, 'page' => null])) }}" class="filter-option {{ !$selectedCategoryId ? 'is-selected' : '' }}">
+                            <span class="filter-option__label"><span class="filter-radio"></span>همهٔ محصولات</span>
+                            <span class="filter-option__count">{{ $products->total() }}</span>
+                        </a>
+                        @foreach($categories as $category)
+                            <a href="{{ request()->fullUrlWithQuery(['category_id' => (int) $selectedCategoryId === $category->id ? null : $category->id, 'page' => null]) }}" class="filter-option {{ (int) $selectedCategoryId === $category->id ? 'is-selected' : '' }}">
+                                <span class="filter-option__label"><span class="filter-radio"></span>{{ $category->name }}</span>
+                                <span class="filter-option__count">{{ $category->active_products_count }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                @if($brands->isNotEmpty())
+                    <div class="filter-group">
+                        <div class="filter-group__heading"><h3>برند</h3><span>{{ $brands->count() }}</span></div>
+                        <div class="filter-options">
+                            <a href="{{ request()->fullUrlWithQuery(['brand_id' => null, 'page' => null]) }}" class="filter-option {{ !$selectedBrandId ? 'is-selected' : '' }}">
+                                <span class="filter-option__label"><span class="filter-checkbox"></span>همهٔ برندها</span>
+                                <span class="filter-option__count">{{ $brands->sum('active_products_count') }}</span>
+                            </a>
+                            @foreach($brands as $brand)
+                                <a href="{{ request()->fullUrlWithQuery(['brand_id' => (int) $selectedBrandId === $brand->id ? null : $brand->id, 'page' => null]) }}" class="filter-option {{ (int) $selectedBrandId === $brand->id ? 'is-selected' : '' }}">
+                                    <span class="filter-option__label"><span class="filter-checkbox"></span>{{ $brand->name }}</span>
+                                    <span class="filter-option__count">{{ $brand->active_products_count }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <div class="filter-group filter-group--price">
+                    <div class="filter-group__heading"><h3>محدودهٔ قیمت</h3><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span></div>
+                    <form class="price-filter" action="{{ route('shop.index') }}" method="GET">
+                        @foreach(request()->query() as $key => $value)
+                            @if(!in_array($key, ['price_min', 'price_max', 'page'], true) && is_scalar($value))
+                                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                            @endif
+                        @endforeach
+                        <label><span>حداقل</span><span class="price-input"><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span><input type="number" min="0" step="1" name="price_min" value="{{ $minPrice }}" placeholder="۰" aria-label="حداقل قیمت"></span></label>
+                        <label><span>حداکثر</span><span class="price-input"><span>{{ config('commerce-admin.currency_symbol', 'تومان') }}</span><input type="number" min="0" step="1" name="price_max" value="{{ $maxPrice }}" placeholder="بدون سقف" aria-label="حداکثر قیمت"></span></label>
+                        <button type="submit" class="filter-apply">اعمال قیمت <span aria-hidden="true">↗</span></button>
+                    </form>
+                </div>
+
+                <a class="sale-filter {{ $saleOnly ? 'is-active' : '' }}" href="{{ request()->fullUrlWithQuery(['sale' => $saleOnly ? null : 1, 'page' => null]) }}">
+                    <span class="sale-filter__icon">%</span>
+                    <span><strong>تخفیف‌دار</strong><small>محصولات دارای قیمت ویژه</small></span>
+                    <span class="sale-filter__toggle" aria-hidden="true"><i></i></span>
+                </a>            </section>
+        </aside>
+    </div>
 
 </main>
 @endsection

@@ -67,40 +67,24 @@
     let inlineReturnFocus = null;
 
     function setInlineOpen(open, initialize = true) {
-        if (!inlineMode) return;
-        const currentlyOpen = root.classList.contains('is-open');
-        if (currentlyOpen === open) return;
+        if (!inlineMode || !open) return;
 
-        if (open) {
-            inlineReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : ui.launcher;
-            root.inert = false;
-            root.setAttribute('aria-hidden', 'false');
-            root.classList.add('is-open');
-            ui.launcher?.setAttribute('aria-expanded', 'true');
-            window.requestAnimationFrame(() => ui.close?.focus({ preventScroll: true }));
-            if (initialize && !state.mannequin && !state.bootstrapController) {
-                loadBootstrap().catch((error) => {
-                    showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
-                    showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
-                });
-            }
-            return;
+        // Shop fitting room stays inline; it is not a dismissible drawer.
+        root.classList.add('is-open');
+        root.inert = false;
+        root.removeAttribute('aria-hidden');
+        ui.launcher?.setAttribute('aria-expanded', 'true');
+
+        if (initialize && !state.mannequin && !state.bootstrapController) {
+            loadBootstrap().catch((error) => {
+                showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+                showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+            });
         }
-
-        root.classList.remove('is-open');
-        root.inert = true;
-        root.setAttribute('aria-hidden', 'true');
-        ui.launcher?.setAttribute('aria-expanded', 'false');
-        const focusTarget = inlineReturnFocus?.isConnected && !root.contains(inlineReturnFocus)
-            ? inlineReturnFocus
-            : ui.launcher;
-        focusTarget?.focus?.({ preventScroll: true });
-        inlineReturnFocus = null;
     }
 
-    // The shop card owns the click target; this controller owns the drawer and
-    // the single source of truth for selection. Animate a decorative clone only.
-    function animateShopSelection(button, drawerAlreadyOpen = false) {
+    // Keep the existing product-to-preview transition lightweight and in-page.
+    function animateShopSelection(button, workspaceVisible = false) {
         const thumbnail = button.closest('[data-product-card]')?.querySelector('.product-card__image');
         if (!thumbnail || !ui.stage || !thumbnail.complete || !thumbnail.naturalWidth) return;
 
@@ -134,7 +118,7 @@
         }
 
         const waitForDrawer = () => new Promise((resolve) => {
-            if (drawerAlreadyOpen || !inlineMode || !root.classList.contains('is-open')) {
+            if (workspaceVisible || !inlineMode || !root.classList.contains('is-open')) {
                 resolve();
                 return;
             }
@@ -165,11 +149,13 @@
             const dx = target.left + target.width / 2 - (source.left + source.width / 2);
             const dy = target.top + target.height * .36 - (source.top + source.height / 2);
             const animation = clone.animate([
-                { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1, filter: 'blur(0px) drop-shadow(0 12px 18px rgba(0,0,0,.36))' },
-                { offset: .58, transform: `translate(${dx * .58}px,${dy * .58 - 22}px) scale(.48) rotate(5deg)`, opacity: .94, filter: 'blur(1px) drop-shadow(0 8px 12px rgba(0,0,0,.24))' },
-                { transform: `translate(${dx}px,${dy}px) scale(.13) rotate(10deg)`, opacity: 0, filter: 'blur(4px) drop-shadow(0 0 0 rgba(0,0,0,0))' },
+                { transform: 'translate(0,0) scale(1,1) rotate(0deg)', borderRadius: '8%', opacity: 1, filter: 'blur(0px) drop-shadow(0 12px 18px rgba(0,0,0,.36))' },
+                { offset: .26, transform: `translate(${dx * .26}px,${dy * .26 - 12}px) scale(.82,.68) rotate(110deg)`, borderRadius: '22%', opacity: 1, filter: 'blur(.35px) drop-shadow(0 9px 14px rgba(0,0,0,.3))' },
+                { offset: .52, transform: `translate(${dx * .52}px,${dy * .52 - 24}px) scale(.46,.56) rotate(300deg)`, borderRadius: '38%', opacity: .96, filter: 'blur(.8px) drop-shadow(0 6px 10px rgba(0,0,0,.22))' },
+                { offset: .78, transform: `translate(${dx * .78}px,${dy * .78 - 8}px) scale(.24,.3) rotate(520deg)`, borderRadius: '48%', opacity: .75, filter: 'blur(1.8px) drop-shadow(0 3px 6px rgba(0,0,0,.16))' },
+                { transform: `translate(${dx}px,${dy}px) scale(.08,.12) rotate(720deg)`, borderRadius: '50%', opacity: 0, filter: 'blur(4px) drop-shadow(0 0 0 rgba(0,0,0,0))' },
             ], {
-                duration: 620,
+                duration: 780,
                 easing: 'cubic-bezier(.16,1,.3,1)',
                 fill: 'forwards',
             });
@@ -813,11 +799,12 @@
         renderSlots();
         updateMannequinStage();
         if (!state.mannequin) {
+            ui.stageLoading.hidden = true;
             showCatalogEmpty('مانکن فعالی برای این گروه تعریف نشده است.', 'پیکربندی پایهٔ مانکن را اجرا کن.');
             ui.stageEmpty.hidden = false;
             return;
         }
-        await loadCatalog(true);
+        if (!inlineMode) await loadCatalog(true);
         if (version !== state.bootstrapVersion) return;
         if (state.requestedVariantId && !state.initialVariantHasLayer) {
             ui.catalogNote.textContent = 'این واریانت برای مانکن انتخاب‌شده لایهٔ سازگار ندارد؛ می‌توانی لباس‌های آمادهٔ دیگر را در همین پیش‌نمایش ترکیب کنی.';
@@ -867,18 +854,19 @@
 
     ui.expand?.addEventListener('click', () => setExpanded(!root.classList.contains('is-expanded')));
     ui.close?.addEventListener('click', () => setInlineOpen(false));
-    ui.launcher?.addEventListener('click', () => setInlineOpen(!root.classList.contains('is-open')));
+    ui.launcher?.addEventListener('click', () => setInlineOpen(true));
 
     if (inlineMode) {
-        root.inert = true;
-        root.setAttribute('aria-hidden', 'true');
-        ui.launcher?.setAttribute('aria-expanded', 'false');
+        root.inert = false;
+        root.removeAttribute('aria-hidden');
+        root.classList.remove('is-open');
+        ui.launcher?.setAttribute('aria-expanded', 'true');
 
         document.addEventListener('click', (event) => {
             const target = event.target instanceof Element ? event.target.closest('[data-vto-select-product]') : null;
             if (!target) return;
             event.preventDefault();
-            const drawerAlreadyOpen = root.classList.contains('is-open');
+            const workspaceVisible = !root.inert;
             setInlineOpen(true, false);
 
             const variantId = Number(target.dataset.vtoVariantId) || null;
@@ -899,7 +887,7 @@
 
             const alreadySelected = Object.values(state.selected).some((id) => Number(id) === variantId);
             const sameSelectionPending = Number(state.requestedVariantId) === variantId && !alreadySelected;
-            if (!alreadySelected && !sameSelectionPending) animateShopSelection(target, drawerAlreadyOpen);
+            if (!alreadySelected && !sameSelectionPending) animateShopSelection(target, workspaceVisible);
 
             root.dispatchEvent(new CustomEvent('vto:select-variant', {
                 detail: {
@@ -913,11 +901,6 @@
     }
 
     document.addEventListener('keydown', (event) => {
-        if (inlineMode && event.key === 'Escape' && root.classList.contains('is-open') && !root.classList.contains('is-expanded')) {
-            event.preventDefault();
-            setInlineOpen(false);
-            return;
-        }
         if (!root.classList.contains('is-expanded')) return;
 
         if (event.key === 'Escape') {
@@ -999,6 +982,7 @@
             delete state.selected[state.currentProductSlot];
         }
 
+        ui.stageLoading.hidden = false;
         state.requestedVariantId = variantId;
         state.pendingInitialVariantId = null;
         state.currentProductVariantId = null;
@@ -1010,6 +994,7 @@
         state.bootstrapVersion++;
         ui.stageLoading.hidden = true;
         loadBootstrap().catch((error) => {
+            ui.stageLoading.hidden = true;
             if (state.requestedVariantId === variantId) state.requestedVariantId = null;
             showToast(error.message || 'آماده‌سازی مانکن انجام نشد.');
         });
@@ -1082,10 +1067,10 @@
         else loadBootstrap().catch((error) => showToast(error.message || 'آماده‌سازی مانکن انجام نشد.'));
     });
 
-    if (!inlineMode) {
-        loadBootstrap().catch((error) => {
-            showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
-            showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
-        });
-    }
+    ui.stageLoading.hidden = false;
+    loadBootstrap().catch((error) => {
+        ui.stageLoading.hidden = true;
+        showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
+        showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
+    });
 })();
