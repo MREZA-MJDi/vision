@@ -81,7 +81,7 @@ class VirtualTryOnController extends Controller
 
             $record->save();
         });
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             if ($storedPath) Storage::disk($disk)->delete($storedPath);
             throw $exception;
         }
@@ -184,7 +184,7 @@ class VirtualTryOnController extends Controller
                     ->update(['is_default' => false]);
             }
         });
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             if ($storedPath) Storage::disk($disk)->delete($storedPath);
             throw $exception;
         }
