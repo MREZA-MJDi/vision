@@ -6,7 +6,7 @@ Only adult women and men mannequins are supported; the module deliberately has n
 
 ## Setup
 
-Run composer dump-autoload, php artisan migrate, and php artisan db:seed. The regular DatabaseSeeder creates the two mannequin profiles and seeds a small editable demo outfit with a mannequin base and seven transparent garment layers. To seed only the demo mappings on an existing install, run php artisan db:seed --class=VirtualTryOnDemoSeeder.
+Run composer dump-autoload, php artisan migrate, and php artisan db:seed. The regular DatabaseSeeder creates the two mannequin profiles and preserves the existing launch catalog. To add the optional editable demo outfit, run php artisan db:seed --class=VirtualTryOnDemoSeeder after the mannequin seeder has run. This seeds a mannequin base, two photo-based outerwear layers, and SVG top/trouser layers; it does not alter the default launch catalog counts.
 
 Edit a product in Commerce Admin and select its audience. Leave the audience blank to keep it out of the fitting room. For each active variant intended for preview, choose a mannequin and a slot, then upload a transparent layer image.
 
@@ -20,7 +20,7 @@ Edit a product in Commerce Admin and select its audience. Leave the audience bla
 - One try-on mapping is supported per variant in the first version.
 - Layer order is fixed by the server: shoes, bottom, top, outerwear, then accessory.
 
-The supplied demo mannequin base is connected to the women-front mannequin through base_media_id. A neutral, faceless SVG silhouette is rendered when a mannequin has no base image (the seeded men-front profile uses this fallback). Base images are Media records on the public disk.
+The supplied demo mannequin base is connected to the women-front mannequin through base_media_id when the opt-in demo seeder runs. A neutral, faceless SVG silhouette is rendered when a mannequin has no base image (the seeded men-front profile uses this fallback). Base images are Media records on the public disk.
 
 ## API
 
