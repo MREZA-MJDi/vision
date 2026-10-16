@@ -67,14 +67,15 @@
     let inlineReturnFocus = null;
 
     function setInlineOpen(open, initialize = true) {
-        if (!inlineMode) return;
-        // The Shop workspace lives in the page flow. "Open" now means reveal it,
-        // never launch a floating drawer or move focus into a modal-like surface.
-        root.classList.toggle('is-open', Boolean(open));
-        root.inert = !open;
-        root.setAttribute('aria-hidden', String(!open));
-        ui.launcher?.setAttribute('aria-expanded', String(Boolean(open)));
-        if (open && initialize && !state.mannequin && !state.bootstrapController) {
+        if (!inlineMode || !open) return;
+
+        // Shop fitting room stays inline; it is not a dismissible drawer.
+        root.classList.add('is-open');
+        root.inert = false;
+        root.removeAttribute('aria-hidden');
+        ui.launcher?.setAttribute('aria-expanded', 'true');
+
+        if (initialize && !state.mannequin && !state.bootstrapController) {
             loadBootstrap().catch((error) => {
                 showCatalogEmpty('اتاق پرو آماده نشد.', error.message || 'اتصال را بررسی کن و صفحه را دوباره بارگذاری کن.');
                 showToast(error.message || 'آماده‌سازی اتاق پرو انجام نشد.');
@@ -897,11 +898,6 @@
     }
 
     document.addEventListener('keydown', (event) => {
-        if (inlineMode && event.key === 'Escape' && root.classList.contains('is-open') && !root.classList.contains('is-expanded')) {
-            event.preventDefault();
-            setInlineOpen(false);
-            return;
-        }
         if (!root.classList.contains('is-expanded')) return;
 
         if (event.key === 'Escape') {
