@@ -52,7 +52,7 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                         ->where(function ($dimensions): void {
                         $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
                             ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
@@ -103,7 +103,7 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                         ->where(function ($dimensions): void {
                         $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
                             ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
@@ -148,11 +148,12 @@ class VirtualTryOnController extends Controller
             'meta' => [
                 'ready' => $mannequins->isNotEmpty(),
                 'asset_contract' => [
-                    'format' => 'transparent PNG or WebP',
+                    'format' => 'transparent SVG, PNG or WebP',
                     'canvas_width' => 1024,
                     'canvas_height' => 1536,
                     'optimized_layer_width' => 320,
                     'optimized_layer_height' => 480,
+                    'svg_demo_layers' => 'Vector demo layers are stored as transparent SVG at the same 2:3 canvas size.',
                     'alignment' => 'Every layer shares the same 2:3 mannequin canvas and pose; 320×480 WebP layers are storage-optimized equivalents of the 1024×1536 canvas.',
                 ],
             ],
@@ -180,7 +181,7 @@ class VirtualTryOnController extends Controller
                 $query->where('collection', 'try-on-layer')
                     ->whereNotNull('path')
                     ->whereRaw("TRIM(path) <> ''")
-                    ->whereIn('mime_type', ['image/png', 'image/webp'])
+                    ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                     ->where(function ($dimensions): void {
                         $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
                             ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
@@ -249,7 +250,7 @@ class VirtualTryOnController extends Controller
                     $query->where('collection', 'try-on-layer')
                         ->whereNotNull('path')
                         ->whereRaw("TRIM(path) <> ''")
-                        ->whereIn('mime_type', ['image/png', 'image/webp'])
+                        ->whereIn('mime_type', ['image/png', 'image/webp', 'image/svg+xml'])
                         ->where(function ($dimensions): void {
                         $dimensions->where(fn ($query) => $query->where('width', 1024)->where('height', 1536))
                             ->orWhere(fn ($query) => $query->where('width', 320)->where('height', 480));
