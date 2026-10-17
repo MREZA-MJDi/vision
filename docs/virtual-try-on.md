@@ -4,6 +4,22 @@ The fitting room is available at /try-on and is also embedded on product detail 
 
 Only adult women and men mannequins are supported; the module deliberately has no third or unisex audience.
 
+## Expected customer workflow
+
+1. An admin configures one base image for each mannequin profile in Commerce Admin → **اتاق پرو**. The base image is the person/mannequin only; it is not a product image.
+2. Each product is assigned an audience (women or men). Every active product variant that should be selectable needs one active try-on mapping, its compatible mannequin, a garment slot and a transparent garment-layer image.
+3. In the storefront, the hanger/try-on control is enabled only when the selected variant has a valid compatible layer. Clicking it opens the fitting room, selects that exact variant, and keeps selections in other garment slots. Selecting another item in the same slot replaces the prior item in that slot.
+4. The preview API validates the variant and returns the ordered layer URLs. The browser overlays those assets on the configured base mannequin, and the loading indicator remains visible until the updated composition returns.
+5. The ordinary product gallery image is a thumbnail only; it must never be treated as the garment overlay. If an active compatible layer is missing, the UI should explain that the product is not yet configured instead of pretending that a try-on was generated.
+
+## Layer compositor versus AI try-on
+
+The current implementation is a deterministic **transparent-layer compositor**, not an AI image-generation integration. It needs a base mannequin image plus a separate transparent, pose-aligned garment layer for each supported product variant. This mode is fast, predictable and can combine multiple slots in one preview, but it requires asset preparation.
+
+An AI try-on workflow would be different: the inputs would normally be the configured mannequin/person image and the product's source garment photo. A backend provider adapter would submit those inputs to a try-on model, store a queued request, show progress while the provider works, and display the generated result when complete. The app would also need failure handling, provider credentials stored server-side, request deduplication and result caching keyed by mannequin image, product image/variant and model version. It would not require admins to upload a transparent image of every garment already aligned to the mannequin.
+
+No AI provider, API credential, generation job or result-cache pipeline is wired into this repository today. Do not label the current layered preview as AI-generated. For a first production release, either keep the layer-compositor workflow and make its per-variant image requirement explicit, or implement AI as a distinct backend mode rather than silently mixing the two contracts. Multi-garment AI outfit composition must be verified against the selected provider; it should not be assumed to work just because single-product try-on works.
+
 ## Setup
 
 Run composer dump-autoload, php artisan migrate, and php artisan db:seed. The regular DatabaseSeeder creates the two mannequin profiles and preserves the existing launch catalog. To add the optional editable demo outfit, run php artisan db:seed --class=VirtualTryOnDemoSeeder after the mannequin seeder has run. This seeds a mannequin base, two photo-based outerwear layers, and SVG top/trouser layers; it does not alter the default launch catalog counts.
