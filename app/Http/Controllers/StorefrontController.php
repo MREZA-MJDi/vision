@@ -45,7 +45,7 @@ class StorefrontController extends Controller
 
         // The hero is a small, already eager-loaded playlist. It is rendered in
         // the initial document so changing slides never adds a request.
-        $heroProducts = $this->catalogProducts()
+        $heroProducts = $this->homepageHeroProducts()
             ->where('is_hero', true)
             ->orderBy('sort_order')
             ->orderByDesc('updated_at')
@@ -56,7 +56,7 @@ class StorefrontController extends Controller
         $heroProduct = $heroProducts->first();
 
         if (!$heroProduct) {
-            $heroProduct = $this->catalogProducts()
+            $heroProduct = $this->homepageHeroProducts()
                 ->orderByDesc('is_featured')
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
@@ -66,10 +66,6 @@ class StorefrontController extends Controller
                 $heroProducts = collect([$heroProduct]);
             }
         }
-
-        // The hero picker uses real active variants and each variant's own
-        // photo. This is a single bounded eager load for the highlighted product.
-        $heroProduct?->loadMissing(['activeVariants.primaryGalleryMedia']);
 
         return view('store.home', compact(
             'categories',
@@ -265,6 +261,25 @@ class StorefrontController extends Controller
             ->get();
 
         return view('store.products.show', compact('product', 'relatedProducts'));
+    }
+
+    /**
+     * Minimal eager-loaded query for the homepage hero playlist.
+     *
+     * Unlike the shop catalog query, the hero does not render review aggregates,
+     * brands or category metadata. Keeping this query focused avoids unnecessary
+     * joins and relationship loads on the first page view.
+     */
+    private function homepageHeroProducts(): Builder
+    {
+        return Product::query()
+            ->active()
+            ->whereHas('activeVariants')
+            ->with([
+                'primaryGalleryMedia',
+                'primaryAvailableVariant.primaryGalleryMedia',
+                'primaryActiveVariant.primaryGalleryMedia',
+            ]);
     }
 
     /**
