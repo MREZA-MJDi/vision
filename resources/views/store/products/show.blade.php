@@ -152,11 +152,7 @@
         </div>
     </section>
 
-    @include('store.partials.virtual-try-on-workspace', [
-        'productPage' => true,
-        'tryOnInitialVariantId' => $defaultVariant?->getKey(),
-        'tryOnInitialAudience' => in_array($product->audience ?? '', ['women', 'men'], true) ? $product->audience : 'women',
-    ])
+    @include('store.partials.fitting-room-shell')
 
     @if($relatedProducts->isNotEmpty())
         <section class="commerce-related">

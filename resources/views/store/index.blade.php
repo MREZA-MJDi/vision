@@ -28,12 +28,7 @@
     </div>
 
     <div class="store-catalog-layout">
-        @include('store.partials.virtual-try-on-workspace', [
-            'inline' => true,
-            'productPage' => false,
-            'tryOnInitialVariantId' => null,
-            'tryOnInitialAudience' => 'women',
-        ])
+        @include('store.partials.fitting-room-shell')
 
         <section class="store-catalog" id="catalog" aria-labelledby="catalog-title">
             @if($products->count())
@@ -41,28 +36,10 @@
                     @foreach($products as $product)
                         @php
                             $variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant;
-                            $image = null; // Resolve after the compatible try-on layer is known.
+                            $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url;
                             $effectivePrice = $variant?->effective_price ?? $variant?->price;
                             $isOnSale = $variant?->is_on_sale ?? false;
                             $rating = $product->approved_reviews_avg_rating;
-                            $tryOnAsset = $variant?->tryOnAssets?->first(function ($asset) use ($product) {
-                                $mannequin = $asset->mannequin;
-                                $media = $asset->media;
-
-                                return $asset->is_active
-                                    && $mannequin?->is_active
-                                    && $mannequin->audience === $product->audience
-                                    && \Rm\VirtualTryOn\Support\VirtualTryOnConfig::isSlot((string) $asset->slot)
-                                    && $media
-                                    && $media->collection === 'try-on-layer'
-                                    && trim((string) $media->path) !== ''
-                                    && $media->url
-                                    && in_array($media->mime_type, ['image/png', 'image/webp'], true)
-                                    && (int) $media->width === 1024
-                                    && (int) $media->height === 1536;
-                            });
-                            $image = $product->primaryGalleryMedia?->url ?? $variant?->primaryGalleryMedia?->url ?? $tryOnAsset?->media?->url;
-                            $tryOnAudience = $tryOnAsset?->mannequin?->audience ?? $product->audience ?? 'women';
                         @endphp
                         <article class="product-card" data-product-card>
                             <div class="product-card__visual">
@@ -85,21 +62,6 @@
                                         <span aria-hidden="true">★</span> {{ number_format((float) $rating, 1) }}
                                     </span>
                                 @endif
-
-                                <button class="product-card__quickfit {{ $tryOnAsset ? 'is-tryon-ready' : 'is-tryon-unavailable' }}"
-                                    type="button"
-                                    data-vto-select-product
-                                    data-vto-variant-id="{{ $variant?->id ?? '' }}"
-                                    data-vto-slot="{{ $tryOnAsset?->slot ?? '' }}"
-                                    data-vto-audience="{{ $tryOnAudience }}"
-                                    data-vto-ready="{{ $tryOnAsset ? '1' : '0' }}"
-                                    data-product-name="{{ $product->name }}"
-                                    aria-pressed="false"
-                                    aria-label="{{ $tryOnAsset ? 'امتحان ' . $product->name . ' روی مانکن' : 'تصویر اتاق پرو برای ' . $product->name . ' هنوز ثبت نشده است' }}"
-                                    title="{{ $tryOnAsset ? 'امتحان روی مانکن' : 'تصویر لایه‌ای اتاق پرو هنوز ثبت نشده است' }}"
-                                    @disabled(!$variant)>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4m0 0-3-3m3 3 3-3M4 15l8-5 8 5M6 14v5h12v-5"></path></svg>
-                                </button>
 
                                 <button class="product-card__cart" type="button"
                                     data-cart-add="{{ $variant?->id ?? '' }}"
