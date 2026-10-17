@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Rm\VirtualTryOn\Models\TryOnAsset;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductVariant extends Model
@@ -34,11 +33,6 @@ class ProductVariant extends Model
 
     public function product(): BelongsTo { return $this->belongsTo(Product::class); }
     public function media(): MorphMany { return $this->morphMany(Media::class, 'mediable'); }
-
-    public function tryOnAssets(): HasMany
-    {
-        return $this->hasMany(TryOnAsset::class, 'product_variant_id');
-    }
 
     public function galleryMedia(): MorphMany
     {
