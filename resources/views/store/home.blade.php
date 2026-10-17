@@ -10,11 +10,10 @@
     $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
     $heroVariant = $heroProduct?->primaryAvailableVariant ?? $heroProduct?->primaryActiveVariant;
     $heroImage = $heroVariant?->primaryGalleryMedia?->url ?? $heroProduct?->primaryGalleryMedia?->url;
-    $heroVariants = $heroProduct?->activeVariants ?? collect();
     $heroSlides = ($heroProducts ?? collect())->map(function ($product) use ($formatPrice) {
         $variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant;
         $image = $variant?->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url;
-        $color = preg_match('/^#[0-9a-fA-F]{3,8}$/', (string) $variant?->color_code)
+        $color = preg_match('/^#[0-9a-fA-F]{3,6}$/', (string) $variant?->color_code)
             ? $variant->color_code
             : '#9a5527';
 
@@ -31,20 +30,6 @@
             'stock' => $variant && (int) $variant->stock > 0 ? number_format((int) $variant->stock) . ' عدد موجود' : 'فعلاً ناموجود',
         ];
     })->values();
-    $heroColors = $heroVariants
-        ->filter(fn ($variant) => filled($variant->color))
-        ->unique(fn ($variant) => mb_strtolower(trim((string) $variant->color)))
-        ->take(4)
-        ->values();
-    $heroSizes = $heroVariants
-        ->filter(fn ($variant) => filled($variant->size))
-        ->unique(fn ($variant) => mb_strtolower(trim((string) $variant->size)))
-        ->take(4)
-        ->values();
-    $heroChoiceMode = $heroColors->count() > 1 ? 'color' : 'size';
-    $heroVariantChoices = $heroChoiceMode === 'color'
-        ? $heroColors
-        : ($heroSizes->isNotEmpty() ? $heroSizes : $heroColors);
 @endphp
 
 <main class="store-main store-home">
