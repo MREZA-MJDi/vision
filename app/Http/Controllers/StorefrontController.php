@@ -50,7 +50,7 @@ class StorefrontController extends Controller
             ->orderBy('sort_order')
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->limit(6)
+            ->limit(10)
             ->get();
 
         $heroProduct = $heroProducts->first();
