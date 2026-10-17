@@ -738,8 +738,9 @@
 
             const moveImages = (x, y) => {
                 const size = container.getBoundingClientRect().width || 280;
-                const targetX = -size / 2 + (size / 2) * x;
-                const targetY = -(size / 2) * y;
+                const maxShift = Math.min(8, size * 0.025);
+                const targetX = (x - 0.5) * 2 * maxShift;
+                const targetY = (y - 0.5) * 2 * maxShift;
                 images.forEach((image, index) => {
                     imageXTo[index](targetX);
                     imageYTo[index](targetY);
@@ -758,7 +759,7 @@
             const setGeometry = () => {
                 const size = container.getBoundingClientRect().width || 280;
                 stage.style.perspective = String(Math.round(size * 5)) + 'px';
-                gsap.set(images, { x: -size / 4, y: -size / 4 });
+                gsap.set(images, { x: 0, y: 0 });
             };
 
             gsap.set(cube, { rotationX: -18, rotationY: -26, transformStyle: 'preserve-3d' });
