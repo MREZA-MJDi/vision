@@ -123,16 +123,6 @@ class StorefrontController extends Controller
 
         $productsQuery = $this->catalogProducts();
         
-        // Shop cards need their fitting-room readiness without issuing one query per card.
-        $loadActiveTryOnAssets = static fn ($query) => $query
-            ->active()
-            ->with(['mannequin', 'media']);
-
-        $productsQuery->with([
-            'primaryAvailableVariant.tryOnAssets' => $loadActiveTryOnAssets,
-            'primaryActiveVariant.tryOnAssets' => $loadActiveTryOnAssets,
-        ]);
-
         if ($search !== '') {
             $productsQuery->where(function (Builder $query) use ($search): void {
                 $query->where('name', 'like', '%' . $search . '%')
