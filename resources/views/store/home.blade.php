@@ -206,7 +206,7 @@
                 <div class="home-section__heading">
                     <div>
                         <p class="store-eyebrow">V I S I O N / C A T E G O R I E S</p>
-                        <h2 id="home-categories-title">از استایل خودت شروع کن</h2>
+                        <h2 id="home-categories-title">انتخاب بر اساس استایل</h2>
                         <p class="home-section__intro">دستهٔ موردعلاقه‌ات را بچرخان و مجموعه‌اش را ببین.</p>
                     </div>
                     <a class="home-section__link" href="{{ route('shop.index') }}">همهٔ محصولات <span aria-hidden="true">←</span></a>
