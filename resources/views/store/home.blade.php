@@ -224,7 +224,7 @@
                                        aria-current="{{ $loop->first ? 'true' : 'false' }}"
                                        tabindex="{{ $loop->first ? '0' : '-1' }}">
                                         @if($categoryImage)
-                                            <img class="home-category-cube__image"
+                                            <img class="home-category-cube__image home-category-card__image"
                                                  src="{{ $categoryImage }}"
                                                  alt=""
                                                  loading="lazy"
