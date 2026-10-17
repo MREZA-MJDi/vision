@@ -11,7 +11,6 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReviewController;
-use App\Http\Controllers\Admin\VirtualTryOnController;
 use App\Http\Middleware\Admin\EnsureAdmin;
 
 Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
@@ -58,9 +57,6 @@ Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
         Route::delete('/products/{product}/media/{media}', [ProductController::class, 'deleteMedia'])->whereNumber('product')->whereNumber('media')->name('products.media.destroy');
         Route::delete('/products/{product}/variants/{variant}/media/{media}', [ProductController::class, 'deleteVariantMedia'])->whereNumber('product')->whereNumber('variant')->whereNumber('media')->name('products.variants.media.destroy');
 
-        Route::get('/try-on', [VirtualTryOnController::class, 'index'])->name('try-on.index');
-        Route::put('/try-on/mannequins/{mannequin}', [VirtualTryOnController::class, 'updateMannequin'])->whereNumber('mannequin')->name('try-on.mannequins.update');
-        Route::put('/try-on/variants/{variant}', [VirtualTryOnController::class, 'updateVariant'])->whereNumber('variant')->name('try-on.variants.update');
 
         Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
         Route::patch('/reviews/{review}/status', [ReviewController::class, 'updateStatus'])->whereNumber('review')->name('reviews.status');
