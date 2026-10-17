@@ -646,7 +646,10 @@
                     heroThumbnail.hidden = true;
                 }
             }
-            if (heroThumbnailLink) heroThumbnailLink.hidden = !imageUrl;
+            if (heroThumbnailLink) {
+                heroThumbnailLink.href = slide.dataset.url || heroThumbnailLink.href;
+                heroThumbnailLink.hidden = !imageUrl;
+            }
         };
 
         const updateHeroControls = () => {
