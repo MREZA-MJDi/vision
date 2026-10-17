@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Support\SeoDefaults;
+use App\Services\HeroService;
 use Rm\VirtualTryOn\Models\TryOnAsset;
 use Rm\VirtualTryOn\Models\TryOnMannequin;
 use Rm\VirtualTryOn\Support\VirtualTryOnConfig;
@@ -20,6 +21,7 @@ use App\Http\Requests\Admin\BulkArchiveProductsRequest;
 use App\Http\Requests\Admin\SaveProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -195,13 +197,31 @@ class ProductController
         $variantModel = $this->model('variant', ProductVariant::class);
         $inventoryModel = $this->model('inventory_movement', InventoryMovement::class);
         $validated = $request->validated();
+        $requestedHeroState = (bool) ($validated['is_hero'] ?? false);
+        $heroSelectionChanged = $requestedHeroState !== (bool) $product->is_hero;
+        $serializeHeroSelection = $requestedHeroState || $heroSelectionChanged;
 
         $mediaDisk = (string) config('commerce-admin.media_disk', 'public');
         $storedImagePaths = [];
         $obsoleteImagePaths = [];
 
         try {
-            DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, &$storedImagePaths, &$obsoleteImagePaths): void {
+            $persist = function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, $requestedHeroState, &$storedImagePaths, &$obsoleteImagePaths): void {
+                DB::transaction(function () use ($validated, $product, $productModel, $updating, $variantModel, $inventoryModel, $request, $mediaDisk, $requestedHeroState, &$storedImagePaths, &$obsoleteImagePaths): void {
+            if ($requestedHeroState) {
+                $heroProducts = $productModel::query()->where('is_hero', true);
+
+                if ($product->exists) {
+                    $heroProducts->where($product->getKeyName(), '<>', $product->getKey());
+                }
+
+                if ($heroProducts->count() >= HeroService::MAX_SLIDES) {
+                    throw ValidationException::withMessages([
+                        'is_hero' => 'حداکثر ۱۰ محصول می‌تواند در هِروی صفحهٔ اصلی باشد؛ ابتدا یک محصول دیگر را از هِرو خارج کن.',
+                    ]);
+                }
+            }
+
             $requestedSlug = trim((string) ($validated['slug'] ?? ''));
             $slug = $requestedSlug !== '' ? $requestedSlug : Str::slug($validated['name']);
 
@@ -523,7 +543,14 @@ class ProductController
                     ]);
                 }
             }
-            }, 1);
+                }, 1);
+            };
+
+            if ($serializeHeroSelection) {
+                Cache::lock('store:home:hero:toggle', 120)->block(10, $persist);
+            } else {
+                $persist();
+            }
         } catch (\Throwable $exception) {
             foreach ($storedImagePaths as $path) {
                 Storage::disk($mediaDisk)->delete($path);
