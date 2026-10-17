@@ -10,7 +10,7 @@ use RuntimeException;
 
 final class HeroService
 {
-    public const MAX_SLIDES = 30;
+    public const MAX_SLIDES = 10;
 
     private const VERSION_KEY = 'store:home:hero:products:version';
     private const CACHE_PREFIX = 'store:home:hero:products:';
