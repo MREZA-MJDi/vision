@@ -57,13 +57,19 @@ class VirtualTryOnTest extends TestCase
     {
         $mannequin = $this->mannequin('women');
         $variant = $this->variant('women', 'vto-initial-variant');
-        $this->asset($variant, $mannequin, 'bottom', 'women/initial.webp');
+        $asset = $this->asset($variant, $mannequin, 'bottom', 'women/initial.webp');
 
-        $this->getJson('/api/virtual-try-on/bootstrap?audience=women&variant_id='.$variant->id)
+        $response = $this->getJson('/api/virtual-try-on/bootstrap?audience=women&variant_id='.$variant->id)
             ->assertOk()
             ->assertJsonPath('data.initial_selection.variant_id', $variant->id)
             ->assertJsonPath('data.initial_selection.mannequin_id', $mannequin->id)
-            ->assertJsonPath('data.initial_selection.slot', 'bottom');
+            ->assertJsonPath('data.initial_selection.slot', 'bottom')
+            ->assertJsonPath('data.initial_selection.name', 'vto-initial-variant');
+
+        // The inline shop workspace does not load the VTO catalog; bootstrap
+        // must include enough trusted data to select and render the clicked item.
+        $this->assertSame($asset->media->url, $response->json('data.initial_selection.layer_url'));
+        $this->assertSame($asset->media->url, $response->json('data.initial_selection.thumbnail_url'));
 
         TryOnAsset::query()->where('product_variant_id', $variant->id)->firstOrFail()
             ->media()->update(['width' => 500]);
