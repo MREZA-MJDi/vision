@@ -431,20 +431,9 @@
             maximumFractionDigits: 0
         }) + ' ' + currency;
 
-        const syncTryOnVariant = (option) => {
-            const tryOnWorkspace = document.querySelector('[data-virtual-try-on]');
-            if (!tryOnWorkspace) return;
-            tryOnWorkspace.dispatchEvent(new CustomEvent('vto:select-variant', {
-                // The fitting-room audience is user-controlled. A variant change
-                // updates its own slot without forcibly switching the mannequin.
-                detail: { variantId: option ? Number(option.value) : null },
-            }));
-        };
-
         const refreshVariant = () => {
             const option = select.selectedOptions?.[0];
             if (!option) {
-                syncTryOnVariant(null);
                 if (addButton) addButton.disabled = true;
                 if (stockDisplay) stockDisplay.textContent = 'فعلاً موجود نیست';
                 if (mainImage) {
@@ -524,7 +513,6 @@
                 }
             }
             if (addButton) addButton.disabled = stock < 1;
-            syncTryOnVariant(option);
         };
 
         colorButtons.forEach((button) => button.addEventListener('click', () => {

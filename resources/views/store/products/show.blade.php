@@ -152,12 +152,6 @@
         </div>
     </section>
 
-    @include('store.partials.virtual-try-on-workspace', [
-        'productPage' => true,
-        'tryOnInitialVariantId' => $defaultVariant?->getKey(),
-        'tryOnInitialAudience' => in_array($product->audience ?? '', ['women', 'men'], true) ? $product->audience : 'women',
-    ])
-
     @if($relatedProducts->isNotEmpty())
         <section class="commerce-related">
             <div class="commerce-page-heading"><div><p class="store-eyebrow">پیشنهادهای دیگر</p><h2>شاید این‌ها را هم بپسندی<span>.</span></h2></div><a class="commerce-text-link" href="{{ route('shop.index') }}">مشاهدهٔ همه ↗</a></div>
