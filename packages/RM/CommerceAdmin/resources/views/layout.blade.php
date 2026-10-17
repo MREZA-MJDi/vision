@@ -33,7 +33,7 @@
         <nav class="ak-nav" aria-label="ناوبری اصلی">
 <div class="ak-nav-caption">داشبورد</div>
 <a class="ak-nav-link {{ request()->routeIs('commerce-admin.dashboard') ? 'is-active' : '' }}" href="{{ route('commerce-admin.dashboard') }}"><span class="ak-nav-icon" aria-hidden="true">▦</span><span>داشبورد اصلی</span></a>
-<button class="ak-nav-group {{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.categories.*','commerce-admin.brands.*','commerce-admin.try-on.*') ? 'is-open' : '' }}" type="button" data-nav-toggle aria-expanded="{{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.categories.*','commerce-admin.brands.*','commerce-admin.try-on.*') ? 'true' : 'false' }}"><span class="ak-nav-icon" aria-hidden="true">▤</span><span>فروشگاه</span><span class="ak-nav-caret" aria-hidden="true">⌄</span></button>
+<button class="ak-nav-group {{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.categories.*','commerce-admin.brands.*') ? 'is-open' : '' }}" type="button" data-nav-toggle aria-expanded="{{ request()->routeIs('commerce-admin.analytics','commerce-admin.products.*','commerce-admin.orders.*','commerce-admin.categories.*','commerce-admin.brands.*') ? 'true' : 'false' }}"><span class="ak-nav-icon" aria-hidden="true">▤</span><span>فروشگاه</span><span class="ak-nav-caret" aria-hidden="true">⌄</span></button>
 <div class="ak-nav-submenu" data-nav-submenu>
 <a class="{{ request()->routeIs('commerce-admin.analytics') ? 'is-active' : '' }}" href="{{ route('commerce-admin.analytics') }}">گزارش فروشگاه</a>
 <a class="{{ request()->routeIs('commerce-admin.products.index') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.index') }}">فهرست محصولات</a>
@@ -41,9 +41,7 @@
 <a class="{{ request()->routeIs('commerce-admin.products.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.products.create') }}">افزودن محصول</a>
 <a class="{{ request()->routeIs('commerce-admin.categories.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.categories.index') }}">دسته‌بندی‌ها</a>
 <a class="{{ request()->routeIs('commerce-admin.brands.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.brands.index') }}">برندها</a>
-@if (\Illuminate\Support\Facades\Route::has('commerce-admin.try-on.index'))
-<a class="{{ request()->routeIs('commerce-admin.try-on.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.try-on.index') }}">مدیریت اتاق پرو</a>
-@endif
+
 <a class="{{ request()->routeIs('commerce-admin.orders.index','commerce-admin.orders.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index') }}">فهرست سفارش‌ها</a>
 <a class="{{ request()->routeIs('commerce-admin.orders.show') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.orders.show') ? url()->current() : route('commerce-admin.orders.index') }}">جزئیات سفارش</a>
 </div>
