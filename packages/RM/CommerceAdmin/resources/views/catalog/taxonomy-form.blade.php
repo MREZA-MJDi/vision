@@ -28,8 +28,7 @@
                 <div class="ak-category-cover-upload">
                     <img data-category-cover-preview
                          @if($record->coverMedia?->url) src="{{ $record->coverMedia->url }}" @else hidden @endif
-                         alt="{{ $record->coverMedia?->alt_text ?: $record->name }}" @if($record->coverMedia?->url) data-existing-src="{{ $record->coverMedia->url }}" @endif
-                         @if($record->coverMedia?->url) data-existing-src="{{ $record->coverMedia->url }}" @endif>
+                         alt="{{ $record->coverMedia?->alt_text ?: $record->name }}" @if($record->coverMedia?->url) data-existing-src="{{ $record->coverMedia->url }}" @endif>
                     <label class="ak-field">
                         <span>انتخاب تصویر (JPG، PNG یا WebP)</span>
                         <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" data-category-cover-input data-crop-ratio-default="3:4">
