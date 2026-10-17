@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\HeroService;
 use App\Support\NumericInput;
 use Rm\VirtualTryOn\Models\TryOnAsset;
 use Rm\VirtualTryOn\Models\TryOnMannequin;
@@ -91,6 +92,26 @@ class SaveProductRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
+            $productModel = (string) config('commerce-admin.models.product', Product::class);
+            $routeProductId = filter_var($this->route('product'), FILTER_VALIDATE_INT) ?: null;
+            $currentProduct = $routeProductId
+                ? $productModel::query()->select(['id', 'is_hero'])->find($routeProductId)
+                : null;
+
+            if ($this->boolean('is_hero') && ! (bool) $currentProduct?->is_hero) {
+                $heroProducts = $productModel::query()->where('is_hero', true);
+                if ($routeProductId) {
+                    $heroProducts->where((new $productModel())->getKeyName(), '<>', $routeProductId);
+                }
+
+                if ($heroProducts->count() >= HeroService::MAX_SLIDES) {
+                    $validator->errors()->add(
+                        'is_hero',
+                        'حداکثر ۱۰ محصول می‌تواند در هِروی صفحهٔ اصلی باشد؛ ابتدا یک محصول دیگر را از هِرو خارج کن.'
+                    );
+                }
+            }
+
             $seenAttributeKeys = [];
             foreach ((array) $this->input('attributes', []) as $index => $attribute) {
                 if (! is_array($attribute)) {
