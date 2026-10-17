@@ -265,7 +265,6 @@
             </div>
         </section>
     @endif
-    @endif
 
 </main>
 @endsection
