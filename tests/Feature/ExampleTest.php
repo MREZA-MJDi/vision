@@ -24,18 +24,15 @@ class ExampleTest extends TestCase
             ->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_the_shop_route_mounts_the_shared_inline_fitting_room(): void
+    public function test_the_shop_keeps_a_static_fitting_room_shell(): void
     {
         $this->withoutVite();
         $this->get('/shop')
             ->assertOk()
             ->assertSee('فروشگاه محصولات')
             ->assertSee('فیلترها')
-            ->assertSee('data-virtual-try-on', false)
-            ->assertSee('data-vto-inline="true"', false)
-            ->assertSee('data-vto-launcher', false)
-            ->assertDontSee('store-tryon-link', false)
-            ->assertDontSee('data-fitting-room', false);
+            ->assertSee('data-fitting-room-shell', false)
+            ->assertSee('اتاق پرو');
     }
 
     public function test_admin_kit_routes_exist_and_protect_private_pages(): void

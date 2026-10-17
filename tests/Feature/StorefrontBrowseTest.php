@@ -28,31 +28,25 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_shop_contains_filters_and_mounts_the_shared_inline_fitting_room(): void
+    public function test_shop_keeps_the_static_fitting_room_shell(): void
     {
         $this->withoutVite();
         $response = $this->get('/shop');
-        $response
-            ->assertOk()
+
+        $response->assertOk()
             ->assertSee('فیلترها')
-            ->assertSee('data-virtual-try-on', false)
-            ->assertSee('id="vto-inline-workspace" data-vto-inline="true" tabindex="-1"', false)
-            ->assertSee('data-vto-launcher', false)
-            ->assertSee('data-vto-stage-loading', false)
-            ->assertDontSee('store-tryon-link', false)
-            ->assertSee('اتاق پرو')
-            ->assertDontSee('data-fitting-room', false);
+            ->assertSee('data-fitting-room-shell', false)
+            ->assertSee('اتاق پرو');
 
         $html = (string) $response->getContent();
-        $workspacePosition = strpos($html, 'id="vto-inline-workspace"');
+        $roomPosition = strpos($html, 'data-fitting-room-shell');
         $catalogPosition = strpos($html, '<section class="store-catalog"');
-        $this->assertNotFalse($workspacePosition, 'The live fitting room must render on the Shop page.');
+        $this->assertNotFalse($roomPosition, 'The static fitting-room shell must remain on the Shop page.');
         $this->assertNotFalse($catalogPosition, 'The Shop catalog must remain on the same page.');
-        $this->assertLessThan($catalogPosition, $workspacePosition, 'The fitting room should occupy the right-to-left first catalog column.');
-        $this->assertStringNotContainsString('data-vto-inline="true" inert', $html);
+        $this->assertLessThan($catalogPosition, $roomPosition, 'The shell should retain its right-to-left first catalog column.');
     }
 
-    public function test_shop_cards_and_product_detail_use_real_variant_media_and_inline_try_on(): void
+    public function test_shop_cards_and_product_detail_use_real_variant_media(): void
     {
         $this->withoutVite();
 
@@ -87,8 +81,6 @@ class StorefrontBrowseTest extends TestCase
             ->assertOk()
             ->assertSee('src="' . $photoUrl . '"', false)
             ->assertSee(route('products.show', ['product' => $product->slug]), false)
-            ->assertSee('data-vto-select-product', false)
-            ->assertDontSee('store-tryon-link', false)
             ->assertDontSee('data-card-preview', false)
             ->assertDontSee('data-fit-product', false);
 
@@ -96,8 +88,7 @@ class StorefrontBrowseTest extends TestCase
             ->assertOk()
             ->assertSee('src="' . $photoUrl . '"', false)
             ->assertSee('data-image="' . $photoUrl . '"', false)
-            ->assertSee('data-virtual-try-on', false)
-            ->assertSee('data-vto-expand', false)
+            ->assertDontSee('data-fitting-room-shell', false)
             ->assertDontSee('data-variant-preview-modal', false);
     }
 
