@@ -692,6 +692,7 @@
         const step = count ? 360 / count : 360;
         let rotation = 0;
         let activePointerId = null;
+        let activeCaptureTarget = null;
         let startX = 0;
         let startRotation = 0;
         let lastX = 0;
@@ -756,6 +757,7 @@
         stage?.addEventListener('pointerdown', (event) => {
             if (count < 2 || (event.pointerType === 'mouse' && event.button !== 0) || event.target.closest('button')) return;
             activePointerId = event.pointerId;
+            activeCaptureTarget = event.target.closest('[data-category-ring-item]') || stage;
             startX = event.clientX;
             startRotation = rotation;
             lastX = event.clientX;
@@ -765,7 +767,7 @@
             stage.classList.add('is-dragging');
             track?.classList.remove('is-settling');
             if (settleTimer) window.clearTimeout(settleTimer);
-            try { stage.setPointerCapture(event.pointerId); } catch {}
+            try { activeCaptureTarget.setPointerCapture(event.pointerId); } catch {}
         });
         stage?.addEventListener('pointermove', (event) => {
             if (event.pointerId !== activePointerId) return;
@@ -788,8 +790,9 @@
             activePointerId = null;
             stage?.classList.remove('is-dragging');
             try {
-                if (stage?.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
+                if (activeCaptureTarget?.hasPointerCapture(event.pointerId)) activeCaptureTarget.releasePointerCapture(event.pointerId);
             } catch {}
+            activeCaptureTarget = null;
             if (dragMoved && count > 1) {
                 suppressClickUntil = performance.now() + 320;
                 const momentum = Math.max(-1.4, Math.min(1.4, velocityX)) * 150 * 0.34;
