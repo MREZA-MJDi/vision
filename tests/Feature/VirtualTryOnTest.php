@@ -101,6 +101,47 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonMissingPath('data.default_selections.bottom');
     }
 
+    public function test_storefront_marks_optimized_webp_and_svg_layers_as_try_on_ready(): void
+    {
+        $mannequin = $this->mannequin('women');
+
+        $optimizedWebp = $this->variant('women', 'vto-store-card-optimized-webp');
+        $optimizedWebpAsset = $this->asset(
+            $optimizedWebp,
+            $mannequin,
+            'top',
+            'women/store-card-optimized.webp'
+        );
+        $optimizedWebpAsset->media()->update([
+            'width' => 320,
+            'height' => 480,
+        ]);
+
+        $optimizedSvg = $this->variant('women', 'vto-store-card-optimized-svg');
+        $optimizedSvgAsset = $this->asset(
+            $optimizedSvg,
+            $mannequin,
+            'top',
+            'women/store-card-optimized.svg'
+        );
+        $optimizedSvgAsset->media()->update([
+            'mime_type' => 'image/svg+xml',
+            'width' => 320,
+            'height' => 480,
+        ]);
+
+        $this->withoutVite();
+        $html = $this->get('/shop')->assertOk()->getContent();
+
+        // Both formats and canvas sizes are accepted by the preview API. The
+        // storefront must not disable a product that the API can render.
+        $this->assertGreaterThanOrEqual(
+            2,
+            substr_count($html, 'data-vto-ready="1"'),
+            'Shop cards should mark optimized WebP and transparent SVG layers as ready.'
+        );
+    }
+
     public function test_catalog_returns_only_active_layer_assets_matching_audience_and_slot(): void
     {
         $womenMannequin = $this->mannequin('women');
