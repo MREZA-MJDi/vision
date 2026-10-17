@@ -195,44 +195,76 @@
         </div>
     </section>
 
-    {{-- Section 1: real category covers, with a bounded product-image fallback. --}}
+    {{-- Section 2: interactive category ring, driven by real category records. --}}
     @if($categories->isNotEmpty())
+        @php
+            $categoryCount = $categories->count();
+            $categoryRingStep = 360 / max(1, $categoryCount);
+        @endphp
         <section class="home-section home-categories" id="home-categories" aria-labelledby="home-categories-title">
             <div class="home-section__inner">
                 <div class="home-section__heading">
                     <div>
-                        <p class="store-eyebrow">دسته‌بندی‌ها</p>
-                        <h2 id="home-categories-title">انتخاب بر اساس استایل</h2>
-                        <p class="home-section__intro">از دستهٔ موردعلاقه‌ات شروع کن.</p>
+                        <p class="store-eyebrow">V I S I O N / C A T E G O R I E S</p>
+                        <h2 id="home-categories-title">از استایل خودت شروع کن</h2>
+                        <p class="home-section__intro">دستهٔ موردعلاقه‌ات را بچرخان و مجموعه‌اش را ببین.</p>
                     </div>
                     <a class="home-section__link" href="{{ route('shop.index') }}">همهٔ محصولات <span aria-hidden="true">←</span></a>
                 </div>
 
-                <div class="home-category-grid">
-                    @foreach($categories as $category)
-                        @php
-                            $categoryImageProduct = $category->products->first();
-                            $categoryImage = $category->coverMedia?->url
-                                ?? $categoryImageProduct?->primaryGalleryMedia?->url
-                                ?? $categoryImageProduct?->primaryAvailableVariant?->primaryGalleryMedia?->url
-                                ?? $categoryImageProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
-                        @endphp
-                        <a class="home-category-card" href="{{ route('shop.index', ['category_id' => $category->id]) }}">
-                            @if($categoryImage)
-                                <img class="home-category-card__image" src="{{ $categoryImage }}" alt="" loading="lazy" decoding="async">
-                            @endif
-                            <span class="home-category-card__shade" aria-hidden="true"></span>
-                            <span class="home-category-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                            <span class="home-category-card__content">
-                                <strong class="home-category-card__name">{{ $category->name }}</strong>
-                                <span class="home-category-card__meta">{{ number_format($category->active_products_count) }} محصول</span>
-                            </span>
-                            <span class="home-category-card__arrow" aria-hidden="true">↙</span>
-                        </a>
-                    @endforeach
+                <div class="home-category-ring" data-category-ring data-category-ring-count="{{ $categoryCount }}">
+                    <div class="home-category-ring__stage"
+                         data-category-ring-stage
+                         role="region"
+                         tabindex="0"
+                         aria-label="مرور سه‌بعدی دسته‌بندی‌های فروشگاه">
+                        <div class="home-category-ring__track" data-category-ring-track>
+                            @foreach($categories as $category)
+                                @php
+                                    $categoryImageProduct = $category->products->first();
+                                    $categoryImage = $category->coverMedia?->url
+                                        ?? $categoryImageProduct?->primaryGalleryMedia?->url
+                                        ?? $categoryImageProduct?->primaryAvailableVariant?->primaryGalleryMedia?->url
+                                        ?? $categoryImageProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
+                                    $categoryRingAngle = $loop->index * $categoryRingStep;
+                                @endphp
+                                <a class="home-category-ring__item home-category-card"
+                                   data-category-ring-item
+                                   href="{{ route('shop.index', ['category_id' => $category->id]) }}"
+                                   aria-label="{{ $category->name }}، {{ number_format($category->active_products_count) }} محصول"
+                                   style="--category-ring-angle: {{ number_format($categoryRingAngle, 3, '.', '') }}deg">
+                                    @if($categoryImage)
+                                        <img class="home-category-ring__image home-category-card__image"
+                                             src="{{ $categoryImage }}"
+                                             alt=""
+                                             loading="lazy"
+                                             decoding="async">
+                                    @else
+                                        <span class="home-category-ring__placeholder" aria-hidden="true"></span>
+                                    @endif
+                                    <span class="home-category-ring__shade home-category-card__shade" aria-hidden="true"></span>
+                                    <span class="home-category-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                                    <span class="home-category-ring__content home-category-card__content">
+                                        <strong class="home-category-card__name">{{ $category->name }}</strong>
+                                        <span class="home-category-card__meta">{{ number_format($category->active_products_count) }} محصول</span>
+                                    </span>
+                                    <span class="home-category-card__arrow" aria-hidden="true">↙</span>
+                                </a>
+                            @endforeach
+                        </div>
+                        <div class="home-category-ring__vignette" aria-hidden="true"></div>
+                    </div>
+
+                    <div class="home-category-ring__controls">
+                        <button type="button" data-category-ring-prev aria-label="دسته‌بندی قبلی">‹</button>
+                        <span data-category-ring-status aria-live="polite">{{ number_format(1) }} از {{ number_format($categoryCount) }} دسته</span>
+                        <button type="button" data-category-ring-next aria-label="دسته‌بندی بعدی">›</button>
+                        <span class="home-category-ring__hint">برای مرور، بکشید یا از فلش‌ها استفاده کنید</span>
+                    </div>
                 </div>
             </div>
         </section>
+    @endif
     @endif
 
 </main>

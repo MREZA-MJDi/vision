@@ -674,6 +674,153 @@
         resetHeroTimer();
     }
 
+
+    // The homepage category ring is scoped to its own stage. Native Pointer Events
+    // keep mouse, pen and touch support without adding a GSAP dependency.
+    const categoryRing = root.querySelector('[data-category-ring]');
+    if (categoryRing) {
+        const stage = categoryRing.querySelector('[data-category-ring-stage]');
+        const track = categoryRing.querySelector('[data-category-ring-track]');
+        const items = Array.from(categoryRing.querySelectorAll('[data-category-ring-item]'));
+        const previous = categoryRing.querySelector('[data-category-ring-prev]');
+        const next = categoryRing.querySelector('[data-category-ring-next]');
+        const status = categoryRing.querySelector('[data-category-ring-status]');
+        const count = items.length;
+        const step = count ? 360 / count : 360;
+        let rotation = 0;
+        let activePointerId = null;
+        let startX = 0;
+        let startRotation = 0;
+        let lastX = 0;
+        let lastTime = 0;
+        let velocityX = 0;
+        let dragMoved = false;
+        let suppressClickUntil = 0;
+        let paintFrame = 0;
+        let settleTimer = null;
+
+        const activeIndex = () => {
+            if (count < 2) return 0;
+            const fractional = (((-rotation / step) % count) + count) % count;
+            return Math.round(fractional) % count;
+        };
+        const updateAccessibleState = () => {
+            if (!count) return;
+            const current = activeIndex();
+            items.forEach((item, index) => {
+                const distance = Math.min((index - current + count) % count, (current - index + count) % count);
+                item.setAttribute('aria-current', index === current ? 'true' : 'false');
+                item.tabIndex = distance <= 1 ? 0 : -1;
+            });
+            if (status) status.textContent = (current + 1).toLocaleString('fa-IR') + ' از ' + count.toLocaleString('fa-IR') + ' دسته';
+        };
+        const paintRotation = () => {
+            if (!track) return;
+            track.style.setProperty('--category-ring-rotation', rotation + 'deg');
+            updateAccessibleState();
+        };
+        const setRotation = (value, settle = false) => {
+            rotation = value;
+            if (settle) {
+                track?.classList.add('is-settling');
+                if (settleTimer) window.clearTimeout(settleTimer);
+                settleTimer = window.setTimeout(() => track?.classList.remove('is-settling'), 580);
+            } else {
+                track?.classList.remove('is-settling');
+                if (settleTimer) window.clearTimeout(settleTimer);
+            }
+            paintRotation();
+        };
+        const snapToIndex = (index) => {
+            if (count < 2) return;
+            setRotation(-(((index % count) + count) % count) * step, true);
+        };
+        const moveBy = (difference) => {
+            if (count > 1) snapToIndex(activeIndex() + difference);
+        };
+        const updateRadius = () => {
+            if (!stage || !items.length) return;
+            const cardWidth = items[0].offsetWidth || 220;
+            const radius = count < 2 ? 0 : Math.max(220, Math.round((cardWidth / 2) / Math.tan(Math.PI / count)));
+            stage.style.setProperty('--category-ring-radius', radius + 'px');
+        };
+
+        previous?.addEventListener('click', () => moveBy(-1));
+        next?.addEventListener('click', () => moveBy(1));
+        if (previous) previous.disabled = count < 2;
+        if (next) next.disabled = count < 2;
+
+        stage?.addEventListener('pointerdown', (event) => {
+            if (count < 2 || (event.pointerType === 'mouse' && event.button !== 0) || event.target.closest('button')) return;
+            activePointerId = event.pointerId;
+            startX = event.clientX;
+            startRotation = rotation;
+            lastX = event.clientX;
+            lastTime = performance.now();
+            velocityX = 0;
+            dragMoved = false;
+            stage.classList.add('is-dragging');
+            track?.classList.remove('is-settling');
+            if (settleTimer) window.clearTimeout(settleTimer);
+            try { stage.setPointerCapture(event.pointerId); } catch {}
+        });
+        stage?.addEventListener('pointermove', (event) => {
+            if (event.pointerId !== activePointerId) return;
+            const now = performance.now();
+            const deltaX = event.clientX - startX;
+            if (Math.abs(deltaX) > 5) dragMoved = true;
+            if (now > lastTime) velocityX = (event.clientX - lastX) / (now - lastTime);
+            lastX = event.clientX;
+            lastTime = now;
+            rotation = startRotation + deltaX * 0.34;
+            if (!paintFrame) {
+                paintFrame = window.requestAnimationFrame(() => {
+                    paintFrame = 0;
+                    paintRotation();
+                });
+            }
+        });
+        const finishDrag = (event) => {
+            if (event.pointerId !== activePointerId) return;
+            activePointerId = null;
+            stage?.classList.remove('is-dragging');
+            try {
+                if (stage?.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
+            } catch {}
+            if (dragMoved && count > 1) {
+                suppressClickUntil = performance.now() + 320;
+                const momentum = Math.max(-1.4, Math.min(1.4, velocityX)) * 150 * 0.34;
+                snapToIndex(Math.round(-(rotation + momentum) / step));
+                window.setTimeout(() => { suppressClickUntil = 0; }, 340);
+            } else {
+                paintRotation();
+            }
+        };
+        stage?.addEventListener('pointerup', finishDrag);
+        stage?.addEventListener('pointercancel', finishDrag);
+        categoryRing.addEventListener('click', (event) => {
+            if (event.target.closest('[data-category-ring-item]') && performance.now() < suppressClickUntil) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, true);
+        stage?.addEventListener('keydown', (event) => {
+            if (event.target !== stage) return;
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                moveBy(1);
+            } else if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                moveBy(-1);
+            }
+        });
+
+        updateRadius();
+        setRotation(0);
+        if ('ResizeObserver' in window && stage) new ResizeObserver(updateRadius).observe(stage);
+        else window.addEventListener('resize', updateRadius, { passive: true });
+    }
+
     updateCartCount(0);
     syncCartCount();
 

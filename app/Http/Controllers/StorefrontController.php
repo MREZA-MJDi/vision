@@ -40,7 +40,7 @@ class StorefrontController extends Controller
             ])
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->limit(8)
+            ->limit(10)
             ->get();
 
         // The hero is a small, already eager-loaded playlist. It is rendered in

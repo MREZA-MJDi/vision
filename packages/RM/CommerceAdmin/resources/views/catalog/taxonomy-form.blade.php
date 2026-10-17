@@ -28,11 +28,11 @@
                 <div class="ak-category-cover-upload">
                     <img data-category-cover-preview
                          @if($record->coverMedia?->url) src="{{ $record->coverMedia->url }}" @else hidden @endif
-                         alt="{{ $record->coverMedia?->alt_text ?: $record->name }}"
+                         alt="{{ $record->coverMedia?->alt_text ?: $record->name }}" @if($record->coverMedia?->url) data-existing-src="{{ $record->coverMedia->url }}" @endif
                          @if($record->coverMedia?->url) data-existing-src="{{ $record->coverMedia->url }}" @endif>
                     <label class="ak-field">
                         <span>انتخاب تصویر (JPG، PNG یا WebP)</span>
-                        <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" data-category-cover-input>
+                        <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" data-category-cover-input data-crop-ratio-default="3:4">
                         <small>حداکثر ۴ مگابایت. پس از ذخیره، تصویر روی دیسک عمومی و رکورد رسانه در دیتابیس ثبت می‌شود.</small>
                         <small data-category-cover-filename aria-live="polite"></small>
                     </label>
@@ -59,4 +59,5 @@
         </section>
         <div class="ak-heading-actions"><button class="ak-button ak-button-dark" type="submit">ذخیره</button><a class="ak-button ak-button-light" href="{{ route($routePrefix . '.index') }}">انصراف</a></div>
     </form>
+    @include('commerce-admin::partials.image-cropper', ['cropTitle' => 'برش تصویر دسته‌بندی'])
 @endsection

@@ -76,26 +76,6 @@
         $$('[data-money-input]', event.target).forEach((input) => { input.value = cleanMoneyInput(input.value); });
     }, true);
 
-    // Image preview is only visual; Laravel validates and persists the uploaded file.
-    $('[data-category-cover-input]')?.addEventListener('change', (event) => {
-        const input = event.currentTarget;
-        const file = input.files?.[0];
-        const preview = $('[data-category-cover-preview]');
-        if (!file || !preview || !file.type.startsWith('image/')) return;
-
-        if (preview.dataset.objectUrl) URL.revokeObjectURL(preview.dataset.objectUrl);
-        const objectUrl = URL.createObjectURL(file);
-        preview.dataset.objectUrl = objectUrl;
-        preview.src = objectUrl;
-        preview.hidden = false;
-
-        const filename = $('[data-category-cover-filename]');
-        if (filename) filename.textContent = file.name;
-
-        const removeCheckbox = $('[data-remove-category-cover]');
-        if (removeCheckbox) removeCheckbox.checked = false;
-    });
-
     // Sidebar interactions (desktop expandable navigation + mobile drawer).
     $$('[data-nav-toggle]').forEach((button) => button.addEventListener('click', () => {
         const open = button.classList.toggle('is-open');
@@ -208,32 +188,39 @@
     };
     const selectImageTarget = (input) => {
         activeImageInput = input || imageInput;
-        activePreviewBox = activeImageInput?.matches('[data-variant-image-input]')
+        const isVariantUpload = activeImageInput?.matches('[data-variant-image-input]');
+        const isCategoryUpload = activeImageInput?.matches('[data-category-cover-input]');
+        activePreviewBox = isVariantUpload
             ? activeImageInput.closest('[data-variant-row]')?.querySelector('[data-variant-image-preview]')
-            : previewBox;
+            : isCategoryUpload
+                ? $('[data-category-cover-preview]')
+                : previewBox;
     };
     const renderImages = (files) => {
         if (!activePreviewBox) return;
 
         const box = activePreviewBox;
         const isVariantUpload = activeImageInput?.matches('[data-variant-image-input]');
-
-        // A variant preview is a single <img>, not a gallery container. Update
-        // its src directly instead of trying to append gallery tiles inside it.
-        if (isVariantUpload) {
+        const isCategoryUpload = activeImageInput?.matches('[data-category-cover-input]');
+        if (isVariantUpload || isCategoryUpload) {
             revokePreviewUrls(box);
             if (box.dataset.objectUrl) {
                 URL.revokeObjectURL(box.dataset.objectUrl);
                 delete box.dataset.objectUrl;
             }
-
             const file = Array.from(files || []).find((candidate) => candidate.type?.startsWith('image/'));
-            const removeCheckbox = activeImageInput.closest('[data-variant-row]')?.querySelector('[data-remove-variant-image]');
+            const removeCheckbox = isCategoryUpload
+                ? $('[data-remove-category-cover]')
+                : activeImageInput.closest('[data-variant-row]')?.querySelector('[data-remove-variant-image]');
             if (file) {
                 const url = URL.createObjectURL(file);
                 box.src = url;
                 box.dataset.objectUrl = url;
                 box.hidden = false;
+                if (isCategoryUpload) {
+                    const altInput = activeImageInput.closest('form')?.querySelector('[name="cover_alt"]');
+                    if (altInput && !altInput.value.trim()) altInput.value = file.name.replace(/\.[^.]+$/, '');
+                }
                 if (removeCheckbox) removeCheckbox.checked = false;
             } else {
                 const existing = box.dataset.existingSrc || '';
@@ -316,7 +303,9 @@
     };
     const assignCroppedFiles = () => {
         if (!activeImageInput) return;
-        const limit = activeImageInput.matches('[data-variant-image-input]') ? 4 : 8;
+        const isCategoryUpload = activeImageInput.matches('[data-category-cover-input]');
+        const isVariantUpload = activeImageInput.matches('[data-variant-image-input]');
+        const limit = isCategoryUpload ? 1 : isVariantUpload ? 4 : 8;
         const files = cropResults.slice(0, limit);
         try {
             const transfer = new DataTransfer();
@@ -346,6 +335,7 @@
             showCropAtIndex();
         };
         cropImage.src = cropObjectUrl;
+        if (cropRatio) cropRatio.value = activeImageInput?.dataset.cropRatioDefault || 'original';
         if (cropZoom) cropZoom.value = '100';
         if (cropX) cropX.value = '50';
         if (cropY) cropY.value = '50';
@@ -355,11 +345,15 @@
         selectImageTarget(targetInput);
         const files = Array.from(fileList || []);
         if (!files.length) return;
-        const maxImages = activeImageInput?.matches('[data-variant-image-input]') ? 4 : 8;
+        const isCategoryUpload = activeImageInput?.matches('[data-category-cover-input]');
+        const isVariantUpload = activeImageInput?.matches('[data-variant-image-input]');
+        const maxImages = isCategoryUpload ? 1 : isVariantUpload ? 4 : 8;
         if (files.length > maxImages) {
-            window.alert(activeImageInput?.matches('[data-variant-image-input]')
-                ? 'برای هر تنوع حداکثر ۴ تصویر انتخاب کنید.'
-                : 'در هر بار ذخیره حداکثر ۸ تصویر انتخاب کنید.');
+            window.alert(isCategoryUpload
+                ? 'برای هر دسته‌بندی فقط یک تصویر کاور انتخاب کنید.'
+                : isVariantUpload
+                    ? 'برای هر تنوع حداکثر ۴ تصویر انتخاب کنید.'
+                    : 'در هر بار ذخیره حداکثر ۸ تصویر انتخاب کنید.');
             if (activeImageInput) activeImageInput.value = '';
             renderImages([]);
             return;
@@ -429,8 +423,12 @@
     // Delegation supports variant rows added dynamically after page load.
     document.addEventListener('change', (event) => {
         const input = event.target;
-        if (input instanceof HTMLInputElement && input.matches('[data-variant-image-input]')) {
-            startImageCropping(input.files, input);
+        if (!(input instanceof HTMLInputElement) || !input.matches('[data-variant-image-input], [data-category-cover-input]')) return;
+        const selectedName = input.files?.[0]?.name || '';
+        startImageCropping(input.files, input);
+        if (input.matches('[data-category-cover-input]')) {
+            const filename = $('[data-category-cover-filename]');
+            if (filename) filename.textContent = selectedName;
         }
     });
     [cropRatio, cropZoom, cropX, cropY].forEach((control) => control?.addEventListener('input', paintCropPreview));
@@ -459,6 +457,8 @@
         cropIndex = 0;
         if (activeImageInput) activeImageInput.value = '';
         renderImages([]);
+        const filename = $('[data-category-cover-filename]');
+        if (activeImageInput?.matches('[data-category-cover-input]') && filename) filename.textContent = '';
         closeCropper();
     }));
     const dropZone = $('[data-image-drop]');
