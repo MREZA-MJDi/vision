@@ -57,13 +57,19 @@ class VirtualTryOnTest extends TestCase
     {
         $mannequin = $this->mannequin('women');
         $variant = $this->variant('women', 'vto-initial-variant');
-        $this->asset($variant, $mannequin, 'bottom', 'women/initial.webp');
+        $asset = $this->asset($variant, $mannequin, 'bottom', 'women/initial.webp');
 
-        $this->getJson('/api/virtual-try-on/bootstrap?audience=women&variant_id='.$variant->id)
+        $response = $this->getJson('/api/virtual-try-on/bootstrap?audience=women&variant_id='.$variant->id)
             ->assertOk()
             ->assertJsonPath('data.initial_selection.variant_id', $variant->id)
             ->assertJsonPath('data.initial_selection.mannequin_id', $mannequin->id)
-            ->assertJsonPath('data.initial_selection.slot', 'bottom');
+            ->assertJsonPath('data.initial_selection.slot', 'bottom')
+            ->assertJsonPath('data.initial_selection.name', 'vto-initial-variant');
+
+        // The inline shop workspace does not load the VTO catalog; bootstrap
+        // must include enough trusted data to select and render the clicked item.
+        $this->assertSame($asset->media->url, $response->json('data.initial_selection.layer_url'));
+        $this->assertSame($asset->media->url, $response->json('data.initial_selection.thumbnail_url'));
 
         TryOnAsset::query()->where('product_variant_id', $variant->id)->firstOrFail()
             ->media()->update(['width' => 500]);
@@ -93,6 +99,47 @@ class VirtualTryOnTest extends TestCase
             ->assertJsonPath('data.default_selections.shoes.variant_id', $shoes->id)
             ->assertJsonCount(2, 'data.default_selections')
             ->assertJsonMissingPath('data.default_selections.bottom');
+    }
+
+    public function test_storefront_marks_optimized_webp_and_svg_layers_as_try_on_ready(): void
+    {
+        $mannequin = $this->mannequin('women');
+
+        $optimizedWebp = $this->variant('women', 'vto-store-card-optimized-webp');
+        $optimizedWebpAsset = $this->asset(
+            $optimizedWebp,
+            $mannequin,
+            'top',
+            'women/store-card-optimized.webp'
+        );
+        $optimizedWebpAsset->media()->update([
+            'width' => 320,
+            'height' => 480,
+        ]);
+
+        $optimizedSvg = $this->variant('women', 'vto-store-card-optimized-svg');
+        $optimizedSvgAsset = $this->asset(
+            $optimizedSvg,
+            $mannequin,
+            'top',
+            'women/store-card-optimized.svg'
+        );
+        $optimizedSvgAsset->media()->update([
+            'mime_type' => 'image/svg+xml',
+            'width' => 320,
+            'height' => 480,
+        ]);
+
+        $this->withoutVite();
+        $html = $this->get('/shop')->assertOk()->getContent();
+
+        // Both formats and canvas sizes are accepted by the preview API. The
+        // storefront must not disable a product that the API can render.
+        $this->assertGreaterThanOrEqual(
+            2,
+            substr_count($html, 'data-vto-ready="1"'),
+            'Shop cards should mark optimized WebP and transparent SVG layers as ready.'
+        );
     }
 
     public function test_catalog_returns_only_active_layer_assets_matching_audience_and_slot(): void

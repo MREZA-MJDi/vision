@@ -65,14 +65,18 @@ class VirtualTryOnController extends Controller
                             ->where('is_active', true)
                             ->where('audience', $validated['audience']));
                 })
+                ->with(['media', 'variant.primaryGalleryMedia', 'variant.product.primaryGalleryMedia', 'variant.product.category'])
                 ->first();
 
             if ($asset) {
-                $initialSelection = [
-                    'variant_id' => (int) $asset->product_variant_id,
-                    'mannequin_id' => (int) $asset->try_on_mannequin_id,
-                    'slot' => $asset->slot,
-                ];
+                // Return the same canonical product-layer payload as the catalog
+                // endpoint. The inline shop fitting room does not request catalog
+                // results, so it needs the selected garment's layer URL and labels
+                // directly from bootstrap to render a clicked product.
+                $initialSelection = array_merge(
+                    $this->catalogItemPayload($asset),
+                    ['mannequin_id' => (int) $asset->try_on_mannequin_id]
+                );
             }
         }
 

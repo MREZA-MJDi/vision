@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Media;
 use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,37 +50,43 @@ class VirtualTryOnController extends Controller
         $storedPath = null;
 
         try {
-        DB::transaction(function () use ($request, $record, $validated, $disk, &$obsolete, &$storedPath): void {
-            $record->label = trim($validated['label']);
-            $record->is_active = (bool) ($validated['is_active'] ?? false);
+            DB::transaction(function () use ($request, $record, $validated, $disk, &$obsolete, &$storedPath): void {
+                $record->label = trim($validated['label']);
+                $record->is_active = (bool) ($validated['is_active'] ?? false);
 
-            if ($request->hasFile('base_image')) {
-                $file = $request->file('base_image');
-                $path = $file->store('virtual-try-on/mannequins/' . $record->getKey(), $disk);
-                $storedPath = $path;
-                if (! is_string($path) || $path === '') {
-                    throw new \RuntimeException('ذخیره‌سازی تصویر مانکن انجام نشد.');
+                if ($request->hasFile('base_image')) {
+                    $file = $request->file('base_image');
+                    $path = $file->store('virtual-try-on/mannequins/' . $record->getKey(), $disk);
+                    $storedPath = $path;
+
+                    if (! is_string($path) || $path === '') {
+                        throw new \RuntimeException('ذخیره‌سازی تصویر مانکن انجام نشد.');
+                    }
+
+                    $obsolete = $record->baseMedia;
+                    $media = $record->media()->create([
+                        'collection' => 'try-on-mannequin',
+                        'disk' => $disk,
+                        'path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime_type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                        'width' => 1024,
+                        'height' => 1536,
+                        'alt_text' => $record->label,
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+
+                    $record->base_media_id = $media->getKey();
                 }
-                $obsolete = $record->baseMedia;
-                $media = Media::query()->create([
-                    'collection' => 'try-on-mannequin',
-                    'disk' => $disk,
-                    'path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                    'width' => 1024,
-                    'height' => 1536,
-                    'alt_text' => $record->label,
-                    'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
-                ]);
-                $record->base_media_id = $media->getKey();
+
+                $record->save();
+            });
+        } catch (\Throwable $exception) {
+            if ($storedPath) {
+                Storage::disk($disk)->delete($storedPath);
             }
 
-            $record->save();
-        });
-        } catch (\Throwable $exception) {
-            if ($storedPath) Storage::disk($disk)->delete($storedPath);
             throw $exception;
         }
 
@@ -89,6 +94,7 @@ class VirtualTryOnController extends Controller
             $oldPath = $obsolete->path;
             $oldDisk = $obsolete->disk ?: $disk;
             $obsolete->delete();
+
             if ($oldPath && ! Str::startsWith($oldPath, ['http://', 'https://'])) {
                 Storage::disk($oldDisk)->delete($oldPath);
             }
@@ -129,62 +135,68 @@ class VirtualTryOnController extends Controller
         $obsoleteMedia = null;
 
         try {
-        DB::transaction(function () use ($request, $record, $asset, $mannequin, $validated, $disk, &$storedPath, &$obsoleteMedia): void {
-            if ($request->hasFile('layer_image')) {
-                $file = $request->file('layer_image');
-                $storedPath = $file->store('virtual-try-on/layers/' . $record->getKey(), $disk);
-                if (! is_string($storedPath) || $storedPath === '') {
-                    throw new \RuntimeException('ذخیره‌سازی تصویر لایه انجام نشد.');
-                }
-                $media = $record->media()->create([
-                    'collection' => 'try-on-layer',
-                    'disk' => $disk,
-                    'path' => $storedPath,
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                    'width' => 1024,
-                    'height' => 1536,
-                    'alt_text' => trim(($record->product?->name ?? 'Product') . ($record->color ? ' - ' . $record->color : '')),
-                    'sort_order' => 0,
-                    'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
-                ]);
-                if ($asset) {
-                    $obsoleteMedia = $asset->media;
-                    $asset->media_id = $media->getKey();
+            DB::transaction(function () use ($request, $record, $asset, $mannequin, $validated, $disk, &$storedPath, &$obsoleteMedia): void {
+                if ($request->hasFile('layer_image')) {
+                    $file = $request->file('layer_image');
+                    $storedPath = $file->store('virtual-try-on/layers/' . $record->getKey(), $disk);
+
+                    if (! is_string($storedPath) || $storedPath === '') {
+                        throw new \RuntimeException('ذخیره‌سازی تصویر لایه انجام نشد.');
+                    }
+
+                    $media = $record->media()->create([
+                        'collection' => 'try-on-layer',
+                        'disk' => $disk,
+                        'path' => $storedPath,
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime_type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                        'width' => 1024,
+                        'height' => 1536,
+                        'alt_text' => trim(($record->product?->name ?? 'Product') . ($record->color ? ' - ' . $record->color : '')),
+                        'sort_order' => 0,
+                        'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+                    ]);
+
+                    if ($asset) {
+                        $obsoleteMedia = $asset->media;
+                        $asset->media_id = $media->getKey();
+                        $asset->try_on_mannequin_id = $mannequin->getKey();
+                        $asset->slot = $validated['slot'];
+                        $asset->is_active = (bool) ($validated['is_active'] ?? false);
+                        $asset->is_default = (bool) ($validated['is_default'] ?? false);
+                        $asset->save();
+                    } else {
+                        $asset = TryOnAsset::query()->create([
+                            'product_variant_id' => $record->getKey(),
+                            'try_on_mannequin_id' => $mannequin->getKey(),
+                            'media_id' => $media->getKey(),
+                            'slot' => $validated['slot'],
+                            'is_active' => (bool) ($validated['is_active'] ?? false),
+                            'is_default' => (bool) ($validated['is_default'] ?? false),
+                        ]);
+                    }
+                } elseif ($asset) {
                     $asset->try_on_mannequin_id = $mannequin->getKey();
                     $asset->slot = $validated['slot'];
                     $asset->is_active = (bool) ($validated['is_active'] ?? false);
                     $asset->is_default = (bool) ($validated['is_default'] ?? false);
                     $asset->save();
-                } else {
-                    $asset = TryOnAsset::query()->create([
-                        'product_variant_id' => $record->getKey(),
-                        'try_on_mannequin_id' => $mannequin->getKey(),
-                        'media_id' => $media->getKey(),
-                        'slot' => $validated['slot'],
-                        'is_active' => (bool) ($validated['is_active'] ?? false),
-                        'is_default' => (bool) ($validated['is_default'] ?? false),
-                    ]);
                 }
-            } elseif ($asset) {
-                $asset->try_on_mannequin_id = $mannequin->getKey();
-                $asset->slot = $validated['slot'];
-                $asset->is_active = (bool) ($validated['is_active'] ?? false);
-                $asset->is_default = (bool) ($validated['is_default'] ?? false);
-                $asset->save();
+
+                if ($asset && $asset->is_default) {
+                    TryOnAsset::query()
+                        ->where('try_on_mannequin_id', $asset->try_on_mannequin_id)
+                        ->where('slot', $asset->slot)
+                        ->where('id', '<>', $asset->getKey())
+                        ->update(['is_default' => false]);
+                }
+            });
+        } catch (\Throwable $exception) {
+            if ($storedPath) {
+                Storage::disk($disk)->delete($storedPath);
             }
 
-            if ($asset && $asset->is_default) {
-                TryOnAsset::query()
-                    ->where('try_on_mannequin_id', $asset->try_on_mannequin_id)
-                    ->where('slot', $asset->slot)
-                    ->where('id', '<>', $asset->getKey())
-                    ->update(['is_default' => false]);
-            }
-        });
-        } catch (\Throwable $exception) {
-            if ($storedPath) Storage::disk($disk)->delete($storedPath);
             throw $exception;
         }
 
@@ -192,6 +204,7 @@ class VirtualTryOnController extends Controller
             $path = $obsoleteMedia->path;
             $oldDisk = $obsoleteMedia->disk ?: $disk;
             $obsoleteMedia->delete();
+
             if ($path && ! Str::startsWith($path, ['http://', 'https://'])) {
                 Storage::disk($oldDisk)->delete($path);
             }
