@@ -27,7 +27,15 @@
                     </div>
                     <div class="ak-checkbox-row">
                         <label class="ak-check-card"><input type="checkbox" name="is_featured" value="1" @checked(old('is_featured', $product?->is_featured ?? false))><span><strong>محصول ویژه</strong><small>این محصول را در بخش محصولات ویژه اولویت بده.</small></span></label>
-                        <label class="ak-check-card"><input type="checkbox" name="is_hero" value="1" @checked(old('is_hero', $product?->is_hero ?? false))><span><strong>قابل استفاده در هِرو</strong><small>اجازه بده این محصول در بخش هِرو صفحهٔ اصلی انتخاب شود.</small></span></label>
+                        <label class="ak-check-card"><input type="checkbox" name="is_hero" value="1" @checked(old('is_hero', $product?->is_hero ?? false))><span><strong>قابل استفاده در هِرو</strong><small>حداکثر ۱۰ محصول هم‌زمان نمایش داده می‌شود؛ تصویر، قیمت و رنگ زمینه از واریانت فعال و اولویت‌دار می‌آیند.</small></span></label>
+                    </div>
+                    <div class="ak-hero-color-preview" data-hero-color-preview style="--admin-hero-color: #9a5527" aria-live="polite">
+                        <span class="ak-hero-color-preview__swatch" aria-hidden="true"></span>
+                        <span class="ak-hero-color-preview__copy">
+                            <strong>پیش‌نمایش رنگ پس‌زمینهٔ هِرو</strong>
+                            <small data-hero-color-status>رنگ از واریانت فعال و دارای موجودی با اولویت بالاتر خوانده می‌شود.</small>
+                        </span>
+                        <code data-hero-color-code>#9A5527</code>
                     </div>
                 </section>
 
