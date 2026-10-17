@@ -498,12 +498,14 @@
         const html = variantTemplate.innerHTML.replaceAll('__INDEX__', String(index)).replaceAll('__NUMBER__', String(index + 1));
         variantList.insertAdjacentHTML('beforeend', html);
         renumberVariants();
+        updateHeroColorPreview();
     });
     variantList?.addEventListener('click', (event) => {
         const remove = event.target.closest('[data-remove-variant]');
         if (remove && !remove.disabled) {
             remove.closest('[data-variant-row]')?.remove();
             renumberVariants();
+            updateHeroColorPreview();
         }
     });
     variantList?.addEventListener('input', (event) => {
@@ -517,6 +519,34 @@
         }
     });
     renumberVariants();
+
+    // Mirror the storefront's preferred variant rule so admins can see the
+    // background color the selected product will currently feed into the hero.
+    const heroColorPreview = $('[data-hero-color-preview]');
+    const updateHeroColorPreview = () => {
+        if (!heroColorPreview) return;
+        const rows = $$('[data-variant-row]', variantList || document);
+        const activeRows = rows.filter((row) => row.querySelector('select[name$="[is_active]"]')?.value === '1');
+        const preferred = activeRows.find((row) => Number(row.querySelector('input[name$="[stock]"]')?.value || 0) > 0)
+            || activeRows[0]
+            || null;
+        const colorInput = preferred?.querySelector('input[type="color"][name$="[color_code]"]');
+        const colorMirror = preferred?.querySelector('[data-color-mirror]');
+        let color = colorInput?.value || colorMirror?.value || '#9a5527';
+        if (!/^#[0-9a-f]{6}$/i.test(color)) color = '#9a5527';
+        heroColorPreview.style.setProperty('--admin-hero-color', color);
+        const colorCode = $('[data-hero-color-code]', heroColorPreview);
+        if (colorCode) colorCode.textContent = color.toUpperCase();
+        const status = $('[data-hero-color-status]', heroColorPreview);
+        if (status) {
+            status.textContent = preferred
+                ? 'این رنگ از اولین واریانت فعالِ دارای موجودی در ترتیب فرم گرفته شده است.'
+                : 'واریانت فعالی وجود ندارد؛ این محصول در حال حاضر برای هِرو قابل نمایش نیست.';
+        }
+    };
+    variantList?.addEventListener('input', updateHeroColorPreview);
+    variantList?.addEventListener('change', updateHeroColorPreview);
+    updateHeroColorPreview();
 
     // Dynamic product specification rows (material, dimensions, warranty, etc.).
     const attributeList = $('[data-attribute-list]');
