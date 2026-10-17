@@ -795,6 +795,26 @@
             state.defaultMannequinId = activeMannequinId;
         }
 
+        // The inline shop workspace has no separate VTO catalog request.
+        // Apply a clicked product directly from bootstrap, replacing only its
+        // garment slot while preserving selections in other slots.
+        if (inlineMode && initial && targetMannequin
+            && Number(initial.variant_id) === Number(state.requestedVariantId)
+            && Object.prototype.hasOwnProperty.call(labels, initial.slot)
+            && initial.layer_url) {
+            const variantId = Number(initial.variant_id);
+            state.selected[initial.slot] = variantId;
+            state.itemsByVariant.set(variantId, {
+                ...initial,
+                variant_id: variantId,
+                slot: initial.slot,
+            });
+            state.pendingInitialVariantId = null;
+            state.currentProductVariantId = variantId;
+            state.currentProductSlot = initial.slot;
+            state.initialVariantHasLayer = true;
+        }
+
         renderMannequins();
         renderSlots();
         updateMannequinStage();
@@ -992,7 +1012,8 @@
         if (state.bootstrapController) state.bootstrapController.abort();
         state.requestVersion++;
         state.bootstrapVersion++;
-        ui.stageLoading.hidden = true;
+        // Keep the loading state visible until bootstrap and the resulting
+        // composition finish; hiding it here makes the spinner flash off early.
         loadBootstrap().catch((error) => {
             ui.stageLoading.hidden = true;
             if (state.requestedVariantId === variantId) state.requestedVariantId = null;
