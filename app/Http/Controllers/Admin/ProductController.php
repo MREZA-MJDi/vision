@@ -398,7 +398,7 @@ class ProductController
                     }
                 }
 
-
+            }
 
             if ($updating) {
                 $product->variants()->whereNotIn('id', $keepIds)->get()->each(function ($variant): void {
