@@ -678,153 +678,136 @@
     }
 
 
-    // The homepage category ring is scoped to its own stage. Native Pointer Events
-    // keep mouse, pen and touch support without adding a GSAP dependency.
-    const categoryRing = root.querySelector('[data-category-ring]');
-    if (categoryRing) {
-        const stage = categoryRing.querySelector('[data-category-ring-stage]');
-        const track = categoryRing.querySelector('[data-category-ring-track]');
-        const items = Array.from(categoryRing.querySelectorAll('[data-category-ring-item]'));
-        const previous = categoryRing.querySelector('[data-category-ring-prev]');
-        const next = categoryRing.querySelector('[data-category-ring-next]');
-        const status = categoryRing.querySelector('[data-category-ring-status]');
-        const count = items.length;
-        const step = count ? 360 / count : 360;
-        let rotation = 0;
-        let activePointerId = null;
-        let activeCaptureTarget = null;
-        let startX = 0;
-        let startRotation = 0;
-        let lastX = 0;
-        let lastTime = 0;
-        let velocityX = 0;
-        let dragMoved = false;
-        let suppressClickUntil = 0;
-        let paintFrame = 0;
-        let settleTimer = null;
+    // The homepage category cube uses GSAP only when this section exists.
+    const categoryCube = root.querySelector('[data-category-cube]');
+    if (categoryCube) {
+        import('gsap').then(({ gsap }) => {
+            const stage = categoryCube.querySelector('[data-category-cube-stage]');
+            const container = categoryCube.querySelector('[data-category-cube-container]');
+            const cube = categoryCube.querySelector('[data-category-cube-object]');
+            const faces = Array.from(categoryCube.querySelectorAll('[data-category-cube-face]'));
+            const images = faces.map((face) => face.querySelector('img')).filter(Boolean);
+            const previous = categoryCube.querySelector('[data-category-cube-prev]');
+            const next = categoryCube.querySelector('[data-category-cube-next]');
+            const status = categoryCube.querySelector('[data-category-cube-status]');
 
-        const activeIndex = () => {
-            if (count < 2) return 0;
-            const fractional = (((-rotation / step) % count) + count) % count;
-            return Math.round(fractional) % count;
-        };
-        const updateAccessibleState = () => {
-            if (!count) return;
-            const current = activeIndex();
-            items.forEach((item, index) => {
-                const distance = Math.min((index - current + count) % count, (current - index + count) % count);
-                item.setAttribute('aria-current', index === current ? 'true' : 'false');
-                item.tabIndex = distance <= 1 ? 0 : -1;
-            });
-            if (status) status.textContent = (current + 1).toLocaleString('fa-IR') + ' از ' + count.toLocaleString('fa-IR') + ' دسته';
-        };
-        const paintRotation = () => {
-            if (!track) return;
-            track.style.setProperty('--category-ring-rotation', rotation + 'deg');
-            updateAccessibleState();
-        };
-        const setRotation = (value, settle = false) => {
-            rotation = value;
-            if (settle) {
-                track?.classList.add('is-settling');
-                if (settleTimer) window.clearTimeout(settleTimer);
-                settleTimer = window.setTimeout(() => track?.classList.remove('is-settling'), 580);
-            } else {
-                track?.classList.remove('is-settling');
-                if (settleTimer) window.clearTimeout(settleTimer);
-            }
-            paintRotation();
-        };
-        const snapToIndex = (index) => {
-            if (count < 2) return;
-            setRotation(-(((index % count) + count) % count) * step, true);
-        };
-        const moveBy = (difference) => {
-            if (count > 1) snapToIndex(activeIndex() + difference);
-        };
-        const updateRadius = () => {
-            if (!stage || !items.length) return;
-            const cardWidth = items[0].offsetWidth || 220;
-            const radius = count < 2 ? 0 : Math.max(220, Math.round((cardWidth / 2) / Math.tan(Math.PI / count)));
-            stage.style.setProperty('--category-ring-radius', radius + 'px');
-        };
+            if (!stage || !container || !cube || faces.length !== 6) return;
 
-        previous?.addEventListener('click', () => moveBy(-1));
-        next?.addEventListener('click', () => moveBy(1));
-        if (previous) previous.disabled = count < 2;
-        if (next) next.disabled = count < 2;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const duration = reduceMotion ? 0 : 0.72;
+            const faceRotations = [
+                { x: -18, y: -26 },
+                { x: -18, y: -116 },
+                { x: -18, y: 154 },
+                { x: -18, y: 64 },
+                { x: -90, y: -26 },
+                { x: 90, y: -26 },
+            ];
+            const rotateXTo = gsap.quickTo(cube, 'rotationX', { duration, ease: 'power3.out' });
+            const rotateYTo = gsap.quickTo(cube, 'rotationY', { duration, ease: 'power3.out' });
+            const imageXTo = images.map((image) => gsap.quickTo(image, 'x', { duration, ease: 'power3.out' }));
+            const imageYTo = images.map((image) => gsap.quickTo(image, 'y', { duration, ease: 'power3.out' }));
+            const clamp = (value) => Math.min(1, Math.max(0, value));
+            const normalizeAngle = (angle) => ((angle % 360) + 360) % 360;
+            let activeFace = -1;
 
-        stage?.addEventListener('pointerdown', (event) => {
-            if (count < 2 || (event.pointerType === 'mouse' && event.button !== 0) || event.target.closest('button')) return;
-            activePointerId = event.pointerId;
-            activeCaptureTarget = event.target.closest('[data-category-ring-item]') || stage;
-            startX = event.clientX;
-            startRotation = rotation;
-            lastX = event.clientX;
-            lastTime = performance.now();
-            velocityX = 0;
-            dragMoved = false;
-            stage.classList.add('is-dragging');
-            track?.classList.remove('is-settling');
-            if (settleTimer) window.clearTimeout(settleTimer);
-            try { activeCaptureTarget.setPointerCapture(event.pointerId); } catch {}
-        });
-        stage?.addEventListener('pointermove', (event) => {
-            if (event.pointerId !== activePointerId) return;
-            const now = performance.now();
-            const deltaX = event.clientX - startX;
-            if (Math.abs(deltaX) > 5) dragMoved = true;
-            if (now > lastTime) velocityX = (event.clientX - lastX) / (now - lastTime);
-            lastX = event.clientX;
-            lastTime = now;
-            rotation = startRotation + deltaX * 0.34;
-            if (!paintFrame) {
-                paintFrame = window.requestAnimationFrame(() => {
-                    paintFrame = 0;
-                    paintRotation();
+            const faceFromRotation = (rotationX, rotationY) => {
+                const x = normalizeAngle(rotationX);
+                if (x >= 225 && x < 315) return 4;
+                if (x >= 45 && x < 135) return 5;
+                return (4 - (Math.round(normalizeAngle(rotationY) / 90) % 4)) % 4;
+            };
+
+            const showFace = (index) => {
+                const nextIndex = (index + faces.length) % faces.length;
+                if (nextIndex === activeFace) return;
+                activeFace = nextIndex;
+                faces.forEach((face, faceIndex) => {
+                    const isActive = faceIndex === activeFace;
+                    face.tabIndex = isActive ? 0 : -1;
+                    face.setAttribute('aria-current', isActive ? 'true' : 'false');
                 });
-            }
-        });
-        const finishDrag = (event) => {
-            if (event.pointerId !== activePointerId) return;
-            activePointerId = null;
-            stage?.classList.remove('is-dragging');
-            try {
-                if (activeCaptureTarget?.hasPointerCapture(event.pointerId)) activeCaptureTarget.releasePointerCapture(event.pointerId);
-            } catch {}
-            activeCaptureTarget = null;
-            if (dragMoved && count > 1) {
-                suppressClickUntil = performance.now() + 320;
-                const momentum = Math.max(-1.4, Math.min(1.4, velocityX)) * 150 * 0.34;
-                snapToIndex(Math.round(-(rotation + momentum) / step));
-                window.setTimeout(() => { suppressClickUntil = 0; }, 340);
-            } else {
-                paintRotation();
-            }
-        };
-        stage?.addEventListener('pointerup', finishDrag);
-        stage?.addEventListener('pointercancel', finishDrag);
-        categoryRing.addEventListener('click', (event) => {
-            if (event.target.closest('[data-category-ring-item]') && performance.now() < suppressClickUntil) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        }, true);
-        stage?.addEventListener('keydown', (event) => {
-            if (event.target !== stage) return;
-            if (event.key === 'ArrowLeft') {
-                event.preventDefault();
-                moveBy(1);
-            } else if (event.key === 'ArrowRight') {
-                event.preventDefault();
-                moveBy(-1);
-            }
-        });
+                if (status) status.textContent = 'دسته: ' + (faces[activeFace].dataset.categoryName || 'دسته‌بندی');
+            };
 
-        updateRadius();
-        setRotation(0);
-        if ('ResizeObserver' in window && stage) new ResizeObserver(updateRadius).observe(stage);
-        else window.addEventListener('resize', updateRadius, { passive: true });
+            const animateTo = (rotationX, rotationY) => {
+                rotateXTo(rotationX);
+                rotateYTo(rotationY);
+                showFace(faceFromRotation(rotationX, rotationY));
+            };
+
+            const moveImages = (x, y) => {
+                const size = container.getBoundingClientRect().width || 280;
+                const targetX = -size / 2 + (size / 2) * x;
+                const targetY = -(size / 2) * y;
+                images.forEach((image, index) => {
+                    imageXTo[index](targetX);
+                    imageYTo[index](targetY);
+                });
+            };
+
+            const updateFromPointer = (event) => {
+                const bounds = stage.getBoundingClientRect();
+                if (!bounds.width || !bounds.height) return;
+                const x = clamp((event.clientX - bounds.left) / bounds.width);
+                const y = clamp((event.clientY - bounds.top) / bounds.height);
+                animateTo(-180 + 360 * y, -180 + 360 * x);
+                moveImages(x, y);
+            };
+
+            const setGeometry = () => {
+                const size = container.getBoundingClientRect().width || 280;
+                stage.style.perspective = String(Math.round(size * 5)) + 'px';
+                gsap.set(images, { x: -size / 4, y: -size / 4 });
+            };
+
+            gsap.set(cube, { rotationX: -18, rotationY: -26, transformStyle: 'preserve-3d' });
+            gsap.fromTo(
+                container,
+                { autoAlpha: 0, scale: 0.94 },
+                { autoAlpha: 1, scale: 1, duration: reduceMotion ? 0 : 0.72, ease: 'power3.out' }
+            );
+
+            stage.addEventListener('pointermove', (event) => {
+                if (event.pointerType === 'touch' && event.buttons === 0) return;
+                updateFromPointer(event);
+            }, { passive: true });
+            stage.addEventListener('pointerdown', (event) => {
+                if (event.pointerType === 'touch') updateFromPointer(event);
+            }, { passive: true });
+            stage.addEventListener('pointerleave', () => {
+                animateTo(-18, -26);
+                moveImages(0.5, 0.5);
+            }, { passive: true });
+
+            previous?.addEventListener('click', () => {
+                const index = (Math.max(activeFace, 0) - 1 + faces.length) % faces.length;
+                const rotation = faceRotations[index];
+                animateTo(rotation.x, rotation.y);
+            });
+            next?.addEventListener('click', () => {
+                const index = (Math.max(activeFace, 0) + 1) % faces.length;
+                const rotation = faceRotations[index];
+                animateTo(rotation.x, rotation.y);
+            });
+            stage.addEventListener('keydown', (event) => {
+                if (event.target !== stage) return;
+                if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    next?.click();
+                } else if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    previous?.click();
+                }
+            });
+
+            setGeometry();
+            showFace(0);
+            if ('ResizeObserver' in window) new ResizeObserver(setGeometry).observe(container);
+            else window.addEventListener('resize', setGeometry, { passive: true });
+        }).catch((error) => {
+            console.error('Could not load GSAP for the homepage category cube.', error);
+        });
     }
 
     updateCartCount(0);

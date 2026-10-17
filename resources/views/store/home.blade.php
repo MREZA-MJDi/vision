@@ -180,11 +180,14 @@
         </div>
     </section>
 
-    {{-- Section 2: interactive category ring, driven by real category records. --}}
+    {{-- Section 2: interactive six-face category cube, using real category/product media. --}}
     @if($categories->isNotEmpty())
         @php
             $categoryCount = $categories->count();
-            $categoryRingStep = 360 / max(1, $categoryCount);
+            $categoryCubeFaces = collect(range(0, 5))->map(
+                fn (int $faceIndex) => $categories->get($faceIndex % $categoryCount)
+            );
+            $categoryCubeFaceClasses = ['front', 'right', 'back', 'left', 'top', 'bottom'];
         @endphp
         <section class="home-section home-categories" id="home-categories" aria-labelledby="home-categories-title">
             <div class="home-section__inner">
@@ -197,54 +200,55 @@
                     <a class="home-section__link" href="{{ route('shop.index') }}">همهٔ محصولات <span aria-hidden="true">←</span></a>
                 </div>
 
-                <div class="home-category-ring" data-category-ring data-category-ring-count="{{ $categoryCount }}">
-                    <div class="home-category-ring__stage"
-                         data-category-ring-stage
+                <div class="home-category-cube" data-category-cube>
+                    <div class="home-category-cube__stage"
+                         data-category-cube-stage
                          role="region"
                          tabindex="0"
-                         aria-label="مرور سه‌بعدی دسته‌بندی‌های فروشگاه">
-                        <div class="home-category-ring__track" data-category-ring-track>
-                            @foreach($categories as $category)
-                                @php
-                                    $categoryImageProduct = $category->products->first();
-                                    $categoryImage = $category->coverMedia?->url
-                                        ?? $categoryImageProduct?->primaryGalleryMedia?->url
-                                        ?? $categoryImageProduct?->primaryAvailableVariant?->primaryGalleryMedia?->url
-                                        ?? $categoryImageProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
-                                    $categoryRingAngle = $loop->index * $categoryRingStep;
-                                @endphp
-                                <a class="home-category-ring__item home-category-card"
-                                   data-category-ring-item
-                                   href="{{ route('shop.index', ['category_id' => $category->id]) }}"
-                                   aria-label="{{ $category->name }}، {{ number_format($category->active_products_count) }} محصول"
-                                   style="--category-ring-angle: {{ number_format($categoryRingAngle, 3, '.', '') }}deg">
-                                    @if($categoryImage)
-                                        <img class="home-category-ring__image home-category-card__image"
-                                             src="{{ $categoryImage }}"
-                                             alt=""
-                                             loading="lazy"
-                                             decoding="async">
-                                    @else
-                                        <span class="home-category-ring__placeholder" aria-hidden="true"></span>
-                                    @endif
-                                    <span class="home-category-ring__shade home-category-card__shade" aria-hidden="true"></span>
-                                    <span class="home-category-card__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                                    <span class="home-category-ring__content home-category-card__content">
-                                        <strong class="home-category-card__name">{{ $category->name }}</strong>
-                                        <span class="home-category-card__meta">{{ number_format($category->active_products_count) }} محصول</span>
-                                    </span>
-                                    <span class="home-category-card__arrow" aria-hidden="true">↙</span>
-                                </a>
-                            @endforeach
+                         aria-label="مکعب سه‌بعدی دسته‌بندی‌های فروشگاه">
+                        <div class="home-category-cube__container" data-category-cube-container>
+                            <div class="home-category-cube__object" data-category-cube-object>
+                                @foreach($categoryCubeFaces as $faceIndex => $category)
+                                    @php
+                                        $categoryImageProduct = $category->products->first();
+                                        $categoryImage = $category->coverMedia?->url
+                                            ?? $categoryImageProduct?->primaryGalleryMedia?->url
+                                            ?? $categoryImageProduct?->primaryAvailableVariant?->primaryGalleryMedia?->url
+                                            ?? $categoryImageProduct?->primaryActiveVariant?->primaryGalleryMedia?->url;
+                                    @endphp
+                                    <a class="home-category-cube__face home-category-cube__face--{{ $categoryCubeFaceClasses[$faceIndex] }}"
+                                       data-category-cube-face
+                                       data-category-name="{{ $category->name }}"
+                                       href="{{ route('shop.index', ['category_id' => $category->id]) }}"
+                                       aria-label="{{ $category->name }}، {{ number_format($category->active_products_count) }} محصول"
+                                       aria-current="{{ $loop->first ? 'true' : 'false' }}"
+                                       tabindex="{{ $loop->first ? '0' : '-1' }}">
+                                        @if($categoryImage)
+                                            <img class="home-category-cube__image"
+                                                 src="{{ $categoryImage }}"
+                                                 alt=""
+                                                 loading="lazy"
+                                                 decoding="async">
+                                        @else
+                                            <span class="home-category-cube__placeholder" aria-hidden="true"></span>
+                                        @endif
+                                        <span class="home-category-cube__shade" aria-hidden="true"></span>
+                                        <span class="home-category-cube__number">{{ str_pad((string) ($faceIndex + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                        <span class="home-category-cube__content">
+                                            <strong class="home-category-cube__name">{{ $category->name }}</strong>
+                                            <span class="home-category-cube__meta">{{ number_format($category->active_products_count) }} محصول</span>
+                                        </span>
+                                    </a>
+                                @endforeach
+                            </div>
                         </div>
-                        <div class="home-category-ring__vignette" aria-hidden="true"></div>
                     </div>
 
-                    <div class="home-category-ring__controls">
-                        <button type="button" data-category-ring-prev aria-label="دسته‌بندی قبلی">‹</button>
-                        <span data-category-ring-status aria-live="polite">{{ number_format(1) }} از {{ number_format($categoryCount) }} دسته</span>
-                        <button type="button" data-category-ring-next aria-label="دسته‌بندی بعدی">›</button>
-                        <span class="home-category-ring__hint">برای مرور، بکشید یا از فلش‌ها استفاده کنید</span>
+                    <div class="home-category-cube__controls">
+                        <button type="button" data-category-cube-prev aria-label="نمای قبلی مکعب">‹</button>
+                        <span data-category-cube-status aria-live="polite">دسته: {{ $categoryCubeFaces->first()->name }}</span>
+                        <button type="button" data-category-cube-next aria-label="نمای بعدی مکعب">›</button>
+                        <span class="home-category-cube__hint">موس را حرکت بده یا از فلش‌ها استفاده کن</span>
                     </div>
                 </div>
             </div>
