@@ -13,7 +13,7 @@ class FittingRoomShopData
 {
     public function payload(?Request $request = null): array
     {
-        $mannequin = FittingRoomMannequin::query()
+        $mannequins = FittingRoomMannequin::query()
             ->active()
             ->with([
                 'baseMedia',
@@ -32,13 +32,14 @@ class FittingRoomShopData
             ])
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->first();
+            ->get();
 
+        $mannequin = $mannequins->first();
         $looks = [];
         $itemMap = [];
 
-        if ($mannequin) {
-            foreach ($mannequin->looks as $look) {
+        foreach ($mannequins as $mannequinRecord) {
+            foreach ($mannequinRecord->looks as $look) {
                 $top = $look->items->firstWhere('slot', 'top');
                 $bottom = $look->items->firstWhere('slot', 'bottom');
 
