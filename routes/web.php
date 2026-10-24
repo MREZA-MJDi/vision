@@ -29,6 +29,9 @@ Route::get('/cart', [CustomerCommerceController::class, 'index'])->name('cart.in
 Route::post('/cart/items', [CustomerCommerceController::class, 'storeItem'])
     ->middleware('throttle:30,1')
     ->name('cart.items.store');
+Route::post('/cart/items/bulk', [CustomerCommerceController::class, 'storeBulkItems'])
+    ->middleware('throttle:10,1')
+    ->name('cart.items.bulk');
 Route::patch('/cart/items/{item}', [CustomerCommerceController::class, 'updateItem'])
     ->whereNumber('item')
     ->name('cart.items.update');
