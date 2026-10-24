@@ -7,7 +7,14 @@
   --vs-bg:#f4efea; --vs-panel:#fffaf6; --vs-card:#fffdfb; --vs-line:#e5dcd2;
   --vs-text:#241e21; --vs-muted:#7c7279; --vs-glow:rgba(217,116,43,.13); color-scheme:light;
 }
-.storefront-body:has(.vision-shop-main) { background:var(--vs-bg); color:var(--vs-text); }
+.storefront-body:has(.vision-shop-main) {
+  background:var(--vs-bg); color:var(--vs-text);
+  font-family:Vazirmatn,Tahoma,system-ui,sans-serif; font-size:15px; line-height:1.5;
+}
+.storefront-body:has(.vision-shop-main) .store-shell {
+  width:100%; min-height:100vh; margin:0; overflow:visible;
+  border:0; border-radius:0; background:var(--vs-bg); box-shadow:none;
+}
 .storefront-body:has(.vision-shop-main) .store-atmosphere { display:none; }
 .storefront-body:has(.vision-shop-main) #app,
 .storefront-body:has(.vision-shop-main) { min-height:100vh; }
