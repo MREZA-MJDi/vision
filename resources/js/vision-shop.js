@@ -271,8 +271,9 @@
   function persistComparison() {
     try {
       window.localStorage.setItem(COMPARE_KEY, JSON.stringify(comparison));
+      return true;
     } catch (_) {
-      showToast("ذخیره در این مرورگر در دسترس نیست.");
+      return false;
     }
   }
 
@@ -282,9 +283,11 @@
       return;
     }
     comparison[slot] = [...W].map(Number);
-    persistComparison();
+    const persisted = persistComparison();
     renderComparison();
-    showToast("ترکیب " + slot + " ذخیره شد.");
+    showToast(persisted
+      ? "ترکیب " + slot + " برای مقایسه ذخیره شد."
+      : "ترکیب برای همین صفحه ذخیره شد؛ ذخیره مرورگر در دسترس نیست.");
   }
 
   function renderComparison() {
@@ -447,9 +450,9 @@
   $("#clearCompare").addEventListener("click", () => {
     comparison.A = [];
     comparison.B = [];
-    persistComparison();
+    const persisted = persistComparison();
     renderComparison();
-    showToast("استایل‌های مقایسه پاک شدند.");
+    showToast(persisted ? "استایل‌های مقایسه پاک شدند." : "استایل‌ها در همین صفحه پاک شدند.");
   });
   $("#addset").addEventListener("click", async () => {
     const ids = [...W].map(Number);
