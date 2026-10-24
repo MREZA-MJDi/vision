@@ -67,6 +67,8 @@ class FittingRoomStudioController extends Controller
 
                 $media = $this->storeMedia($mannequin, $request->file('base_image'), 'fitting-room-mannequin', $mannequin->label, $storedPath);
                 $mannequin->base_media_id = $media->getKey();
+                $mannequin->canvas_width = (int) $media->width;
+                $mannequin->canvas_height = (int) $media->height;
                 $mannequin->save();
 
                 return $mannequin;
@@ -146,7 +148,7 @@ class FittingRoomStudioController extends Controller
             'fit_y_top' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'fit_y_bottom' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
-            'preview_top' => [$creating ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
+            'preview_top' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
             'preview_bottom' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
             'preview_combined' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
             'preview_suggested' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
@@ -163,6 +165,9 @@ class FittingRoomStudioController extends Controller
         $topVariantRequested = (int) ($data['top_variant_id'] ?? 0) > 0;
         $bottomVariantRequested = (int) ($data['bottom_variant_id'] ?? 0) > 0;
 
+        if (!$topVariantRequested && !$bottomVariantRequested) {
+            throw ValidationException::withMessages(['top_variant_id' => 'برای هر ست حداقل یک واریانت بالاپوش یا پایین‌تنه انتخاب کن.']);
+        }
         if ($topVariantRequested && !$hasTopScene) {
             throw ValidationException::withMessages(['preview_top' => 'برای واریانت بالاپوش، تصویر حالت T را آپلود کن.']);
         }
