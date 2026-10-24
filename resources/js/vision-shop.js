@@ -11,6 +11,20 @@
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
   const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
   const W = new Set();
+  const COMPARE_KEY = "vision.fit.compare.v1";
+  const comparison = (() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(COMPARE_KEY) || "{}");
+      const clean = ids => Array.isArray(ids)
+        ? ids.map(Number).filter(id => P.some(product => Number(product.id) === id && product.slot))
+        : [];
+      return { A: clean(saved.A), B: clean(saved.B) };
+    } catch (_) {
+      return { A: [], B: [] };
+    }
+  })();
+  let recommendationSlot = "top";
+  let recommendationSlotChosen = false;
   let busy = false;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
 
@@ -183,6 +197,125 @@
     ).join("");
     $("#addset").disabled = items.length === 0;
     render();
+    renderRecommendations();
+    renderComparison();
+  }
+
+  function renderRecommendations() {
+    const root = $("#fit-recommend-grid");
+    if (!root) return;
+
+    const chosenTop = P.find(product => product.slot === "top" && W.has(Number(product.id))) || null;
+    const chosenBottom = P.find(product => product.slot === "bottom" && W.has(Number(product.id))) || null;
+
+    if (!recommendationSlotChosen) {
+      recommendationSlot = chosenTop && !chosenBottom ? "bottom"
+        : chosenBottom && !chosenTop ? "top"
+        : "top";
+    }
+
+    document.querySelectorAll("[data-rec-slot]").forEach(button => {
+      const active = button.dataset.recSlot === recommendationSlot;
+      button.classList.toggle("on", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+
+    const anchor = recommendationSlot === "top" ? chosenBottom : chosenTop;
+    const caption = $("#fit-recommend-caption");
+    if (caption) {
+      caption.textContent = anchor
+        ? "گزینه‌های هماهنگ با " + anchor.name
+        : recommendationSlot === "top"
+          ? "یک بالاپوش انتخاب کن تا استایلت رو بسازیم."
+          : "یک پایین‌تنه انتخاب کن تا استایلت رو بسازیم.";
+    }
+
+    const candidates = P
+      .filter(product => product.slot === recommendationSlot
+        && !W.has(Number(product.id))
+        && Number(product.stock || 0) > 0
+        && product.o
+        && OF[String(product.o)]?.s)
+      .sort((a, b) => {
+        const aMatch = anchor && String(a.o) === String(anchor.o) ? 0 : 1;
+        const bMatch = anchor && String(b.o) === String(anchor.o) ? 0 : 1;
+        if (aMatch !== bMatch) return aMatch - bMatch;
+
+        const aPriceGap = anchor ? Math.abs(Number(a.price || 0) - Number(anchor.price || 0)) : Number(a.price || 0);
+        const bPriceGap = anchor ? Math.abs(Number(b.price || 0) - Number(anchor.price || 0)) : Number(b.price || 0);
+        if (aPriceGap !== bPriceGap) return aPriceGap - bPriceGap;
+        return Number(b.rate || 0) - Number(a.rate || 0);
+      })
+      .slice(0, 5);
+
+    if (!candidates.length) {
+      root.innerHTML = '<p class="fit-rec-empty">فعلاً گزینه‌ی آماده‌ای برای این بخش نیست.</p>';
+      return;
+    }
+
+    root.innerHTML = candidates.map(product =>
+      '<article class="fit-rec-card">' +
+        '<div class="fit-rec-thumb">' +
+          (product.img ? '<img src="' + escapeHtml(product.img) + '" alt="" loading="lazy">' : '<span>V.</span>') +
+        '</div>' +
+        '<div class="fit-rec-copy">' +
+          '<strong>' + escapeHtml(product.name) + '</strong>' +
+          '<span>' + fa(product.price) + ' ' + escapeHtml(S.currency || "تومان") + '</span>' +
+          (anchor && String(product.o) === String(anchor.o) ? '<small>پیشنهاد ست هماهنگ</small>' : '') +
+        '</div>' +
+        '<button type="button" data-rec="' + Number(product.id) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن">امتحان</button>' +
+      '</article>'
+    ).join("");
+  }
+
+  function persistComparison() {
+    try {
+      window.localStorage.setItem(COMPARE_KEY, JSON.stringify(comparison));
+    } catch (_) {
+      showToast("ذخیره در این مرورگر در دسترس نیست.");
+    }
+  }
+
+  function saveComparison(slot) {
+    if (!W.size) {
+      showToast("اول لباس‌ها رو روی مانکن انتخاب کن.");
+      return;
+    }
+    comparison[slot] = [...W].map(Number);
+    persistComparison();
+    renderComparison();
+    showToast("ترکیب " + slot + " ذخیره شد.");
+  }
+
+  function renderComparison() {
+    const root = $("#fit-compare-grid");
+    if (!root) return;
+
+    const card = slot => {
+      const items = (comparison[slot] || [])
+        .map(id => P.find(product => Number(product.id) === Number(id)))
+        .filter(Boolean);
+      const top = items.find(product => product.slot === "top");
+      const bottom = items.find(product => product.slot === "bottom");
+      const total = items.reduce((sum, product) => sum + Number(product.price || 0), 0);
+      const piece = (product, label) => '<div class="fit-compare-piece">' +
+        (product?.img ? '<img src="' + escapeHtml(product.img) + '" alt="" loading="lazy">' : '<span class="fit-compare-piece-empty">—</span>') +
+        '<span><small>' + label + '</small><strong>' + escapeHtml(product?.name || "انتخاب نشده") + '</strong></span>' +
+      '</div>';
+
+      return '<article class="fit-compare-card">' +
+        '<div class="fit-compare-card-head"><strong>استایل ' + slot + '</strong><span>' + (items.length ? fa(items.length) + ' تکه' : 'خالی') + '</span></div>' +
+        (items.length
+          ? piece(top, "بالاپوش") + piece(bottom, "پایین‌تنه") + '<div class="fit-compare-total">جمع <strong>' + fa(total) + ' ' + escapeHtml(S.currency || "تومان") + '</strong></div>'
+          : '<p class="fit-compare-empty">برای ذخیره، لباس‌ها رو انتخاب کن و دکمه‌ی ' + slot + ' رو بزن.</p>') +
+      '</article>';
+    };
+
+    root.innerHTML = card("A") + card("B");
+    const buttonA = $("#saveCompareA");
+    const buttonB = $("#saveCompareB");
+    if (buttonA) buttonA.textContent = comparison.A.length ? "جایگزینی ترکیب A" : "ذخیره‌ی ترکیب A";
+    if (buttonB) buttonB.textContent = comparison.B.length ? "جایگزینی ترکیب B" : "ذخیره‌ی ترکیب B";
   }
 
   function showToast(message) {
@@ -285,6 +418,14 @@
       } else if (product) {
         tryOn(product, image);
       }
+    } else if (data.rec) {
+      const product = P.find(item => Number(item.id) === Number(data.rec));
+      const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
+      if (product) tryOn(product, image);
+    } else if (data.recSlot) {
+      recommendationSlot = data.recSlot;
+      recommendationSlotChosen = true;
+      renderRecommendations();
     } else if (data.r) {
       W.delete(Number(data.r));
       refresh();
@@ -301,6 +442,15 @@
     fit.setAttribute("aria-hidden", "true");
   });
   $("#strip").addEventListener("click", clearAll);
+  $("#saveCompareA").addEventListener("click", () => saveComparison("A"));
+  $("#saveCompareB").addEventListener("click", () => saveComparison("B"));
+  $("#clearCompare").addEventListener("click", () => {
+    comparison.A = [];
+    comparison.B = [];
+    persistComparison();
+    renderComparison();
+    showToast("استایل‌های مقایسه پاک شدند.");
+  });
   $("#addset").addEventListener("click", async () => {
     const ids = [...W].map(Number);
     if (!ids.length) { showToast("اول یک لباس انتخاب کن."); return; }
