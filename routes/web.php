@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [StorefrontController::class, 'home'])->name('storefront.index');
 Route::get('/shop', [StorefrontController::class, 'index'])->name('shop.index');
 Route::get('/products', [StorefrontController::class, 'index'])->name('products.index');
-Route::get('/try-on', VirtualTryOnPageController::class)->name('try-on.index');
+Route::redirect('/try-on', '/shop')->name('try-on.index');
 Route::get('/products/{product:slug}', [StorefrontController::class, 'show'])
     ->where('product', '[a-z0-9-]+')
     ->name('products.show');
