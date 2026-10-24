@@ -202,6 +202,71 @@ class CustomerCommerceController extends Controller
         return redirect()->route('cart.index')->with('status', 'کالا به سبد خرید اضافه شد.');
     }
 
+    /**
+     * Add all pieces selected in the fitting-room drawer as one validated action.
+     * Totals are never accepted from the browser; checkout recalculates from variants.
+     */
+    public function storeBulkItems(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'variant_ids' => ['required', 'array', 'min:1', 'max:5'],
+            'variant_ids.*' => ['required', 'integer', 'distinct', 'exists:product_variants,id'],
+        ]);
+
+        $variantIds = array_values(array_unique(array_map('intval', $validated['variant_ids'])));
+        $cart = $this->currentCart();
+
+        DB::transaction(function () use ($cart, $variantIds): void {
+            Cart::query()->whereKey($cart->getKey())->lockForUpdate()->firstOrFail();
+
+            $variants = ProductVariant::query()
+                ->with('product')
+                ->whereIn('id', $variantIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($variantIds as $variantId) {
+                $variant = $variants->get($variantId);
+                if (!$variant || !$variant->is_active || !$variant->product || !$variant->product->is_active) {
+                    throw ValidationException::withMessages([
+                        'variant_ids' => 'یکی از آیتم‌های این ست دیگر در دسترس نیست.',
+                    ]);
+                }
+
+                $existing = CartItem::query()
+                    ->where('cart_id', $cart->getKey())
+                    ->where('product_variant_id', $variantId)
+                    ->lockForUpdate()
+                    ->first();
+
+                $nextQuantity = (int) ($existing?->quantity ?? 0) + 1;
+                if ((int) $variant->stock < $nextQuantity) {
+                    throw ValidationException::withMessages([
+                        'variant_ids' => $variant->product->name . ' موجودی کافی ندارد.',
+                    ]);
+                }
+
+                if ($existing) {
+                    $existing->quantity = $nextQuantity;
+                    $existing->save();
+                } else {
+                    CartItem::query()->create([
+                        'cart_id' => $cart->getKey(),
+                        'product_variant_id' => $variantId,
+                        'quantity' => 1,
+                    ]);
+                }
+            }
+        }, 3);
+
+        return response()->json([
+            'message' => 'ست انتخاب‌شده به سبد خرید اضافه شد.',
+            'count' => (int) $cart->items()->sum('quantity'),
+        ], 201);
+    }
+
     public function updateItem(Request $request, int $item): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $validated = $request->validate([
