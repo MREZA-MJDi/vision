@@ -82,7 +82,7 @@ class StorefrontBrowseTest extends TestCase
         $this->get('/shop')
             ->assertOk()
             ->assertSee('src="' . $photoUrl . '"', false)
-            ->assertSee('data-c="' . $variant->getKey() . '"', false)
+            ->assertSee('"id":' . $variant->getKey(), false)
             ->assertDontSee('data-virtual-try-on', false)
             ->assertDontSee('data-vto-select-product', false)
             ->assertDontSee('data-fit-product', false);
@@ -166,8 +166,8 @@ class StorefrontBrowseTest extends TestCase
 
         $this->get('/products')
             ->assertOk()
-            ->assertSee('data-c="' . $available->getKey() . '"', false)
-            ->assertDontSee('data-c="' . $soldOut->getKey() . '"', false);
+            ->assertSee('"id":' . $available->getKey(), false)
+            ->assertDontSee('"id":' . $soldOut->getKey(), false);
     }
 
     public function test_product_detail_shows_variant_and_returns_404_for_inactive_product(): void
