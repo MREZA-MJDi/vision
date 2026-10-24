@@ -165,6 +165,19 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('"slot":"bottom"', false);
     }
 
+    public function test_shop_includes_outfit_recommendations_and_saved_style_comparison(): void
+    {
+        $this->get('/shop')
+            ->assertOk()
+            ->assertSee('fit-recommend-grid', false)
+            ->assertSee('data-rec-slot="top"', false)
+            ->assertSee('data-rec-slot="bottom"', false)
+            ->assertSee('fit-compare-grid', false)
+            ->assertSee('saveCompareA', false)
+            ->assertSee('saveCompareB', false)
+            ->assertDontSee('اتاق پرو استودیویی</a>', false);
+    }
+
     public function test_selected_outfit_variants_are_added_to_the_database_cart_together(): void
     {
         $variantIds = [];
