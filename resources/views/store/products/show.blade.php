@@ -131,6 +131,8 @@
                 @endif
             </form>
 
+            <a class="commerce-text-link" href="{{ route('shop.index', ['q' => $product->name]) }}#catalog">امتحان این محصول در اتاق پرو استودیویی <span aria-hidden="true">↗</span></a>
+
             <div class="store-product-detail__accordions">
                 <details open><summary>توضیحات محصول</summary><div>{{ $product->description ?: $product->short_description ?: 'محصولی از مجموعهٔ منتخب VISION.' }}</div></details>
                 <details><summary>ارسال و بازگشت کالا</summary><div>هزینهٔ ارسال بر اساس نرخ ثبت‌شده در تنظیمات فروشگاه محاسبه می‌شود. برای هماهنگی بازگشت کالا با فروشگاه تماس بگیرید.</div></details>
@@ -151,12 +153,6 @@
             <a class="commerce-text-link" href="{{ route('shop.index') }}">بازگشت به فروشگاه ←</a>
         </div>
     </section>
-
-    @include('store.partials.virtual-try-on-workspace', [
-        'productPage' => true,
-        'tryOnInitialVariantId' => $defaultVariant?->getKey(),
-        'tryOnInitialAudience' => in_array($product->audience ?? '', ['women', 'men'], true) ? $product->audience : 'women',
-    ])
 
     @if($relatedProducts->isNotEmpty())
         <section class="commerce-related">
