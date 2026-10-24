@@ -31,6 +31,7 @@ class FittingRoomStudioController extends Controller
             ->get();
 
         $variants = ProductVariant::query()
+            ->where('is_active', true)
             ->whereHas('product', fn ($query) => $query->where('is_active', true))
             ->with(['product:id,name,slug,audience', 'primaryGalleryMedia'])
             ->orderByDesc('updated_at')
