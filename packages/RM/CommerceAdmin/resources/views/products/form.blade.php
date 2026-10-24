@@ -84,11 +84,6 @@
                                 if (! $variantImage && $variantId && $product) {
                                     $variantImage = $product->variants->firstWhere('id', (int) $variantId)?->primaryGalleryMedia?->url;
                                 }
-                                $currentTryOnAsset = data_get($variant, 'tryOnAssets.0');
-                                $currentTryOnImage = data_get($currentTryOnAsset, 'media.url');
-                                $currentTryOnMannequinId = old('variants.'.$index.'.try_on_mannequin_id', data_get($currentTryOnAsset, 'try_on_mannequin_id'));
-                                $currentTryOnSlot = old('variants.'.$index.'.try_on_slot', data_get($currentTryOnAsset, 'slot'));
-                                $currentTryOnDefault = old('variants.'.$index.'.try_on_default', data_get($currentTryOnAsset, 'is_default', false));
                             @endphp
                             <div class="ak-variant-card" data-variant-row>
                                 <div class="ak-variant-card-head"><strong>تنوع <span data-variant-number>{{ $loop->iteration }}</span></strong><button type="button" class="ak-icon-button ak-remove-variant" data-remove-variant aria-label="حذف تنوع" {{ $loop->first ? 'disabled' : '' }}>×</button></div>
@@ -106,16 +101,6 @@
                                     @if(data_get($variant, 'primaryGalleryMedia.id') && data_get($variant, 'id'))
                                         <button class="ak-button ak-button-light ak-button-sm" type="submit" form="delete-variant-media-{{ $product?->getKey() }}-{{ data_get($variant, 'id') }}-{{ data_get($variant, 'primaryGalleryMedia.id') }}" aria-label="حذف تصویر اختصاصی">حذف تصویر</button>
                                     @endif
-                                </div>
-                                <div class="ak-try-on-layer-fields">
-                                    <div class="ak-try-on-layer-fields__heading"><strong>لایهٔ اتاق پرو</strong><small>جدا از گالری · PNG/WebP شفاف</small></div>
-                                    <div class="ak-variant-grid">
-                                        <label class="ak-field"><span>مانکن</span><select name="variants[{{ $index }}][try_on_mannequin_id]"><option value="">بدون لایه</option>@foreach($tryOnMannequins as $tryOnMannequin)<option value="{{ $tryOnMannequin->id }}" @selected((string)$currentTryOnMannequinId === (string)$tryOnMannequin->id)>{{ $tryOnMannequin->label }}</option>@endforeach</select></label>
-                                        <label class="ak-field"><span>جایگاه</span><select name="variants[{{ $index }}][try_on_slot]"><option value="">انتخاب جایگاه</option><option value="top" @selected($currentTryOnSlot === 'top')>بالاپوش</option><option value="outerwear" @selected($currentTryOnSlot === 'outerwear')>لایهٔ رویی</option><option value="bottom" @selected($currentTryOnSlot === 'bottom')>پایین‌تنه</option><option value="shoes" @selected($currentTryOnSlot === 'shoes')>کفش</option><option value="accessory" @selected($currentTryOnSlot === 'accessory')>اکسسوری</option></select></label>
-                                    </div>
-                                    @if($currentTryOnImage)<div class="ak-try-on-layer-current"><img src="{{ $currentTryOnImage }}" alt="لایهٔ اتاق پرو"><label><input type="checkbox" name="variants[{{ $index }}][remove_try_on_image]" value="1"><span>حذف لایهٔ فعلی</span></label></div>@endif
-                                    <label class="ak-variant-remove-image ak-try-on-default-option"><input type="checkbox" name="variants[{{ $index }}][try_on_default]" value="1" @checked((bool) $currentTryOnDefault)><span>این لباس پیش‌فرض اتاق پرو برای این جایگاه باشد.</span></label>
-                                    <label class="ak-field"><span>{{ $currentTryOnImage ? 'جایگزینی تصویر لایه‌ای' : 'بارگذاری تصویر لایه‌ای' }}</span><input type="file" name="variants[{{ $index }}][try_on_image]" accept="image/png,image/webp"><small>تصویر شفاف دقیقاً ۱۰۲۴×۱۵۳۶؛ پس‌زمینه و فضای خالی آن باید با مانکن هم‌تراز باشد.</small></label>
                                 </div>
                                 <div class="ak-variant-grid">
                                     <label class="ak-field"><span>SKU</span><input name="variants[{{ $index }}][sku]" value="{{ old('variants.'.$index.'.sku', data_get($variant, 'sku')) }}" maxlength="100" placeholder="SKU-001"></label>
@@ -137,15 +122,6 @@
                             <div class="ak-variant-image-field">
                                 <img class="ak-variant-image-preview" src="" alt="" data-variant-image-preview hidden>
                                 <label class="ak-field"><span>تصویر مخصوص این تنوع</span><input type="file" name="variants[__INDEX__][image]" accept="image/jpeg,image/png,image/webp" data-variant-image-input><small>تصویر این رنگ در صفحهٔ محصول نمایش داده می‌شود. حداکثر ۴ مگابایت.</small></label>
-                            </div>
-                            <div class="ak-try-on-layer-fields">
-                                <div class="ak-try-on-layer-fields__heading"><strong>لایهٔ اتاق پرو</strong><small>فقط PNG/WebP شفاف</small></div>
-                                <div class="ak-variant-grid">
-                                    <label class="ak-field"><span>مانکن</span><select name="variants[__INDEX__][try_on_mannequin_id]"><option value="">بدون لایه</option>@foreach($tryOnMannequins as $tryOnMannequin)<option value="{{ $tryOnMannequin->id }}">{{ $tryOnMannequin->label }}</option>@endforeach</select></label>
-                                    <label class="ak-field"><span>جایگاه</span><select name="variants[__INDEX__][try_on_slot]"><option value="">انتخاب جایگاه</option><option value="top">بالاپوش</option><option value="outerwear">لایهٔ رویی</option><option value="bottom">پایین‌تنه</option><option value="shoes">کفش</option><option value="accessory">اکسسوری</option></select></label>
-                                </div>
-                                <label class="ak-variant-remove-image ak-try-on-default-option"><input type="checkbox" name="variants[__INDEX__][try_on_default]" value="1"><span>این لباس پیش‌فرض اتاق پرو برای این جایگاه باشد.</span></label>
-                                <label class="ak-field"><span>بارگذاری تصویر لایه‌ای</span><input type="file" name="variants[__INDEX__][try_on_image]" accept="image/png,image/webp"><small>تصویر شفاف دقیقاً ۱۰۲۴×۱۵۳۶ و هم‌تراز با مانکن.</small></label>
                             </div>
                             <div class="ak-variant-grid">
                                 <label class="ak-field"><span>SKU</span><input name="variants[__INDEX__][sku]" maxlength="100" placeholder="SKU-001"></label>
