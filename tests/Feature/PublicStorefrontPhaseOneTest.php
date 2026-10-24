@@ -62,7 +62,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('id="sort"', false)
             ->assertSee('id="cats"', false)
             ->assertSee('اتاق پرو')
-            ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
+            ->assertSee('demo-essential-cotton-tee', false)
             ->assertSee('تومان');
     }
 
@@ -286,6 +286,6 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $this->get('/shop?sale=1&price_max=1050000')
             ->assertOk()
-            ->assertSee('تی‌شرت پنبه‌ای کلاسیک');
+            ->assertSee('demo-essential-cotton-tee', false);
     }
 }
