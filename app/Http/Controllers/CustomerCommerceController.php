@@ -127,7 +127,7 @@ class CustomerCommerceController extends Controller
      * Session-scoped favourites mirror the approved prototype without creating
      * a second wishlist storage path beside the commerce models.
      */
-    public function toggleFavourite(Request $request, int $variant): \\Illuminate\\Http\\JsonResponse
+    public function toggleFavourite(Request $request, int $variant): \Illuminate\Http\JsonResponse
     {
         $productVariant = ProductVariant::query()
             ->with('product')
