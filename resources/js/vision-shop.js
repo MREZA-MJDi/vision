@@ -151,7 +151,7 @@
       const bottomScene = String(bottom.o) + ":B";
       if (scenes[topScene] && scenes[bottomScene]) {
         // A longer outer layer (e.g. a coat) should cover more of the trousers.
-        const seam = Number(top.fy || 0) >= 0.44 ? 0.74 : 0.55;
+        const seam = Number(top.fy || 0) >= 0.44 ? 0.74 : 0.47;
         activate(topScene, "inset(0 0 " + (100 - seam * 100) + "% 0)", 2);
         activate(bottomScene, "inset(" + Math.max(0, seam * 100 - 4) + "% 0 0 0)", 1);
         return;
