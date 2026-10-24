@@ -55,6 +55,36 @@
     </div>
     <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
     <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
+
+    <section class="fit-recommendations" aria-labelledby="fit-recommend-title">
+        <div class="fit-section-head">
+            <div>
+                <h5 id="fit-recommend-title">با این ست کن</h5>
+                <p id="fit-recommend-caption">برای شروع، یک لباس انتخاب کن.</p>
+            </div>
+        </div>
+        <div class="fit-rec-tabs" role="group" aria-label="نوع لباس پیشنهادی">
+            <button type="button" data-rec-slot="top" aria-pressed="true">بالاپوش</button>
+            <button type="button" data-rec-slot="bottom" aria-pressed="false">پایین‌تنه</button>
+        </div>
+        <div class="fit-recommend-grid" id="fit-recommend-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="fit-compare" aria-labelledby="fit-compare-title">
+        <div class="fit-section-head fit-compare-head">
+            <div>
+                <h5 id="fit-compare-title">مقایسه‌ی استایل‌ها</h5>
+                <p>دو ترکیب را ذخیره کن و قیمتشان را کنار هم ببین.</p>
+            </div>
+            <button type="button" id="clearCompare" aria-label="پاک کردن استایل‌های مقایسه">پاک‌کردن</button>
+        </div>
+        <div class="fit-compare-actions">
+            <button type="button" id="saveCompareA">ذخیره‌ی ترکیب A</button>
+            <button type="button" id="saveCompareB">ذخیره‌ی ترکیب B</button>
+        </div>
+        <div class="fit-compare-grid" id="fit-compare-grid" aria-live="polite"></div>
+    </section>
+
     <div class="tot" id="tot">هنوز چیزی انتخاب نشده</div>
     <div class="btns"><button class="pri" id="addset" type="button">افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
 </aside>
