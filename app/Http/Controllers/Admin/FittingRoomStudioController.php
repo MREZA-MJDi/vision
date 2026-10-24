@@ -61,7 +61,7 @@ class FittingRoomStudioController extends Controller
                     'pose_key' => $data['pose_key'] ?? 'front-neutral',
                     'canvas_width' => 640,
                     'canvas_height' => 960,
-                    'is_active' => $request->boolean('is_active', true),
+                    'is_active' => $request->boolean('is_active'),
                     'sort_order' => (int) ($data['sort_order'] ?? 0),
                 ]);
 
@@ -139,9 +139,15 @@ class FittingRoomStudioController extends Controller
     private function saveLook(Request $request, FittingRoomLook $look): RedirectResponse
     {
         $creating = !$look->exists;
+        $codeRule = Rule::unique('fitting_room_looks', 'code')
+            ->where('mannequin_id', (int) $request->input('mannequin_id'));
+        if (!$creating) {
+            $codeRule->ignore($look->getKey());
+        }
+
         $data = $request->validate([
             'mannequin_id' => ['required', 'integer', 'exists:fitting_room_mannequins,id'],
-            'code' => ['required', 'string', 'max:80', 'regex:/^[a-zA-Z0-9_-]+$/'],
+            'code' => ['required', 'string', 'max:80', 'regex:/^[a-zA-Z0-9_-]+$/', $codeRule],
             'label' => ['required', 'string', 'max:160'],
             'top_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'bottom_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
@@ -178,10 +184,15 @@ class FittingRoomStudioController extends Controller
             throw ValidationException::withMessages(['preview_combined' => 'برای ست کامل، تصویر حالت TB را آپلود کن.']);
         }
 
-        $variantIds = array_values(array_filter([
-            (int) ($data['top_variant_id'] ?? 0) ?: null,
-            (int) ($data['bottom_variant_id'] ?? 0) ?: null,
-        ]));
+        $topVariantId = (int) ($data['top_variant_id'] ?? 0);
+        $bottomVariantId = (int) ($data['bottom_variant_id'] ?? 0);
+        if ($topVariantId > 0 && $topVariantId === $bottomVariantId) {
+            throw ValidationException::withMessages([
+                'bottom_variant_id' => 'بالاپوش و پایین‌تنه باید دو واریانت جدا باشند.',
+            ]);
+        }
+
+        $variantIds = array_values(array_filter([$topVariantId ?: null, $bottomVariantId ?: null]));
 
         $variants = ProductVariant::query()
             ->with('product')
