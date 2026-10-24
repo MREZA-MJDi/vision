@@ -135,6 +135,15 @@ class FittingRoomShopData
             ->filter()
             ->values();
 
+        $requestedSort = $request?->query('sort');
+        $initialSort = is_string($requestedSort) ? match ($requestedSort) {
+            'new', 'newest' => 'new',
+            'lo', 'price_asc' => 'lo',
+            'hi', 'price_desc' => 'hi',
+            'rt', 'rating' => 'rt',
+            default => 'new',
+        } : 'new';
+
         $categories = $products->pluck('cat')->filter()->unique()->values()->all();
         $prices = $products->pluck('price')->filter(fn ($price) => is_numeric($price) && $price >= 0);
         $min = $prices->isNotEmpty() ? (int) floor($prices->min() / 100000) * 100000 : 0;
@@ -161,6 +170,8 @@ class FittingRoomShopData
             'initialQuery' => $request && is_string($request->query('q'))
                 ? mb_substr(trim($request->query('q')), 0, 120)
                 : '',
+            'initialSaleOnly' => $request?->boolean('sale') ?? false,
+            'initialSort' => $initialSort,
         ];
     }
 }
