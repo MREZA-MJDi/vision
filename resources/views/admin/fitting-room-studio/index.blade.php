@@ -130,7 +130,7 @@
                         <label class="fr-scene-upload">
                             <span class="fr-scene-upload__code">{{ $code }}</span>
                             <span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $hint }}</small></span>
-                            <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input @if($input === 'preview_top') required @endif>
+                            <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input>
                             <span class="fr-scene-upload__choose">انتخاب تصویر <span>↗</span></span>
                             <img alt="" data-fr-preview hidden>
                         </label>
