@@ -58,7 +58,11 @@ class FittingRoomShopData
                 foreach ($look->items as $item) {
                     $variant = $item->variant;
                     $product = $variant?->product;
-                    if (!$variant || !$product || !$variant->is_active || !$product->is_active) {
+                    $audienceMatches = $product && (
+                        $mannequin->audience === 'all'
+                        || $product->audience === $mannequin->audience
+                    );
+                    if (!$variant || !$product || !$variant->is_active || !$product->is_active || !$audienceMatches) {
                         continue;
                     }
 
