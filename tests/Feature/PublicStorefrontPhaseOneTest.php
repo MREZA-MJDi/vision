@@ -45,7 +45,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('images.unsplash.com');
     }
 
-    public function test_shop_has_real_catalog_controls_and_the_bounded_product_grid(): void
+    public function test_shop_has_real_catalog_controls_and_the_fitting_room_studio_drawer(): void
     {
         $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
@@ -54,16 +54,14 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $response->assertOk()
             ->assertDontSee('data-tiamir-intro', false)
-            ->assertDontSee('data-fitting-room', false)
-            ->assertSee('data-virtual-try-on', false)
-            ->assertSee('data-vto-inline="true"', false)
-            ->assertSee('data-vto-launcher', false)
-            ->assertSee('data-vto-select-product', false)
-            ->assertDontSee('store-tryon-link', false)
-            ->assertSee('اتاق پرو')
-            ->assertSee('data-store-sort', false)
-            ->assertSee('data-product-grid', false)
-            ->assertSee('مرتب‌سازی')
+            ->assertDontSee('data-virtual-try-on', false)
+            ->assertSee('id="fit"', false)
+            ->assertSee('id="stage"', false)
+            ->assertSee('id="grid"', false)
+            ->assertSee('window.SHOP', false)
+            ->assertSee('id="sort"', false)
+            ->assertSee('id="cats"', false)
+            ->assertSee('Fitting Room Studio')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
             ->assertSee('تومان');
     }
@@ -80,9 +78,8 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('property="og:image"', false)
             ->assertSee('data-variant-select', false)
             ->assertSee('data-variant-color-pick', false)
-            ->assertSee('data-virtual-try-on', false)
-            ->assertSee('data-vto-expand', false)
-            ->assertSee('data-initial-variant-id', false)
+            ->assertDontSee('data-virtual-try-on', false)
+            ->assertSee('امتحان این محصول در اتاق پرو استودیویی')
             ->assertDontSee('data-variant-preview-modal', false)
             ->assertSee('افزودن به سبد خرید')
             ->assertSee('محصولات منتخب')
