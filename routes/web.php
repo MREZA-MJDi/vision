@@ -4,7 +4,6 @@ use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\CustomerCommerceController;
 use App\Http\Controllers\StorefrontController;
-use App\Http\Controllers\VirtualTryOnPageController;
 use Illuminate\Support\Facades\Route;
 
 /*
