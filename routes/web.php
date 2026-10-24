@@ -23,6 +23,10 @@ Route::get('/products/{product:slug}', [StorefrontController::class, 'show'])
     ->where('product', '[a-z0-9-]+')
     ->name('products.show');
 
+Route::post('/shop/favourites/{variant}', [CustomerCommerceController::class, 'toggleFavourite'])
+    ->whereNumber('variant')
+    ->name('shop.favourites.toggle');
+
 Route::get('/cart/summary', [CustomerCommerceController::class, 'summary'])->name('cart.summary');
 Route::get('/cart', [CustomerCommerceController::class, 'index'])->name('cart.index');
 Route::post('/cart/items', [CustomerCommerceController::class, 'storeItem'])
