@@ -9,7 +9,7 @@
     <nav class="vision-shop-nav" aria-label="ناوبری اصلی">
         <a href="{{ route('storefront.index') }}">خانه</a>
         <a href="{{ route('shop.index') }}">فروشگاه</a>
-        <a href="{{ route('shop.index', ['sort' => 'new']) }}#catalog">تازه‌ها</a>
+        <a href="{{ route('shop.index', ['sort' => 'newest']) }}#catalog">تازه‌ها</a>
         <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog">حراج</a>
     </nav>
     <a class="vision-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION صفحهٔ اصلی">VISION</a>
