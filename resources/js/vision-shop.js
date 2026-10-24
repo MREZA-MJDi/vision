@@ -70,9 +70,9 @@
           '<button type="button" class="fav ' + (state.fav.has(Number(product.id)) ? "on" : "") + '" data-f="' + Number(product.id) + '" aria-pressed="' + state.fav.has(Number(product.id)) + '" aria-label="ذخیرهٔ ' + escapeHtml(product.name) + '" title="علاقه‌مندی">' +
             '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>' +
           '</button>' +
-          (canFit ? '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="امتحان روی مانکن">' +
+          '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="امتحان روی مانکن">' +
             '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg>' +
-          '</button>' : "") +
+          '</button>' +
         '</div>' +
         (product.rate !== null && product.rate !== undefined ? '<span class="shop-rate">★ ' + fa(product.rate) + '</span>' : "") +
         '<a class="shop-pic" href="' + escapeHtml(product.url || "#") + '" aria-label="مشاهدهٔ ' + escapeHtml(product.name) + '">' + image + '</a>' +
@@ -243,7 +243,13 @@
     } else if (data.t) {
       const product = P.find(item => Number(item.id) === Number(data.t));
       const image = button.closest(".shop-product-card")?.querySelector(".shop-pic img");
-      if (product) tryOn(product, image);
+      if (product && (!product.slot || !product.o || !OF[String(product.o)] || !OF[String(product.o)].s || !Object.keys(OF[String(product.o)].s).length)) {
+        fit.classList.add("open");
+        fit.setAttribute("aria-hidden", "false");
+        showToast("برای پرو مجازی، این محصول را در استودیو به ست و تصویر مانکن وصل کن.");
+      } else if (product) {
+        tryOn(product, image);
+      }
     } else if (data.r) {
       W.delete(Number(data.r));
       refresh();
