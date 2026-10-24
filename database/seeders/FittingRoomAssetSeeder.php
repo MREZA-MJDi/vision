@@ -26,6 +26,15 @@ class FittingRoomAssetSeeder extends Seeder
 
     public function run(): void
     {
+        if (! $this->archivePath()) {
+            $this->command?->warn(
+                'VISION asset seeding skipped: place vision-fitting-room-assets.zip in database/seeders/assets/ '
+                . 'or storage/app/seed-imports/ and run php artisan db:seed --class=FittingRoomAssetSeeder.'
+            );
+
+            return;
+        }
+
         $assets = $this->readArchive();
         $disk = Storage::disk('public');
 
@@ -211,6 +220,22 @@ class FittingRoomAssetSeeder extends Seeder
         $this->command?->info('VISION fitting-room assets imported: product galleries, mannequin scenes, 12 looks and variant mappings are persisted.');
     }
 
+    private function archivePath(): ?string
+    {
+        foreach ([
+            database_path('seeders/' . self::ARCHIVE),
+            storage_path('app/seed-imports/vision-fitting-room-assets.zip'),
+            base_path('vision-fitting-room-assets.zip'),
+            '/mnt/data/vision-fitting-room-assets.zip',
+        ] as $candidate) {
+            if (is_file($candidate) && is_readable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Read the bundle without requiring PHP's optional ZipArchive extension.
      * The supplied archive uses standard ZIP local file headers and DEFLATE.
@@ -219,10 +244,10 @@ class FittingRoomAssetSeeder extends Seeder
      */
     private function readArchive(): array
     {
-        $path = database_path('seeders/' . self::ARCHIVE);
-        $archive = @file_get_contents($path);
+        $path = $this->archivePath();
+        $archive = $path ? @file_get_contents($path) : false;
         if (! is_string($archive) || $archive === '') {
-            throw new RuntimeException('Missing VISION asset bundle: ' . $path);
+            throw new RuntimeException('Could not read the VISION asset bundle. Place vision-fitting-room-assets.zip in the documented import path.');
         }
 
         $assets = [];
