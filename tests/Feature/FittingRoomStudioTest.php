@@ -34,6 +34,134 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('name="bottom_variant_id"', false);
     }
 
+    public function test_shop_payload_uses_database_scene_urls_and_variant_mappings(): void
+    {
+        $mannequin = FittingRoomMannequin::query()->create([
+            'code' => 'test-women-front',
+            'label' => 'Test mannequin',
+            'audience' => 'women',
+            'pose_key' => 'front-neutral',
+            'canvas_width' => 640,
+            'canvas_height' => 960,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $base = $mannequin->media()->create([
+            'collection' => 'fitting-room-mannequin',
+            'disk' => 'public',
+            'path' => 'https://assets.example.test/s0.jpg',
+            'original_name' => 's0.jpg',
+            'mime_type' => 'image/jpeg',
+            'size' => 1,
+            'width' => 640,
+            'height' => 960,
+            'alt_text' => 'Test mannequin',
+            'sort_order' => 0,
+        ]);
+        $mannequin->base_media_id = $base->getKey();
+        $mannequin->save();
+
+        $variants = [];
+        foreach ([
+            ['name' => 'Studio top', 'slug' => 'studio-top', 'sku' => 'STUDIO-TOP-001', 'slot' => 'top'],
+            ['name' => 'Studio bottom', 'slug' => 'studio-bottom', 'sku' => 'STUDIO-BOTTOM-001', 'slot' => 'bottom'],
+        ] as $item) {
+            $product = Product::query()->create([
+                'name' => $item['name'],
+                'slug' => $item['slug'],
+                'audience' => 'women',
+                'is_active' => true,
+            ]);
+            $variant = ProductVariant::query()->create([
+                'product_id' => $product->getKey(),
+                'sku' => $item['sku'],
+                'price' => 120000,
+                'stock' => 3,
+                'low_stock_threshold' => 1,
+                'is_active' => true,
+            ]);
+            $variant->media()->create([
+                'collection' => 'gallery',
+                'disk' => 'public',
+                'path' => 'https://assets.example.test/' . $item['slot'] . '.png',
+                'original_name' => $item['slot'] . '.png',
+                'mime_type' => 'image/png',
+                'size' => 1,
+                'width' => 420,
+                'height' => 420,
+                'alt_text' => $item['name'],
+                'sort_order' => 0,
+            ]);
+            $variants[$item['slot']] = $variant;
+        }
+
+        $look = FittingRoomLook::query()->create([
+            'mannequin_id' => $mannequin->getKey(),
+            'code' => 'test-outfit',
+            'label' => 'Test outfit',
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $sceneIds = [];
+        foreach ([
+            'preview_top' => ['collection' => 'fitting-room-scene', 'path' => 'https://assets.example.test/T.jpg'],
+            'preview_bottom' => ['collection' => 'fitting-room-scene', 'path' => 'https://assets.example.test/B.jpg'],
+            'preview_combined' => ['collection' => 'fitting-room-scene', 'path' => 'https://assets.example.test/TB.jpg'],
+            'preview_suggested' => ['collection' => 'fitting-room-scene', 'path' => 'https://assets.example.test/S.jpg'],
+        ] as $key => $scene) {
+            $media = $look->media()->create([
+                'collection' => $scene['collection'],
+                'disk' => 'public',
+                'path' => $scene['path'],
+                'original_name' => basename($scene['path']),
+                'mime_type' => 'image/jpeg',
+                'size' => 1,
+                'width' => 420,
+                'height' => 630,
+                'alt_text' => $key,
+                'sort_order' => 0,
+            ]);
+            $sceneIds[$key] = $media->getKey();
+        }
+
+        $look->fill([
+            'preview_top_media_id' => $sceneIds['preview_top'],
+            'preview_bottom_media_id' => $sceneIds['preview_bottom'],
+            'preview_combined_media_id' => $sceneIds['preview_combined'],
+            'preview_suggested_media_id' => $sceneIds['preview_suggested'],
+        ])->save();
+
+        FittingRoomLookItem::query()->create([
+            'look_id' => $look->getKey(),
+            'product_variant_id' => $variants['top']->getKey(),
+            'slot' => 'top',
+            'fit_y' => 0.38,
+            'is_active' => true,
+            'sort_order' => 10,
+        ]);
+        FittingRoomLookItem::query()->create([
+            'look_id' => $look->getKey(),
+            'product_variant_id' => $variants['bottom']->getKey(),
+            'slot' => 'bottom',
+            'fit_y' => 0.66,
+            'is_active' => true,
+            'sort_order' => 20,
+        ]);
+
+        $response = $this->get('/shop');
+        $response->assertOk()
+            ->assertSee('window.SHOP', false)
+            ->assertSee('assets.example.test/s0.jpg', false)
+            ->assertSee('"T":', false)
+            ->assertSee('"B":', false)
+            ->assertSee('"TB":', false)
+            ->assertSee('"S":', false)
+            ->assertSee('"slot":"top"', false)
+            ->assertSee('"slot":"bottom"', false);
+    }
+
     public function test_selected_outfit_variants_are_added_to_the_database_cart_together(): void
     {
         $variantIds = [];
