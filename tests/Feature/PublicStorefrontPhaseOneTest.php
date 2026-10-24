@@ -61,7 +61,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('window.SHOP', false)
             ->assertSee('id="sort"', false)
             ->assertSee('id="cats"', false)
-            ->assertSee('Fitting Room Studio')
+            ->assertSee('VISION FIT STUDIO')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
             ->assertSee('تومان');
     }
