@@ -11,7 +11,7 @@
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
   const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
   const W = new Set();
-  let busy = false, currentLook = null, suggested = false;
+  let busy = false, currentLook = null;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -71,7 +71,7 @@
             '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>' +
           '</button>' +
           (canFit ? '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="امتحان روی مانکن">' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7V5.4a2.2 2.2 0 1 0-2.2-2.2"/><path d="m12 8.2-8.5 4.9a1.8 1.8 0 0 0 .9 3.4h15.2a1.8 1.8 0 0 0 .9-3.4L12 8.2Z"/></svg>' +
+            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg>' +
           '</button>' : "") +
         '</div>' +
         (product.rate !== null && product.rate !== undefined ? '<span class="shop-rate">★ ' + fa(product.rate) + '</span>' : "") +
@@ -108,7 +108,6 @@
       scenes[lookId + ":" + key] = makeScene(url, false);
     });
   });
-  if (scenes.base) $("#stageFallback")?.setAttribute("hidden", "hidden");
 
   function sceneKey() {
     if (!W.size || currentLook === null) return "base";
@@ -117,7 +116,6 @@
     const hasTop = !!look.t && W.has(Number(look.t));
     const hasBottom = !!look.b && W.has(Number(look.b));
     let key = hasTop && hasBottom && look.s?.TB ? "TB" : hasTop ? "T" : hasBottom ? "B" : "base";
-    if (suggested && look.s?.S && hasTop) key = "S";
     return key === "base" ? "base" : String(currentLook) + ":" + key;
   }
 
@@ -132,7 +130,7 @@
   }
 
   function refresh() {
-    if (!W.size) { currentLook = null; suggested = false; }
+    if (!W.size) { currentLook = null; }
     state.worn = new Set(W);
     setScene();
     const items = P.filter(product => W.has(Number(product.id)));
@@ -146,10 +144,6 @@
       '</button>'
     ).join("");
     const look = currentLook !== null ? OF[String(currentLook)] : null;
-    const suggestion = $("#sugg");
-    suggestion.classList.toggle("show", !!(look?.s?.S && look?.t && W.has(Number(look.t))));
-    suggestion.classList.toggle("on", suggested);
-    suggestion.textContent = suggested ? "بازگشت به همین لباس" : "دیدن ست پیشنهادی";
     $("#addset").disabled = items.length === 0;
     render();
   }
@@ -188,7 +182,6 @@
     fit.setAttribute("aria-hidden", "false");
     if (W.has(Number(product.id))) {
       W.delete(Number(product.id));
-      suggested = false;
       refresh();
       return;
     }
@@ -208,7 +201,6 @@
         if (product.slot === "bottom" && look?.b) W.delete(Number(look.b));
       }
       W.add(Number(product.id));
-      suggested = false;
     } finally {
       $("#load").classList.remove("on");
       busy = false;
@@ -270,7 +262,6 @@
     fit.setAttribute("aria-hidden", "true");
   });
   $("#strip").addEventListener("click", clearAll);
-  $("#sugg").addEventListener("click", () => { suggested = !suggested; refresh(); });
   $("#addset").addEventListener("click", async () => {
     const ids = [...W].map(Number);
     if (!ids.length) { showToast("اول یک لباس انتخاب کن."); return; }
