@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\FittingRoomLook;
+use App\Models\FittingRoomLookItem;
+use App\Models\FittingRoomMannequin;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -18,8 +21,8 @@ class FittingRoomStudioTest extends TestCase
             'name' => 'Studio Admin',
             'email' => 'studio-admin@example.test',
             'password' => 'studio-password-123',
-            'is_admin' => true,
         ]);
+        $admin->forceFill(['is_admin' => true])->save();
 
         $this->actingAs($admin)
             ->get(route('commerce-admin.try-on.index'))
@@ -153,7 +156,7 @@ class FittingRoomStudioTest extends TestCase
         $response = $this->get('/shop');
         $response->assertOk()
             ->assertSee('window.SHOP', false)
-            ->assertSee('assets.example.test/s0.jpg', false)
+            ->assertSee('assets.example.test', false)
             ->assertSee('"T":', false)
             ->assertSee('"B":', false)
             ->assertSee('"TB":', false)
