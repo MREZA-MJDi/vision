@@ -246,7 +246,7 @@
         if (aPriceGap !== bPriceGap) return aPriceGap - bPriceGap;
         return Number(b.rate || 0) - Number(a.rate || 0);
       })
-      .slice(0, 5);
+      .slice(0, 3);
 
     if (!candidates.length) {
       root.innerHTML = '<p class="fit-rec-empty">فعلاً گزینه‌ی آماده‌ای برای این بخش نیست.</p>';
