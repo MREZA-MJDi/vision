@@ -150,10 +150,29 @@ class FittingRoomStudioController extends Controller
             'preview_bottom' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
             'preview_combined' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
             'preview_suggested' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
+            'top_product_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'bottom_product_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $mannequin = FittingRoomMannequin::query()->findOrFail((int) $data['mannequin_id']);
+
+        $hasTopScene = $request->hasFile('preview_top') || (bool) $look->previewTopMedia;
+        $hasBottomScene = $request->hasFile('preview_bottom') || (bool) $look->previewBottomMedia;
+        $hasCombinedScene = $request->hasFile('preview_combined') || (bool) $look->previewCombinedMedia;
+        $topVariantRequested = (int) ($data['top_variant_id'] ?? 0) > 0;
+        $bottomVariantRequested = (int) ($data['bottom_variant_id'] ?? 0) > 0;
+
+        if ($topVariantRequested && !$hasTopScene) {
+            throw ValidationException::withMessages(['preview_top' => 'برای واریانت بالاپوش، تصویر حالت T را آپلود کن.']);
+        }
+        if ($bottomVariantRequested && !$hasBottomScene) {
+            throw ValidationException::withMessages(['preview_bottom' => 'برای واریانت پایین‌تنه، تصویر حالت B را آپلود کن.']);
+        }
+        if ($topVariantRequested && $bottomVariantRequested && !$hasCombinedScene) {
+            throw ValidationException::withMessages(['preview_combined' => 'برای ست کامل، تصویر حالت TB را آپلود کن.']);
+        }
+
         $variantIds = array_values(array_filter([
             (int) ($data['top_variant_id'] ?? 0) ?: null,
             (int) ($data['bottom_variant_id'] ?? 0) ?: null,
@@ -246,6 +265,22 @@ class FittingRoomStudioController extends Controller
                             'sort_order' => $mapping['slot'] === 'top' ? 10 : 20,
                         ]
                     );
+                }
+
+                foreach ([
+                    'top_product_image' => 'top_variant_id',
+                    'bottom_product_image' => 'bottom_variant_id',
+                ] as $input => $variantField) {
+                    $variantId = (int) ($data[$variantField] ?? 0);
+                    if ($variantId && $request->hasFile($input)) {
+                        $variant = $variants->get($variantId);
+                        if (!$variant) {
+                            throw ValidationException::withMessages([
+                                $variantField => 'برای آپلود تصویر، یک واریانت معتبر انتخاب کن.',
+                            ]);
+                        }
+                        $this->storeVariantGalleryImage($variant, $request->file($input), $storedPaths);
+                    }
                 }
             });
         } catch (\Throwable $exception) {
@@ -341,6 +376,40 @@ class FittingRoomStudioController extends Controller
             'width' => (int) ($size[0] ?? 640),
             'height' => (int) ($size[1] ?? 960),
             'alt_text' => $alt,
+            'sort_order' => 0,
+            'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
+        ]);
+    }
+
+    private function storeVariantGalleryImage(ProductVariant $variant, UploadedFile $file, array &$storedPaths): Media
+    {
+        $path = $file->store('products/variants/' . $variant->getKey(), 'public');
+        if (!is_string($path) || $path === '') {
+            throw new \RuntimeException('ذخیرهٔ تصویر واریانت انجام نشد.');
+        }
+        $storedPaths[] = $path;
+
+        $morphType = $variant->getMorphClass();
+        Media::query()
+            ->where('mediable_type', $morphType)
+            ->where('mediable_id', $variant->getKey())
+            ->where('collection', 'gallery')
+            ->increment('sort_order');
+
+        $size = @getimagesize($file->getPathname());
+
+        return Media::query()->create([
+            'mediable_type' => $morphType,
+            'mediable_id' => $variant->getKey(),
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'width' => (int) ($size[0] ?? 0),
+            'height' => (int) ($size[1] ?? 0),
+            'alt_text' => (string) ($variant->product?->name ?? 'VISION product variant'),
             'sort_order' => 0,
             'uploaded_by' => Auth::guard(config('commerce-admin.guard', 'web'))->id(),
         ]);
