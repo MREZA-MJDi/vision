@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Category;
 use App\Models\FittingRoomLook;
-use App\Models\FittingRoomLookItem;
 use App\Models\FittingRoomMannequin;
-use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 
 class FittingRoomShopData
@@ -60,8 +58,8 @@ class FittingRoomShopData
                     $variant = $item->variant;
                     $product = $variant?->product;
                     $audienceMatches = $product && (
-                        $mannequin->audience === 'all'
-                        || $product->audience === $mannequin->audience
+                        $mannequinRecord->audience === 'all'
+                        || $product->audience === $mannequinRecord->audience
                     );
                     if (!$variant || !$product || !$variant->is_active || !$product->is_active || !$audienceMatches) {
                         continue;
