@@ -182,3 +182,8 @@
   #fit { width:calc(100% - 36px); }
   #fit .stage { width:min(100%,210px); }
 }
+
+#fit .btns { position:sticky; bottom:-14px; z-index:12; margin:8px -14px -14px; padding:10px 14px 14px; background:linear-gradient(to bottom,transparent 0,var(--vs-panel) 20%); }
+@media(max-width:760px) {
+  #fit .btns { margin:8px -13px -13px; padding:10px 13px 13px; }
+}
