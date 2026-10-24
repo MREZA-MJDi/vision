@@ -9,7 +9,7 @@
   const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
-  const state = { cat: C[0], q: S.initialQuery || "", sort: "new", max: Number(S.max || 4000000), fav: new Set(), worn: new Set(), cart: 0 };
+  const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set(), worn: new Set(), cart: 0 };
   const W = new Set();
   let busy = false, currentLook = null, suggested = false;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
@@ -45,6 +45,7 @@
       (state.cat === C[0] || product.cat === state.cat)
       && String(product.name || "").toLocaleLowerCase("fa").includes(state.q.toLocaleLowerCase("fa"))
       && Number(product.price || 0) <= state.max
+      && (!state.saleOnly || (Number(product.old || 0) > Number(product.price || 0)))
     );
     const sorters = {
       lo: (a, b) => Number(a.price) - Number(b.price),
@@ -69,9 +70,9 @@
           '<button type="button" class="fav ' + (state.fav.has(Number(product.id)) ? "on" : "") + '" data-f="' + Number(product.id) + '" aria-pressed="' + state.fav.has(Number(product.id)) + '" aria-label="ذخیرهٔ ' + escapeHtml(product.name) + '" title="علاقه‌مندی">' +
             '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>' +
           '</button>' +
-          '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="امتحان روی مانکن" ' + (!canFit ? "disabled" : "") + '>' +
+          (canFit ? '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="امتحان روی مانکن">' +
             '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7V5.4a2.2 2.2 0 1 0-2.2-2.2"/><path d="m12 8.2-8.5 4.9a1.8 1.8 0 0 0 .9 3.4h15.2a1.8 1.8 0 0 0 .9-3.4L12 8.2Z"/></svg>' +
-          '</button>' +
+          '</button>' : "") +
         '</div>' +
         (product.rate !== null && product.rate !== undefined ? '<span class="shop-rate">★ ' + fa(product.rate) + '</span>' : "") +
         '<a class="shop-pic" href="' + escapeHtml(product.url || "#") + '" aria-label="مشاهدهٔ ' + escapeHtml(product.name) + '">' + image + '</a>' +
@@ -279,7 +280,7 @@
   $("#sort").addEventListener("change", event => { state.sort = event.target.value; render(); });
   pr.addEventListener("input", event => { state.max = Number(event.target.value); render(); });
   $("#reset").addEventListener("click", () => {
-    state.cat = C[0]; state.q = ""; state.sort = "new"; state.max = Number(S.max || 4000000);
+    state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
     $("#q").value = ""; $("#sort").value = "new"; pr.value = state.max;
     render();
   });
@@ -303,6 +304,7 @@
   } catch (_) {}
 
   $("#q").value = state.q;
+  $("#sort").value = state.sort;
   if (pr) { pr.min = Number(S.min || 0); pr.max = Number(S.max || 4000000); pr.value = state.max; }
   updateCart(S.cart);
   render();
