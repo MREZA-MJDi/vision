@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 return new class extends Migration
 {
@@ -15,6 +16,17 @@ return new class extends Migration
         Schema::dropIfExists('try_on_mannequins');
 
         if (Schema::hasTable('media')) {
+            $legacyMedia = DB::table('media')
+                ->whereIn('collection', ['try-on-layer', 'try-on-mannequin'])
+                ->get(['disk', 'path']);
+
+            foreach ($legacyMedia as $media) {
+                $path = (string) ($media->path ?? '');
+                if ($path !== '' && !preg_match('/^https?:\\/\\//i', $path)) {
+                    Storage::disk($media->disk ?: 'public')->delete($path);
+                }
+            }
+
             DB::table('media')
                 ->whereIn('collection', ['try-on-layer', 'try-on-mannequin'])
                 ->delete();
