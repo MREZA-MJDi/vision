@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\FittingRoomLook;
 use App\Models\FittingRoomMannequin;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -99,14 +98,23 @@ class FittingRoomShopData
 
         $products = $catalog->flatMap(function (Product $product) use ($itemMap): array {
             $fittedVariants = $product->activeVariants
-                ->filter(fn (ProductVariant $variant) => isset($itemMap[$variant->getKey()]))
+                ->filter(function (ProductVariant $variant) use ($itemMap): bool {
+                    $fit = $itemMap[$variant->getKey()] ?? null;
+                    $look = $fit['look'] ?? null;
+                    if (!$fit || !$look) {
+                        return false;
+                    }
+
+                    return ($fit['slot'] === 'top' && (bool) $look->previewTopMedia?->url)
+                        || ($fit['slot'] === 'bottom' && (bool) $look->previewBottomMedia?->url);
+                })
                 ->values();
 
             $variants = $fittedVariants->isNotEmpty()
                 ? $fittedVariants
                 : collect([$product->primaryAvailableVariant ?? $product->primaryActiveVariant])->filter();
 
-            return $variants->map(function (ProductVariant $variant) use ($product, $itemMap, $fittedVariants): array {
+            return $variants->map(function (ProductVariant $variant) use ($product, $itemMap): array {
                 $fit = $itemMap[$variant->getKey()] ?? null;
                 $look = $fit['look'] ?? null;
                 $slot = $fit['slot'] ?? null;
