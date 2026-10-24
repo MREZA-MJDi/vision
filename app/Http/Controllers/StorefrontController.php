@@ -130,9 +130,7 @@ class StorefrontController extends Controller
             ->limit(4)
             ->get();
 
-        $shop = app(FittingRoomShopData::class)->payload();
-
-        return view('store.products.show', compact('product', 'relatedProducts', 'shop'));
+        return view('store.products.show', compact('product', 'relatedProducts'));
     }
 
     /**
