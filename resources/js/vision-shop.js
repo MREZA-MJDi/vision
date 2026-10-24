@@ -11,7 +11,7 @@
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
   const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
   const W = new Set();
-  let busy = false, currentLook = null;
+  let busy = false;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -109,19 +109,58 @@
     });
   });
 
-  function sceneKey() {
-    if (!W.size || currentLook === null) return "base";
-    const look = OF[String(currentLook)];
-    if (!look) return "base";
-    const hasTop = !!look.t && W.has(Number(look.t));
-    const hasBottom = !!look.b && W.has(Number(look.b));
-    let key = hasTop && hasBottom && look.s?.TB ? "TB" : hasTop ? "T" : hasBottom ? "B" : "base";
-    return key === "base" ? "base" : String(currentLook) + ":" + key;
-  }
-
   function setScene() {
-    const activeKey = sceneKey();
-    Object.entries(scenes).forEach(([key, image]) => image?.classList.toggle("on", key === activeKey));
+    const selected = P.filter(product => W.has(Number(product.id)));
+    const top = selected.find(product => product.slot === "top") || null;
+    const bottom = selected.find(product => product.slot === "bottom") || null;
+
+    // Reset previous selections. Two clipped, full-frame scenes can be layered
+    // to preview a custom top + bottom combination even across curated looks.
+    Object.values(scenes).forEach(image => {
+      if (!image) return;
+      image.classList.remove("on");
+      image.style.clipPath = "";
+      image.style.zIndex = "";
+    });
+
+    const activate = (key, clipPath = "", zIndex = "") => {
+      const image = scenes[key];
+      if (!image) return false;
+      if (clipPath) image.style.clipPath = clipPath;
+      if (zIndex) image.style.zIndex = String(zIndex);
+      image.classList.add("on");
+      return true;
+    };
+
+    if (!top && !bottom) {
+      activate("base");
+      return;
+    }
+
+    if (top && bottom) {
+      const look = String(top.o) === String(bottom.o) ? OF[String(top.o)] : null;
+      const isExactCuratedPair = look
+        && Number(look.t) === Number(top.id)
+        && Number(look.b) === Number(bottom.id)
+        && scenes[String(top.o) + ":TB"];
+
+      // Use the clean, authored full outfit whenever the exact pair is selected.
+      if (isExactCuratedPair && activate(String(top.o) + ":TB")) return;
+
+      const topScene = String(top.o) + ":T";
+      const bottomScene = String(bottom.o) + ":B";
+      if (scenes[topScene] && scenes[bottomScene]) {
+        // A longer outer layer (e.g. a coat) should cover more of the trousers.
+        const seam = Number(top.fy || 0) >= 0.44 ? 0.74 : 0.55;
+        activate(topScene, "inset(0 0 " + (100 - seam * 100) + "% 0)", 2);
+        activate(bottomScene, "inset(" + Math.max(0, seam * 100 - 4) + "% 0 0 0)", 1);
+        return;
+      }
+    }
+
+    if (top && activate(String(top.o) + ":T")) return;
+    if (bottom && activate(String(bottom.o) + ":B")) return;
+    activate("base");
   }
 
   function updateCart(count) {
@@ -130,7 +169,6 @@
   }
 
   function refresh() {
-    if (!W.size) { currentLook = null; }
     state.worn = new Set(W);
     setScene();
     const items = P.filter(product => W.has(Number(product.id)));
@@ -143,7 +181,6 @@
         (product.img ? '<img src="' + escapeHtml(product.img) + '" alt="">' : '<span>V.</span>') +
       '</button>'
     ).join("");
-    const look = currentLook !== null ? OF[String(currentLook)] : null;
     $("#addset").disabled = items.length === 0;
     render();
   }
@@ -191,15 +228,14 @@
       await fly(source, product.fy);
       $("#load").classList.add("on");
       await wait(RM ? 0 : 850);
-      if (String(currentLook) !== String(product.o)) {
-        W.clear();
-        currentLook = product.o;
-      } else {
-        // Keep one top and one bottom at a time, as in the approved demo.
-        const look = OF[String(product.o)];
-        if (product.slot === "top" && look?.t) W.delete(Number(look.t));
-        if (product.slot === "bottom" && look?.b) W.delete(Number(look.b));
-      }
+      // Keep one garment per slot across ALL curated looks. Choosing a new
+      // shirt replaces only the old top; an already selected pair of trousers
+      // stays on the mannequin until another bottom is selected.
+      P.forEach(item => {
+        if (item.slot === product.slot && W.has(Number(item.id))) {
+          W.delete(Number(item.id));
+        }
+      });
       W.add(Number(product.id));
     } finally {
       $("#load").classList.remove("on");
@@ -210,7 +246,6 @@
 
   function clearAll() {
     W.clear();
-    currentLook = null;
     refresh();
   }
 
