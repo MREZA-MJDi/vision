@@ -58,9 +58,13 @@ Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
         Route::delete('/products/{product}/media/{media}', [ProductController::class, 'deleteMedia'])->whereNumber('product')->whereNumber('media')->name('products.media.destroy');
         Route::delete('/products/{product}/variants/{variant}/media/{media}', [ProductController::class, 'deleteVariantMedia'])->whereNumber('product')->whereNumber('variant')->whereNumber('media')->name('products.variants.media.destroy');
 
-        Route::get('/try-on', [VirtualTryOnController::class, 'index'])->name('try-on.index');
-        Route::put('/try-on/mannequins/{mannequin}', [VirtualTryOnController::class, 'updateMannequin'])->whereNumber('mannequin')->name('try-on.mannequins.update');
-        Route::put('/try-on/variants/{variant}', [VirtualTryOnController::class, 'updateVariant'])->whereNumber('variant')->name('try-on.variants.update');
+        Route::get('/try-on', [FittingRoomStudioController::class, 'index'])->name('try-on.index');
+        Route::post('/try-on/mannequins', [FittingRoomStudioController::class, 'storeMannequin'])->name('try-on.mannequins.store');
+        Route::put('/try-on/mannequins/{mannequin}', [FittingRoomStudioController::class, 'updateMannequin'])->whereNumber('mannequin')->name('try-on.mannequins.update');
+        Route::delete('/try-on/mannequins/{mannequin}', [FittingRoomStudioController::class, 'destroyMannequin'])->whereNumber('mannequin')->name('try-on.mannequins.destroy');
+        Route::post('/try-on/looks', [FittingRoomStudioController::class, 'storeLook'])->name('try-on.looks.store');
+        Route::put('/try-on/looks/{look}', [FittingRoomStudioController::class, 'updateLook'])->whereNumber('look')->name('try-on.looks.update');
+        Route::delete('/try-on/looks/{look}', [FittingRoomStudioController::class, 'destroyLook'])->whereNumber('look')->name('try-on.looks.destroy');
 
         Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
         Route::patch('/reviews/{review}/status', [ReviewController::class, 'updateStatus'])->whereNumber('review')->name('reviews.status');
