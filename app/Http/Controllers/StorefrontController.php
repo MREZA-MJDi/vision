@@ -80,145 +80,11 @@ class StorefrontController extends Controller
 
     public function index(Request $request): View
     {
-        $categories = Category::query()
-            ->active()
-            ->withCount([
-                'products as active_products_count' => fn (Builder $query) => $query
-                    ->where('is_active', true)
-                    ->whereHas('activeVariants'),
-            ])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+        // The approved catalog interactions run client-side; all visible product
+        // values and fitting-room mappings still originate from active DB records.
+        $shop = app(FittingRoomShopData::class)->payload($request);
 
-        $brands = Brand::query()
-            ->active()
-            ->withCount([
-                'products as active_products_count' => fn (Builder $query) => $query
-                    ->where('is_active', true)
-                    ->whereHas('activeVariants'),
-            ])
-            ->orderBy('name')
-            ->get();
-
-        $search = is_string($request->input('q')) ? mb_substr(trim($request->input('q')), 0, 120) : '';
-        $categoryId = filter_var($request->input('category_id'), FILTER_VALIDATE_INT) ?: null;
-        $brandId = filter_var($request->input('brand_id'), FILTER_VALIDATE_INT) ?: null;
-        $minPriceInput = $request->input('price_min');
-        $maxPriceInput = $request->input('price_max');
-        $minPrice = is_scalar($minPriceInput)
-            ? filter_var($minPriceInput, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])
-            : false;
-        $maxPrice = is_scalar($maxPriceInput)
-            ? filter_var($maxPriceInput, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])
-            : false;
-        $minPrice = $minPrice === false ? null : $minPrice;
-        $maxPrice = $maxPrice === false ? null : $maxPrice;
-
-        // The inputs represent whole currency units. If the range is inverted,
-        // normalize it instead of returning a confusing empty result set.
-        if ($minPrice !== null && $maxPrice !== null && $minPrice > $maxPrice) {
-            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
-        }
-        $sort = in_array($request->input('sort'), ['newest', 'featured', 'price_asc', 'price_desc'], true)
-            ? $request->input('sort')
-            : 'newest';
-        $saleOnly = $request->boolean('sale');
-
-        $productsQuery = $this->catalogProducts();
-        
-        // Shop cards need their fitting-room readiness without issuing one query per card.
-        $loadActiveTryOnAssets = static fn ($query) => $query
-            ->active()
-            ->with(['mannequin', 'media']);
-
-        $productsQuery->with([
-            'primaryAvailableVariant.tryOnAssets' => $loadActiveTryOnAssets,
-            'primaryActiveVariant.tryOnAssets' => $loadActiveTryOnAssets,
-        ]);
-
-        if ($search !== '') {
-            $productsQuery->where(function (Builder $query) use ($search): void {
-                $query->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('short_description', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%')
-                    ->orWhereHas('brand', fn (Builder $brandQuery) => $brandQuery->where('name', 'like', '%' . $search . '%'))
-                    ->orWhereHas('category', fn (Builder $categoryQuery) => $categoryQuery->where('name', 'like', '%' . $search . '%'));
-            });
-        }
-
-        if ($categoryId !== null) {
-            $productsQuery->where('category_id', $categoryId);
-        }
-
-        if ($brandId !== null) {
-            $productsQuery->where('brand_id', $brandId);
-        }
-
-        // Filters must use the exact variant the cards display: first in-stock
-        // active variant, falling back to the first active variant when all are sold out.
-        $displayedSaleFilter = static fn (Builder $variantQuery) => $variantQuery
-            ->whereNotNull('sale_price')
-            ->where('sale_price', '>=', 0)
-            ->whereColumn('sale_price', '<', 'price');
-
-        $displayedPriceFilter = static function (Builder $variantQuery) use ($minPrice, $maxPrice): void {
-            if ($minPrice !== null) {
-                $variantQuery->whereRaw(
-                    'CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END >= ?',
-                    [$minPrice]
-                );
-            }
-
-            if ($maxPrice !== null) {
-                $variantQuery->whereRaw(
-                    'CASE WHEN sale_price IS NOT NULL AND sale_price >= 0 AND sale_price < price THEN sale_price ELSE price END <= ?',
-                    [$maxPrice]
-                );
-            }
-        };
-
-        if ($saleOnly) {
-            $productsQuery->where(function (Builder $query) use ($displayedSaleFilter): void {
-                $query->whereHas('primaryAvailableVariant', $displayedSaleFilter)
-                    ->orWhere(function (Builder $fallbackQuery) use ($displayedSaleFilter): void {
-                        $fallbackQuery->whereDoesntHave('primaryAvailableVariant')
-                            ->whereHas('primaryActiveVariant', $displayedSaleFilter);
-                    });
-            });
-        }
-
-        if ($minPrice !== null || $maxPrice !== null) {
-            $productsQuery->where(function (Builder $query) use ($displayedPriceFilter): void {
-                $query->whereHas('primaryAvailableVariant', $displayedPriceFilter)
-                    ->orWhere(function (Builder $fallbackQuery) use ($displayedPriceFilter): void {
-                        $fallbackQuery->whereDoesntHave('primaryAvailableVariant')
-                            ->whereHas('primaryActiveVariant', $displayedPriceFilter);
-                    });
-            });
-        }
-
-        match ($sort) {
-            'featured' => $productsQuery->orderByDesc('is_featured')->orderBy('sort_order')->orderByDesc('id'),
-            'price_asc' => $productsQuery->orderByEffectivePrice('asc'),
-            'price_desc' => $productsQuery->orderByEffectivePrice('desc'),
-            default => $productsQuery->orderByDesc('created_at')->orderByDesc('id'),
-        };
-
-        $products = $productsQuery->paginate(12)->withQueryString();
-
-        return view('store.index', [
-            'products' => $products,
-            'categories' => $categories,
-            'brands' => $brands,
-            'search' => $search,
-            'selectedCategoryId' => $categoryId,
-            'selectedBrandId' => $brandId,
-            'minPrice' => $minPrice,
-            'maxPrice' => $maxPrice,
-            'sort' => $sort,
-            'saleOnly' => $saleOnly,
-        ]);
+        return view('store.index', compact('shop'));
     }
 
     /**
@@ -264,7 +130,9 @@ class StorefrontController extends Controller
             ->limit(4)
             ->get();
 
-        return view('store.products.show', compact('product', 'relatedProducts'));
+        $shop = app(FittingRoomShopData::class)->payload();
+
+        return view('store.products.show', compact('product', 'relatedProducts', 'shop'));
     }
 
     /**
