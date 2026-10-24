@@ -9,7 +9,7 @@
   const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
-  const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set(), worn: new Set(), cart: 0 };
+  const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
   const W = new Set();
   let busy = false, currentLook = null, suggested = false;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
@@ -239,9 +239,16 @@
     const data = button.dataset;
     if (data.f) {
       const id = Number(data.f);
-      state.fav.has(id) ? state.fav.delete(id) : state.fav.add(id);
-      try { window.localStorage.setItem("vision-shop-favourites", JSON.stringify([...state.fav])); } catch (_) {}
+      const wasFavourite = state.fav.has(id);
+      wasFavourite ? state.fav.delete(id) : state.fav.add(id);
       render();
+      if (S.routes?.fav) {
+        post(S.routes.fav + "/" + id).catch(() => {
+          wasFavourite ? state.fav.add(id) : state.fav.delete(id);
+          render();
+          showToast("ذخیرهٔ علاقه‌مندی انجام نشد.");
+        });
+      }
     } else if (data.t) {
       const product = P.find(item => Number(item.id) === Number(data.t));
       const image = button.closest(".shop-product-card")?.querySelector(".shop-pic img");
@@ -287,7 +294,6 @@
   $("#theme").addEventListener("click", () => {
     const root = document.documentElement;
     root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
-    try { window.localStorage.setItem("vision-shop-theme", root.dataset.theme); } catch (_) {}
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && fit.classList.contains("open")) {
@@ -296,12 +302,6 @@
     }
   });
 
-  try {
-    const theme = window.localStorage.getItem("vision-shop-theme");
-    if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
-    const favs = JSON.parse(window.localStorage.getItem("vision-shop-favourites") || "[]");
-    if (Array.isArray(favs)) favs.forEach(value => { if (Number.isFinite(Number(value))) state.fav.add(Number(value)); });
-  } catch (_) {}
 
   $("#q").value = state.q;
   $("#sort").value = state.sort;
