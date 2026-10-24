@@ -86,7 +86,6 @@
             <nav class="store-nav" aria-label="ناوبری اصلی">
                 <a href="{{ route('storefront.index') }}" class="store-nav__link {{ request()->routeIs('storefront.index') ? 'is-current' : '' }}">خانه</a>
                 <a href="{{ route('shop.index') }}#catalog" class="store-nav__link {{ request()->routeIs('shop.index', 'products.index') ? 'is-current' : '' }}">فروشگاه</a>
-                <a href="{{ route('shop.index') }}#catalog" class="store-nav__link {{ request()->routeIs('shop.index', 'products.index') ? 'is-current' : '' }}">اتاق پرو استودیویی</a>
                 <a href="{{ route('shop.index', ['sort' => 'newest']) }}#catalog" class="store-nav__link">تازه‌ها</a>
                 <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog" class="store-nav__link {{ request()->boolean('sale') ? 'is-current' : '' }}">تخفیف‌ها</a>
             </nav>
