@@ -74,27 +74,23 @@ class FittingRoomShopData
             }
         }
 
-        $products = Product::query()
+        // Each active variant is a storefront card, matching the approved UI.
+        // Variant image, sale price and stock remain sourced from the commerce database.
+        $products = ProductVariant::query()
             ->active()
-            ->whereHas('activeVariants')
-            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
+            ->whereHas('product', fn ($query) => $query->where('is_active', true))
             ->with([
-                'category',
                 'primaryGalleryMedia',
-                'activeVariants.primaryGalleryMedia',
-                'primaryAvailableVariant.primaryGalleryMedia',
-                'primaryActiveVariant.primaryGalleryMedia',
+                'product.category',
+                'product.primaryGalleryMedia',
+                'product' => fn ($query) => $query->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating'),
             ])
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get()
-            ->map(function (Product $product) use ($itemMap): ?array {
-                $variants = $product->activeVariants;
-                $variant = $variants->first(fn ($candidate) => isset($itemMap[$candidate->getKey()]))
-                    ?? $product->primaryAvailableVariant
-                    ?? $product->primaryActiveVariant;
-
-                if (!$variant || !$variant->is_active) {
+            ->map(function (ProductVariant $variant) use ($itemMap): ?array {
+                $product = $variant->product;
+                if (!$product || !$product->is_active) {
                     return null;
                 }
 
@@ -107,27 +103,26 @@ class FittingRoomShopData
                     'combined' => $look->previewCombinedMedia?->url,
                 ] : [];
 
-                // Only display the hanger when the selected slot has a real
-                // matching composite scene in the active fitting-room data.
+                // A hanger only appears when this variant is mapped to a real
+                // mannequin scene; gallery-only products remain normal products.
                 $fitReady = $fit && (
                     ($slot === 'top' && !empty($lookPreviews['top']))
                     || ($slot === 'bottom' && !empty($lookPreviews['bottom']))
                 );
-
                 $isOnSale = (bool) ($variant->is_on_sale ?? false);
-                $image = $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url;
 
                 return [
                     'id' => (int) $variant->getKey(),
                     'product_id' => (int) $product->getKey(),
-                    'name' => (string) $product->name,
+                    'name' => (string) $product->name . (($variant->color || $variant->size) ? ' · ' . $variant->display_name : ''),
                     'price' => (int) round((float) $variant->effective_price),
                     'old' => $isOnSale ? (int) round((float) $variant->price) : null,
                     'rate' => is_numeric($product->approved_reviews_avg_rating)
                         ? round((float) $product->approved_reviews_avg_rating, 1)
                         : null,
                     'cat' => (string) ($product->category?->name ?? 'سایر'),
-                    'img' => $image,
+                    'img' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+                    'stock' => (int) $variant->stock,
                     'fy' => $fitReady ? (float) $fit['fit_y'] : ($slot === 'bottom' ? 0.66 : 0.38),
                     'slot' => $fitReady ? $slot : null,
                     'o' => $fitReady ? (int) $fit['look_id'] : null,
