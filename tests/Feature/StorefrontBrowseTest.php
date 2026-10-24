@@ -38,7 +38,7 @@ class StorefrontBrowseTest extends TestCase
             ->assertSee('id="stage"', false)
             ->assertSee('id="grid"', false)
             ->assertSee('id="cats"', false)
-            ->assertSee('VISION FIT STUDIO')
+            ->assertSee('اتاق پرو')
             ->assertDontSee('data-virtual-try-on', false)
             ->assertDontSee('data-vto-inline', false)
             ->assertSee('window.SHOP', false);
