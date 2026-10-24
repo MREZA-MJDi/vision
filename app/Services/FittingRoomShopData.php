@@ -174,12 +174,13 @@ class FittingRoomShopData
             'max' => $max,
             'base' => $mannequin?->baseMedia?->url,
             'looks' => $looks,
-            'favs' => [],
+            'favs' => array_values(array_unique(array_map('intval', (array) ($request?->session()->get('shop_favourites', []))))),
             'cart' => 0,
             'currency' => (string) config('commerce-admin.currency_symbol', 'تومان'),
             'routes' => [
                 'cart' => route('cart.items.store'),
                 'cartMany' => route('cart.items.bulk'),
+                'fav' => url('/shop/favourites'),
                 'cartSummary' => route('cart.summary'),
             ],
             'initialQuery' => $request && is_string($request->query('q'))
