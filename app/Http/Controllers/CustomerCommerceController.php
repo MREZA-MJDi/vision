@@ -123,6 +123,34 @@ class CustomerCommerceController extends Controller
         ];
     }
 
+    /**
+     * Session-scoped favourites mirror the approved prototype without creating
+     * a second wishlist storage path beside the commerce models.
+     */
+    public function toggleFavourite(Request $request, int $variant): \\Illuminate\\Http\\JsonResponse
+    {
+        $productVariant = ProductVariant::query()
+            ->with('product')
+            ->whereKey($variant)
+            ->firstOrFail();
+
+        abort_unless($productVariant->is_active && $productVariant->product?->is_active, 404);
+
+        $favourites = array_values(array_unique(array_map(
+            'intval',
+            (array) $request->session()->get('shop_favourites', [])
+        )));
+        if (in_array($variant, $favourites, true)) {
+            $favourites = array_values(array_filter($favourites, fn ($id) => $id !== $variant));
+        } else {
+            $favourites[] = $variant;
+        }
+
+        $request->session()->put('shop_favourites', $favourites);
+
+        return response()->json(['favs' => $favourites]);
+    }
+
     public function summary(): \Illuminate\Http\JsonResponse
     {
         $cart = $this->currentCart();
