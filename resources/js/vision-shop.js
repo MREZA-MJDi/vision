@@ -211,7 +211,6 @@
   function clearAll() {
     W.clear();
     currentLook = null;
-    suggested = false;
     refresh();
   }
 
@@ -247,7 +246,6 @@
       if (product) tryOn(product, image);
     } else if (data.r) {
       W.delete(Number(data.r));
-      suggested = false;
       refresh();
     } else if (data.c) {
       addOne(Number(data.c));
