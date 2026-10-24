@@ -33,9 +33,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/home-hero.css', 'resources/js/storefront.js'])
-        @if (request()->routeIs('shop.index', 'products.index', 'try-on.index', 'products.show'))
-            @vite(['resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
+        @if (request()->routeIs('shop.index', 'products.index'))
+            @vite(['resources/css/app.css', 'resources/css/vision-shop.css', 'resources/js/vision-shop.js'])
+        @else
+            @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/home-hero.css', 'resources/js/storefront.js'])
         @endif
     @elseif (app()->environment('testing'))
         {{-- Feature tests assert rendered storefront markup without requiring a Vite build. --}}
@@ -80,6 +81,7 @@
          data-cart-summary-url="{{ route('cart.summary') }}"
          data-cart-add-url="{{ route('cart.items.store') }}"
          data-account-url="{{ route('account.show') }}">
+        @if (!request()->routeIs('shop.index', 'products.index'))
         <header class="store-header">
             <nav class="store-nav" aria-label="ناوبری اصلی">
                 <a href="{{ route('storefront.index') }}" class="store-nav__link {{ request()->routeIs('storefront.index') ? 'is-current' : '' }}">خانه</a>
@@ -115,9 +117,11 @@
                 </button>
             </div>
         </header>
+        @endif
 
         @yield('content')
 
+        @if (!request()->routeIs('shop.index', 'products.index'))
         <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
             <div class="store-footer__main">
                 <div class="store-footer__brand">
@@ -148,9 +152,12 @@
                 <a href="{{ route('storefront.index') }}">بازگشت به صفحهٔ اصلی <span aria-hidden="true">↑</span></a>
             </div>
         </footer>
+        @endif
 
+        @if (!request()->routeIs('shop.index', 'products.index'))
         <div class="store-toast" data-store-toast role="status" aria-live="polite"></div>
         <button class="store-sidebar-backdrop" type="button" data-store-filter-backdrop aria-label="بستن فیلترها" tabindex="-1"></button>
+        @endif
     </div>
 </body>
 </html>
