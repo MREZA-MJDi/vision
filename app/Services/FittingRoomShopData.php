@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\FittingRoomLook;
 use App\Models\FittingRoomMannequin;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 
@@ -77,47 +78,54 @@ class FittingRoomShopData
             }
         }
 
-        // Each active variant is a storefront card, matching the approved UI.
-        // Variant image, sale price and stock remain sourced from the commerce database.
-        $products = ProductVariant::query()
+        // Keep the catalogue product-first. Products without fitting-room
+        // mapping appear once with their primary purchasable variant. If an
+        // administrator maps several variants into curated looks, those
+        // fit-ready variants appear as selectable garment cards.
+        $catalog = Product::query()
             ->active()
-            ->whereHas('product', fn ($query) => $query->where('is_active', true))
+            ->whereHas('activeVariants')
+            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
             ->with([
+                'category',
                 'primaryGalleryMedia',
-                'product.category',
-                'product.primaryGalleryMedia',
-                'product' => fn ($query) => $query->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating'),
+                'activeVariants.primaryGalleryMedia',
+                'primaryAvailableVariant.primaryGalleryMedia',
+                'primaryActiveVariant.primaryGalleryMedia',
             ])
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->get()
-            ->map(function (ProductVariant $variant) use ($itemMap): ?array {
-                $product = $variant->product;
-                if (!$product || !$product->is_active) {
-                    return null;
-                }
+            ->get();
 
+        $products = $catalog->flatMap(function (Product $product) use ($itemMap): array {
+            $fittedVariants = $product->activeVariants
+                ->filter(fn (ProductVariant $variant) => isset($itemMap[$variant->getKey()]))
+                ->values();
+
+            $variants = $fittedVariants->isNotEmpty()
+                ? $fittedVariants
+                : collect([$product->primaryAvailableVariant ?? $product->primaryActiveVariant])->filter();
+
+            return $variants->map(function (ProductVariant $variant) use ($product, $itemMap, $fittedVariants): array {
                 $fit = $itemMap[$variant->getKey()] ?? null;
                 $look = $fit['look'] ?? null;
                 $slot = $fit['slot'] ?? null;
                 $lookPreviews = $look ? [
                     'top' => $look->previewTopMedia?->url,
                     'bottom' => $look->previewBottomMedia?->url,
-                    'combined' => $look->previewCombinedMedia?->url,
                 ] : [];
 
-                // A hanger only appears when this variant is mapped to a real
-                // mannequin scene; gallery-only products remain normal products.
                 $fitReady = $fit && (
                     ($slot === 'top' && !empty($lookPreviews['top']))
                     || ($slot === 'bottom' && !empty($lookPreviews['bottom']))
                 );
                 $isOnSale = (bool) ($variant->is_on_sale ?? false);
+                $variantLabel = ($variant->color || $variant->size) ? ' · ' . $variant->display_name : '';
 
                 return [
                     'id' => (int) $variant->getKey(),
                     'product_id' => (int) $product->getKey(),
-                    'name' => (string) $product->name . (($variant->color || $variant->size) ? ' · ' . $variant->display_name : ''),
+                    'name' => (string) $product->name . $variantLabel,
                     'price' => (int) round((float) $variant->effective_price),
                     'old' => $isOnSale ? (int) round((float) $variant->price) : null,
                     'rate' => is_numeric($product->approved_reviews_avg_rating)
@@ -131,9 +139,8 @@ class FittingRoomShopData
                     'o' => $fitReady ? (int) $fit['look_id'] : null,
                     'url' => route('products.show', ['product' => $product->slug]),
                 ];
-            })
-            ->filter()
-            ->values();
+            })->all();
+        })->values();
 
         $requestedSort = $request?->query('sort');
         $initialSort = is_string($requestedSort) ? match ($requestedSort) {
