@@ -137,3 +137,48 @@
   .vision-shop-footer { padding:18px 14px;flex-wrap:wrap; }
 }
 @media(prefers-reduced-motion:reduce) { .vision-shop-main *,#fit * { scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important; } }
+
+/* Outfit builder: contextual alternatives and saved style comparison. */
+#fit { width:350px; }
+#fit .stage { width:min(100%,220px); margin-inline:auto; }
+.fit-recommendations,.fit-compare { border-top:1px solid var(--vs-line); margin-top:13px; padding-top:11px; }
+.fit-section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.fit-section-head h5 { margin:0; font-size:12px; font-weight:700; color:var(--vs-text); }
+.fit-section-head p { margin:3px 0 0; font-size:10px; line-height:1.7; color:var(--vs-muted); }
+.fit-rec-tabs { display:flex; gap:6px; margin:9px 0; }
+.fit-rec-tabs button,.fit-compare-actions button,.fit-compare-head>button { border:1px solid var(--vs-line); border-radius:8px; color:var(--vs-muted); padding:5px 8px; font-size:10px; background:var(--vs-card); transition:color .2s,border-color .2s,background .2s; }
+.fit-rec-tabs button { flex:1; }
+.fit-rec-tabs button.on { color:var(--vs-accent-2); border-color:var(--vs-accent); background:var(--vs-glow); }
+.fit-recommend-grid { display:grid; gap:7px; }
+.fit-rec-card { display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:8px; padding:7px; border:1px solid var(--vs-line); border-radius:11px; background:var(--vs-card); min-width:0; }
+.fit-rec-thumb { width:42px; height:48px; display:grid; place-items:center; overflow:hidden; border-radius:7px; background:var(--vs-glow); color:var(--vs-muted); }
+.fit-rec-thumb img { width:100%; height:100%; object-fit:contain; }
+.fit-rec-copy { display:grid; gap:2px; min-width:0; }
+.fit-rec-copy strong { font-size:10px; line-height:1.55; color:var(--vs-text); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.fit-rec-copy>span { font-size:10px; font-variant-numeric:tabular-nums; color:var(--vs-muted); }
+.fit-rec-copy small { color:var(--vs-accent-2); font-size:9px; }
+.fit-rec-card>button { align-self:center; border:1px solid var(--vs-accent); color:var(--vs-accent-2); border-radius:7px; background:var(--vs-glow); padding:6px 7px; font-size:10px; white-space:nowrap; }
+.fit-rec-card>button:hover { background:var(--vs-accent); color:#fff; }
+.fit-rec-empty { margin:0; padding:10px 4px; color:var(--vs-muted); text-align:center; font-size:10px; }
+.fit-compare-head { align-items:center; }
+.fit-compare-head>button { flex:0 0 auto; }
+.fit-compare-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin:9px 0; }
+.fit-compare-actions button { color:var(--vs-text); }
+.fit-compare-actions button:hover { color:var(--vs-accent-2); border-color:var(--vs-accent); }
+.fit-compare-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.fit-compare-card { min-width:0; padding:8px; border:1px solid var(--vs-line); border-radius:11px; background:var(--vs-card); }
+.fit-compare-card-head { display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:7px; }
+.fit-compare-card-head strong { color:var(--vs-text); font-size:11px; }
+.fit-compare-card-head span { color:var(--vs-muted); font-size:9px; }
+.fit-compare-piece { display:flex; align-items:center; gap:6px; min-width:0; margin:6px 0; }
+.fit-compare-piece img,.fit-compare-piece-empty { width:30px; height:36px; flex:0 0 30px; border-radius:6px; background:var(--vs-glow); object-fit:contain; display:grid; place-items:center; color:var(--vs-muted); }
+.fit-compare-piece>span:last-child { display:grid; min-width:0; gap:1px; }
+.fit-compare-piece small { color:var(--vs-muted); font-size:8px; }
+.fit-compare-piece strong { color:var(--vs-text); font-size:9px; line-height:1.55; font-weight:500; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.fit-compare-total { display:flex; flex-wrap:wrap; gap:3px; justify-content:space-between; border-top:1px solid var(--vs-line); padding-top:6px; margin-top:7px; color:var(--vs-muted); font-size:9px; }
+.fit-compare-total strong { color:var(--vs-accent-2); font-size:10px; font-variant-numeric:tabular-nums; }
+.fit-compare-empty { margin:0; color:var(--vs-muted); font-size:9px; line-height:1.8; }
+@media(max-width:760px) {
+  #fit { width:calc(100% - 36px); }
+  #fit .stage { width:min(100%,210px); }
+}
