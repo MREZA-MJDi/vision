@@ -81,7 +81,8 @@ class StorefrontBrowseTest extends TestCase
 
         $this->get('/shop')
             ->assertOk()
-            ->assertSee('src="' . $photoUrl . '"', false)
+            ->assertSee('photo-1583743814966-8936f5b7be1a', false)
+            ->assertSee($product->slug, false)
             ->assertSee('"id":' . $variant->getKey(), false)
             ->assertDontSee('data-virtual-try-on', false)
             ->assertDontSee('data-vto-select-product', false)
