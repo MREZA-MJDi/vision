@@ -1017,3 +1017,81 @@ body.storefront-home-body .home-hero__index {
     body.storefront-home-body .home-hero__price-panel { right: 10px; left: 10px; padding: 9px; }
     .home-minimal-footer { padding-inline: 10px; }
 }
+
+
+/* Editable social and tap-to-call links: deliberately tiny, colorful, and accessible. */
+.home-minimal-footer {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+.home-minimal-footer__contact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    direction: ltr;
+}
+.home-contact-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border: 1px solid rgb(255 255 255 / 14%);
+    border-radius: 10px;
+    color: #fff !important;
+    box-shadow: 0 4px 13px rgb(0 0 0 / 19%);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.home-contact-icon:hover,
+.home-contact-icon:focus-visible {
+    transform: translateY(-2px);
+    filter: saturate(1.12);
+    box-shadow: 0 7px 17px rgb(0 0 0 / 26%);
+}
+.home-contact-icon:focus-visible {
+    outline: 2px solid #f6eee5;
+    outline-offset: 3px;
+}
+.home-contact-icon svg {
+    display: block;
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.home-contact-icon--instagram {
+    border-color: rgb(255 170 111 / 45%);
+    background: linear-gradient(135deg, #f7b538 0%, #ef476f 50%, #7655d8 100%);
+}
+.home-contact-icon--instagram .home-contact-icon__dot { fill: currentColor; stroke: none; }
+.home-contact-icon--telegram {
+    border-color: rgb(86 193 244 / 44%);
+    background: linear-gradient(145deg, #41c5ef 0%, #168bd3 100%);
+}
+.home-contact-icon--telegram svg { fill: currentColor; stroke: none; }
+.home-contact-icon--phone {
+    border-color: rgb(102 226 166 / 42%);
+    background: linear-gradient(145deg, #40d99a 0%, #148b65 100%);
+}
+.home-contact-icon--phone svg { fill: currentColor; stroke: none; }
+
+@media (max-width: 720px) {
+    .home-minimal-footer { grid-template-columns: minmax(0, 1fr) auto; }
+    .home-minimal-footer__copyright { grid-column: 2; grid-row: 1; }
+    .home-minimal-footer nav { grid-column: 1 / -1; grid-row: 2; }
+    .home-minimal-footer__contact {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        justify-content: flex-start;
+        gap: 8px;
+        padding-top: 2px;
+    }
+    .home-contact-icon { width: 31px; height: 31px; flex-basis: 31px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .home-contact-icon { transition: none; }
+    .home-contact-icon:hover { transform: none; }
+}
