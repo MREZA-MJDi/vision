@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\SiteSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class HomeContactLinksTest extends TestCase
@@ -87,6 +88,7 @@ class HomeContactLinksTest extends TestCase
         $this->withoutVite();
 
         SiteSetting::query()->delete();
+        Cache::forget('site:contact-settings');
 
         $this->get('/')
             ->assertOk()
