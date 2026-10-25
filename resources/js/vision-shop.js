@@ -8,7 +8,6 @@ import { gsap } from "gsap";
   const OF = S.looks || {};
   const $ = (selector, parent = document) => parent.querySelector(selector);
   const fa = n => Number(n || 0).toLocaleString("fa-IR");
-  const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
   const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
@@ -130,6 +129,42 @@ import { gsap } from "gsap";
       scenes[lookId + ":" + key] = makeScene(url, false);
     });
   });
+
+  async function ensureSceneReady(key) {
+    const image = scenes[key];
+    if (!image) return false;
+
+    if (!image.complete) {
+      const loaded = await new Promise(resolve => {
+        let settled = false;
+        const finish = success => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          image.removeEventListener("load", onLoad);
+          image.removeEventListener("error", onError);
+          resolve(!!success && image.naturalWidth > 0);
+        };
+        const onLoad = () => finish(true);
+        const onError = () => finish(false);
+        const timer = window.setTimeout(() => finish(false), 1200);
+        image.addEventListener("load", onLoad, { once: true });
+        image.addEventListener("error", onError, { once: true });
+        if (image.complete) finish(image.naturalWidth > 0);
+      });
+      if (!loaded) return false;
+    }
+
+    if (image.naturalWidth < 1) return false;
+    if (typeof image.decode === "function") {
+      try {
+        await image.decode();
+      } catch (_) {
+        return image.complete && image.naturalWidth > 0;
+      }
+    }
+    return image.naturalWidth > 0;
+  }
 
   function setScene() {
     const selected = P.filter(product => W.has(Number(product.id)));
@@ -445,22 +480,34 @@ import { gsap } from "gsap";
 
   async function fly(source, fitY) {
     if (RM || !source || !source.getBoundingClientRect) return;
-    const start = source.getBoundingClientRect(), end = stage.getBoundingClientRect();
+    const start = source.getBoundingClientRect();
+    const end = stage.getBoundingClientRect();
     if (start.width < 1 || start.height < 1 || end.width < 1 || end.height < 1) return;
+
     const element = document.createElement("img");
     element.src = source.currentSrc || source.src;
     element.className = "fly";
-    Object.assign(element.style, { left: start.left + "px", top: start.top + "px", width: start.width + "px", height: start.height + "px" });
+    Object.assign(element.style, {
+      left: start.left + "px",
+      top: start.top + "px",
+      width: start.width + "px",
+      height: start.height + "px"
+    });
     document.body.appendChild(element);
+
     const dx = end.left + end.width / 2 - (start.left + start.width / 2);
     const dy = end.top + end.height * Number(fitY || .38) - (start.top + start.height / 2);
-    const animation = element.animate([
-      { transform: "none", opacity: 1 },
-      { transform: `translate(${dx * .5}px,${dy * .4 - 70}px) rotate(-16deg) scale(.62)`, offset: .5 },
-      { transform: `translate(${dx}px,${dy}px) rotate(8deg) scale(.3)`, opacity: .15 }
-    ], { duration: 780, easing: "cubic-bezier(.5,0,.25,1)" });
-    await animation.finished.catch(() => undefined);
-    element.remove();
+    try {
+      const animation = element.animate([
+        { transform: "translate3d(0, 0, 0) scale(1)", opacity: 1 },
+        { transform: `translate3d(${dx}px, ${dy}px, 0) scale(.56)`, opacity: .78 }
+      ], { duration: 220, easing: "ease-out", fill: "forwards" });
+      await animation.finished;
+    } catch (_) {
+      // Removing the decorative flight must never block the actual try-on.
+    } finally {
+      element.remove();
+    }
   }
 
   async function tryOn(product, source) {
@@ -472,21 +519,43 @@ import { gsap } from "gsap";
       refresh();
       return;
     }
+
+    const other = P.find(item => item.slot !== product.slot && W.has(Number(item.id))) || null;
+    const proposedTop = product.slot === "top" ? product : other;
+    const proposedBottom = product.slot === "bottom" ? product : other;
+    let sceneKey = String(product.o) + ":" + (product.slot === "top" ? "T" : "B");
+
+    if (proposedTop && proposedBottom && String(proposedTop.o) === String(proposedBottom.o)) {
+      const lookId = String(proposedTop.o);
+      const look = OF[lookId];
+      const pairImage = scenes[lookId + ":TB"];
+      if (look && pairImage
+        && Number(look.t) === Number(proposedTop.id)
+        && Number(look.b) === Number(proposedBottom.id)) {
+        sceneKey = lookId + ":TB";
+      }
+    }
+
     busy = true;
     try {
-      await wait(RM ? 0 : 260);
-      await fly(source, product.fy);
-      $("#load").classList.add("on");
-      await wait(RM ? 0 : 850);
-      // Keep one garment per slot across ALL curated looks. Choosing a new
-      // shirt replaces only the old top; an already selected pair of trousers
-      // stays on the mannequin until another bottom is selected.
+      const results = await Promise.all([
+        fly(source, product.fy),
+        ensureSceneReady(sceneKey)
+      ]);
+      if (!results[1]) {
+        showToast("تصویر مانکن این لباس در دسترس نیست؛ یک لباس دیگر انتخاب کن.");
+        return;
+      }
+
+      // Keep one garment per slot across all curated looks.
       P.forEach(item => {
         if (item.slot === product.slot && W.has(Number(item.id))) {
           W.delete(Number(item.id));
         }
       });
       W.add(Number(product.id));
+    } catch (error) {
+      showToast(error.message || "نمایش لباس انجام نشد؛ دوباره تلاش کن.");
     } finally {
       $("#load").classList.remove("on");
       busy = false;
@@ -584,13 +653,36 @@ import { gsap } from "gsap";
   });
   $("#addset").addEventListener("click", async () => {
     const ids = [...W].map(Number);
-    if (!ids.length) { showToast("اول یک لباس انتخاب کن."); return; }
+    if (!ids.length) {
+      showToast("اول یک لباس انتخاب کن.");
+      return;
+    }
+
+    const selected = ids.map(id => P.find(product => Number(product.id) === id));
+    const invalid = ids.length > 5
+      || new Set(ids).size !== ids.length
+      || ids.some(id => !Number.isSafeInteger(id) || id < 1)
+      || selected.some(product => !product || !product.slot || !product.o);
+    if (invalid) {
+      showToast("انتخاب‌های ست معتبر نیستند؛ لباس‌ها را دوباره انتخاب کن.");
+      return;
+    }
+    const unavailable = selected.find(product => Number(product.stock || 0) < 1);
+    if (unavailable) {
+      showToast(unavailable.name + " موجود نیست.");
+      return;
+    }
+
+    const button = $("#addset");
+    button.disabled = true;
     try {
       const response = await post(S.routes.cartMany, { variant_ids: ids });
       updateCart(response.count);
       showToast(response.message || "ست به سبد خرید اضافه شد.");
     } catch (error) {
       showToast(error.message || "افزودن ست به سبد خرید انجام نشد.");
+    } finally {
+      button.disabled = W.size === 0;
     }
   });
 
