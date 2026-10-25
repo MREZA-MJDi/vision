@@ -13,26 +13,30 @@ class StorefrontController extends Controller
 {
     public function home(): View
     {
-        // The homepage is intentionally one focused editorial hero: one real,
-        // purchasable product and no below-the-fold product/category grid.
-        $heroProduct = $this->catalogProducts()
+        // The homepage is a focused editorial hero. Products explicitly selected
+        // in Commerce Admin make the playlist; every color is a real active
+        // database variant with its own image, price, stock and color token.
+        $heroProducts = $this->catalogProducts()
             ->where('is_hero', true)
             ->orderBy('sort_order')
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->first();
+            ->limit(16)
+            ->get();
 
-        if (!$heroProduct) {
-            $heroProduct = $this->catalogProducts()
+        if ($heroProducts->isEmpty()) {
+            $heroProducts = $this->catalogProducts()
                 ->orderByDesc('is_featured')
+                ->orderBy('sort_order')
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->first();
+                ->limit(16)
+                ->get();
         }
 
-        $heroProduct?->loadMissing(['activeVariants.primaryGalleryMedia']);
+        $heroProducts->loadMissing(['activeVariants.primaryGalleryMedia']);
 
-        return view('store.home', compact('heroProduct'));
+        return view('store.home', compact('heroProducts'));
     }
 
     public function index(Request $request): View
