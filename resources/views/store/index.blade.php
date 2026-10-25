@@ -50,7 +50,11 @@
         <button id="close" type="button" aria-label="بستن اتاق پرو">×</button>
     </h4>
     <p>روی چوب‌لباسی هر محصول بزن تا روی مانکن بپوشه. بالاپوش و پایین‌تنه رو می‌تونی توی یک ست امتحان کنی.</p>
-    <div class="stage" id="stage" role="img" aria-label="پیش‌نمایش زندهٔ مانکن و لباس‌ها">
+    <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها">
+        <div class="stage-message" id="stageMessage" hidden role="status" aria-live="polite">
+            <strong id="stageMessageTitle">پیش‌نمایش ترکیب آماده نیست</strong>
+            <span id="stageMessageCopy">برای نمایش طبیعی این ست، تصویر یکپارچهٔ مانکن باید ثبت شود.</span>
+        </div>
         <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال پوشاندن مدل</b><span>ترکیب در حال آماده‌شدن است</span></div>
     </div>
     <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
