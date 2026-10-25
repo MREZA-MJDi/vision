@@ -25,8 +25,6 @@ import { gsap } from "gsap";
       return { A: [], B: [] };
     }
   })();
-  let recommendationSlot = "top";
-  let recommendationSlotChosen = false;
   let busy = false;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
 
@@ -80,7 +78,7 @@ import { gsap } from "gsap";
     $("#n").textContent = fa(products.length) + " محصول";
     $("#prv").textContent = "تا " + fa(state.max) + " " + (S.currency || "تومان");
     grid.innerHTML = products.length ? products.map(product => {
-      const canFit = !!(product.slot && product.o && OF[String(product.o)] && OF[String(product.o)].s);
+      const canFit = !!(product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
       const image = product.img
         ? '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">'
         : '<span class="shop-pic-empty" aria-label="تصویر محصول ثبت نشده">V.</span>';
@@ -89,7 +87,7 @@ import { gsap } from "gsap";
           '<button type="button" class="fav ' + (state.fav.has(Number(product.id)) ? "on" : "") + '" data-f="' + Number(product.id) + '" aria-pressed="' + state.fav.has(Number(product.id)) + '" aria-label="ذخیرهٔ ' + escapeHtml(product.name) + '" title="علاقه‌مندی">' +
             '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>' +
           '</button>' +
-          '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="امتحان روی مانکن">' +
+          '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="' + (canFit ? "امتحان روی مانکن" : "تصویر مانکن برای این محصول ثبت نشده") + '"' + (canFit ? "" : " disabled") + '>' +
             '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg>' +
           '</button>' +
         '</div>' +
@@ -131,13 +129,20 @@ import { gsap } from "gsap";
     });
   });
 
+  function exactOutfitScene(top, bottom) {
+    if (!top || !bottom || String(top.o) !== String(bottom.o)) return null;
+    const lookId = String(top.o);
+    const look = OF[lookId];
+    const scene = look?.s?.TB;
+    if (!look || !scene || !scenes[lookId + ":TB"]) return null;
+    if (Number(look.t) !== Number(top.id) || Number(look.b) !== Number(bottom.id)) return null;
+    return lookId + ":TB";
+  }
+
   function setScene() {
     const selected = P.filter(product => W.has(Number(product.id)));
     const top = selected.find(product => product.slot === "top") || null;
     const bottom = selected.find(product => product.slot === "bottom") || null;
-    const stageMessage = $("#stageMessage");
-    const messageTitle = $("#stageMessageTitle");
-    const messageCopy = $("#stageMessageCopy");
 
     Object.values(scenes).forEach(image => {
       if (!image) return;
@@ -145,19 +150,12 @@ import { gsap } from "gsap";
       image.style.clipPath = "";
       image.style.zIndex = "";
     });
-    if (stageMessage) stageMessage.hidden = true;
 
     const activate = key => {
       const image = scenes[key];
       if (!image) return false;
       image.classList.add("on");
       return true;
-    };
-    const showMessage = (title, copy) => {
-      if (!stageMessage) return;
-      if (messageTitle) messageTitle.textContent = title;
-      if (messageCopy) messageCopy.textContent = copy;
-      stageMessage.hidden = false;
     };
 
     if (!top && !bottom) {
@@ -166,33 +164,16 @@ import { gsap } from "gsap";
     }
 
     if (top && bottom) {
-      const look = String(top.o) === String(bottom.o) ? OF[String(top.o)] : null;
-      const isExactCuratedPair = look
-        && Number(look.t) === Number(top.id)
-        && Number(look.b) === Number(bottom.id)
-        && scenes[String(top.o) + ":TB"];
-
-      // Only show a full-frame image authored for this exact pair.
-      // Never clip two unrelated mannequin photos together: the body pose,
-      // lighting, garment scale and seams would visibly disagree.
-      if (isExactCuratedPair && activate(String(top.o) + ":TB")) return;
-
-      activate("base");
-      showMessage(
-        "پیش‌نمایش کامل این ترکیب آماده نیست",
-        "هر دو لباس انتخاب شده‌اند، اما برای نمایش طبیعی این ست باید تصویر یکپارچهٔ آن ثبت شود. فعلاً تصویرسازی ساختگی نشان نمی‌دهیم."
-      );
+      const pairScene = exactOutfitScene(top, bottom);
+      // Only use the studio photograph that was actually authored for this
+      // exact combination. Never imply a visual try-on that is not in the DB.
+      activate(pairScene || "base");
       return;
     }
 
     if (top && activate(String(top.o) + ":T")) return;
     if (bottom && activate(String(bottom.o) + ":B")) return;
-
     activate("base");
-    showMessage(
-      "تصویر مانکن این لباس آماده نیست",
-      "برای نمایش دقیق، این محصول باید در استودیو به یک تصویر واقعیِ مانکن متصل شود."
-    );
   }
 
   function updateCart(count) {
@@ -319,66 +300,60 @@ import { gsap } from "gsap";
     const root = $("#fit-recommend-grid");
     if (!root) return;
 
+    const section = root.closest(".fit-recommendations");
     const chosenTop = P.find(product => product.slot === "top" && W.has(Number(product.id))) || null;
     const chosenBottom = P.find(product => product.slot === "bottom" && W.has(Number(product.id))) || null;
 
-    if (!recommendationSlotChosen) {
-      recommendationSlot = chosenTop && !chosenBottom ? "bottom"
-        : chosenBottom && !chosenTop ? "top"
-        : "top";
-    }
-
-    document.querySelectorAll("[data-rec-slot]").forEach(button => {
-      const active = button.dataset.recSlot === recommendationSlot;
-      button.classList.toggle("on", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-
-    const anchor = recommendationSlot === "top" ? chosenBottom : chosenTop;
-    const caption = $("#fit-recommend-caption");
-    if (caption) {
-      caption.textContent = anchor
-        ? "گزینه‌های هماهنگ با " + anchor.name
-        : recommendationSlot === "top"
-          ? "یک بالاپوش انتخاب کن تا استایلت رو بسازیم."
-          : "یک پایین‌تنه انتخاب کن تا استایلت رو بسازیم.";
-    }
-
-    const candidates = P
-      .filter(product => product.slot === recommendationSlot
-        && !W.has(Number(product.id))
-        && Number(product.stock || 0) > 0
-        && product.o
-        && OF[String(product.o)]?.s)
-      .sort((a, b) => {
-        const aMatch = anchor && String(a.o) === String(anchor.o) ? 0 : 1;
-        const bMatch = anchor && String(b.o) === String(anchor.o) ? 0 : 1;
-        if (aMatch !== bMatch) return aMatch - bMatch;
-
-        const aPriceGap = anchor ? Math.abs(Number(a.price || 0) - Number(anchor.price || 0)) : Number(a.price || 0);
-        const bPriceGap = anchor ? Math.abs(Number(b.price || 0) - Number(anchor.price || 0)) : Number(b.price || 0);
-        if (aPriceGap !== bPriceGap) return aPriceGap - bPriceGap;
-        return Number(b.rate || 0) - Number(a.rate || 0);
-      })
-      .slice(0, 3);
-
-    if (!candidates.length) {
-      root.innerHTML = '<p class="fit-rec-empty">فعلاً گزینه‌ی آماده‌ای برای این بخش نیست.</p>';
+    // Recommendations are useful only when exactly one real garment is on the
+    // mannequin. With zero or two selections, keep this panel out of the way.
+    const selectedCount = Number(Boolean(chosenTop)) + Number(Boolean(chosenBottom));
+    if (selectedCount !== 1) {
+      if (section) section.hidden = true;
+      root.replaceChildren();
       return;
     }
 
+    const anchor = chosenTop || chosenBottom;
+    const recommendationSlot = chosenTop ? "bottom" : "top";
+    const candidates = P
+      .filter(product => {
+        if (product.slot !== recommendationSlot
+          || W.has(Number(product.id))
+          || Number(product.stock || 0) < 1
+          || !product.img
+          || !product.o) return false;
+
+        const look = OF[String(product.o)];
+        if (!look || !look.s || !look.s.TB) return false;
+
+        // A recommendation is allowed only when the database has a complete
+        // mannequin image for this exact pair of variants—not merely a shared
+        // look ID or a separate top/bottom photo.
+        return recommendationSlot === "bottom"
+          ? Number(look.t) === Number(anchor.id) && Number(look.b) === Number(product.id)
+          : Number(look.t) === Number(product.id) && Number(look.b) === Number(anchor.id);
+      })
+      .sort((a, b) => Number(b.rate || 0) - Number(a.rate || 0))
+      .slice(0, 2);
+
+    if (!candidates.length) {
+      if (section) section.hidden = true;
+      root.replaceChildren();
+      return;
+    }
+
+    if (section) section.hidden = false;
     root.innerHTML = candidates.map(product =>
-      '<article class="fit-rec-card">' +
-        '<div class="fit-rec-thumb">' +
-          (product.img ? '<img src="' + escapeHtml(product.img) + '" alt="" loading="lazy">' : '<span>V.</span>') +
-        '</div>' +
-        '<div class="fit-rec-copy">' +
+      '<button type="button" class="fit-rec-card" data-rec="' + Number(product.id) + '" aria-label="اضافه کردن ' + escapeHtml(product.name) + ' به ست">' +
+        '<span class="fit-rec-thumb">' +
+          '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">' +
+        '</span>' +
+        '<span class="fit-rec-copy">' +
           '<strong>' + escapeHtml(product.name) + '</strong>' +
           '<span>' + fa(product.price) + ' ' + escapeHtml(S.currency || "تومان") + '</span>' +
-          (anchor && String(product.o) === String(anchor.o) ? '<small>پیشنهاد ست هماهنگ</small>' : '') +
-        '</div>' +
-        '<button type="button" data-rec="' + Number(product.id) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن">امتحان</button>' +
-      '</article>'
+        '</span>' +
+        '<span class="fit-rec-add" aria-hidden="true">+</span>' +
+      '</button>'
     ).join("");
   }
 
@@ -467,24 +442,32 @@ import { gsap } from "gsap";
     if (busy || !product || !product.o || !product.slot) return;
     fit.classList.add("open");
     fit.setAttribute("aria-hidden", "false");
+
     if (W.has(Number(product.id))) {
       W.delete(Number(product.id));
       refresh();
       return;
     }
+
+    const oppositeSlot = product.slot === "top" ? "bottom" : "top";
+    const opposite = P.find(item => item.slot === oppositeSlot && W.has(Number(item.id))) || null;
+    const nextTop = product.slot === "top" ? product : opposite;
+    const nextBottom = product.slot === "bottom" ? product : opposite;
+    if (nextTop && nextBottom && !exactOutfitScene(nextTop, nextBottom)) {
+      showToast("برای این ست، عکس یکپارچهٔ مانکن ثبت نشده.");
+      return;
+    }
+
     busy = true;
     try {
       await wait(RM ? 0 : 260);
       await fly(source, product.fy);
       $("#load").classList.add("on");
-      await wait(RM ? 0 : 850);
-      // Keep one garment per slot across ALL curated looks. Choosing a new
-      // shirt replaces only the old top; an already selected pair of trousers
-      // stays on the mannequin until another bottom is selected.
+      await wait(RM ? 0 : 700);
+      // One item per slot. Opposite-slot items remain selected only when an
+      // exact combined studio photo exists for the new pair.
       P.forEach(item => {
-        if (item.slot === product.slot && W.has(Number(item.id))) {
-          W.delete(Number(item.id));
-        }
+        if (item.slot === product.slot && W.has(Number(item.id))) W.delete(Number(item.id));
       });
       W.add(Number(product.id));
     } finally {
@@ -553,10 +536,6 @@ import { gsap } from "gsap";
       const product = P.find(item => Number(item.id) === Number(data.rec));
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
       if (product) tryOn(product, image);
-    } else if (data.recSlot) {
-      recommendationSlot = data.recSlot;
-      recommendationSlotChosen = true;
-      renderRecommendations();
     } else if (data.r) {
       W.delete(Number(data.r));
       refresh();
