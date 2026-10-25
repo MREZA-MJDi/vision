@@ -89,19 +89,14 @@ import { gsap } from "gsap";
   const formatMoney = amount => fa(amount) + " <small>" + escapeHtml(S.currency || "تومان") + "</small>";
 
   function list() {
-    let products = P.filter(product =>
+    // The server already filtered and globally sorted this 12-product page.
+    // Only mirror text/range input locally while the filter request is debounced.
+    return P.filter(product =>
       (state.cat === C[0] || product.cat === state.cat)
       && String(product.name || "").toLocaleLowerCase("fa").includes(state.q.toLocaleLowerCase("fa"))
       && Number(product.price || 0) <= state.max
       && (!state.saleOnly || (Number(product.old || 0) > Number(product.price || 0)))
     );
-    const sorters = {
-      lo: (a, b) => Number(a.price) - Number(b.price),
-      hi: (a, b) => Number(b.price) - Number(a.price),
-      rt: (a, b) => Number(b.rate || 0) - Number(a.rate || 0)
-    };
-    if (sorters[state.sort]) products = [...products].sort(sorters[state.sort]);
-    return products;
   }
 
   function render() {
