@@ -593,3 +593,192 @@ body.storefront-home-body .home-hero__variant-dot {
     body.storefront-home-body .home-hero__variant { min-width: 29px; min-height: 29px; padding-inline: 6px; font-size: 8px; }
     body.storefront-home-body .home-hero__variant-dot { width: 10px; height: 10px; flex-basis: 10px; }
 }
+
+
+/* Final responsive pass: keep the same design language while respecting source-image resolution. */
+:root {
+    --vision-content-gap: clamp(14px, 1.5vw, 20px);
+    --vision-copy-gap: clamp(8px, 1vw, 12px);
+}
+
+/* Keep garment colors truthful and never enlarge a source image beyond its pixels. */
+body.storefront-home-body .home-hero__image-stage {
+    place-items: center;
+}
+body.storefront-home-body .home-hero__image-stage img {
+    width: auto;
+    height: auto;
+    max-width: min(100%, var(--home-hero-image-natural-width, 690px));
+    max-height: min(100%, var(--home-hero-image-natural-height, 760px));
+    object-fit: contain;
+    object-position: center;
+    mix-blend-mode: normal;
+    opacity: 1;
+    filter: drop-shadow(0 26px 30px rgb(0 0 0 / 32%));
+}
+
+/* Text containers use a fluid scale; content spacing follows a shared 20px ceiling. */
+body.storefront-home-body .home-hero__copy {
+    gap: var(--vision-copy-gap);
+}
+body.storefront-home-body .home-hero__description {
+    font-size: clamp(12px, .95vw, 14px);
+    line-height: 1.95;
+}
+.storefront-body:has(.vision-shop-main) .vision-shop-main {
+    gap: var(--vision-content-gap);
+}
+.storefront-body:has(.vision-shop-main) .shop-grid {
+    gap: var(--vision-content-gap);
+}
+.storefront-body:has(.vision-shop-main) .shop-product-details {
+    gap: 8px;
+}
+.storefront-body:has(.vision-shop-main) .shop-product-name {
+    font-size: clamp(12px, .9vw, 13px);
+    line-height: 1.8;
+}
+.storefront-body:has(.vision-shop-main) .shop-product-price {
+    font-size: clamp(14px, 1.15vw, 17px);
+    line-height: 1.7;
+}
+
+/* Fitting room: clearer type, slightly larger canvas, no forced crop of the lookbook. */
+.storefront-body:has(.vision-shop-main) #fit {
+    width: min(430px, calc(100vw - 32px));
+    padding: 18px;
+}
+.storefront-body:has(.vision-shop-main) #fit > p {
+    margin: 12px 0 14px;
+    color: var(--vs-muted);
+    font-size: clamp(11px, .9vw, 12px);
+    line-height: 1.9;
+}
+.storefront-body:has(.vision-shop-main) #fit .stage {
+    width: min(100%, 270px);
+    margin-inline: auto;
+    aspect-ratio: 2 / 3;
+}
+.storefront-body:has(.vision-shop-main) #fit .mm {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    image-rendering: auto;
+    backface-visibility: hidden;
+}
+.storefront-body:has(.vision-shop-main) .fit-recommendations,
+.storefront-body:has(.vision-shop-main) .fit-compare {
+    margin-top: 20px;
+    padding-top: 16px;
+}
+.storefront-body:has(.vision-shop-main) .fit-section-head h5 {
+    font-size: 13px;
+    line-height: 1.7;
+}
+.storefront-body:has(.vision-shop-main) .fit-section-head p {
+    font-size: 11px;
+    line-height: 1.85;
+}
+.storefront-body:has(.vision-shop-main) .fit-recommend-grid,
+.storefront-body:has(.vision-shop-main) .fit-compare-grid,
+.storefront-body:has(.vision-shop-main) .fit-compare-actions {
+    gap: 10px;
+}
+.storefront-body:has(.vision-shop-main) .fit-rec-card {
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 9px;
+}
+.storefront-body:has(.vision-shop-main) .fit-rec-thumb {
+    width: 46px;
+    height: 56px;
+}
+.storefront-body:has(.vision-shop-main) .fit-rec-copy strong,
+.storefront-body:has(.vision-shop-main) .fit-rec-copy > span {
+    font-size: 11px;
+    line-height: 1.7;
+}
+.storefront-body:has(.vision-shop-main) .fit-rec-copy small {
+    font-size: 10px;
+}
+.storefront-body:has(.vision-shop-main) .fit-rec-card > button,
+.storefront-body:has(.vision-shop-main) .fit-rec-tabs button,
+.storefront-body:has(.vision-shop-main) .fit-compare-actions button,
+.storefront-body:has(.vision-shop-main) .fit-compare-head > button {
+    font-size: 11px;
+    line-height: 1.65;
+}
+
+@media (max-width: 760px) {
+    body.storefront-home-body .home-hero__frame {
+        min-height: 760px;
+    }
+    body.storefront-home-body .home-hero__image-stage {
+        inset: 100px 7% auto;
+        height: 220px;
+        overflow: hidden;
+    }
+    body.storefront-home-body .home-hero__image-stage img {
+        width: auto;
+        height: auto;
+        max-width: min(100%, var(--home-hero-image-natural-width, 690px));
+        max-height: min(100%, var(--home-hero-image-natural-height, 760px));
+        object-fit: contain;
+    }
+    body.storefront-home-body .home-hero__copy {
+        bottom: 245px;
+        gap: 6px;
+    }
+    body.storefront-home-body .home-hero__title {
+        font-size: clamp(29px, 7vw, 39px);
+        line-height: 1.25;
+    }
+    body.storefront-home-body .home-hero__description {
+        margin-top: 5px;
+        font-size: clamp(11px, 2.9vw, 12px);
+        line-height: 1.85;
+    }
+    body.storefront-home-body .home-hero__cta {
+        min-height: 40px;
+        font-size: clamp(11px, 2.8vw, 12px);
+    }
+    body.storefront-body:has(.vision-shop-main) .shop-grid {
+        gap: 12px;
+    }
+    body.storefront-body:has(.vision-shop-main) .shop-product-name {
+        font-size: clamp(11px, 3vw, 12px);
+    }
+    body.storefront-body:has(.vision-shop-main) .shop-product-price {
+        font-size: clamp(13px, 3.5vw, 15px);
+    }
+    body.storefront-body:has(.vision-shop-main) #fit {
+        width: calc(100vw - 20px);
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        max-height: min(88dvh, calc(100dvh - 24px));
+        padding: 14px;
+    }
+    body.storefront-body:has(.vision-shop-main) #fit .stage {
+        width: min(100%, 220px);
+    }
+}
+@media (max-width: 400px) {
+    body.storefront-home-body .home-hero__frame {
+        min-height: 780px;
+    }
+    body.storefront-home-body .home-hero__image-stage {
+        inset: 96px 2% auto;
+        height: 210px;
+    }
+    body.storefront-home-body .home-hero__copy {
+        bottom: 245px;
+    }
+    body.storefront-body:has(.vision-shop-main) .shop-product-colour {
+        font-size: 11px;
+    }
+    body.storefront-body:has(.vision-shop-main) #fit .stage {
+        width: min(100%, 210px);
+    }
+}
