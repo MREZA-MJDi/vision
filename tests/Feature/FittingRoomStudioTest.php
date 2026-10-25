@@ -250,6 +250,7 @@ class FittingRoomStudioTest extends TestCase
     {
         $this->get('/shop')
             ->assertOk()
+            ->assertSee('fit-backdrop', false)
             ->assertSee('fit-recommend-grid', false)
             ->assertSee('fit-recommendations', false)
             ->assertDontSee('fit-rec-copy', false)

@@ -1286,3 +1286,101 @@ body.storefront-home-body .home-hero__image-stage::before {
         gap: 12px;
     }
 }
+
+
+/* Unified, colorful VISION icon treatment across storefront, product, account and cart pages. */
+body.storefront-body :is(.store-icon-button,.home-hero__icon-button,.vision-shop-tools .ibtn,.shop-product-side button,.shop-cart-add) {
+    position:relative;
+    isolation:isolate;
+    border:1px solid rgb(255 255 255 / 17%);
+    box-shadow:0 5px 15px rgb(0 0 0 / 14%),inset 0 1px 0 rgb(255 255 255 / 15%);
+    transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+body.storefront-body :is(.store-icon-button,.home-hero__icon-button,.vision-shop-tools .ibtn,.shop-product-side button,.shop-cart-add):hover:not(:disabled) {
+    filter:saturate(1.13) brightness(1.04);
+    box-shadow:0 8px 20px rgb(0 0 0 / 20%),inset 0 1px 0 rgb(255 255 255 / 18%);
+}
+body.storefront-body :is(.store-icon-button,.home-hero__icon-button,.vision-shop-tools .ibtn,.shop-product-side button,.shop-cart-add):focus-visible {
+    outline:2px solid #f3c36b;
+    outline-offset:3px;
+}
+body.storefront-body .home-hero__top-actions .home-hero__icon-button:first-child,
+body.storefront-body .store-header .store-icon-button[aria-label*="حساب"] {
+    border-color:rgb(169 148 255 / 45%);
+    background:linear-gradient(145deg,#7765df 0%,#4745a8 100%);
+    color:#fff !important;
+}
+body.storefront-body .home-hero__cart,
+body.storefront-body .store-header .store-icon-button[aria-label*="سبد"] {
+    border-color:rgb(255 183 113 / 46%);
+    background:linear-gradient(145deg,#ffbd67 0%,#f17e51 56%,#d45d78 100%);
+    color:#25151b !important;
+}
+body.storefront-body .home-hero__cart > span,
+body.storefront-body .store-header .store-cart-count {
+    background:#fffaf1;
+    color:#5b243b;
+    box-shadow:0 2px 8px rgb(0 0 0 / 19%);
+}
+body.storefront-body .store-header .store-icon-button[aria-label*="فیلتر"] {
+    border-color:rgb(91 204 207 / 45%);
+    background:linear-gradient(145deg,#60d9d3 0%,#348eae 100%);
+    color:#08262d !important;
+}
+body.storefront-body .vision-shop-tools #theme {
+    border-color:rgb(255 209 113 / 65%);
+    background:linear-gradient(145deg,#ffdf80 0%,#f3a55d 58%,#df718b 100%);
+    color:#33202b;
+}
+body.storefront-body .vision-shop-tools #cartTarget {
+    border-color:rgb(255 168 112 / 58%);
+    background:linear-gradient(145deg,#ffbf69 0%,#f28b58 54%,#d96687 100%);
+    color:#25151b;
+}
+body.storefront-body .vision-shop-tools #cartTarget svg {
+    stroke:#311a22;
+}
+body.storefront-body .vision-shop-tools .badge {
+    background:#fffaf2;
+    color:#71344a;
+    box-shadow:0 2px 7px rgb(0 0 0 / 18%);
+}
+body.storefront-body:has(.vision-shop-main) .shop-product-side .fav {
+    border-color:rgb(255 155 178 / 58%);
+    background:linear-gradient(145deg,#ff9eb7 0%,#ef638d 55%,#c64c82 100%);
+    color:#fff;
+}
+body.storefront-body:has(.vision-shop-main) .shop-product-side .try {
+    border-color:rgb(167 163 255 / 54%);
+    background:linear-gradient(145deg,#a79bff 0%,#7773df 55%,#4c75c8 100%);
+    color:#fff;
+}
+body.storefront-body:has(.vision-shop-main) .shop-product-side button:disabled {
+    filter:grayscale(.65);
+    opacity:.38;
+    box-shadow:none;
+}
+body.storefront-body:has(.vision-shop-main) .shop-cart-add {
+    border-color:rgb(110 233 199 / 44%);
+    background:linear-gradient(145deg,#5ce0c0 0%,#21ad9c 54%,#3587bb 100%);
+    color:#082822;
+}
+body.storefront-body:has(.vision-shop-main) .shop-cart-add svg { stroke:currentColor; }
+body.storefront-body:has(.vision-shop-main) .shop-product-side button svg {
+    width:15px;
+    height:15px;
+    stroke-width:1.9;
+}
+body.storefront-body:has(.vision-shop-main) #fit #close {
+    border-color:rgb(226 158 181 / 35%);
+    background:linear-gradient(145deg,rgb(201 92 130 / 17%),rgb(96 78 162 / 17%));
+    color:#e9c8d6;
+}
+body.storefront-body :is(.store-icon-button,.home-hero__icon-button,.vision-shop-tools .ibtn,.shop-product-side button,.shop-cart-add) svg {
+    display:block;
+    flex-shrink:0;
+}
+@media (prefers-reduced-motion:reduce) {
+    body.storefront-body :is(.store-icon-button,.home-hero__icon-button,.vision-shop-tools .ibtn,.shop-product-side button,.shop-cart-add) { transition:none; }
+    body.storefront-body :is(.store-icon-button,.home-hero__icon-button,.vision-shop-tools .ibtn,.shop-product-side button,.shop-cart-add):hover { transform:none; }
+}
