@@ -64,7 +64,10 @@ import { gsap } from "gsap";
     $("#n").textContent = fa(products.length) + " محصول";
     $("#prv").textContent = "تا " + fa(state.max) + " " + (S.currency || "تومان");
     grid.innerHTML = products.length ? products.map(product => {
-      const canFit = !!(product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
+      const look = product.o ? OF[String(product.o)] : null;
+      const individualScene = look?.s?.[product.slot === "top" ? "T" : "B"];
+      const combinedSceneMatches = !!(look?.s?.TB && Number(look[product.slot === "top" ? "t" : "b"]) === Number(product.id));
+      const canFit = !!(product.slot && product.o && (individualScene || combinedSceneMatches));
       const image = product.img
         ? '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">'
         : '<span class="shop-pic-empty" aria-label="تصویر محصول ثبت نشده">V.</span>';
@@ -163,8 +166,18 @@ import { gsap } from "gsap";
       return;
     }
 
-    if (top && activate(String(top.o) + ":T")) return;
-    if (bottom && activate(String(bottom.o) + ":B")) return;
+    const single = top || bottom;
+    if (single) {
+      const lookId = String(single.o);
+      const individualKey = lookId + ":" + (single.slot === "top" ? "T" : "B");
+      if (activate(individualKey)) return;
+
+      const look = OF[lookId];
+      const mappedVariantId = single.slot === "top" ? look?.t : look?.b;
+      // Use the exact curated outfit image as fallback when the isolated
+      // garment scene is missing; never synthesize a fake overlay.
+      if (look?.s?.TB && Number(mappedVariantId) === Number(single.id) && activate(lookId + ":TB")) return;
+    }
     activate("base");
   }
 
@@ -304,7 +317,7 @@ import { gsap } from "gsap";
         return Boolean(exactOutfitScene(top, bottom));
       })
       .sort((a, b) => Number(b.rate || 0) - Number(a.rate || 0))
-      .slice(0, 2);
+      .slice(0, 3);
 
     if (!candidates.length) {
       if (section) section.hidden = true;
