@@ -109,8 +109,8 @@
 
             @if($heroProduct && $heroVariant)
                 <aside class="home-hero__price-panel" aria-label="اطلاعات محصول منتخب">
-                    <span class="home-hero__price-label" data-home-hero-caption>{{ $heroFeaturedLabel }}</span>
-                    <strong class="home-hero__featured-name">{{ $heroProduct->name }}</strong>
+                    <span class="home-hero__price-label">محصول منتخب / VISION</span>
+                    <strong class="home-hero__featured-name" data-home-hero-caption>{{ $heroProduct->name }}</strong>
                     <strong class="home-hero__price" data-home-hero-price>{{ $formatPrice($heroVariant->effective_price) }}</strong>
                     <del class="home-hero__original-price" data-home-hero-original @if(!$heroVariant->is_on_sale) hidden @endif>{{ $heroVariant->is_on_sale ? $formatPrice($heroVariant->price) : '' }}</del>
                     <span class="home-hero__stock" data-home-hero-stock>
@@ -151,7 +151,7 @@
                                             data-price="{{ $formatPrice($slideVariant->effective_price) }}"
                                             data-original-price="{{ $slideVariant->is_on_sale ? $formatPrice($slideVariant->price) : '' }}"
                                             data-stock="{{ (int) $slideVariant->stock > 0 ? number_format((int) $slideVariant->stock) . ' عدد موجود' : 'فعلاً ناموجود' }}"
-                                            data-label="{{ $slideLabel }}"
+                                            data-label="{{ $slideProduct->name }}"
                                             data-image-alt="{{ $slideAlt }}"
                                             aria-label="نمایش {{ $slideLabel }}"
                                             aria-pressed="{{ $slideSelected ? 'true' : 'false' }}"
