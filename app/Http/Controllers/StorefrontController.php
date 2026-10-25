@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Brand;
-use App\Models\Category;
 use App\Models\Product;
 use App\Services\FittingRoomShopData;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,47 +13,14 @@ class StorefrontController extends Controller
 {
     public function home(): View
     {
-        $categories = Category::query()
-            ->active()
-            ->withCount([
-                'products as active_products_count' => fn (Builder $query) => $query
-                    ->where('is_active', true)
-                    ->whereHas('activeVariants'),
-            ])
-            ->with([
-                'coverMedia',
-                // Load at most one active, photo-ready product per category.
-                // The bounded eager load provides a useful fallback when a category
-                // has no dedicated cover image, without introducing an N+1 query.
-                'products' => fn ($query) => $query
-                    ->active()
-                    ->whereHas('activeVariants')
-                    ->with([
-                        'primaryGalleryMedia',
-                        'primaryAvailableVariant.primaryGalleryMedia',
-                        'primaryActiveVariant.primaryGalleryMedia',
-                    ])
-                    ->orderByDesc('is_featured')
-                    ->orderBy('sort_order')
-                    ->orderByDesc('id')
-                    ->limit(1),
-            ])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->limit(8)
-            ->get();
-
-        // The hero is a small, already eager-loaded playlist. It is rendered in
-        // the initial document so changing slides never adds a request.
-        $heroProducts = $this->catalogProducts()
+        // The homepage is intentionally one focused editorial hero: one real,
+        // purchasable product and no below-the-fold product/category grid.
+        $heroProduct = $this->catalogProducts()
             ->where('is_hero', true)
             ->orderBy('sort_order')
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->limit(6)
-            ->get();
-
-        $heroProduct = $heroProducts->first();
+            ->first();
 
         if (!$heroProduct) {
             $heroProduct = $this->catalogProducts()
@@ -62,21 +28,11 @@ class StorefrontController extends Controller
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
                 ->first();
-
-            if ($heroProduct) {
-                $heroProducts = collect([$heroProduct]);
-            }
         }
 
-        // The hero picker uses real active variants and each variant's own
-        // photo. This is a single bounded eager load for the highlighted product.
         $heroProduct?->loadMissing(['activeVariants.primaryGalleryMedia']);
 
-        return view('store.home', compact(
-            'categories',
-            'heroProduct',
-            'heroProducts',
-        ));
+        return view('store.home', compact('heroProduct'));
     }
 
     public function index(Request $request): View
@@ -91,7 +47,7 @@ class StorefrontController extends Controller
     /**
      * Render a public product detail page from active catalog records only.
      */
-    public function show(Product $product): View
+    public function show(Request $request, Product $product): View
     {
         abort_unless((bool) $product->is_active, 404);
 
@@ -106,6 +62,11 @@ class StorefrontController extends Controller
         if ($product->activeVariants->isEmpty()) {
             abort(404);
         }
+
+        $requestedVariantId = $request->integer('variant_id');
+        $selectedVariantId = $product->activeVariants
+            ->first(fn ($variant) => (int) $variant->getKey() === $requestedVariantId)
+            ?->getKey();
 
         $relatedQuery = Product::query()
             ->active()
@@ -131,7 +92,7 @@ class StorefrontController extends Controller
             ->limit(4)
             ->get();
 
-        return view('store.products.show', compact('product', 'relatedProducts'));
+        return view('store.products.show', compact('product', 'relatedProducts', 'selectedVariantId'));
     }
 
     /**

@@ -24,22 +24,22 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('lang="fa" dir="rtl"', false)
             ->assertSee('VISION — فروشگاه پوشاک')
             ->assertSee('property="og:site_name"', false)
-            ->assertSee('data-tiamir-intro', false)
-            ->assertDontSee('data-tiamir-replay', false)
-            ->assertSee('data-tiamir-hint', false)
-            ->assertSee('data-first-duration="3200"', false)
-            ->assertSee('data-return-duration="1900"', false)
-            ->assertSee('Created by R MAJIDI')
-            ->assertSee('https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png', false)
+            ->assertDontSee('data-tiamir-intro', false)
+            ->assertDontSee('tiamir.com')
+            ->assertDontSee('Created by R MAJIDI')
             ->assertSee('VISION')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
-            ->assertSee('انتخاب بر اساس استایل')
+            ->assertSee('استایل تو؛')
             ->assertSee('home-hero__frame', false)
-            ->assertSee('home-category-card__image', false)
+            ->assertSee('home-hero__cta--secondary', false)
+            ->assertDontSee('home-category-grid', false)
+            ->assertDontSee('home-category-card__image', false)
             ->assertDontSee('home-featured', false)
             ->assertDontSee('home-brand-story', false)
             ->assertDontSee('home-benefits', false)
-            ->assertSee('store-footer__column', false)
+            ->assertSee('home-minimal-footer', false)
+            ->assertDontSee('store-footer__column', false)
+            ->assertDontSee('store-header', false)
             ->assertDontSee('data-cart-add=', false)
             ->assertDontSee('data-fitting-room', false)
             ->assertSee('images.unsplash.com');
@@ -203,7 +203,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->where('slug', 'vision-demo')
             ->firstOrFail();
 
-        // The homepage now queries only the bounded hero playlist and category card media.
+        // The homepage queries one featured product and its bounded media relations.
         $queryCount = 0;
         $sqlLog = [];
 

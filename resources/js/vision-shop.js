@@ -1,3 +1,5 @@
+import { gsap } from "gsap";
+
 /* VISION shop: approved store-fa interactions, backed by Laravel records. */
 (() => {
   const S = window.SHOP || {};
@@ -127,23 +129,29 @@
     const selected = P.filter(product => W.has(Number(product.id)));
     const top = selected.find(product => product.slot === "top") || null;
     const bottom = selected.find(product => product.slot === "bottom") || null;
+    const stageMessage = $("#stageMessage");
+    const messageTitle = $("#stageMessageTitle");
+    const messageCopy = $("#stageMessageCopy");
 
-    // Reset previous selections. Two clipped, full-frame scenes can be layered
-    // to preview a custom top + bottom combination even across curated looks.
     Object.values(scenes).forEach(image => {
       if (!image) return;
       image.classList.remove("on");
       image.style.clipPath = "";
       image.style.zIndex = "";
     });
+    if (stageMessage) stageMessage.hidden = true;
 
-    const activate = (key, clipPath = "", zIndex = "") => {
+    const activate = key => {
       const image = scenes[key];
       if (!image) return false;
-      if (clipPath) image.style.clipPath = clipPath;
-      if (zIndex) image.style.zIndex = String(zIndex);
       image.classList.add("on");
       return true;
+    };
+    const showMessage = (title, copy) => {
+      if (!stageMessage) return;
+      if (messageTitle) messageTitle.textContent = title;
+      if (messageCopy) messageCopy.textContent = copy;
+      stageMessage.hidden = false;
     };
 
     if (!top && !bottom) {
@@ -158,28 +166,128 @@
         && Number(look.b) === Number(bottom.id)
         && scenes[String(top.o) + ":TB"];
 
-      // Use the clean, authored full outfit whenever the exact pair is selected.
+      // Only show a full-frame image authored for this exact pair.
+      // Never clip two unrelated mannequin photos together: the body pose,
+      // lighting, garment scale and seams would visibly disagree.
       if (isExactCuratedPair && activate(String(top.o) + ":TB")) return;
 
-      const topScene = String(top.o) + ":T";
-      const bottomScene = String(bottom.o) + ":B";
-      if (scenes[topScene] && scenes[bottomScene]) {
-        // A longer outer layer (e.g. a coat) should cover more of the trousers.
-        const seam = Number(top.fy || 0) >= 0.44 ? 0.74 : 0.47;
-        activate(topScene, "inset(0 0 " + (100 - seam * 100) + "% 0)", 2);
-        activate(bottomScene, "inset(" + Math.max(0, seam * 100 - 4) + "% 0 0 0)", 1);
-        return;
-      }
+      activate("base");
+      showMessage(
+        "پیش‌نمایش کامل این ترکیب آماده نیست",
+        "هر دو لباس انتخاب شده‌اند، اما برای نمایش طبیعی این ست باید تصویر یکپارچهٔ آن ثبت شود. فعلاً تصویرسازی ساختگی نشان نمی‌دهیم."
+      );
+      return;
     }
 
     if (top && activate(String(top.o) + ":T")) return;
     if (bottom && activate(String(bottom.o) + ":B")) return;
+
     activate("base");
+    showMessage(
+      "تصویر مانکن این لباس آماده نیست",
+      "برای نمایش دقیق، این محصول باید در استودیو به یک تصویر واقعیِ مانکن متصل شود."
+    );
   }
 
   function updateCart(count) {
     state.cart = Math.max(0, Number(count) || 0);
     $("#cnt").textContent = fa(state.cart);
+  }
+
+  function flyToCart(source) {
+    if (RM || !source || !source.getBoundingClientRect) return Promise.resolve();
+    const target = $("#cartTarget");
+    if (!target) return Promise.resolve();
+
+    const start = source.getBoundingClientRect();
+    const end = target.getBoundingClientRect();
+    if (start.width < 1 || start.height < 1 || end.width < 1 || end.height < 1) {
+      return Promise.resolve();
+    }
+
+    const isImage = source instanceof HTMLImageElement && (source.currentSrc || source.src);
+    const element = document.createElement(isImage ? "img" : "div");
+    if (isImage) {
+      element.src = source.currentSrc || source.src;
+      element.alt = "";
+      element.decoding = "async";
+    } else {
+      element.textContent = "V.";
+      element.classList.add("shop-cart-flight--fallback");
+    }
+    element.classList.add("shop-cart-flight");
+    element.setAttribute("aria-hidden", "true");
+
+    const width = Math.min(Math.max(start.width, 52), 144);
+    const height = Math.min(Math.max(start.height, 64), 168);
+    Object.assign(element.style, {
+      position: "fixed",
+      left: (start.left + (start.width - width) / 2) + "px",
+      top: (start.top + (start.height - height) / 2) + "px",
+      width: width + "px",
+      height: height + "px"
+    });
+    document.body.appendChild(element);
+
+    const dx = end.left + end.width / 2 - (start.left + start.width / 2);
+    const dy = end.top + end.height / 2 - (start.top + start.height / 2);
+    const arc = Math.min(105, window.innerHeight * 0.14);
+
+    return new Promise(resolve => {
+      let completed = false;
+      const finish = () => {
+        if (completed) return;
+        completed = true;
+        element.remove();
+        resolve();
+      };
+      const timeline = gsap.timeline({ onComplete: finish, onInterrupt: finish });
+      timeline
+        .to(element, {
+          x: dx * 0.46,
+          y: dy * 0.42 - arc,
+          rotation: -13,
+          scale: 0.7,
+          duration: 0.36,
+          ease: "power2.out"
+        })
+        .to(element, {
+          x: dx,
+          y: dy,
+          rotation: 9,
+          scale: 0.12,
+          opacity: 0.12,
+          duration: 0.42,
+          ease: "power3.in"
+        }, "-=0.06");
+    });
+  }
+
+  function pulseCartTarget() {
+    if (RM) return;
+    const target = $("#cartTarget");
+    if (!target) return;
+
+    gsap.killTweensOf(target);
+    gsap.fromTo(target, { scale: 1 }, {
+      scale: 1.12,
+      duration: 0.2,
+      repeat: 1,
+      yoyo: true,
+      ease: "back.out(2)",
+      clearProps: "transform"
+    });
+
+    const badge = target.querySelector(".badge");
+    if (badge) {
+      gsap.killTweensOf(badge);
+      gsap.fromTo(badge, { scale: 0.7 }, {
+        scale: 1,
+        duration: 0.2,
+        ease: "back.out(3)",
+        clearProps: "transform"
+      });
+    }
   }
 
   function refresh() {
@@ -385,13 +493,27 @@
     refresh();
   }
 
-  async function addOne(productId) {
+  async function addOne(productId, trigger) {
+    if (trigger?.disabled) return;
+    const wasDisabled = !!trigger?.disabled;
+    if (trigger) trigger.disabled = true;
+    let flight = Promise.resolve();
+
     try {
+      const card = trigger?.closest(".shop-product-card");
+      const source = card?.querySelector(".shop-pic img") || card?.querySelector(".shop-pic");
+      flight = flyToCart(source);
+
       const response = await post(S.routes.cart, { variant_id: Number(productId), quantity: 1 });
+      await flight;
       updateCart(response.count);
+      pulseCartTarget();
       showToast(response.message || "به سبد خرید اضافه شد.");
     } catch (error) {
+      await flight.catch(() => undefined);
       showToast(error.message || "افزودن به سبد خرید انجام نشد.");
+    } finally {
+      if (trigger?.isConnected) trigger.disabled = wasDisabled;
     }
   }
 
@@ -433,7 +555,7 @@
       W.delete(Number(data.r));
       refresh();
     } else if (data.c) {
-      addOne(Number(data.c));
+      addOne(Number(data.c), button);
     } else if (data.cat !== undefined) {
       state.cat = data.cat;
       render();

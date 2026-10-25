@@ -9,7 +9,7 @@
 
 @section('content')
 @php
-    $defaultVariant = $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
+    $defaultVariant = $product->activeVariants->first(fn ($variant) => $selectedVariantId !== null && (int) $variant->getKey() === (int) $selectedVariantId) ?? $product->activeVariants->first(fn ($variant) => (int) $variant->stock > 0) ?? $product->activeVariants->first();
     $baseImage = $product->primaryGalleryMedia?->url ?? $product->galleryMedia->first()?->url;
     $primaryImage = $defaultVariant?->primaryGalleryMedia?->url ?? $baseImage;
     $colorVariants = $product->activeVariants

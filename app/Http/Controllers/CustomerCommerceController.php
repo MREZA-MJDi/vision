@@ -9,12 +9,16 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\ProductVariant;
+use App\Services\OrderService;
+use App\Services\PaymentGatewayService;
+use App\Services\PaymentService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -364,7 +368,7 @@ class CustomerCommerceController extends Controller
         return redirect()->route('cart.index')->with('status', 'کالا از سبد خرید حذف شد.');
     }
 
-    public function checkout(): View|RedirectResponse
+    public function checkout(PaymentGatewayService $paymentGatewayService): View|RedirectResponse
     {
         $cart = $this->currentCart();
         $items = $this->loadCartItems($cart);
@@ -375,10 +379,10 @@ class CustomerCommerceController extends Controller
 
         $summary = $this->presentCart($items);
 
-        return view('store.checkout', compact('items', 'summary'));
+        return view('store.checkout', ['items' => $items, 'summary' => $summary, 'paymentGateways' => $paymentGatewayService->availableGateways()]);
     }
 
-    public function placeOrder(Request $request): RedirectResponse
+    public function placeOrder(Request $request, PaymentGatewayService $paymentGatewayService, OrderService $orderService): RedirectResponse
     {
         $validated = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
@@ -389,16 +393,18 @@ class CustomerCommerceController extends Controller
             'shipping_city' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'customer_note' => ['nullable', 'string', 'max:2000'],
-            'payment_method' => ['required', Rule::in(['cash_on_delivery', 'bank_transfer'])],
+            'payment_method' => ['required', Rule::in(array_merge(['cash_on_delivery', 'bank_transfer'], array_keys($paymentGatewayService->availableGateways())))],
         ]);
 
+        $selectedGateway = (string) $validated['payment_method'];
+        $isOnlinePayment = $paymentGatewayService->isAvailable($selectedGateway);
         $cart = $this->currentCart();
         $customer = Auth::user();
         if ($customer && (bool) $customer->getAttribute('is_admin')) {
             $customer = null;
         }
 
-        $order = DB::transaction(function () use ($validated, $cart, $customer): Order {
+        $order = DB::transaction(function () use ($validated, $cart, $customer, $isOnlinePayment, $selectedGateway): Order {
             Cart::query()->whereKey($cart->getKey())->lockForUpdate()->firstOrFail();
 
             $cartItems = CartItem::query()
@@ -527,22 +533,126 @@ class CustomerCommerceController extends Controller
                 ]);
             }
 
+            $paymentGateway = $isOnlinePayment ? $selectedGateway : 'manual';
             Payment::query()->create([
                 'order_id' => $order->getKey(),
-                'gateway' => 'manual',
-                'idempotency_key' => 'checkout:' . $order->order_number,
+                'gateway' => $paymentGateway,
+                'idempotency_key' => $paymentGateway . ':checkout:' . $order->order_number,
                 'amount' => $totalCents / 100,
                 'status' => 'pending',
             ]);
 
-            CartItem::query()->where('cart_id', $cart->getKey())->delete();
+            // Keep the cart intact until an online payment has been initiated
+            // successfully; gateway errors must not consume the customer's cart.
+            if (!$isOnlinePayment) {
+                CartItem::query()->where('cart_id', $cart->getKey())->delete();
+            }
 
             return $order;
         }, 3);
 
+        if ($isOnlinePayment) {
+            try {
+                $redirectUrl = $paymentGatewayService->initiate($order, $selectedGateway);
+            } catch (\Throwable $exception) {
+                try {
+                    $orderService->updateStatus($order, 'cancelled', 'failed');
+                } catch (\Throwable $cleanupException) {
+                    Log::critical('Failed to release stock after payment initiation failed.', [
+                        'order_id' => $order->getKey(),
+                        'gateway' => $selectedGateway,
+                    ]);
+                }
+
+                return redirect()
+                    ->route('checkout.index')
+                    ->withInput()
+                    ->with('error', 'اتصال به درگاه کامل نشد و سفارش لغو شد؛ سبد خریدت حفظ شده است. دوباره تلاش کن یا روش دیگری را انتخاب کن.');
+            }
+
+            $variantIds = $order->items()->pluck('product_variant_id')->filter()->unique()->values();
+            CartItem::query()
+                ->where('cart_id', $cart->getKey())
+                ->whereIn('product_variant_id', $variantIds)
+                ->delete();
+
+            return redirect()->away($redirectUrl);
+        }
+
         return redirect()
             ->route('checkout.complete', ['token' => $order->public_token])
             ->with('status', 'سفارش شما با موفقیت ثبت شد.');
+    }
+
+    /**
+     * Provider callbacks are untrusted browser traffic. PaymentGatewayService
+     * verifies every result with the provider before PaymentService records it.
+     */
+    public function paymentCallback(
+        Request $request,
+        string $gateway,
+        string $token,
+        PaymentGatewayService $paymentGatewayService,
+        PaymentService $paymentService
+    ): RedirectResponse {
+        abort_unless(in_array($gateway, ['snappay', 'torobpay', 'digipay'], true), 404);
+
+        $order = Order::query()
+            ->with('items')
+            ->where('public_token', $token)
+            ->firstOrFail();
+        $payment = $order->payments()->latest('id')->firstOrFail();
+
+        abort_unless($payment->gateway === $gateway, 404);
+
+        if ($payment->status === 'paid' && $order->payment_status === 'paid') {
+            return redirect()->route('checkout.complete', ['token' => $order->public_token])
+                ->with('status', 'این پرداخت قبلاً با موفقیت تأیید شده است.');
+        }
+
+        try {
+            $verified = $paymentGatewayService->verifyCallback($gateway, $order, $payment, $request);
+        } catch (\Throwable $exception) {
+            // A missing or delayed provider response is not proof of failure.
+            // Keep the order pending for a safe retry/reconciliation instead of
+            // incorrectly marking it paid or restoring potentially-sold stock.
+            Log::warning('Payment callback could not be verified; order left pending.', [
+                'order_id' => $order->getKey(),
+                'gateway' => $gateway,
+            ]);
+
+            return redirect()->route('checkout.complete', ['token' => $order->public_token])
+                ->with('error', 'هنوز تأیید نهایی پرداخت از درگاه دریافت نشده است. مبلغی را دوباره پرداخت نکن؛ سفارش برای بررسی وضعیت در انتظار مانده است.');
+        }
+
+        try {
+            $payment->forceFill([
+                'transaction_id' => $verified['transaction_id'] ?? $payment->transaction_id,
+                'reference_number' => $verified['reference_number'] ?? $payment->reference_number,
+                'metadata' => array_merge((array) $payment->metadata, array_filter([
+                    'ticket_type' => $verified['ticket_type'] ?? null,
+                ], fn ($value) => $value !== null)),
+            ])->save();
+
+            $paymentService->markPaid(
+                $order,
+                $gateway,
+                $verified['reference_number'] ?? null
+            );
+        } catch (\Throwable $exception) {
+            // Provider verification already succeeded. Do not cancel, release
+            // stock, or invite another payment if local accounting needs repair.
+            Log::critical('Verified provider payment needs local reconciliation.', [
+                'order_id' => $order->getKey(),
+                'gateway' => $gateway,
+            ]);
+
+            return redirect()->route('checkout.complete', ['token' => $order->public_token])
+                ->with('error', 'درگاه پرداخت را تأیید کرده، اما ثبت نهایی سفارش نیاز به بررسی فروشگاه دارد. لطفاً دوباره پرداخت نکن.');
+        }
+
+        return redirect()->route('checkout.complete', ['token' => $order->public_token])
+            ->with('status', 'پرداخت با موفقیت تأیید شد؛ سفارش ثبت نهایی شد.');
     }
 
     public function complete(string $token): View

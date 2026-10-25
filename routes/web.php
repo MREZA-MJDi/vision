@@ -50,6 +50,12 @@ Route::get('/order-confirmation/{token}', [CustomerCommerceController::class, 'c
     ->where('token', '[0-9a-fA-F-]{36}')
     ->name('checkout.complete');
 
+// Provider callbacks: signatures/tokens and final amounts are verified server-side.
+Route::match(['GET', 'POST'], '/payments/{gateway}/callback/{token}', [CustomerCommerceController::class, 'paymentCallback'])
+    ->where('gateway', 'snappay|torobpay|digipay')
+    ->where('token', '[0-9a-fA-F-]{36}')
+    ->name('payments.callback');
+
 /*
 |--------------------------------------------------------------------------
 | Customer authentication and order history
