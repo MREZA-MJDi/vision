@@ -47,14 +47,12 @@
 <aside id="fit" aria-label="اتاق پرو استودیویی VISION" aria-hidden="true">
     <h4>
         <span>اتاق پرو</span>
-        <button id="close" type="button" aria-label="بستن اتاق پرو">×</button>
+        <button id="close" type="button" aria-label="بستن اتاق پرو">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
     </h4>
     <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها">
-        <div class="stage-message" id="stageMessage" hidden role="status" aria-live="polite">
-            <strong id="stageMessageTitle">پیش‌نمایش ترکیب آماده نیست</strong>
-            <span id="stageMessageCopy">برای نمایش طبیعی این ست، تصویر یکپارچهٔ مانکن باید ثبت شود.</span>
-        </div>
-        <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال پوشاندن مدل</b><span>ترکیب در حال آماده‌شدن است</span></div>
+        <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال آماده‌سازی</b></div>
     </div>
     <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
     <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
