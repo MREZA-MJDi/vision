@@ -129,23 +129,29 @@ import { gsap } from "gsap";
     const selected = P.filter(product => W.has(Number(product.id)));
     const top = selected.find(product => product.slot === "top") || null;
     const bottom = selected.find(product => product.slot === "bottom") || null;
+    const stageMessage = $("#stageMessage");
+    const messageTitle = $("#stageMessageTitle");
+    const messageCopy = $("#stageMessageCopy");
 
-    // Reset previous selections. Two clipped, full-frame scenes can be layered
-    // to preview a custom top + bottom combination even across curated looks.
     Object.values(scenes).forEach(image => {
       if (!image) return;
       image.classList.remove("on");
       image.style.clipPath = "";
       image.style.zIndex = "";
     });
+    if (stageMessage) stageMessage.hidden = true;
 
-    const activate = (key, clipPath = "", zIndex = "") => {
+    const activate = key => {
       const image = scenes[key];
       if (!image) return false;
-      if (clipPath) image.style.clipPath = clipPath;
-      if (zIndex) image.style.zIndex = String(zIndex);
       image.classList.add("on");
       return true;
+    };
+    const showMessage = (title, copy) => {
+      if (!stageMessage) return;
+      if (messageTitle) messageTitle.textContent = title;
+      if (messageCopy) messageCopy.textContent = copy;
+      stageMessage.hidden = false;
     };
 
     if (!top && !bottom) {
@@ -160,23 +166,27 @@ import { gsap } from "gsap";
         && Number(look.b) === Number(bottom.id)
         && scenes[String(top.o) + ":TB"];
 
-      // Use the clean, authored full outfit whenever the exact pair is selected.
+      // Only show a full-frame image authored for this exact pair.
+      // Never clip two unrelated mannequin photos together: the body pose,
+      // lighting, garment scale and seams would visibly disagree.
       if (isExactCuratedPair && activate(String(top.o) + ":TB")) return;
 
-      const topScene = String(top.o) + ":T";
-      const bottomScene = String(bottom.o) + ":B";
-      if (scenes[topScene] && scenes[bottomScene]) {
-        // A longer outer layer (e.g. a coat) should cover more of the trousers.
-        const seam = Number(top.fy || 0) >= 0.44 ? 0.74 : 0.47;
-        activate(topScene, "inset(0 0 " + (100 - seam * 100) + "% 0)", 2);
-        activate(bottomScene, "inset(" + Math.max(0, seam * 100 - 4) + "% 0 0 0)", 1);
-        return;
-      }
+      activate("base");
+      showMessage(
+        "پیش‌نمایش کامل این ترکیب آماده نیست",
+        "هر دو لباس انتخاب شده‌اند، اما برای نمایش طبیعی این ست باید تصویر یکپارچهٔ آن ثبت شود. فعلاً تصویرسازی ساختگی نشان نمی‌دهیم."
+      );
+      return;
     }
 
     if (top && activate(String(top.o) + ":T")) return;
     if (bottom && activate(String(bottom.o) + ":B")) return;
+
     activate("base");
+    showMessage(
+      "تصویر مانکن این لباس آماده نیست",
+      "برای نمایش دقیق، این محصول باید در استودیو به یک تصویر واقعیِ مانکن متصل شود."
+    );
   }
 
   function updateCart(count) {
