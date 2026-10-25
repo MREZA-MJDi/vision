@@ -782,3 +782,362 @@ body.storefront-home-body .home-hero__description {
         width: min(100%, 210px);
     }
 }
+
+
+/* VISION fitting-room finish: studio light, compact type, and image-led recommendations. */
+.storefront-body:has(.vision-shop-main) #fit {
+    width: min(430px, calc(100vw - 32px));
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--vs-accent) 18%, var(--vs-line));
+    background:
+        radial-gradient(ellipse at 92% 0%, color-mix(in srgb, var(--vs-accent) 8%, transparent), transparent 34%),
+        linear-gradient(150deg, color-mix(in srgb, var(--vs-panel) 96%, #fff 4%), var(--vs-panel) 76%);
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--vs-muted) 42%, transparent) transparent;
+}
+.storefront-body:has(.vision-shop-main) #fit h4 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 14px;
+    color: var(--vs-text);
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1.6;
+    letter-spacing: -.02em;
+}
+.storefront-body:has(.vision-shop-main) #fit #close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--vs-line);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--vs-card) 86%, transparent);
+    color: var(--vs-muted);
+    transition: color .18s ease, border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.storefront-body:has(.vision-shop-main) #fit #close:hover {
+    color: var(--vs-text);
+    border-color: color-mix(in srgb, var(--vs-accent) 52%, var(--vs-line));
+    background: var(--vs-glow);
+    transform: rotate(3deg);
+}
+.storefront-body:has(.vision-shop-main) #fit #close svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+.storefront-body:has(.vision-shop-main) #fit .stage {
+    position: relative;
+    width: min(100%, 278px);
+    aspect-ratio: 2 / 3;
+    margin: 0 auto;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid rgb(255 240 220 / 20%);
+    border-radius: 20px;
+    background:
+        radial-gradient(ellipse at 50% 13%, rgb(255 226 190 / 18%) 0%, transparent 42%),
+        radial-gradient(ellipse at 50% 54%, rgb(220 169 118 / 12%) 0%, transparent 58%),
+        linear-gradient(180deg, #25232a 0%, #1b191f 62%, #100f13 100%);
+    box-shadow:
+        0 18px 38px rgb(0 0 0 / 24%),
+        inset 0 1px 0 rgb(255 255 255 / 8%);
+}
+.storefront-body:has(.vision-shop-main) #fit .stage::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% 4%, rgb(255 243 222 / 14%), transparent 48%),
+        linear-gradient(90deg, rgb(0 0 0 / 15%), transparent 18% 82%, rgb(0 0 0 / 14%));
+}
+.storefront-body:has(.vision-shop-main) #fit .stage::after {
+    position: absolute;
+    z-index: 2;
+    right: 15%;
+    bottom: 1.5%;
+    left: 15%;
+    height: 10%;
+    content: "";
+    pointer-events: none;
+    background: radial-gradient(ellipse, rgb(0 0 0 / 32%) 0%, rgb(0 0 0 / 12%) 32%, transparent 72%);
+    opacity: .6;
+}
+.storefront-body:has(.vision-shop-main) #fit .mm {
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    image-rendering: auto;
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(.99);
+    filter: drop-shadow(0 13px 17px rgb(0 0 0 / 24%));
+    transition: opacity .42s ease, transform .52s cubic-bezier(.2, .75, .25, 1);
+}
+.storefront-body:has(.vision-shop-main) #fit .mm.on {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+}
+.storefront-body:has(.vision-shop-main) #fit .load {
+    border-radius: inherit;
+    background: rgb(17 15 20 / 72%);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+.storefront-body:has(.vision-shop-main) #fit .load b {
+    margin-top: 3px;
+    color: #f5eee5;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+.storefront-body:has(.vision-shop-main) #fit .spin {
+    width: 22px;
+    height: 22px;
+    border-width: 2px;
+}
+.storefront-body:has(.vision-shop-main) #fit .pk {
+    align-items: center;
+    margin: 15px 0 8px;
+    color: var(--vs-muted);
+    font-size: 11px;
+    line-height: 1.7;
+}
+.storefront-body:has(.vision-shop-main) #fit .pk span:first-child {
+    color: var(--vs-text);
+    font-weight: 650;
+}
+.storefront-body:has(.vision-shop-main) #fit .picks {
+    display: flex;
+    gap: 8px;
+    min-height: 0;
+    flex-wrap: wrap;
+}
+.storefront-body:has(.vision-shop-main) #fit .picks button {
+    width: 46px;
+    height: 54px;
+    padding: 3px;
+    border-radius: 12px;
+    border-color: var(--vs-line);
+    background: var(--vs-card);
+    transition: border-color .18s ease, transform .18s ease;
+}
+.storefront-body:has(.vision-shop-main) #fit .picks button:hover {
+    border-color: var(--vs-accent);
+    transform: translateY(-2px);
+}
+.storefront-body:has(.vision-shop-main) #fit .picks button img {
+    object-fit: contain;
+    border-radius: 8px;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-recommendations[hidden] {
+    display: none !important;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-recommendations {
+    margin-top: 15px;
+    padding-top: 13px;
+    border-top: 1px solid var(--vs-line);
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-section-head {
+    margin-bottom: 9px;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-section-head h5 {
+    margin: 0;
+    color: var(--vs-text);
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.7;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-recommend-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-card {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 30px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--vs-line);
+    border-radius: 14px;
+    background: linear-gradient(110deg, color-mix(in srgb, var(--vs-card) 96%, #fff 4%), var(--vs-card));
+    color: var(--vs-text);
+    text-align: right;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-card:hover,
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-card:focus-visible {
+    border-color: color-mix(in srgb, var(--vs-accent) 62%, var(--vs-line));
+    background: color-mix(in srgb, var(--vs-card) 92%, var(--vs-accent) 8%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgb(0 0 0 / 12%);
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-thumb {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 62px;
+    overflow: hidden;
+    border: 1px solid var(--vs-line);
+    border-radius: 10px;
+    background: var(--vs-bg);
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-thumb img {
+    width: 100%;
+    height: 100%;
+    padding: 3px;
+    object-fit: contain;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-copy strong {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--vs-text);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.65;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-copy > span {
+    color: var(--vs-muted);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.6;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-add {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid color-mix(in srgb, var(--vs-accent) 44%, var(--vs-line));
+    border-radius: 10px;
+    background: var(--vs-glow);
+    color: var(--vs-accent-2);
+    font-size: 19px;
+    line-height: 1;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-compare {
+    margin-top: 14px;
+    padding-top: 11px;
+    border-top: 1px solid var(--vs-line);
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    list-style: none;
+    color: var(--vs-muted);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.8;
+    cursor: pointer;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-summary::-webkit-details-marker { display: none; }
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-summary::after {
+    content: "+";
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border: 1px solid var(--vs-line);
+    border-radius: 8px;
+    font: 500 17px/1 "Space Grotesk", sans-serif;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-compare[open] .fit-compare-summary::after { content: "−"; }
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-content {
+    padding-top: 10px;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-head p {
+    color: var(--vs-muted);
+    font-size: 10px;
+    line-height: 1.8;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-actions button,
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-head > button {
+    min-height: 34px;
+    border-radius: 10px;
+    font-size: 10px;
+    line-height: 1.6;
+}
+.storefront-body:has(.vision-shop-main) #fit .fit-compare-card {
+    padding: 9px;
+    border-radius: 12px;
+    background: var(--vs-card);
+}
+.storefront-body:has(.vision-shop-main) #fit .tot {
+    margin: 13px 0 8px;
+    color: var(--vs-muted);
+    font-size: 11px;
+    line-height: 1.8;
+    font-variant-numeric: tabular-nums;
+}
+.storefront-body:has(.vision-shop-main) #fit .btns {
+    position: sticky;
+    bottom: -18px;
+    z-index: 12;
+    margin: 8px -18px -18px;
+    padding: 12px 18px 18px;
+    gap: 9px;
+    border-top: 1px solid color-mix(in srgb, var(--vs-line) 78%, transparent);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--vs-panel) 0%, transparent), var(--vs-panel) 26%);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+.storefront-body:has(.vision-shop-main) #fit .btns button {
+    min-height: 42px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+@media (max-width: 760px) {
+    .storefront-body:has(.vision-shop-main) #fit {
+        width: calc(100vw - 20px);
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        max-height: min(90dvh, calc(100dvh - 24px));
+        padding: 14px;
+        border-radius: 22px;
+    }
+    .storefront-body:has(.vision-shop-main) #fit h4 { margin-bottom: 10px; }
+    .storefront-body:has(.vision-shop-main) #fit #close { width: 34px; height: 34px; }
+    .storefront-body:has(.vision-shop-main) #fit .stage { width: min(100%, 224px); border-radius: 17px; }
+    .storefront-body:has(.vision-shop-main) #fit .picks button { width: 42px; height: 48px; }
+    .storefront-body:has(.vision-shop-main) #fit .fit-rec-card {
+        grid-template-columns: 44px minmax(0, 1fr) 28px;
+        gap: 8px;
+        padding: 7px;
+        border-radius: 12px;
+    }
+    .storefront-body:has(.vision-shop-main) #fit .fit-rec-thumb { width: 44px; height: 52px; border-radius: 9px; }
+    .storefront-body:has(.vision-shop-main) #fit .fit-rec-copy strong { font-size: 10px; }
+    .storefront-body:has(.vision-shop-main) #fit .fit-rec-add { width: 26px; height: 26px; font-size: 17px; }
+    .storefront-body:has(.vision-shop-main) #fit .btns { margin: 8px -14px -14px; padding: 10px 14px 14px; }
+}
+@media (max-width: 360px) {
+    .storefront-body:has(.vision-shop-main) #fit .stage { width: min(100%, 194px); }
+}
