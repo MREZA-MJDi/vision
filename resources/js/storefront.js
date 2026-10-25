@@ -1,5 +1,3 @@
-import { gsap } from "gsap";
-
 (() => {
     function initTiamirIntro(intro) {
         const storageKey = 'tiamir_intro_seen';
@@ -586,21 +584,7 @@ import { gsap } from "gsap";
         const heroPrev = root.querySelector('[data-home-hero-prev]');
         const heroNext = root.querySelector('[data-home-hero-next]');
         let activeHeroIndex = Math.max(0, heroSlides.findIndex((slide) => slide.getAttribute('aria-pressed') === 'true'));
-
-        // Use the asset's intrinsic dimensions as an upper bound so a small
-        // seeded photo is not stretched past its available pixel resolution.
-        const setHeroImageBounds = () => {
-            if (!heroImage || !heroImage.naturalWidth || !heroImage.naturalHeight) return;
-            heroImage.style.setProperty('--home-hero-image-natural-width', heroImage.naturalWidth + 'px');
-            heroImage.style.setProperty('--home-hero-image-natural-height', heroImage.naturalHeight + 'px');
-        };
-        const clearHeroImageBounds = () => {
-            heroImage?.style.removeProperty('--home-hero-image-natural-width');
-            heroImage?.style.removeProperty('--home-hero-image-natural-height');
-        };
-        heroImage?.addEventListener('load', setHeroImageBounds);
-        heroImage?.addEventListener('error', clearHeroImageBounds);
-        if (heroImage?.complete) setHeroImageBounds();
+        let heroTimer = null;
 
         const selectHeroSlide = (index) => {
             activeHeroIndex = (index + heroSlides.length) % heroSlides.length;
@@ -613,23 +597,11 @@ import { gsap } from "gsap";
                 item.setAttribute('aria-pressed', selected ? 'true' : 'false');
             });
 
-            const heroColor = slide.dataset.theme || '#9a5527';
-            // One focused GSAP color tween changes the frame and the glass footer.
-            // Product imagery and typography are not transformed or faded.
-            if (hero) {
-                gsap.to(hero, {
-                    '--home-hero-base': heroColor,
-                    duration: 0.72,
-                    ease: 'power2.out',
-                    overwrite: 'auto'
-                });
-            }
-            gsap.to(document.documentElement, {
-                '--vision-home-accent': heroColor,
-                duration: 0.72,
-                ease: 'power2.out',
-                overwrite: 'auto'
-            });
+            hero?.style.setProperty('--home-hero-base', slide.dataset.theme || '#9a5527');
+            hero?.classList.remove('is-transitioning');
+            // Restart a small, compositor-friendly entrance animation without
+            // reading layout for every product card on the page.
+            window.requestAnimationFrame(() => hero?.classList.add('is-transitioning'));
             if (heroTitle) heroTitle.textContent = slide.dataset.title || 'محصول منتخب';
             if (heroDescription) heroDescription.textContent = slide.dataset.description || '';
             if (heroCta) heroCta.href = slide.dataset.url || heroCta.href;
@@ -671,11 +643,23 @@ import { gsap } from "gsap";
             if (heroNext) heroNext.disabled = disabled;
         };
 
-        heroSlides.forEach((slide, index) => slide.addEventListener('click', () => selectHeroSlide(index)));
-        heroPrev?.addEventListener('click', () => selectHeroSlide(activeHeroIndex - 1));
-        heroNext?.addEventListener('click', () => selectHeroSlide(activeHeroIndex + 1));
+        const resetHeroTimer = () => {
+            if (heroTimer) window.clearInterval(heroTimer);
+            if (heroSlides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            heroTimer = window.setInterval(() => selectHeroSlide(activeHeroIndex + 1), 6500);
+        };
+
+        heroSlides.forEach((slide, index) => slide.addEventListener('click', () => {
+            selectHeroSlide(index);
+            resetHeroTimer();
+        }));
+        heroPrev?.addEventListener('click', () => { selectHeroSlide(activeHeroIndex - 1); resetHeroTimer(); });
+        heroNext?.addEventListener('click', () => { selectHeroSlide(activeHeroIndex + 1); resetHeroTimer(); });
+        hero?.addEventListener('mouseenter', () => heroTimer && window.clearInterval(heroTimer));
+        hero?.addEventListener('mouseleave', resetHeroTimer);
         updateHeroControls();
         selectHeroSlide(activeHeroIndex);
+        resetHeroTimer();
     }
 
     updateCartCount(0);
