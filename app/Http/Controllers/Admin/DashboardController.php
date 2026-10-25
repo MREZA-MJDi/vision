@@ -81,6 +81,7 @@ class DashboardController
             'phone' => ['nullable', 'string', 'max:40', 'regex:/^[0-9+().\\s-]{7,40}$/'],
         ]);
 
+        $settings = [];
         foreach ([
             'instagram_url' => ['contact.instagram', ['instagram.com', 'www.instagram.com']],
             'telegram_url' => ['contact.telegram', ['t.me', 'telegram.me', 'www.telegram.me']],
@@ -97,10 +98,14 @@ class DashboardController
                     ]);
                 }
             }
-
-            SiteSetting::setValue($key, $url);
+            $settings[$key] = $url;
         }
 
+        // Validate every value before writing anything, so one invalid URL
+        // cannot leave only part of the contact settings updated.
+        foreach ($settings as $key => $value) {
+            SiteSetting::setValue($key, $value);
+        }
         SiteSetting::setValue('contact.phone', trim((string) ($data['phone'] ?? '')));
 
         return redirect()->route('commerce-admin.dashboard')
