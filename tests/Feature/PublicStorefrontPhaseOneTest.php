@@ -22,7 +22,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $response->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
-            ->assertSee('VISION — فروشگاه پوشاک')
+            ->assertSee('VISION — پوشاک برای نگاه متفاوت')
             ->assertSee('property="og:site_name"', false)
             ->assertDontSee('data-tiamir-intro', false)
             ->assertDontSee('tiamir.com')
