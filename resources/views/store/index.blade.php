@@ -14,8 +14,8 @@
     </nav>
     <a class="vision-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION صفحهٔ اصلی">VISION</a>
     <div class="vision-shop-tools">
-        <button class="ibtn" id="theme" type="button" aria-label="تغییر تم">◐</button>
-        <a class="ibtn" id="cartTarget" href="{{ route('cart.index') }}" aria-label="سبد خرید">🛒<span class="badge" id="cnt">۰</span></a>
+        <button class="ibtn" id="theme" type="button" aria-label="تغییر تم" title="تغییر تم"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg></button>
+        <a class="ibtn" id="cartTarget" href="{{ route('cart.index') }}" aria-label="سبد خرید" title="سبد خرید"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"></path><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2M9 12v4m6-4v4"></path></svg><span class="badge" id="cnt">۰</span></a>
     </div>
 </header>
 
