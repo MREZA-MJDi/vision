@@ -1,7 +1,7 @@
 <?php
 
-use App\\Http\\Controllers\\Api\\TorobProductSyncController;
-use Illuminate\\Support\\Facades\\Route;
+use App\Http\Controllers\Api\TorobProductSyncController;
+use Illuminate\Support\Facades\Route;
 
 // Torob calls this endpoint to synchronize real active product variants.
 Route::post('/torob_api/v3/products', [TorobProductSyncController::class, 'index'])
