@@ -73,10 +73,23 @@
                 <div class="commerce-panel-heading"><h2>روش پرداخت</h2><span>03</span></div>
                 <div class="commerce-payment-options">
                     <label><input type="radio" name="payment_method" value="cash_on_delivery" @checked(old('payment_method', 'cash_on_delivery') === 'cash_on_delivery') required><span><strong>پرداخت هنگام تحویل</strong><small>هزینه را هنگام تحویل سفارش پرداخت کن.</small></span></label>
-                    <label><input type="radio" name="payment_method" value="bank_transfer" @checked(old('payment_method') === 'bank_transfer') required><span><strong>واریز بانکی</strong><small>اطلاعات واریز پس از ثبت سفارش باید از طرف فروشگاه اعلام شود.</small></span></label>
+                    <label><input type="radio" name="payment_method" value="bank_transfer" @checked(old('payment_method') === 'bank_transfer') required><span><strong>واریز بانکی</strong><small>جزئیات واریز پس از ثبت سفارش اعلام می‌شود.</small></span></label>
+                    @foreach($paymentGateways as $gateway)
+                        <label>
+                            <input type="radio" name="payment_method" value="{{ $gateway['value'] }}" @checked(old('payment_method') === $gateway['value']) required>
+                            <span>
+                                <strong>{{ $gateway['label'] }}</strong>
+                                <small>{{ $gateway['description'] }}</small>
+                            </span>
+                        </label>
+                    @endforeach
                 </div>
                 @error('payment_method')<small class="commerce-field-error">{{ $message }}</small>@enderror
-                <p class="commerce-muted">پرداخت آنلاین با کارت فعال نیست؛ هیچ اطلاعات کارت بانکی در این صفحه دریافت یا ذخیره نمی‌شود.</p>
+                @if(empty($paymentGateways))
+                    <p class="commerce-muted">درگاه آنلاین تا زمان ثبت اطلاعات پذیرندگی در تنظیمات سرور نمایش داده نمی‌شود. هیچ اطلاعات کارت بانکی در این سایت دریافت یا ذخیره نمی‌شود.</p>
+                @else
+                    <p class="commerce-muted">پس از انتقال به درگاه رسمی، نتیجهٔ پرداخت از سمت سرور بررسی می‌شود و فقط بعد از تأیید نهایی، سفارش پرداخت‌شده محسوب می‌شود.</p>
+                @endif
             </section>
         </div>
 

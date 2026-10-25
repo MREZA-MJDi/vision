@@ -19,22 +19,25 @@ class ExampleTest extends TestCase
             ->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
             ->assertSee('home-hero__frame', false)
-            ->assertSee('متفاوت باش،<br>بدون تلاش اضافه', false)
+            ->assertSee('استایل تو؛<br>امضای تو.', false)
             ->assertSee('home-hero__title', false)
             ->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_the_shop_route_mounts_the_shared_inline_fitting_room(): void
+    public function test_the_shop_route_renders_the_vision_fitting_room_studio_ui(): void
     {
         $this->withoutVite();
         $this->get('/shop')
             ->assertOk()
-            ->assertSee('فروشگاه محصولات')
+            ->assertSee('تازه‌ها')
             ->assertSee('فیلترها')
-            ->assertSee('data-virtual-try-on', false)
-            ->assertSee('data-vto-inline="true"', false)
-            ->assertSee('data-vto-launcher', false)
-            ->assertDontSee('store-tryon-link', false)
+            ->assertSee('id="fit"', false)
+            ->assertSee('id="stage"', false)
+            ->assertSee('id="grid"', false)
+            ->assertSee('id="cats"', false)
+            ->assertSee('اتاق پرو')
+            ->assertDontSee('data-virtual-try-on', false)
+            ->assertDontSee('data-vto-inline', false)
             ->assertDontSee('data-fitting-room', false);
     }
 

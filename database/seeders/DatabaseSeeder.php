@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             StorefrontLaunchSeeder::class,
-            VirtualTryOnMannequinSeeder::class,
+            FittingRoomAssetSeeder::class,
         ]);
     }
 }

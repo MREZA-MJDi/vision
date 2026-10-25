@@ -6,6 +6,12 @@
 @section('content')
 <main class="store-main commerce-page">
     <section class="commerce-complete commerce-panel">
+        @if(session('status'))
+            <div class="commerce-alert commerce-alert--success" role="status">{{ session('status') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="commerce-alert commerce-alert--error" role="alert">{{ session('error') }}</div>
+        @endif
         <span class="commerce-complete__mark" aria-hidden="true">✓</span>
         <p class="store-eyebrow">سفارش دریافت شد</p>
         <h1>سپاس از خرید شما<span>.</span></h1>
