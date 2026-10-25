@@ -4,15 +4,23 @@ import { gsap } from "gsap";
 (() => {
   const S = window.SHOP || {};
   const P = Array.isArray(S.products) ? S.products : [];
+  const FIT = Array.isArray(S.fitProducts) ? S.fitProducts : [];
+  const ALL = [...new Map([...P, ...FIT].map(product => [Number(product.id), product])).values()];
+  const productById = id => ALL.find(product => Number(product.id) === Number(id)) || null;
   const C = ["همه دسته‌ها", ...(S.cats || [])];
   const OF = S.looks || {};
   const $ = (selector, parent = document) => parent.querySelector(selector);
   const fa = n => Number(n || 0).toLocaleString("fa-IR");
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
-  const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
+  const state = { cat: S.initialCategory || C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.initialMax ?? S.max ?? 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
   const W = new Set();
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
+  const fitBackdrop = $("#fit-backdrop");
+  const catalogMain = $("#catalog");
+  const shopHeader = $(".vision-shop-header");
+  let fitOpener = null;
+  let previousOverflow = "";
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -20,6 +28,43 @@ import { gsap } from "gsap";
   const safeColorCode = value => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || ""))
     ? String(value)
     : "#8b8490";
+
+  function openFit(opener = null) {
+    const alreadyOpen = fit.classList.contains("open");
+    if (!alreadyOpen) {
+      fitOpener = opener instanceof HTMLElement ? opener : (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+      previousOverflow = document.documentElement.style.overflow;
+    }
+    if (fitBackdrop) {
+      fitBackdrop.hidden = false;
+      fitBackdrop.setAttribute("aria-hidden", "false");
+    }
+    fit.classList.add("open");
+    fit.setAttribute("aria-hidden", "false");
+    if (catalogMain) catalogMain.inert = true;
+    if (shopHeader) shopHeader.inert = true;
+    document.body.classList.add("fitting-room-open");
+    document.documentElement.style.overflow = "hidden";
+    if (!alreadyOpen) window.requestAnimationFrame(() => $("#close")?.focus({ preventScroll: true }));
+  }
+
+  function closeFit() {
+    if (!fit.classList.contains("open")) return;
+    fit.classList.remove("open");
+    fit.setAttribute("aria-hidden", "true");
+    if (fitBackdrop) {
+      fitBackdrop.hidden = true;
+      fitBackdrop.setAttribute("aria-hidden", "true");
+    }
+    if (catalogMain) catalogMain.inert = false;
+    if (shopHeader) shopHeader.inert = false;
+    document.body.classList.remove("fitting-room-open");
+    document.documentElement.style.overflow = previousOverflow;
+    if (fitOpener?.isConnected) fitOpener.focus({ preventScroll: true });
+    fitOpener = null;
+  }
+
+  fitBackdrop?.addEventListener("click", closeFit);
 
   async function post(url, body = {}) {
     const response = await fetch(url, {
@@ -61,7 +106,7 @@ import { gsap } from "gsap";
 
   function render() {
     const products = list();
-    $("#n").textContent = fa(products.length) + " محصول";
+    $("#n").textContent = fa(S.pagination?.total ?? products.length) + " محصول";
     $("#prv").textContent = "تا " + fa(state.max) + " " + (S.currency || "تومان");
     grid.innerHTML = products.length ? products.map(product => {
       const look = product.o ? OF[String(product.o)] : null;
@@ -129,7 +174,7 @@ import { gsap } from "gsap";
   }
 
   function setScene() {
-    const selected = P.filter(product => W.has(Number(product.id)));
+    const selected = ALL.filter(product => W.has(Number(product.id)));
     const top = selected.find(product => product.slot === "top") || null;
     const bottom = selected.find(product => product.slot === "bottom") || null;
 
@@ -285,7 +330,7 @@ import { gsap } from "gsap";
   function refresh() {
     state.worn = new Set(W);
     setScene();
-    const items = P.filter(product => W.has(Number(product.id)));
+    const items = ALL.filter(product => W.has(Number(product.id)));
     const addSetButton = $("#addset");
     if (addSetButton) addSetButton.disabled = items.length === 0;
     render();
@@ -297,7 +342,7 @@ import { gsap } from "gsap";
     if (!root) return;
 
     const section = root.closest(".fit-recommendations");
-    const selected = P.filter(product => W.has(Number(product.id)));
+    const selected = ALL.filter(product => W.has(Number(product.id)));
     if (selected.length !== 1 || !["top", "bottom"].includes(selected[0].slot)) {
       if (section) section.hidden = true;
       root.replaceChildren();
@@ -306,7 +351,7 @@ import { gsap } from "gsap";
 
     const anchor = selected[0];
     const recommendationSlot = anchor.slot === "top" ? "bottom" : "top";
-    const candidates = P
+    const candidates = ALL
       .filter(product => {
         if (product.slot !== recommendationSlot
           || W.has(Number(product.id))
@@ -342,11 +387,10 @@ import { gsap } from "gsap";
     showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1700);
   }
 
-  function tryOn(product) {
+  function tryOn(product, trigger = null) {
     if (!product || !product.o || !product.slot) return;
 
-    fit.classList.add("open");
-    fit.setAttribute("aria-hidden", "false");
+    openFit(trigger);
 
     const id = Number(product.id);
     if (W.has(id)) {
@@ -356,11 +400,11 @@ import { gsap } from "gsap";
     }
 
     const oppositeSlot = product.slot === "top" ? "bottom" : "top";
-    const opposite = P.find(item => item.slot === oppositeSlot && W.has(Number(item.id))) || null;
+    const opposite = ALL.find(item => item.slot === oppositeSlot && W.has(Number(item.id))) || null;
 
     // Replace same-slot garments immediately. Keep the opposite garment only
     // when there is a real studio photograph for this exact variant pair.
-    P.forEach(item => {
+    ALL.forEach(item => {
       if (item.slot === product.slot && W.has(Number(item.id))) W.delete(Number(item.id));
     });
 
@@ -420,12 +464,11 @@ import { gsap } from "gsap";
         });
       }
     } else if (data.t) {
-      const product = P.find(item => Number(item.id) === Number(data.t));
-      if (product && product.slot && product.o) tryOn(product);
+      const product = productById(data.t);
+      if (product && product.slot && product.o) tryOn(product, button);
     } else if (data.rec) {
-      const product = P.find(item => Number(item.id) === Number(data.rec));
-      const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
-      if (product) tryOn(product, image);
+      const product = productById(data.rec);
+      if (product) tryOn(product, button);
     } else if (data.r) {
       W.delete(Number(data.r));
       refresh();
@@ -433,14 +476,11 @@ import { gsap } from "gsap";
       addOne(Number(data.c), button);
     } else if (data.cat !== undefined) {
       state.cat = data.cat;
-      render();
+      navigateWithFilters();
     }
   });
 
-  $("#close").addEventListener("click", () => {
-    fit.classList.remove("open");
-    fit.setAttribute("aria-hidden", "true");
-  });
+  $("#close").addEventListener("click", closeFit);
   $("#strip").addEventListener("click", clearAll);
   $("#addset").addEventListener("click", async () => {
     const ids = [...W].map(Number);
@@ -454,23 +494,40 @@ import { gsap } from "gsap";
     }
   });
 
-  $("#q").addEventListener("input", event => { state.q = event.target.value || ""; render(); });
-  $("#sort").addEventListener("change", event => { state.sort = event.target.value; render(); });
-  pr.addEventListener("input", event => { state.max = Number(event.target.value); render(); });
-  $("#reset").addEventListener("click", () => {
-    state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
-    $("#q").value = ""; $("#sort").value = "new"; pr.value = state.max;
+  let filterTimer = null;
+  function navigateWithFilters() {
+    window.clearTimeout(filterTimer);
+    const url = new URL(S.routes?.shop || window.location.pathname, window.location.origin);
+    if (state.q.trim()) url.searchParams.set("q", state.q.trim());
+    if (state.cat && state.cat !== C[0]) url.searchParams.set("category", state.cat);
+    if (state.max < Number(S.max || state.max)) url.searchParams.set("max_price", String(state.max));
+    if (state.sort && state.sort !== "new") url.searchParams.set("sort", state.sort);
+    if (state.saleOnly) url.searchParams.set("sale", "1");
+    window.location.assign(url.toString() + "#catalog");
+  }
+
+  $("#q").addEventListener("input", event => {
+    state.q = event.target.value || "";
     render();
+    window.clearTimeout(filterTimer);
+    filterTimer = window.setTimeout(navigateWithFilters, 500);
+  });
+  $("#q").addEventListener("keydown", event => {
+    if (event.key === "Enter") navigateWithFilters();
+  });
+  $("#sort").addEventListener("change", event => { state.sort = event.target.value; navigateWithFilters(); });
+  pr.addEventListener("input", event => { state.max = Number(event.target.value); render(); });
+  pr.addEventListener("change", navigateWithFilters);
+  $("#reset").addEventListener("click", () => {
+    window.clearTimeout(filterTimer);
+    window.location.assign((S.routes?.shop || window.location.pathname) + "#catalog");
   });
   $("#theme").addEventListener("click", () => {
     const root = document.documentElement;
     root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
   });
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && fit.classList.contains("open")) {
-      fit.classList.remove("open");
-      fit.setAttribute("aria-hidden", "true");
-    }
+    if (event.key === "Escape" && fit.classList.contains("open")) closeFit();
   });
 
 
