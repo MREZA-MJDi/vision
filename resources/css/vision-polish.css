@@ -782,3 +782,23 @@ body.storefront-home-body .home-hero__description {
         width: min(100%, 210px);
     }
 }
+
+
+/* Fitting-room tune-up: preserve the existing palette; reduce movement and keep scene photos proportional. */
+.storefront-body:has(.vision-shop-main) #fit .stage {
+    width: min(100%, 250px);
+    aspect-ratio: 2 / 3;
+}
+.storefront-body:has(.vision-shop-main) #fit .mm {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    transition: opacity .18s ease;
+}
+@media (max-width: 760px) {
+    .storefront-body:has(.vision-shop-main) #fit .stage { width: min(100%, 220px); }
+}
+@media (max-width: 400px) {
+    .storefront-body:has(.vision-shop-main) #fit .stage { width: min(100%, 210px); }
+}
