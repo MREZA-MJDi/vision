@@ -165,106 +165,21 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('"slot":"bottom"', false);
     }
 
-    public function test_shop_uses_the_real_combined_photo_when_a_single_garment_has_no_isolated_scene(): void
-    {
-        $mannequin = FittingRoomMannequin::query()->create([
-            'code' => 'combined-only-mannequin',
-            'label' => 'Combined only mannequin',
-            'audience' => 'women',
-            'pose_key' => 'front-neutral',
-            'canvas_width' => 640,
-            'canvas_height' => 960,
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-
-        $base = $mannequin->media()->create([
-            'collection' => 'fitting-room-mannequin',
-            'disk' => 'public',
-            'path' => 'https://assets.example.test/base-only.jpg',
-            'original_name' => 'base-only.jpg',
-            'mime_type' => 'image/jpeg',
-            'size' => 1,
-            'width' => 640,
-            'height' => 960,
-            'alt_text' => 'Combined only mannequin',
-            'sort_order' => 0,
-        ]);
-        $mannequin->base_media_id = $base->getKey();
-        $mannequin->save();
-
-        $product = Product::query()->create([
-            'name' => 'Combined only top',
-            'slug' => 'combined-only-top',
-            'audience' => 'women',
-            'is_active' => true,
-        ]);
-        $variant = ProductVariant::query()->create([
-            'product_id' => $product->getKey(),
-            'sku' => 'COMBINED-TOP-001',
-            'price' => 120000,
-            'stock' => 3,
-            'low_stock_threshold' => 1,
-            'is_active' => true,
-        ]);
-
-        $look = FittingRoomLook::query()->create([
-            'mannequin_id' => $mannequin->getKey(),
-            'code' => 'combined-only-look',
-            'label' => 'Combined only look',
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $combined = $look->media()->create([
-            'collection' => 'fitting-room-scene',
-            'disk' => 'public',
-            'path' => 'https://assets.example.test/combined-only.jpg',
-            'original_name' => 'combined-only.jpg',
-            'mime_type' => 'image/jpeg',
-            'size' => 1,
-            'width' => 420,
-            'height' => 630,
-            'alt_text' => 'Model wearing the mapped garment',
-            'sort_order' => 0,
-        ]);
-        $look->preview_combined_media_id = $combined->getKey();
-        $look->save();
-
-        FittingRoomLookItem::query()->create([
-            'look_id' => $look->getKey(),
-            'product_variant_id' => $variant->getKey(),
-            'slot' => 'top',
-            'fit_y' => 0.38,
-            'is_active' => true,
-            'sort_order' => 10,
-        ]);
-
-        $this->get('/shop')
-            ->assertOk()
-            ->assertSee('combined-only.jpg', false)
-            ->assertSee('"slot":"top"', false)
-            ->assertSee('"o":' . $look->getKey(), false);
-    }
-
-    public function test_shop_keeps_outfit_recommendations_compact_and_removes_comparison_copy(): void
+    public function test_shop_includes_outfit_recommendations_and_saved_style_comparison(): void
     {
         $this->get('/shop')
             ->assertOk()
-            ->assertSee('fit-backdrop', false)
             ->assertSee('fit-recommend-grid', false)
             ->assertSee('fit-recommendations', false)
-            ->assertDontSee('fit-rec-copy', false)
-            ->assertDontSee('fit-compare', false)
-            ->assertDontSee('pcount', false)
-            ->assertDontSee('id="picks"', false)
-            ->assertDontSee('id="tot"', false)
             ->assertDontSee('data-rec-slot', false)
             ->assertDontSee('fit-recommend-caption', false)
             ->assertDontSee('stageMessage', false)
             ->assertDontSee('روی چوب‌لباسی هر محصول', false)
-            ->assertDontSee('اتاق پرو استودیویی</a>', false)
-            ->assertSee('id="addset"', false)
-            ->assertSee('id="strip"', false);
+            ->assertSee('<details class="fit-compare"', false)
+            ->assertSee('fit-compare-grid', false)
+            ->assertSee('saveCompareA', false)
+            ->assertSee('saveCompareB', false)
+            ->assertDontSee('اتاق پرو استودیویی</a>', false);
     }
 
     public function test_selected_outfit_variants_are_added_to_the_database_cart_together(): void

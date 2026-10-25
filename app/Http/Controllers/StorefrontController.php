@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Product;
-use App\Models\SiteSetting;
 use App\Services\FittingRoomShopData;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -36,9 +35,8 @@ class StorefrontController extends Controller
         }
 
         $heroProducts->loadMissing(['activeVariants.primaryGalleryMedia']);
-        $contactSettings = SiteSetting::homeContactValues();
 
-        return view('store.home', compact('heroProducts', 'contactSettings'));
+        return view('store.home', compact('heroProducts'));
     }
 
     public function index(Request $request): View

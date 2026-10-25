@@ -14,8 +14,8 @@
     </nav>
     <a class="vision-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION صفحهٔ اصلی">VISION</a>
     <div class="vision-shop-tools">
-        <button class="ibtn" id="theme" type="button" aria-label="تغییر تم" title="تغییر تم"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg></button>
-        <a class="ibtn" id="cartTarget" href="{{ route('cart.index') }}" aria-label="سبد خرید" title="سبد خرید"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"></path><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2M9 12v4m6-4v4"></path></svg><span class="badge" id="cnt">۰</span></a>
+        <button class="ibtn" id="theme" type="button" aria-label="تغییر تم">◐</button>
+        <a class="ibtn" id="cartTarget" href="{{ route('cart.index') }}" aria-label="سبد خرید">🛒<span class="badge" id="cnt">۰</span></a>
     </div>
 </header>
 
@@ -26,7 +26,7 @@
         <h3>دسته‌بندی</h3>
         <div id="cats" class="shop-categories" aria-label="دسته‌بندی‌ها"></div>
         <h3>حداکثر قیمت</h3>
-        <input type="range" id="pr" min="{{ $shop['min'] }}" max="{{ $shop['max'] }}" step="100000" value="{{ $shop['initialMax'] ?? $shop['max'] }}" aria-label="حداکثر قیمت">
+        <input type="range" id="pr" min="{{ $shop['min'] }}" max="{{ $shop['max'] }}" step="100000" value="{{ $shop['max'] }}" aria-label="حداکثر قیمت">
         <div class="prv" id="prv"></div>
     </aside>
 
@@ -41,11 +41,9 @@
             </select>
         </div>
         <div class="shop-grid" id="grid" aria-live="polite"></div>
-        <x-store.pagination :pagination="$shop['pagination']" />
     </section>
 </main>
 
-<div id="fit-backdrop" class="fit-backdrop" aria-hidden="true" hidden></div>
 <aside id="fit" aria-label="اتاق پرو استودیویی VISION" aria-hidden="true">
     <h4>
         <span>اتاق پرو</span>
@@ -54,11 +52,36 @@
         </button>
     </h4>
     <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها">
+        <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال آماده‌سازی</b></div>
     </div>
-    <section class="fit-recommendations" aria-label="پیشنهاد ست" hidden>
+    <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
+    <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
+
+    <section class="fit-recommendations" aria-labelledby="fit-recommend-title" hidden>
+        <div class="fit-section-head">
+            <h5 id="fit-recommend-title">با این ست کن</h5>
+        </div>
         <div class="fit-recommend-grid" id="fit-recommend-grid" aria-live="polite"></div>
     </section>
 
+    <details class="fit-compare" aria-labelledby="fit-compare-title">
+        <summary class="fit-compare-summary" id="fit-compare-title">مقایسه‌ی استایل‌ها</summary>
+        <div class="fit-compare-content">
+        <div class="fit-section-head fit-compare-head">
+            <div>
+                <p>دو ترکیب را ذخیره کن و قیمتشان را کنار هم ببین.</p>
+            </div>
+            <button type="button" id="clearCompare" aria-label="پاک کردن استایل‌های مقایسه">پاک‌کردن</button>
+        </div>
+        <div class="fit-compare-actions">
+            <button type="button" id="saveCompareA">ذخیره‌ی ترکیب A</button>
+            <button type="button" id="saveCompareB">ذخیره‌ی ترکیب B</button>
+        </div>
+        <div class="fit-compare-grid" id="fit-compare-grid" aria-live="polite"></div>
+        </div>
+    </details>
+
+    <div class="tot" id="tot">هنوز چیزی انتخاب نشده</div>
     <div class="btns"><button class="pri" id="addset" type="button">افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
