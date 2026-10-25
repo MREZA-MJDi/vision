@@ -537,7 +537,7 @@ class CommerceAdminRenderAuditTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('New Homepage Hero')
-            ->assertDontSee('data-home-hero-slide', false)
+            ->assertSee('data-home-hero-slide', false)
             ->assertSee('home-hero__price-panel', false);
 
         $this->get('/products')
