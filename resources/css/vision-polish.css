@@ -427,7 +427,7 @@ body.storefront-body .commerce-related {
     body.storefront-home-body .home-hero { min-height: 0; padding: 8px 8px 14px; }
     body.storefront-home-body .home-hero__frame {
         height: auto;
-        min-height: 760px;
+        min-height: 820px;
         border-radius: 24px;
     }
     body.storefront-home-body .home-hero__frame-brand { top: 14px; left: 14px; }
@@ -440,7 +440,7 @@ body.storefront-body .commerce-related {
     }
     body.storefront-home-body .home-hero__image-stage {
         inset: 112px 7% auto;
-        height: 330px;
+        height: 270px;
         overflow: hidden;
     }
     body.storefront-home-body .home-hero__image-stage img {
@@ -452,7 +452,7 @@ body.storefront-body .commerce-related {
     body.storefront-home-body .home-hero__copy {
         top: auto;
         right: 18px;
-        bottom: 196px;
+        bottom: 280px;
         left: 18px;
         width: auto;
         transform: none;
@@ -522,9 +522,9 @@ body.storefront-body .commerce-related {
     body.storefront-body .store-product-detail__image:first-child { min-height: clamp(300px, 88vw, 480px); }
 }
 @media (max-width: 400px) {
-    body.storefront-home-body .home-hero__frame { min-height: 790px; }
-    body.storefront-home-body .home-hero__image-stage { inset-inline: 2%; height: 305px; }
-    body.storefront-home-body .home-hero__copy { bottom: 205px; }
+    body.storefront-home-body .home-hero__frame { min-height: 850px; }
+    body.storefront-home-body .home-hero__image-stage { inset-inline: 2%; height: 255px; }
+    body.storefront-home-body .home-hero__copy { bottom: 280px; }
     body.storefront-home-body .home-hero__price-panel { padding: 10px 11px; }
     body.storefront-home-body .home-hero__cta { padding-inline: 11px; }
     body.storefront-body:has(.vision-shop-main) .shop-grid { gap: 8px; }
