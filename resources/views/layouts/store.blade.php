@@ -22,6 +22,34 @@
     @endif
     <meta name="twitter:title" content="{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}">
     <meta name="twitter:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    @if (request()->routeIs('storefront.index') && isset($contactSettings))
+        @php
+            $contactSocialProfiles = array_values(array_filter([
+                $contactSettings['contact.instagram'] ?? '',
+                $contactSettings['contact.telegram'] ?? '',
+            ]));
+            $contactOrganization = [
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => 'VISION',
+                'url' => route('storefront.index'),
+            ];
+            if ($contactSocialProfiles !== []) {
+                $contactOrganization['sameAs'] = $contactSocialProfiles;
+            }
+            if (!empty($contactSettings['contact.phone_href'])) {
+                $contactOrganization['contactPoint'] = [[
+                    '@type' => 'ContactPoint',
+                    'telephone' => $contactSettings['contact.phone'] ?? '',
+                    'contactType' => 'customer service',
+                    'availableLanguage' => ['fa'],
+                ]];
+            }
+        @endphp
+        @if ($contactSocialProfiles !== [] || !empty($contactSettings['contact.phone_href']))
+            <script type="application/ld+json">@json($contactOrganization, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)</script>
+        @endif
+    @endif
     <title>{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,6 +124,29 @@
                 <a href="{{ route('account.show') }}">حساب کاربری</a>
                 <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
             </nav>
+            <div class="home-minimal-footer__contact" aria-label="راه‌های ارتباط با VISION">
+                @if(filled($contactSettings['contact.instagram'] ?? ''))
+                    <a class="home-contact-icon home-contact-icon--instagram"
+                       href="{{ $contactSettings['contact.instagram'] }}" target="_blank" rel="noopener noreferrer"
+                       aria-label="صفحهٔ رسمی VISION در اینستاگرام" title="Instagram">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle class="home-contact-icon__dot" cx="17.7" cy="6.6" r="1"></circle></svg>
+                    </a>
+                @endif
+                @if(filled($contactSettings['contact.telegram'] ?? ''))
+                    <a class="home-contact-icon home-contact-icon--telegram"
+                       href="{{ $contactSettings['contact.telegram'] }}" target="_blank" rel="noopener noreferrer"
+                       aria-label="ارتباط با VISION در تلگرام" title="Telegram">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 4-3.2 16-5.2-4.2-2.8 2.7.4-4.8L18.4 7l-9.5 5.8-4.1-1.4L21 4Z"></path></svg>
+                    </a>
+                @endif
+                @if(filled($contactSettings['contact.phone_href'] ?? ''))
+                    <a class="home-contact-icon home-contact-icon--phone"
+                       href="tel:{{ $contactSettings['contact.phone_href'] }}"
+                       aria-label="تماس تلفنی با VISION" title="تماس با ما">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.8 10 7.6 8.2 9.8a15 15 0 0 0 6 6l2.2-1.8 3.8 2.8-.9 3.3a1.7 1.7 0 0 1-1.9 1.2A18.7 18.7 0 0 1 2.7 6.5a1.7 1.7 0 0 1 1.2-1.9l3.3-.8Z"></path></svg>
+                    </a>
+                @endif
+            </div>
             <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span>
         </footer>
         @elseif (!request()->routeIs('shop.index', 'products.index'))

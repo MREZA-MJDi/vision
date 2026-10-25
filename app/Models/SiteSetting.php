@@ -33,6 +33,40 @@ class SiteSetting extends Model
         }
     }
 
+    /**
+     * Public homepage contact values, restricted to known social domains.
+     * This prevents a malformed or legacy setting from becoming an unsafe href.
+     */
+    public static function homeContactValues(): array
+    {
+        $values = static::contactValues();
+
+        foreach ([
+            'contact.instagram' => ['instagram.com', 'www.instagram.com'],
+            'contact.telegram' => ['t.me', 'telegram.me', 'www.telegram.me'],
+        ] as $key => $hosts) {
+            $url = trim((string) ($values[$key] ?? ''));
+            $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+            $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+            $values[$key] = $url !== ''
+                && $scheme === 'https'
+                && in_array($host, $hosts, true)
+                ? $url
+                : '';
+        }
+
+        $phone = trim((string) ($values['contact.phone'] ?? ''));
+        $digits = preg_replace('/\\D+/', '', $phone) ?? '';
+        $phoneDigits = preg_replace('/\\D+/', '', $phone) ?? '';
+        $values['contact.phone_href'] = strlen($digits) >= 7
+            && preg_match('/^[0-9+().\\s-]{7,40}$/', $phone)
+                ? ((str_starts_with($phone, '+') ? '+' : '') . $phoneDigits)
+                : '';
+
+        return $values;
+    }
+
     public static function contactValues(): array
     {
         return Cache::remember('site:contact-settings', now()->addMinutes(15), function (): array {
@@ -41,6 +75,8 @@ class SiteSetting extends Model
                     ->whereIn('key', [
                         'contact.phone',
                         'contact.email',
+                        'contact.instagram',
+                        'contact.telegram',
                         'contact.address',
                         'contact.working_hours',
                     ])
