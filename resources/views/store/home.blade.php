@@ -13,7 +13,7 @@
             ->groupBy(function ($variant) {
                 $color = mb_strtolower(trim((string) $variant->color));
 
-                return $color !== '' ? 'color:' . $color : 'option:' . trim((string) $variant->size);
+                return 'product:' . $product->getKey() . ':' . ($color !== '' ? 'color:' . $color : 'option:' . trim((string) $variant->size));
             })
             ->map(function ($variants) use ($product) {
                 $variant = $variants->first(fn ($item) => (int) $item->stock > 0 && ($item->primaryGalleryMedia?->url || $product->primaryGalleryMedia?->url))
@@ -70,7 +70,7 @@
 
             <div class="home-hero__copy">
                 <p class="home-hero__eyebrow">VISION / انتخاب محدود، اثر ماندگار</p>
-                <h1 id="home-hero-title" class="home-hero__title" data-home-hero-title>{{ $heroProduct?->name ?? 'استایل تو؛ امضای تو.' }}</h1>
+                <h1 id="home-hero-title" class="home-hero__title">استایل تو؛<br>امضای تو.</h1>
                 <p class="home-hero__description" data-home-hero-description>{{ $heroDescription }}</p>
                 <div class="home-hero__actions">
                     <a class="home-hero__cta" href="{{ route('shop.index') }}">
@@ -109,8 +109,8 @@
 
             @if($heroProduct && $heroVariant)
                 <aside class="home-hero__price-panel" aria-label="اطلاعات محصول منتخب">
-                    <span class="home-hero__price-label">محصول منتخب / VISION</span>
-                    <strong class="home-hero__featured-name" data-home-hero-caption>{{ $heroProduct->name }}</strong>
+                    <span class="home-hero__price-label" data-home-hero-caption>{{ $heroVariant->color ?: 'محصول منتخب / VISION' }}</span>
+                    <strong class="home-hero__featured-name" data-home-hero-title>{{ $heroProduct->name }}</strong>
                     <strong class="home-hero__price" data-home-hero-price>{{ $formatPrice($heroVariant->effective_price) }}</strong>
                     <del class="home-hero__original-price" data-home-hero-original @if(!$heroVariant->is_on_sale) hidden @endif>{{ $heroVariant->is_on_sale ? $formatPrice($heroVariant->price) : '' }}</del>
                     <span class="home-hero__stock" data-home-hero-stock>
@@ -151,7 +151,7 @@
                                             data-price="{{ $formatPrice($slideVariant->effective_price) }}"
                                             data-original-price="{{ $slideVariant->is_on_sale ? $formatPrice($slideVariant->price) : '' }}"
                                             data-stock="{{ (int) $slideVariant->stock > 0 ? number_format((int) $slideVariant->stock) . ' عدد موجود' : 'فعلاً ناموجود' }}"
-                                            data-label="{{ $slideProduct->name }}"
+                                            data-label="{{ $slideVariant->color ?: ($slideVariant->size ?: 'محصول منتخب') }}"
                                             data-image-alt="{{ $slideAlt }}"
                                             aria-label="نمایش {{ $slideLabel }}"
                                             aria-pressed="{{ $slideSelected ? 'true' : 'false' }}"
