@@ -7,9 +7,13 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\ProductReview;
 use App\Models\ProductVariant;
+use App\Models\SiteSetting;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DashboardController
@@ -54,6 +58,7 @@ class DashboardController
             ->orderByDesc('created_at')->limit(7)->get();
         $recentCustomers = $userModel::query()->where($adminFlag, false)
             ->orderByDesc('created_at')->limit(4)->get();
+        $contactSettings = SiteSetting::contactValues();
 
         return view('commerce-admin::dashboard.index', compact(
             'revenue',
@@ -63,8 +68,48 @@ class DashboardController
             'customersCount',
             'series',
             'recentOrders',
-            'recentCustomers'
+            'recentCustomers',
+            'contactSettings'
         ));
+    }
+
+    public function updateContactLinks(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'instagram_url' => ['nullable', 'string', 'url', 'max:512'],
+            'telegram_url' => ['nullable', 'string', 'url', 'max:512'],
+            'phone' => ['nullable', 'string', 'max:40', 'regex:/^[0-9+().\\s-]{7,40}$/'],
+        ]);
+
+        $settings = [];
+        foreach ([
+            'instagram_url' => ['contact.instagram', ['instagram.com', 'www.instagram.com']],
+            'telegram_url' => ['contact.telegram', ['t.me', 'telegram.me', 'www.telegram.me']],
+        ] as $field => [$key, $allowedHosts]) {
+            $url = trim((string) ($data[$field] ?? ''));
+            if ($url !== '') {
+                $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+                $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+                if ($scheme !== 'https' || !in_array($host, $allowedHosts, true)) {
+                    throw ValidationException::withMessages([
+                        $field => $field === 'instagram_url'
+                            ? 'آدرس اینستاگرام باید از دامنهٔ رسمی instagram.com باشد.'
+                            : 'آدرس تلگرام باید از دامنهٔ رسمی t.me یا telegram.me باشد.',
+                    ]);
+                }
+            }
+            $settings[$key] = $url;
+        }
+
+        // Validate every value before writing anything, so one invalid URL
+        // cannot leave only part of the contact settings updated.
+        foreach ($settings as $key => $value) {
+            SiteSetting::setValue($key, $value);
+        }
+        SiteSetting::setValue('contact.phone', trim((string) ($data['phone'] ?? '')));
+
+        return redirect()->route('commerce-admin.dashboard')
+            ->with('status', 'راه‌های ارتباطی صفحهٔ اصلی ذخیره شد.');
     }
 
     public function export()
