@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/storefront.js',
                 'resources/css/vision-shop.css',
+                'resources/css/vision-polish.css',
                 'resources/js/vision-shop.js',
                 'packages/RM/CommerceAdmin/resources/css/admin-kit.css',
                 'packages/RM/CommerceAdmin/resources/js/admin-kit.js',

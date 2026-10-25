@@ -129,6 +129,9 @@ class FittingRoomShopData
                 );
                 $isOnSale = (bool) ($variant->is_on_sale ?? false);
                 $variantLabel = ($variant->color || $variant->size) ? ' · ' . $variant->display_name : '';
+                $colorCode = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) $variant->color_code)
+                    ? (string) $variant->color_code
+                    : '#8b8490';
 
                 return [
                     'id' => (int) $variant->getKey(),
@@ -141,6 +144,8 @@ class FittingRoomShopData
                         : null,
                     'cat' => (string) ($product->category?->name ?? 'سایر'),
                     'img' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+                    'color' => trim((string) $variant->color),
+                    'colorCode' => $colorCode,
                     'stock' => (int) $variant->stock,
                     'fy' => $fitReady ? (float) $fit['fit_y'] : ($slot === 'bottom' ? 0.66 : 0.38),
                     'slot' => $fitReady ? $slot : null,

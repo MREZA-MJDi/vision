@@ -33,6 +33,9 @@ import { gsap } from "gsap";
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[char]);
+  const safeColorCode = value => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || ""))
+    ? String(value)
+    : "#8b8490";
 
   async function post(url, body = {}) {
     const response = await fetch(url, {
@@ -92,7 +95,10 @@ import { gsap } from "gsap";
         '</div>' +
         (product.rate !== null && product.rate !== undefined ? '<span class="shop-rate">★ ' + fa(product.rate) + '</span>' : "") +
         '<a class="shop-pic" href="' + escapeHtml(product.url || "#") + '" aria-label="مشاهدهٔ ' + escapeHtml(product.name) + '">' + image + '</a>' +
-        '<a class="shop-product-name" href="' + escapeHtml(product.url || "#") + '">' + escapeHtml(product.name) + '</a>' +
+        '<div class="shop-product-details">' +
+          '<a class="shop-product-name" href="' + escapeHtml(product.url || "#") + '">' + escapeHtml(product.name) + '</a>' +
+          (product.color ? '<span class="shop-product-colour" aria-label="رنگ ' + escapeHtml(product.color) + '"><i style="--shop-swatch:' + safeColorCode(product.colorCode) + '" aria-hidden="true"></i><span>' + escapeHtml(product.color) + '</span></span>' : '') +
+        '</div>' +
         '<div class="shop-product-price">' + formatMoney(product.price) +
           (product.old && Number(product.old) > Number(product.price) ? '<s>' + fa(product.old) + '</s><em>حراج</em>' : "") +
         '</div>' +

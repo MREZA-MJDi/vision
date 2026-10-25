@@ -66,7 +66,12 @@ php artisan db:seed --class=ProductDemoSeeder
 php artisan db:seed --class=InventoryDemoSeeder
 # Or run all dependent demo data at once:
 php artisan db:seed --class=CommerceDemoSeeder
+
+# Optional: after the fitting-room assets are imported, preview eight color families in the homepage Hero (development/staging only):
+php artisan db:seed --class=HeroColorDemoSeeder
 ```
+
+The optional `HeroColorDemoSeeder` promotes eight existing photo-backed product colorways (black, cream, chestnut, orange, pink, blue, charcoal and light blue) into the homepage Hero playlist. It is opt-in so routine seeding does not override an administrator's Hero choices.
 
 The commands are idempotent and do not delete unrelated records. Demo categories, products, variants and images can be edited or archived through Commerce Admin. Inventory is adjusted through the Inventory screen; its movement ledger is intentionally retained as audit history.
 

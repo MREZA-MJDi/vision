@@ -586,6 +586,21 @@
         let activeHeroIndex = Math.max(0, heroSlides.findIndex((slide) => slide.getAttribute('aria-pressed') === 'true'));
         let heroTimer = null;
 
+        // Use the asset's intrinsic dimensions as an upper bound so a small
+        // seeded photo is not stretched past its available pixel resolution.
+        const setHeroImageBounds = () => {
+            if (!heroImage || !heroImage.naturalWidth || !heroImage.naturalHeight) return;
+            heroImage.style.setProperty('--home-hero-image-natural-width', heroImage.naturalWidth + 'px');
+            heroImage.style.setProperty('--home-hero-image-natural-height', heroImage.naturalHeight + 'px');
+        };
+        const clearHeroImageBounds = () => {
+            heroImage?.style.removeProperty('--home-hero-image-natural-width');
+            heroImage?.style.removeProperty('--home-hero-image-natural-height');
+        };
+        heroImage?.addEventListener('load', setHeroImageBounds);
+        heroImage?.addEventListener('error', clearHeroImageBounds);
+        if (heroImage?.complete) setHeroImageBounds();
+
         const selectHeroSlide = (index) => {
             activeHeroIndex = (index + heroSlides.length) % heroSlides.length;
             const slide = heroSlides[activeHeroIndex];
