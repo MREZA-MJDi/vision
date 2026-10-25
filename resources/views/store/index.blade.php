@@ -52,36 +52,13 @@
         </button>
     </h4>
     <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها">
-        <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال آماده‌سازی</b></div>
     </div>
-    <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
-    <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
-
-    <section class="fit-recommendations" aria-labelledby="fit-recommend-title" hidden>
-        <div class="fit-section-head">
-            <h5 id="fit-recommend-title">با این ست کن</h5>
-        </div>
+    <section class="fit-recommendations" aria-label="پیشنهاد ست" hidden>
         <div class="fit-recommend-grid" id="fit-recommend-grid" aria-live="polite"></div>
     </section>
 
-    <details class="fit-compare" aria-labelledby="fit-compare-title">
-        <summary class="fit-compare-summary" id="fit-compare-title">مقایسه‌ی استایل‌ها</summary>
-        <div class="fit-compare-content">
-        <div class="fit-section-head fit-compare-head">
-            <div>
-                <p>دو ترکیب را ذخیره کن و قیمتشان را کنار هم ببین.</p>
-            </div>
-            <button type="button" id="clearCompare" aria-label="پاک کردن استایل‌های مقایسه">پاک‌کردن</button>
-        </div>
-        <div class="fit-compare-actions">
-            <button type="button" id="saveCompareA">ذخیره‌ی ترکیب A</button>
-            <button type="button" id="saveCompareB">ذخیره‌ی ترکیب B</button>
-        </div>
-        <div class="fit-compare-grid" id="fit-compare-grid" aria-live="polite"></div>
-        </div>
     </details>
 
-    <div class="tot" id="tot">هنوز چیزی انتخاب نشده</div>
     <div class="btns"><button class="pri" id="addset" type="button">افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
