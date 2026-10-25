@@ -3,6 +3,7 @@
 @section('title', 'VISION — پوشاک برای نگاه متفاوت')
 @section('meta-description', 'یک انتخاب دقیق. یک استایل متمایز. محصولات واقعی VISION را کشف کن.')
 @section('canonical', route('storefront.index'))
+@section('og-image', $heroProducts->first()?->primaryAvailableVariant?->primaryGalleryMedia?->url ?: $heroProducts->first()?->primaryGalleryMedia?->url)
 
 @section('content')
 @php
@@ -37,7 +38,6 @@
         ? route('products.show', ['product' => $heroProduct->slug, 'variant_id' => $heroVariant?->getKey()])
         : route('shop.index');
     $heroDescription = $heroProduct?->short_description ?: $heroProduct?->description ?: 'انتخاب‌هایی دقیق، طراحی‌شده برای زندگی واقعی.';
-    $heroFeaturedLabel = trim(implode(' · ', array_filter([$heroProduct?->name, $heroVariant?->color])));
 @endphp
 
 <main class="store-main store-home store-home--minimal">
