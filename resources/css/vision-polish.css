@@ -472,7 +472,7 @@ body.storefront-body .commerce-related {
         min-width: 0;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas: "label label" "name name" "price stock" "original link";
+        grid-template-areas: "label label" "name name" "price stock" "original link" "picker picker";
         align-items: center;
         gap: 4px 12px;
         padding: 12px 14px;
@@ -538,4 +538,58 @@ body.storefront-body .commerce-related {
         scroll-behavior: auto !important;
         transition-duration: .01ms !important;
     }
+}
+
+
+/* A tactile, data-driven hero color rail. The source of each swatch is the
+   exact color_code saved on that product variant in Commerce Admin. */
+body.storefront-home-body .home-hero__variant-picker {
+    justify-items: end;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 15px;
+    border-top: 1px solid rgb(255 255 255 / 15%);
+}
+body.storefront-home-body .home-hero__variant-label {
+    color: rgb(255 248 238 / 64%);
+    font-size: 10px;
+}
+body.storefront-home-body .home-hero__variants { gap: 6px; }
+body.storefront-home-body .home-hero__variant {
+    min-width: 34px;
+    min-height: 34px;
+    padding-inline: 9px;
+    border-color: rgb(255 255 255 / 18%);
+    background: rgb(11 9 14 / 28%);
+    backdrop-filter: blur(10px);
+}
+body.storefront-home-body .home-hero__variant.is-selected {
+    border-color: #fff6e9;
+    background: rgb(255 246 233 / 13%);
+    color: #fff6e9;
+    box-shadow: 0 0 0 2px rgb(255 246 233 / 12%);
+}
+body.storefront-home-body .home-hero__variant-dot {
+    width: 12px;
+    height: 12px;
+    flex-basis: 12px;
+    border-color: rgb(255 255 255 / 40%);
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 7%);
+}
+@media (max-width: 760px) {
+    body.storefront-home-body .home-hero__variant-picker {
+        grid-area: picker;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 7px 10px;
+        margin-top: 7px;
+        padding-top: 8px;
+        border-top: 1px solid rgb(255 255 255 / 12%);
+    }
+    body.storefront-home-body .home-hero__variant-label { font-size: 8px; }
+    body.storefront-home-body .home-hero__variants { justify-content: flex-start; gap: 5px; }
+    body.storefront-home-body .home-hero__variant { min-width: 29px; min-height: 29px; padding-inline: 6px; font-size: 8px; }
+    body.storefront-home-body .home-hero__variant-dot { width: 10px; height: 10px; flex-basis: 10px; }
 }
