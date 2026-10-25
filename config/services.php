@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'torob' => [
+        'product_api_enabled' => env('TOROB_PRODUCT_API_ENABLED', true),
+        // Public verification key published in Torob's Product API v3 token guide.
+        'public_key' => env('TOROB_PUBLIC_KEY', 'MCowBQYDK2VwAyEAt6Mu4T0pBORY11W+QeM35UsmLO3vsf+6yKpFDEImFk0='),
+    ],
+
 ];
