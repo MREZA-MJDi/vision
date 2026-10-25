@@ -26,7 +26,7 @@
         <h3>دسته‌بندی</h3>
         <div id="cats" class="shop-categories" aria-label="دسته‌بندی‌ها"></div>
         <h3>حداکثر قیمت</h3>
-        <input type="range" id="pr" min="{{ $shop['min'] }}" max="{{ $shop['max'] }}" step="100000" value="{{ $shop['max'] }}" aria-label="حداکثر قیمت">
+        <input type="range" id="pr" min="{{ $shop['min'] }}" max="{{ $shop['max'] }}" step="100000" value="{{ $shop['initialMax'] ?? $shop['max'] }}" aria-label="حداکثر قیمت">
         <div class="prv" id="prv"></div>
     </aside>
 
@@ -41,9 +41,11 @@
             </select>
         </div>
         <div class="shop-grid" id="grid" aria-live="polite"></div>
+        <x-store.pagination :pagination="$shop['pagination']" />
     </section>
 </main>
 
+<div id="fit-backdrop" class="fit-backdrop" aria-hidden="true" hidden></div>
 <aside id="fit" aria-label="اتاق پرو استودیویی VISION" aria-hidden="true">
     <h4>
         <span>اتاق پرو</span>
