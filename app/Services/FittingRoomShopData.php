@@ -105,8 +105,13 @@ class FittingRoomShopData
                         return false;
                     }
 
-                    return ($fit['slot'] === 'top' && (bool) $look->previewTopMedia?->url)
+                    $hasIndividualScene = ($fit['slot'] === 'top' && (bool) $look->previewTopMedia?->url)
                         || ($fit['slot'] === 'bottom' && (bool) $look->previewBottomMedia?->url);
+
+                    // A curated combined studio shot is a real photo of this
+                    // mapped garment on the mannequin, even if its isolated
+                    // top/bottom crop has not been uploaded yet.
+                    return $hasIndividualScene || (bool) $look->previewCombinedMedia?->url;
                 })
                 ->values();
 
@@ -126,6 +131,7 @@ class FittingRoomShopData
                 $fitReady = $fit && (
                     ($slot === 'top' && !empty($lookPreviews['top']))
                     || ($slot === 'bottom' && !empty($lookPreviews['bottom']))
+                    || ($slot !== null && (bool) $look?->previewCombinedMedia?->url)
                 );
                 $isOnSale = (bool) ($variant->is_on_sale ?? false);
                 $variantLabel = ($variant->color || $variant->size) ? ' · ' . $variant->display_name : '';
