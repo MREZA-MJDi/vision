@@ -24,6 +24,7 @@ Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
         Route::get('/analytics/export', [DashboardController::class, 'export'])->name('analytics.export');
+        Route::put('/contact-links', [DashboardController::class, 'updateContactLinks'])->name('contact.update');
 
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
