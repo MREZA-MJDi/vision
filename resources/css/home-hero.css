@@ -1095,3 +1095,91 @@ body.storefront-home-body .home-hero__index {
     .home-contact-icon { transition: none; }
     .home-contact-icon:hover { transform: none; }
 }
+
+
+/* VISION color system: GSAP interpolates typed color tokens; only the frame hue moves. */
+@property --home-hero-base {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #704231;
+}
+@property --vision-home-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #704231;
+}
+:root { --vision-home-accent: #704231; }
+
+body.storefront-home-body .home-hero {
+    --hero-panel: color-mix(in srgb, var(--home-hero-base) 76%, #151317);
+    background:
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--home-hero-base) 23%, #17171b) 0%,
+            #0c0c10 47%,
+            #060608 100%);
+    transition: none;
+}
+
+body.storefront-home-body .home-hero__frame {
+    background:
+        linear-gradient(118deg,
+            color-mix(in srgb, var(--home-hero-base) 79%, #20191d) 0%,
+            color-mix(in srgb, var(--home-hero-base) 66%, #111014) 57%,
+            color-mix(in srgb, var(--home-hero-base) 43%, #0c0b0f) 100%);
+    border-color: color-mix(in srgb, var(--home-hero-base) 32%, rgb(255 255 255 / 17%));
+    box-shadow:
+        0 24px 64px color-mix(in srgb, var(--home-hero-base) 19%, rgb(0 0 0 / 62%)),
+        inset 0 1px 0 rgb(255 255 255 / 7%);
+    transition: none;
+}
+
+body.storefront-home-body .home-hero__frame::before {
+    background:
+        linear-gradient(108deg,
+            color-mix(in srgb, var(--home-hero-base) 13%, transparent) 0%,
+            transparent 43%,
+            rgb(0 0 0 / 23%) 100%),
+        linear-gradient(180deg, rgb(255 255 255 / 5%), transparent 28%, rgb(0 0 0 / 25%));
+}
+
+body.storefront-home-body .home-hero__image-stage::before {
+    inset: 17% 18%;
+    background: linear-gradient(120deg,
+        color-mix(in srgb, var(--home-hero-base) 17%, transparent) 0%,
+        transparent 70%);
+    filter: none;
+    opacity: .7;
+}
+
+.home-minimal-footer {
+    position: relative;
+    box-sizing: border-box;
+    width: min(calc(100% - 24px), 1360px);
+    margin: 4px auto 18px;
+    padding: 16px clamp(15px, 2.8vw, 34px);
+    border: 1px solid color-mix(in srgb, var(--vision-home-accent) 28%, rgb(255 255 255 / 13%));
+    border-radius: 18px;
+    background: linear-gradient(112deg,
+        color-mix(in srgb, var(--vision-home-accent) 10%, rgb(255 255 255 / 4%)),
+        rgb(255 255 255 / 2.5%));
+    box-shadow: 0 14px 42px rgb(0 0 0 / 23%), inset 0 1px 0 rgb(255 255 255 / 5%);
+    color: rgb(255 255 255 / 86%);
+    -webkit-backdrop-filter: blur(18px) saturate(125%);
+    backdrop-filter: blur(18px) saturate(125%);
+}
+
+.home-minimal-footer__brand { color: #fffaf3 !important; }
+.home-minimal-footer nav a,
+.home-minimal-footer__copyright { color: rgb(255 255 255 / 84%) !important; }
+.home-minimal-footer nav a:hover { color: #fff !important; }
+.home-minimal-footer__copyright { opacity: .86; }
+
+@media (max-width: 720px) {
+    .home-minimal-footer {
+        width: calc(100% - 16px);
+        margin-top: 2px;
+        padding: 15px 13px 17px;
+        border-radius: 16px;
+        gap: 12px;
+    }
+}
