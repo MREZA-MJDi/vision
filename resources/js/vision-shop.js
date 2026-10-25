@@ -25,8 +25,6 @@ import { gsap } from "gsap";
       return { A: [], B: [] };
     }
   })();
-  let recommendationSlot = "top";
-  let recommendationSlotChosen = false;
   let busy = false;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
 
@@ -319,66 +317,60 @@ import { gsap } from "gsap";
     const root = $("#fit-recommend-grid");
     if (!root) return;
 
+    const section = root.closest(".fit-recommendations");
     const chosenTop = P.find(product => product.slot === "top" && W.has(Number(product.id))) || null;
     const chosenBottom = P.find(product => product.slot === "bottom" && W.has(Number(product.id))) || null;
 
-    if (!recommendationSlotChosen) {
-      recommendationSlot = chosenTop && !chosenBottom ? "bottom"
-        : chosenBottom && !chosenTop ? "top"
-        : "top";
-    }
-
-    document.querySelectorAll("[data-rec-slot]").forEach(button => {
-      const active = button.dataset.recSlot === recommendationSlot;
-      button.classList.toggle("on", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-
-    const anchor = recommendationSlot === "top" ? chosenBottom : chosenTop;
-    const caption = $("#fit-recommend-caption");
-    if (caption) {
-      caption.textContent = anchor
-        ? "گزینه‌های هماهنگ با " + anchor.name
-        : recommendationSlot === "top"
-          ? "یک بالاپوش انتخاب کن تا استایلت رو بسازیم."
-          : "یک پایین‌تنه انتخاب کن تا استایلت رو بسازیم.";
-    }
-
-    const candidates = P
-      .filter(product => product.slot === recommendationSlot
-        && !W.has(Number(product.id))
-        && Number(product.stock || 0) > 0
-        && product.o
-        && OF[String(product.o)]?.s)
-      .sort((a, b) => {
-        const aMatch = anchor && String(a.o) === String(anchor.o) ? 0 : 1;
-        const bMatch = anchor && String(b.o) === String(anchor.o) ? 0 : 1;
-        if (aMatch !== bMatch) return aMatch - bMatch;
-
-        const aPriceGap = anchor ? Math.abs(Number(a.price || 0) - Number(anchor.price || 0)) : Number(a.price || 0);
-        const bPriceGap = anchor ? Math.abs(Number(b.price || 0) - Number(anchor.price || 0)) : Number(b.price || 0);
-        if (aPriceGap !== bPriceGap) return aPriceGap - bPriceGap;
-        return Number(b.rate || 0) - Number(a.rate || 0);
-      })
-      .slice(0, 3);
-
-    if (!candidates.length) {
-      root.innerHTML = '<p class="fit-rec-empty">فعلاً گزینه‌ی آماده‌ای برای این بخش نیست.</p>';
+    // Recommendations are useful only when exactly one real garment is on the
+    // mannequin. With zero or two selections, keep this panel out of the way.
+    const selectedCount = Number(Boolean(chosenTop)) + Number(Boolean(chosenBottom));
+    if (selectedCount !== 1) {
+      if (section) section.hidden = true;
+      root.replaceChildren();
       return;
     }
 
+    const anchor = chosenTop || chosenBottom;
+    const recommendationSlot = chosenTop ? "bottom" : "top";
+    const candidates = P
+      .filter(product => {
+        if (product.slot !== recommendationSlot
+          || W.has(Number(product.id))
+          || Number(product.stock || 0) < 1
+          || !product.img
+          || !product.o) return false;
+
+        const look = OF[String(product.o)];
+        if (!look || !look.s || !look.s.TB) return false;
+
+        // A recommendation is allowed only when the database has a complete
+        // mannequin image for this exact pair of variants—not merely a shared
+        // look ID or a separate top/bottom photo.
+        return recommendationSlot === "bottom"
+          ? Number(look.t) === Number(anchor.id) && Number(look.b) === Number(product.id)
+          : Number(look.t) === Number(product.id) && Number(look.b) === Number(anchor.id);
+      })
+      .sort((a, b) => Number(b.rate || 0) - Number(a.rate || 0))
+      .slice(0, 2);
+
+    if (!candidates.length) {
+      if (section) section.hidden = true;
+      root.replaceChildren();
+      return;
+    }
+
+    if (section) section.hidden = false;
     root.innerHTML = candidates.map(product =>
-      '<article class="fit-rec-card">' +
-        '<div class="fit-rec-thumb">' +
-          (product.img ? '<img src="' + escapeHtml(product.img) + '" alt="" loading="lazy">' : '<span>V.</span>') +
-        '</div>' +
-        '<div class="fit-rec-copy">' +
+      '<button type="button" class="fit-rec-card" data-rec="' + Number(product.id) + '" aria-label="اضافه کردن ' + escapeHtml(product.name) + ' به ست">' +
+        '<span class="fit-rec-thumb">' +
+          '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">' +
+        '</span>' +
+        '<span class="fit-rec-copy">' +
           '<strong>' + escapeHtml(product.name) + '</strong>' +
           '<span>' + fa(product.price) + ' ' + escapeHtml(S.currency || "تومان") + '</span>' +
-          (anchor && String(product.o) === String(anchor.o) ? '<small>پیشنهاد ست هماهنگ</small>' : '') +
-        '</div>' +
-        '<button type="button" data-rec="' + Number(product.id) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن">امتحان</button>' +
-      '</article>'
+        '</span>' +
+        '<span class="fit-rec-add" aria-hidden="true">+</span>' +
+      '</button>'
     ).join("");
   }
 
@@ -553,10 +545,6 @@ import { gsap } from "gsap";
       const product = P.find(item => Number(item.id) === Number(data.rec));
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
       if (product) tryOn(product, image);
-    } else if (data.recSlot) {
-      recommendationSlot = data.recSlot;
-      recommendationSlotChosen = true;
-      renderRecommendations();
     } else if (data.r) {
       W.delete(Number(data.r));
       refresh();
