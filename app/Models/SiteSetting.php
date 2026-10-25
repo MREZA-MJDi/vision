@@ -58,9 +58,10 @@ class SiteSetting extends Model
 
         $phone = trim((string) ($values['contact.phone'] ?? ''));
         $digits = preg_replace('/\\D+/', '', $phone) ?? '';
+        $phoneDigits = preg_replace('/\\D+/', '', $phone) ?? '';
         $values['contact.phone_href'] = strlen($digits) >= 7
             && preg_match('/^[0-9+().\\s-]{7,40}$/', $phone)
-                ? (preg_replace('/[^0-9+]/', '', $phone) ?: '')
+                ? ((str_starts_with($phone, '+') ? '+' : '') . $phoneDigits)
                 : '';
 
         return $values;
