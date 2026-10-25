@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class HomeHeroPlaylistTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_home_hero_uses_each_active_variants_saved_color_code(): void
     {
         $this->withoutVite();
