@@ -7,7 +7,7 @@
 
 @section('content')
 @php
-    $formatPrice = static fn ($amount) => \\App\\Support\\Money::format($amount);
+    $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
     $heroVariant = $heroProduct?->primaryAvailableVariant ?? $heroProduct?->primaryActiveVariant;
     $heroImage = $heroVariant?->primaryGalleryMedia?->url ?? $heroProduct?->primaryGalleryMedia?->url;
     $heroColor = preg_match('/^#[0-9a-fA-F]{3,8}$/', (string) $heroVariant?->color_code)
