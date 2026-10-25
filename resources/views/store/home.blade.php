@@ -10,7 +10,7 @@
     $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
     $heroSlides = $heroProducts->flatMap(function ($product) {
         return $product->activeVariants
-            ->groupBy(function ($variant) {
+            ->groupBy(function ($variant) use ($product) {
                 $color = mb_strtolower(trim((string) $variant->color));
 
                 return 'product:' . $product->getKey() . ':' . ($color !== '' ? 'color:' . $color : 'option:' . trim((string) $variant->size));
