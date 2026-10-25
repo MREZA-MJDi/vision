@@ -11,14 +11,14 @@ class HomeHeroPlaylistTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_home_hero_uses_each_active_variants_saved_color_code(): void
+    public function test_home_hero_returns_to_one_curated_product_without_a_color_playlist(): void
     {
         $this->withoutVite();
 
         $product = Product::query()->create([
             'name' => 'Hero Color Sample',
             'slug' => 'hero-color-sample',
-            'short_description' => 'یک انتخاب رنگی برای تست Hero.',
+            'short_description' => 'یک انتخاب برای تست Hero.',
             'is_active' => true,
             'is_featured' => true,
             'is_hero' => true,
@@ -44,15 +44,10 @@ class HomeHeroPlaylistTest extends TestCase
 
         $this->get(route('storefront.index'))
             ->assertOk()
-            ->assertSee('data-home-hero-slide', false)
-            ->assertSee('data-theme="#171719"', false)
-            ->assertSee('data-theme="#e96512"', false)
-            ->assertSee('data-theme="#DCCDB6"', false)
-            ->assertSee('data-label="مشکی"', false)
-            ->assertSee('data-label="نارنجی"', false)
-            ->assertSee('data-label="کرم"', false)
-            ->assertSee('data-home-hero-title', false)
-            ->assertSee('data-home-hero-price', false)
-            ->assertSee('data-home-hero-product-link', false);
+            ->assertSee('data-home-hero', false)
+            ->assertSee('Hero Color Sample')
+            ->assertDontSee('data-home-hero-slide', false)
+            ->assertDontSee('home-hero__variant-picker', false)
+            ->assertDontSee('data-theme=', false);
     }
 }
