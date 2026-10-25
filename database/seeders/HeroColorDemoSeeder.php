@@ -35,7 +35,8 @@ class HeroColorDemoSeeder extends Seeder
         $products = Product::query()
             ->active()
             ->whereIn('slug', self::HERO_SLUGS)
-            ->whereHas('activeVariants')
+            ->whereHas('activeVariants.primaryGalleryMedia')
+            ->with(['activeVariants.primaryGalleryMedia'])
             ->get()
             ->keyBy('slug');
 
