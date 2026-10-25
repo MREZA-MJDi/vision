@@ -10,7 +10,7 @@
     $formatPrice = static fn ($amount) => \App\Support\Money::format($amount);
     $heroVariant = $heroProduct?->primaryAvailableVariant ?? $heroProduct?->primaryActiveVariant;
     $heroImage = $heroVariant?->primaryGalleryMedia?->url ?? $heroProduct?->primaryGalleryMedia?->url;
-    $heroColor = preg_match('/^#[0-9a-fA-F]{3,8}$/', (string) $heroVariant?->color_code)
+    $heroColor = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/', (string) $heroVariant?->color_code)
         ? $heroVariant->color_code
         : '#9a5527';
     $heroProductUrl = $heroProduct
