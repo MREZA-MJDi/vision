@@ -57,8 +57,6 @@
         <div class="fit-recommend-grid" id="fit-recommend-grid" aria-live="polite"></div>
     </section>
 
-    </details>
-
     <div class="btns"><button class="pri" id="addset" type="button">افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
