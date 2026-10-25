@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([\App\Console\Commands\MakeAdminCommand::class])
     ->withMiddleware(function (Middleware $middleware): void {
+        // DigiPay sends its final callback as a server POST; trust only its
+        // callback URL/token path, then verify the payment server-to-server.
+        $middleware->validateCsrfTokens(except: [
+            'payments/digipay/callback/*',
+        ]);
         // Keep Laravel's default web middleware groups; no admin middleware aliases.
     })
     ->withExceptions(function (Exceptions $exceptions): void {

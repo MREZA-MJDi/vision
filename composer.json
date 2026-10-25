@@ -27,8 +27,7 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Rm\\CommerceAdmin\\": "packages/RM/CommerceAdmin/src/",
-            "Rm\\VirtualTryOn\\": "packages/RM/VirtualTryOn/src/"
+            "Rm\\CommerceAdmin\\": "packages/RM/CommerceAdmin/src/"
         }
     },
     "autoload-dev": {

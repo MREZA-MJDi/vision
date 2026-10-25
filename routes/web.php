@@ -4,7 +4,6 @@ use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\CustomerCommerceController;
 use App\Http\Controllers\StorefrontController;
-use App\Http\Controllers\VirtualTryOnPageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,16 +18,23 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [StorefrontController::class, 'home'])->name('storefront.index');
 Route::get('/shop', [StorefrontController::class, 'index'])->name('shop.index');
 Route::get('/products', [StorefrontController::class, 'index'])->name('products.index');
-Route::get('/try-on', VirtualTryOnPageController::class)->name('try-on.index');
+Route::redirect('/try-on', '/shop')->name('try-on.index');
 Route::get('/products/{product:slug}', [StorefrontController::class, 'show'])
     ->where('product', '[a-z0-9-]+')
     ->name('products.show');
+
+Route::post('/shop/favourites/{variant}', [CustomerCommerceController::class, 'toggleFavourite'])
+    ->whereNumber('variant')
+    ->name('shop.favourites.toggle');
 
 Route::get('/cart/summary', [CustomerCommerceController::class, 'summary'])->name('cart.summary');
 Route::get('/cart', [CustomerCommerceController::class, 'index'])->name('cart.index');
 Route::post('/cart/items', [CustomerCommerceController::class, 'storeItem'])
     ->middleware('throttle:30,1')
     ->name('cart.items.store');
+Route::post('/cart/items/bulk', [CustomerCommerceController::class, 'storeBulkItems'])
+    ->middleware('throttle:10,1')
+    ->name('cart.items.bulk');
 Route::patch('/cart/items/{item}', [CustomerCommerceController::class, 'updateItem'])
     ->whereNumber('item')
     ->name('cart.items.update');
@@ -43,6 +49,12 @@ Route::post('/checkout', [CustomerCommerceController::class, 'placeOrder'])
 Route::get('/order-confirmation/{token}', [CustomerCommerceController::class, 'complete'])
     ->where('token', '[0-9a-fA-F-]{36}')
     ->name('checkout.complete');
+
+// Provider callbacks: signatures/tokens and final amounts are verified server-side.
+Route::match(['GET', 'POST'], '/payments/{gateway}/callback/{token}', [CustomerCommerceController::class, 'paymentCallback'])
+    ->where('gateway', 'snappay|torobpay|digipay')
+    ->where('token', '[0-9a-fA-F-]{36}')
+    ->name('payments.callback');
 
 /*
 |--------------------------------------------------------------------------
