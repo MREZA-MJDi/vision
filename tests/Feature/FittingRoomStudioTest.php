@@ -165,21 +165,24 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('"slot":"bottom"', false);
     }
 
-    public function test_shop_includes_outfit_recommendations_and_saved_style_comparison(): void
+    public function test_shop_keeps_outfit_recommendations_compact_and_removes_comparison_copy(): void
     {
         $this->get('/shop')
             ->assertOk()
             ->assertSee('fit-recommend-grid', false)
             ->assertSee('fit-recommendations', false)
+            ->assertDontSee('fit-rec-copy', false)
+            ->assertDontSee('fit-compare', false)
+            ->assertDontSee('pcount', false)
+            ->assertDontSee('id="picks"', false)
+            ->assertDontSee('id="tot"', false)
             ->assertDontSee('data-rec-slot', false)
             ->assertDontSee('fit-recommend-caption', false)
             ->assertDontSee('stageMessage', false)
             ->assertDontSee('روی چوب‌لباسی هر محصول', false)
-            ->assertSee('<details class="fit-compare"', false)
-            ->assertSee('fit-compare-grid', false)
-            ->assertSee('saveCompareA', false)
-            ->assertSee('saveCompareB', false)
-            ->assertDontSee('اتاق پرو استودیویی</a>', false);
+            ->assertDontSee('اتاق پرو استودیویی</a>', false)
+            ->assertSee('id="addset"', false)
+            ->assertSee('id="strip"', false);
     }
 
     public function test_selected_outfit_variants_are_added_to_the_database_cart_together(): void
