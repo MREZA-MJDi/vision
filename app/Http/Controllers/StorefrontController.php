@@ -47,7 +47,7 @@ class StorefrontController extends Controller
     /**
      * Render a public product detail page from active catalog records only.
      */
-    public function show(Product $product): View
+    public function show(Request $request, Product $product): View
     {
         abort_unless((bool) $product->is_active, 404);
 
@@ -62,6 +62,11 @@ class StorefrontController extends Controller
         if ($product->activeVariants->isEmpty()) {
             abort(404);
         }
+
+        $requestedVariantId = $request->integer('variant_id');
+        $selectedVariantId = $product->activeVariants
+            ->first(fn ($variant) => (int) $variant->getKey() === $requestedVariantId)
+            ?->getKey();
 
         $relatedQuery = Product::query()
             ->active()
@@ -87,7 +92,7 @@ class StorefrontController extends Controller
             ->limit(4)
             ->get();
 
-        return view('store.products.show', compact('product', 'relatedProducts'));
+        return view('store.products.show', compact('product', 'relatedProducts', 'selectedVariantId'));
     }
 
     /**
