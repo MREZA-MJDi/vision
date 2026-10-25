@@ -123,44 +123,4 @@
             <div class="ak-team-foot"><span>{{ number_format((int) $customersCount) }} حساب مشتری</span><a href="{{ route('commerce-admin.customers.index') }}">فهرست مشتری‌ها ↗</a></div>
         </article>
     </section>
-
-    <section class="ak-panel ak-home-contact-panel" aria-labelledby="home-contact-title">
-        <div class="ak-panel-heading">
-            <div>
-                <h2 id="home-contact-title">راه‌های ارتباطی صفحهٔ اصلی</h2>
-                <p>لینک‌های Instagram و Telegram و شمارهٔ تماس در پایین Home نمایش داده می‌شوند. فیلدهای خالی مخفی می‌مانند.</p>
-            </div>
-            <span class="ak-count-chip">Home</span>
-        </div>
-        <form method="POST" action="{{ route('commerce-admin.contact.update') }}" class="ak-home-contact-form">
-            @csrf
-            @method('PUT')
-            <div class="ak-form-grid">
-                <label class="ak-field">
-                    <span>لینک Instagram</span>
-                    <input type="url" name="instagram_url" dir="ltr" maxlength="512"
-                           value="{{ old('instagram_url', $contactSettings['contact.instagram'] ?? '') }}"
-                           placeholder="https://www.instagram.com/yourbrand/">
-                    <small>پروفایل رسمی instagram.com؛ آیکون رنگی کوچک نمایش داده می‌شود.</small>
-                </label>
-                <label class="ak-field">
-                    <span>لینک Telegram</span>
-                    <input type="url" name="telegram_url" dir="ltr" maxlength="512"
-                           value="{{ old('telegram_url', $contactSettings['contact.telegram'] ?? '') }}"
-                           placeholder="https://t.me/yourbrand">
-                    <small>کانال یا حساب عمومی روی t.me یا telegram.me.</small>
-                </label>
-                <label class="ak-field">
-                    <span>شمارهٔ تماس موبایل</span>
-                    <input type="tel" name="phone" dir="ltr" inputmode="tel" maxlength="40"
-                           value="{{ old('phone', $contactSettings['contact.phone'] ?? '') }}"
-                           placeholder="+98 912 123 4567">
-                    <small>با کلیک روی آیکون، تماس تلفنی دستگاه باز می‌شود.</small>
-                </label>
-            </div>
-            <div class="ak-heading-actions">
-                <button class="ak-button ak-button-dark" type="submit">ذخیرهٔ راه‌های ارتباطی</button>
-            </div>
-        </form>
-    </section>
 @endsection

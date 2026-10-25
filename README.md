@@ -17,10 +17,6 @@ Wishlist hearts are currently device-local. They are not synced across browsers 
 
 ## Commerce Admin UI Kit
 
-- The **Fitting Room Studio** is available in admin at `/admin/try-on`. Upload a mannequin image, curate outfits, connect real product variants to top/bottom slots, and manage the pre-rendered `T`, `B`, `TB`, and optional `S` scene images.
-- The redesigned `/shop` page reads active products and variant pricing/media from the existing commerce models. Hanger actions appear only for variants mapped to a valid studio scene; the outfit add-to-cart action validates stock and adds all selected variants atomically.
-- The new `fitting_room_mannequins`, `fitting_room_looks`, and `fitting_room_look_items` tables replace the retired transparent-layer schema. The migration removes the old fitting-room tables and legacy try-on media records, but leaves product, variant, cart, order, inventory, and payment records intact.
-
 - \`/admin/login\` and \`/admin\` — protected by the configured administrator flag.
 - Persian RTL administration using the local IRANYekanX font, with four live dashboard KPIs and a 12-month grouped sales/order chart.
 - Paginated product CRUD with variants, SKU validation, product and per-variant image uploads/cropping, grouped local-currency prices, taxable flag, and inventory audit trail.
@@ -66,12 +62,7 @@ php artisan db:seed --class=ProductDemoSeeder
 php artisan db:seed --class=InventoryDemoSeeder
 # Or run all dependent demo data at once:
 php artisan db:seed --class=CommerceDemoSeeder
-
-# Optional: after the fitting-room assets are imported, preview eight color families in the homepage Hero (development/staging only):
-php artisan db:seed --class=HeroColorDemoSeeder
 ```
-
-The optional `HeroColorDemoSeeder` promotes eight existing photo-backed product colorways (black, cream, chestnut, orange, pink, blue, charcoal and light blue) into the homepage Hero playlist. It is opt-in so routine seeding does not override an administrator's Hero choices.
 
 The commands are idempotent and do not delete unrelated records. Demo categories, products, variants and images can be edited or archived through Commerce Admin. Inventory is adjusted through the Inventory screen; its movement ledger is intentionally retained as audit history.
 

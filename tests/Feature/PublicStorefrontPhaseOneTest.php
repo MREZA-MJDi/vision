@@ -22,30 +22,30 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $response->assertOk()
             ->assertSee('lang="fa" dir="rtl"', false)
-            ->assertSee('VISION — پوشاک برای نگاه متفاوت')
+            ->assertSee('VISION — فروشگاه پوشاک')
             ->assertSee('property="og:site_name"', false)
-            ->assertDontSee('data-tiamir-intro', false)
-            ->assertDontSee('tiamir.com')
-            ->assertDontSee('Created by R MAJIDI')
+            ->assertSee('data-tiamir-intro', false)
+            ->assertDontSee('data-tiamir-replay', false)
+            ->assertSee('data-tiamir-hint', false)
+            ->assertSee('data-first-duration="3200"', false)
+            ->assertSee('data-return-duration="1900"', false)
+            ->assertSee('Created by R MAJIDI')
+            ->assertSee('https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png', false)
             ->assertSee('VISION')
             ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
-            ->assertSee('استایل تو؛')
+            ->assertSee('انتخاب بر اساس استایل')
             ->assertSee('home-hero__frame', false)
-            ->assertSee('home-hero__cta--secondary', false)
-            ->assertDontSee('home-category-grid', false)
-            ->assertDontSee('home-category-card__image', false)
+            ->assertSee('home-category-card__image', false)
             ->assertDontSee('home-featured', false)
             ->assertDontSee('home-brand-story', false)
             ->assertDontSee('home-benefits', false)
-            ->assertSee('home-minimal-footer', false)
-            ->assertDontSee('store-footer__column', false)
-            ->assertDontSee('store-header', false)
+            ->assertSee('store-footer__column', false)
             ->assertDontSee('data-cart-add=', false)
             ->assertDontSee('data-fitting-room', false)
             ->assertSee('images.unsplash.com');
     }
 
-    public function test_shop_has_real_catalog_controls_and_the_fitting_room_studio_drawer(): void
+    public function test_shop_has_real_catalog_controls_and_the_bounded_product_grid(): void
     {
         $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
@@ -54,15 +54,17 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $response->assertOk()
             ->assertDontSee('data-tiamir-intro', false)
-            ->assertDontSee('data-virtual-try-on', false)
-            ->assertSee('id="fit"', false)
-            ->assertSee('id="stage"', false)
-            ->assertSee('id="grid"', false)
-            ->assertSee('window.SHOP', false)
-            ->assertSee('id="sort"', false)
-            ->assertSee('id="cats"', false)
+            ->assertDontSee('data-fitting-room', false)
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-inline="true"', false)
+            ->assertSee('data-vto-launcher', false)
+            ->assertSee('data-vto-select-product', false)
+            ->assertDontSee('store-tryon-link', false)
             ->assertSee('اتاق پرو')
-            ->assertSee('demo-essential-cotton-tee', false)
+            ->assertSee('data-store-sort', false)
+            ->assertSee('data-product-grid', false)
+            ->assertSee('مرتب‌سازی')
+            ->assertSee('تی‌شرت پنبه‌ای کلاسیک')
             ->assertSee('تومان');
     }
 
@@ -78,8 +80,9 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('property="og:image"', false)
             ->assertSee('data-variant-select', false)
             ->assertSee('data-variant-color-pick', false)
-            ->assertDontSee('data-virtual-try-on', false)
-            ->assertSee('امتحان این محصول در اتاق پرو استودیویی')
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-expand', false)
+            ->assertSee('data-initial-variant-id', false)
             ->assertDontSee('data-variant-preview-modal', false)
             ->assertSee('افزودن به سبد خرید')
             ->assertSee('محصولات منتخب')
@@ -203,7 +206,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->where('slug', 'vision-demo')
             ->firstOrFail();
 
-        // The homepage queries one featured product and its bounded media relations.
+        // The homepage now queries only the bounded hero playlist and category card media.
         $queryCount = 0;
         $sqlLog = [];
 
@@ -286,6 +289,6 @@ class PublicStorefrontPhaseOneTest extends TestCase
 
         $this->get('/shop?sale=1&price_max=1050000')
             ->assertOk()
-            ->assertSee('demo-essential-cotton-tee', false);
+            ->assertSee('تی‌شرت پنبه‌ای کلاسیک');
     }
 }

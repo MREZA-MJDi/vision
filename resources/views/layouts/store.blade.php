@@ -22,45 +22,20 @@
     @endif
     <meta name="twitter:title" content="{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}">
     <meta name="twitter:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
-    @if (request()->routeIs('storefront.index') && isset($contactSettings))
-        @php
-            $contactSocialProfiles = array_values(array_filter([
-                $contactSettings['contact.instagram'] ?? '',
-                $contactSettings['contact.telegram'] ?? '',
-            ]));
-            $contactOrganization = [
-                '@context' => 'https://schema.org',
-                '@type' => 'Organization',
-                'name' => 'VISION',
-                'url' => route('storefront.index'),
-            ];
-            if ($contactSocialProfiles !== []) {
-                $contactOrganization['sameAs'] = $contactSocialProfiles;
-            }
-            if (!empty($contactSettings['contact.phone_href'])) {
-                $contactOrganization['contactPoint'] = [[
-                    '@type' => 'ContactPoint',
-                    'telephone' => $contactSettings['contact.phone'] ?? '',
-                    'contactType' => 'customer service',
-                    'availableLanguage' => ['fa'],
-                ]];
-            }
-        @endphp
-        @if ($contactSocialProfiles !== [] || !empty($contactSettings['contact.phone_href']))
-            <script type="application/ld+json">@json($contactOrganization, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)</script>
-        @endif
-    @endif
     <title>{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}</title>
 
+    @if (request()->routeIs('storefront.index'))
+        <link rel="preconnect" href="https://tiamir.com" crossorigin>
+        <link rel="preload" as="image" href="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png" fetchpriority="high">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @if (request()->routeIs('shop.index', 'products.index'))
-            @vite(['resources/css/app.css', 'resources/css/vision-shop.css', 'resources/css/vision-polish.css', 'resources/js/vision-shop.js'])
-        @else
-            @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/home-hero.css', 'resources/css/vision-polish.css', 'resources/js/storefront.js'])
+        @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/home-hero.css', 'resources/js/storefront.js'])
+        @if (request()->routeIs('shop.index', 'products.index', 'try-on.index', 'products.show'))
+            @vite(['resources/css/virtual-try-on.css', 'resources/js/virtual-try-on.js'])
         @endif
     @elseif (app()->environment('testing'))
         {{-- Feature tests assert rendered storefront markup without requiring a Vite build. --}}
@@ -70,17 +45,46 @@
 <body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }} {{ request()->routeIs('shop.index', 'products.index') ? 'store-shop-body' : '' }}">
     <div class="store-atmosphere" aria-hidden="true"></div>
 
+    @if (request()->routeIs('storefront.index'))
+        <div class="tiamir-intro" data-tiamir-intro data-first-duration="3200" data-return-duration="1900" aria-hidden="true">
+            <canvas class="tiamir-intro__static" data-tiamir-static></canvas>
+            <span class="tiamir-intro__grain" aria-hidden="true"></span>
+            <span class="tiamir-intro__scanlines" aria-hidden="true"></span>
+            <span class="tiamir-intro__scan-beam" aria-hidden="true"></span>
+            <span class="tiamir-intro__disturbance" aria-hidden="true"></span>
+            <span class="tiamir-intro__flash" aria-hidden="true"></span>
+
+            <div class="tiamir-intro__identity">
+                <span class="tiamir-intro__logo-wrap">
+                    <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-cyan"
+                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
+                         alt="" aria-hidden="true" loading="eager" decoding="async">
+                    <img class="tiamir-intro__logo tiamir-intro__logo--ghost tiamir-intro__logo--ghost-red"
+                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
+                         alt="" aria-hidden="true" loading="eager" decoding="async">
+                    <img class="tiamir-intro__logo tiamir-intro__logo--main"
+                         src="https://tiamir.com/wp-content/uploads/2026/09/Tiamir-white.png"
+                         alt="" aria-hidden="true" data-tiamir-logo fetchpriority="high" loading="eager" decoding="async">
+                    <span class="tiamir-intro__fallback" data-tiamir-fallback hidden>TIAMIR</span>
+                </span>
+            </div>
+
+            <div class="tiamir-intro__signature">Created by R MAJIDI</div>
+            <div class="tiamir-intro__hint" data-tiamir-hint aria-hidden="true">ANALOG SIGNAL / 01</div>
+        </div>
+    @endif
+
     <div class="store-shell" data-storefront
          data-currency-symbol="{{ config('commerce-admin.currency_symbol', 'تومان') }}"
          data-cart-url="{{ route('cart.index') }}"
          data-cart-summary-url="{{ route('cart.summary') }}"
          data-cart-add-url="{{ route('cart.items.store') }}"
          data-account-url="{{ route('account.show') }}">
-        @if (!request()->routeIs('storefront.index', 'shop.index', 'products.index'))
         <header class="store-header">
             <nav class="store-nav" aria-label="ناوبری اصلی">
                 <a href="{{ route('storefront.index') }}" class="store-nav__link {{ request()->routeIs('storefront.index') ? 'is-current' : '' }}">خانه</a>
                 <a href="{{ route('shop.index') }}#catalog" class="store-nav__link {{ request()->routeIs('shop.index', 'products.index') ? 'is-current' : '' }}">فروشگاه</a>
+                <a href="{{ route('try-on.index') }}" class="store-nav__link {{ request()->routeIs('try-on.index') ? 'is-current' : '' }}">اتاق پرو</a>
                 <a href="{{ route('shop.index', ['sort' => 'newest']) }}#catalog" class="store-nav__link">تازه‌ها</a>
                 <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog" class="store-nav__link {{ request()->boolean('sale') ? 'is-current' : '' }}">تخفیف‌ها</a>
             </nav>
@@ -111,45 +115,9 @@
                 </button>
             </div>
         </header>
-        @endif
 
         @yield('content')
 
-        @if (request()->routeIs('storefront.index'))
-        <footer class="home-minimal-footer" aria-label="پاورقی VISION">
-            <a class="home-minimal-footer__brand" href="{{ route('storefront.index') }}">VISION<span>®</span></a>
-            <nav aria-label="پیوندهای ضروری">
-                <a href="{{ route('shop.index') }}">فروشگاه</a>
-                <a href="{{ route('cart.index') }}">سبد خرید</a>
-                <a href="{{ route('account.show') }}">حساب کاربری</a>
-                <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
-            </nav>
-            <div class="home-minimal-footer__contact" aria-label="راه‌های ارتباط با VISION">
-                @if(filled($contactSettings['contact.instagram'] ?? ''))
-                    <a class="home-contact-icon home-contact-icon--instagram"
-                       href="{{ $contactSettings['contact.instagram'] }}" target="_blank" rel="noopener noreferrer"
-                       aria-label="صفحهٔ رسمی VISION در اینستاگرام" title="Instagram">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle class="home-contact-icon__dot" cx="17.7" cy="6.6" r="1"></circle></svg>
-                    </a>
-                @endif
-                @if(filled($contactSettings['contact.telegram'] ?? ''))
-                    <a class="home-contact-icon home-contact-icon--telegram"
-                       href="{{ $contactSettings['contact.telegram'] }}" target="_blank" rel="noopener noreferrer"
-                       aria-label="ارتباط با VISION در تلگرام" title="Telegram">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 4-3.2 16-5.2-4.2-2.8 2.7.4-4.8L18.4 7l-9.5 5.8-4.1-1.4L21 4Z"></path></svg>
-                    </a>
-                @endif
-                @if(filled($contactSettings['contact.phone_href'] ?? ''))
-                    <a class="home-contact-icon home-contact-icon--phone"
-                       href="tel:{{ $contactSettings['contact.phone_href'] }}"
-                       aria-label="تماس تلفنی با VISION" title="تماس با ما">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.8 10 7.6 8.2 9.8a15 15 0 0 0 6 6l2.2-1.8 3.8 2.8-.9 3.3a1.7 1.7 0 0 1-1.9 1.2A18.7 18.7 0 0 1 2.7 6.5a1.7 1.7 0 0 1 1.2-1.9l3.3-.8Z"></path></svg>
-                    </a>
-                @endif
-            </div>
-            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span>
-        </footer>
-        @elseif (!request()->routeIs('shop.index', 'products.index'))
         <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
             <div class="store-footer__main">
                 <div class="store-footer__brand">
@@ -161,7 +129,7 @@
                     <h2>دسترسی سریع</h2>
                     <a href="{{ route('storefront.index') }}">خانه</a>
                     <a href="{{ route('shop.index') }}">فروشگاه</a>
-                    <a href="{{ route('shop.index') }}#catalog">اتاق پرو استودیویی</a>
+                    <a href="{{ route('try-on.index') }}">اتاق پرو هوشمند</a>
                     <a href="{{ route('shop.index', ['sort' => 'newest']) }}">تازه‌های فروشگاه</a>
                     <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
                 </nav>
@@ -180,12 +148,9 @@
                 <a href="{{ route('storefront.index') }}">بازگشت به صفحهٔ اصلی <span aria-hidden="true">↑</span></a>
             </div>
         </footer>
-        @endif
 
-        @if (!request()->routeIs('shop.index', 'products.index'))
         <div class="store-toast" data-store-toast role="status" aria-live="polite"></div>
         <button class="store-sidebar-backdrop" type="button" data-store-filter-backdrop aria-label="بستن فیلترها" tabindex="-1"></button>
-        @endif
     </div>
 </body>
 </html>

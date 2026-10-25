@@ -565,3 +565,14 @@ html[dir="rtl"] .ak-team-foot{direction:rtl}html[dir="rtl"] .ak-team-foot a{marg
 .ak-category-cover-upload>.ak-field{min-width:0}
 .ak-category-cover-thumb{display:block;width:48px;height:48px;object-fit:cover;border:1px solid #e2e5eb;border-radius:7px;background:#f2f4f7}
 @media(max-width:600px){.ak-category-cover-upload{grid-template-columns:minmax(0,1fr)}.ak-category-cover-upload>img{width:100%;height:190px}}
+
+
+/* Scoped Virtual Try-On mapping fields inside the product editor. */
+.ak-try-on-layer-fields { display:grid; gap:12px; margin:18px 0 4px; padding:14px; border:1px dashed #d2d8c6; border-radius:14px; background:#f7f8f3; }
+.ak-try-on-layer-fields__heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+.ak-try-on-layer-fields__heading strong { font-size:.86rem; }
+.ak-try-on-layer-fields__heading small { color:#777a6b; font-size:.72rem; }
+.ak-try-on-layer-current { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.ak-try-on-layer-current img { display:block; width:72px; height:98px; object-fit:contain; padding:5px; background:#fff; border:1px solid #e2e5dc; border-radius:8px; }
+.ak-try-on-layer-current label { display:inline-flex; align-items:center; gap:7px; color:#884b41; font-size:.75rem; }
+@media (max-width:640px) { .ak-try-on-layer-current { align-items:flex-start; flex-direction:column; } }

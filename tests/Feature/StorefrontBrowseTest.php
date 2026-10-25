@@ -20,35 +20,39 @@ class StorefrontBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee('lang="fa" dir="rtl"', false);
         $response->assertSee('home-hero__frame', false);
-        $response->assertSee('استایل تو؛<br>امضای تو.', false);
+        $response->assertSee('متفاوت باش،<br>بدون تلاش اضافه', false);
         $response->assertDontSee('home-featured', false);
         $response->assertDontSee('home-brand-story', false);
         $response->assertDontSee('home-benefits', false);
-        $response->assertSee('home-minimal-footer', false);
+        $response->assertSee('store-footer__column', false);
         $response->assertDontSee('data-fitting-room', false);
     }
 
-    public function test_shop_contains_filters_and_the_studio_drawer(): void
+    public function test_shop_contains_filters_and_mounts_the_shared_inline_fitting_room(): void
     {
         $this->withoutVite();
-        $this->get('/shop')
+        $response = $this->get('/shop');
+        $response
             ->assertOk()
             ->assertSee('فیلترها')
-            ->assertSee('id="fit"', false)
-            ->assertSee('id="stage"', false)
-            ->assertSee('id="grid"', false)
-            ->assertSee('id="cats"', false)
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('id="vto-inline-workspace" data-vto-inline="true" tabindex="-1"', false)
+            ->assertSee('data-vto-launcher', false)
+            ->assertSee('data-vto-stage-loading', false)
+            ->assertDontSee('store-tryon-link', false)
             ->assertSee('اتاق پرو')
-            ->assertDontSee('data-virtual-try-on', false)
-            ->assertDontSee('data-vto-inline', false)
-            ->assertSee('window.SHOP', false);
+            ->assertDontSee('data-fitting-room', false);
 
-        $html = (string) $this->get('/shop')->getContent();
-        $this->assertNotFalse(strpos($html, 'id="fit"'), 'The fitting-room drawer must render on Shop.');
-        $this->assertNotFalse(strpos($html, '<section class="shop-results"'), 'The product grid must render on the same page.');
+        $html = (string) $response->getContent();
+        $workspacePosition = strpos($html, 'id="vto-inline-workspace"');
+        $catalogPosition = strpos($html, '<section class="store-catalog"');
+        $this->assertNotFalse($workspacePosition, 'The live fitting room must render on the Shop page.');
+        $this->assertNotFalse($catalogPosition, 'The Shop catalog must remain on the same page.');
+        $this->assertLessThan($catalogPosition, $workspacePosition, 'The fitting room should occupy the right-to-left first catalog column.');
+        $this->assertStringNotContainsString('data-vto-inline="true" inert', $html);
     }
 
-    public function test_shop_cards_use_real_variant_media_without_legacy_fitting_room_markup(): void
+    public function test_shop_cards_and_product_detail_use_real_variant_media_and_inline_try_on(): void
     {
         $this->withoutVite();
 
@@ -81,19 +85,20 @@ class StorefrontBrowseTest extends TestCase
 
         $this->get('/shop')
             ->assertOk()
-            ->assertSee('photo-1583743814966-8936f5b7be1a', false)
-            ->assertSee($product->slug, false)
-            ->assertSee('"id":' . $variant->getKey(), false)
-            ->assertDontSee('data-virtual-try-on', false)
-            ->assertDontSee('data-vto-select-product', false)
+            ->assertSee('src="' . $photoUrl . '"', false)
+            ->assertSee(route('products.show', ['product' => $product->slug]), false)
+            ->assertSee('data-vto-select-product', false)
+            ->assertDontSee('store-tryon-link', false)
+            ->assertDontSee('data-card-preview', false)
             ->assertDontSee('data-fit-product', false);
 
         $this->get(route('products.show', ['product' => $product->slug]))
             ->assertOk()
             ->assertSee('src="' . $photoUrl . '"', false)
             ->assertSee('data-image="' . $photoUrl . '"', false)
-            ->assertDontSee('data-virtual-try-on', false)
-            ->assertSee('امتحان این محصول در اتاق پرو استودیویی');
+            ->assertSee('data-virtual-try-on', false)
+            ->assertSee('data-vto-expand', false)
+            ->assertDontSee('data-variant-preview-modal', false);
     }
 
     public function test_product_catalog_lists_active_products_and_hides_inactive_products(): void
@@ -167,8 +172,8 @@ class StorefrontBrowseTest extends TestCase
 
         $this->get('/products')
             ->assertOk()
-            ->assertSee('"id":' . $available->getKey(), false)
-            ->assertDontSee('"id":' . $soldOut->getKey(), false);
+            ->assertSee('data-cart-add="' . $available->getKey() . '"', false)
+            ->assertDontSee('data-cart-add="' . $soldOut->getKey() . '"', false);
     }
 
     public function test_product_detail_shows_variant_and_returns_404_for_inactive_product(): void

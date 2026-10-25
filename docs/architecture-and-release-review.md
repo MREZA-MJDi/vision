@@ -5,8 +5,6 @@
 - `routes/web.php` defines public catalog, product detail, cart, checkout, account, and authentication routes.
 - `routes/admin.php` groups commerce administration behind the configured administrator middleware.
 - `StorefrontController` supplies the homepage, catalog, and product-detail data.
-- `FittingRoomShopData` supplies the `/shop` client-rendered catalogue from active products/variants and fitting-room scene records; `FittingRoomStudioController` owns mannequin, scene, and outfit administration.
-- The studio uses `fitting_room_mannequins`, `fitting_room_looks`, and `fitting_room_look_items`; the browser previews pre-rendered 2:3 scene images and the server remains authoritative for product prices, inventory, and cart writes.
 - Controllers and Form Requests validate input; shared business behavior for order state, payment, accounting, media, and homepage hero belongs in application services.
 - Eloquent models and migrations define products, variants, carts, orders, payment records, inventory movements, and ledger entries.
 - `resources/views/layouts/store.blade.php` is the canonical Persian/RTL storefront layout. Active views are `store/home.blade.php`, `store/index.blade.php`, and `store/products/show.blade.php`.
