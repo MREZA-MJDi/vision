@@ -167,7 +167,15 @@ import { gsap } from "gsap";
       const pairScene = exactOutfitScene(top, bottom);
       // Only use the studio photograph that was actually authored for this
       // exact combination. Never imply a visual try-on that is not in the DB.
-      activate(pairScene || "base");
+      // When an exact combined photograph is unavailable, retain the most
+      // recently chosen garment's real single-item mannequin photograph.
+      // Never substitute an unrelated combined outfit or a fabricated composite.
+      if (pairScene && activate(pairScene)) return;
+      const preferred = Number(state.lastFittedId) === Number(bottom.id) ? bottom : top;
+      const fallback = preferred === top ? bottom : top;
+      if (activate(String(preferred.o) + ":" + (preferred.slot === "top" ? "T" : "B"))) return;
+      if (activate(String(fallback.o) + ":" + (fallback.slot === "top" ? "T" : "B"))) return;
+      activate("base");
       return;
     }
 
@@ -453,10 +461,8 @@ import { gsap } from "gsap";
     const opposite = P.find(item => item.slot === oppositeSlot && W.has(Number(item.id))) || null;
     const nextTop = product.slot === "top" ? product : opposite;
     const nextBottom = product.slot === "bottom" ? product : opposite;
-    if (nextTop && nextBottom && !exactOutfitScene(nextTop, nextBottom)) {
-      showToast("برای این ست، عکس یکپارچهٔ مانکن ثبت نشده.");
-      return;
-    }
+    // Selecting an item must never be blocked by a missing combined image.
+    // The scene resolver falls back to a real single-garment mannequin photo.
 
     busy = true;
     try {
@@ -470,6 +476,7 @@ import { gsap } from "gsap";
         if (item.slot === product.slot && W.has(Number(item.id))) W.delete(Number(item.id));
       });
       W.add(Number(product.id));
+      state.lastFittedId = Number(product.id);
     } finally {
       $("#load").classList.remove("on");
       busy = false;
