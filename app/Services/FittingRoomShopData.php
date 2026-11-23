@@ -98,16 +98,7 @@ class FittingRoomShopData
 
         $products = $catalog->flatMap(function (Product $product) use ($itemMap): array {
             $fittedVariants = $product->activeVariants
-                ->filter(function (ProductVariant $variant) use ($itemMap): bool {
-                    $fit = $itemMap[$variant->getKey()] ?? null;
-                    $look = $fit['look'] ?? null;
-                    if (!$fit || !$look) {
-                        return false;
-                    }
-
-                    return ($fit['slot'] === 'top' && (bool) $look->previewTopMedia?->url)
-                        || ($fit['slot'] === 'bottom' && (bool) $look->previewBottomMedia?->url);
-                })
+                ->filter(fn (ProductVariant $variant): bool => isset($itemMap[$variant->getKey()]))
                 ->values();
 
             $variants = $fittedVariants->isNotEmpty()
@@ -117,16 +108,12 @@ class FittingRoomShopData
             return $variants->map(function (ProductVariant $variant) use ($product, $itemMap): array {
                 $fit = $itemMap[$variant->getKey()] ?? null;
                 $look = $fit['look'] ?? null;
-                $slot = $fit['slot'] ?? null;
+                $slot = $fit['slot'] ?? $this->inferSlot($product);
                 $lookPreviews = $look ? [
                     'top' => $look->previewTopMedia?->url,
                     'bottom' => $look->previewBottomMedia?->url,
                 ] : [];
-
-                $fitReady = $fit && (
-                    ($slot === 'top' && !empty($lookPreviews['top']))
-                    || ($slot === 'bottom' && !empty($lookPreviews['bottom']))
-                );
+                $sceneUrl = $lookPreviews[$slot] ?? null;
                 $isOnSale = (bool) ($variant->is_on_sale ?? false);
                 $variantLabel = ($variant->color || $variant->size) ? ' · ' . $variant->display_name : '';
                 $colorCode = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) $variant->color_code)
@@ -147,9 +134,10 @@ class FittingRoomShopData
                     'color' => trim((string) $variant->color),
                     'colorCode' => $colorCode,
                     'stock' => (int) $variant->stock,
-                    'fy' => $fitReady ? (float) $fit['fit_y'] : ($slot === 'bottom' ? 0.66 : 0.38),
-                    'slot' => $fitReady ? $slot : null,
-                    'o' => $fitReady ? (int) $fit['look_id'] : null,
+                    'fy' => $fit ? (float) $fit['fit_y'] : ($slot === 'bottom' ? 0.66 : 0.38),
+                    'slot' => $slot,
+                    'o' => $fit ? (int) $fit['look_id'] : null,
+                    'scene' => $sceneUrl,
                     'url' => route('products.show', ['product' => $product->slug]),
                 ];
             })->all();
@@ -195,4 +183,32 @@ class FittingRoomShopData
             'initialSort' => $initialSort,
         ];
     }
+
+    /**
+     * Infer a display slot for active catalogue products not yet assigned to
+     * a curated studio look. Explicit LookItem mappings always take priority.
+     *
+     * @return 'top'|'bottom'
+     */
+    private function inferSlot(Product $product): string
+    {
+        $metadata = mb_strtolower(implode(' ', array_filter([
+            $product->category?->slug,
+            $product->category?->name,
+            $product->name,
+            json_encode($product->attributes ?? [], JSON_UNESCAPED_UNICODE) ?: '',
+        ])));
+
+        foreach ([
+            'bottom', 'bottoms', 'trouser', 'pants', 'jeans', 'shorts', 'skirt',
+            'شلوار', 'دامن', 'جین', 'لگ', 'کارگو', 'پایین تنه', 'پایین‌تنه',
+        ] as $keyword) {
+            if (str_contains($metadata, $keyword)) {
+                return 'bottom';
+            }
+        }
+
+        return 'top';
+    }
+
 }

@@ -188,9 +188,40 @@ class FittingRoomStudioTest extends TestCase
             'sort_order' => 20,
         ]);
 
+        $unmappedProduct = Product::query()->create([
+            'name' => 'شلوار مستقل',
+            'slug' => 'unmapped-independent-trousers',
+            'audience' => 'women',
+            'is_active' => true,
+        ]);
+        $unmappedVariant = ProductVariant::query()->create([
+            'product_id' => $unmappedProduct->getKey(),
+            'sku' => 'UNMAPPED-TROUSERS-001',
+            'price' => 140000,
+            'stock' => 4,
+            'low_stock_threshold' => 1,
+            'is_active' => true,
+        ]);
+        $unmappedVariant->media()->create([
+            'collection' => 'gallery',
+            'disk' => 'public',
+            'path' => 'https://assets.example.test/unmapped-trousers.png',
+            'original_name' => 'unmapped-trousers.png',
+            'mime_type' => 'image/png',
+            'size' => 1,
+            'width' => 420,
+            'height' => 420,
+            'alt_text' => 'Unmapped trousers',
+            'sort_order' => 0,
+        ]);
+
         $response = $this->get('/shop');
         $response->assertOk()
             ->assertSee('window.SHOP', false)
+            ->assertSee('"name":"شلوار مستقل"', false)
+            ->assertSee('"slot":"bottom"', false)
+            ->assertSee('"scene":null', false)
+            ->assertSee('unmapped-trousers.png', false)
             ->assertSee('assets.example.test', false)
             ->assertSee('"T":', false)
             ->assertSee('"B":', false)
@@ -284,6 +315,18 @@ class FittingRoomStudioTest extends TestCase
         $this->assertDatabaseCount('cart_items', 0);
     }
 
+
+    public function test_shop_try_on_does_not_require_a_predefined_tb_pair_and_replaces_same_slot(): void
+    {
+        $source = file_get_contents(resource_path('js/vision-shop.js'));
+
+        $this->assertIsString($source);
+        $this->assertStringNotContainsString('برای این ست، عکس یکپارچهٔ مانکن ثبت نشده.', $source);
+        $this->assertStringNotContainsString('برای پرو مجازی، این محصول را در استودیو به ست و تصویر مانکن وصل کن.', $source);
+        $this->assertStringContainsString('if (item.slot === product.slot && W.has(Number(item.id))) W.delete(Number(item.id));', $source);
+        $this->assertStringContainsString('exactOutfitScene(top, bottom)', $source);
+        $this->assertStringContainsString('getProductLayer(product, slot)', $source);
+    }
 
     public function test_remapping_a_look_requires_fresh_scene_photos_for_the_new_garment_pair(): void
     {
