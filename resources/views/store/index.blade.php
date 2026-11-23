@@ -41,6 +41,7 @@
             </select>
         </div>
         <div class="shop-grid" id="grid" aria-live="polite"></div>
+        <button type="button" id="shop-load-more" class="shop-load-more" hidden>نمایش محصولات بیشتر</button>
     </section>
 </main>
 
