@@ -32,7 +32,10 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('name="preview_top"', false)
             ->assertSee('name="preview_bottom"', false)
             ->assertSee('name="preview_combined"', false)
-            ->assertSee('name="preview_suggested"', false)
+            ->assertSee('data-fr-scene-input="top"', false)
+            ->assertSee('data-fr-scene-input="bottom"', false)
+            ->assertSee('data-fr-scene-input="combined"', false)
+            ->assertDontSee('name="preview_suggested"', false)
             ->assertSee('name="top_variant_id"', false)
             ->assertSee('name="bottom_variant_id"', false);
     }
@@ -367,7 +370,22 @@ class FittingRoomStudioTest extends TestCase
                 'fit_y_bottom' => 0.66,
                 'is_active' => '1',
             ])
-            ->assertSessionHasErrors(['preview_top', 'preview_combined']);
+            ->assertSessionHasErrors('preview_top');
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.try-on.index'))
+            ->put(route('commerce-admin.try-on.looks.update', $look), [
+                'mannequin_id' => $mannequin->getKey(),
+                'code' => $look->code,
+                'label' => 'Changed top with only a new top scene',
+                'top_variant_id' => $variants['REMAP-REPLACEMENT-TOP']->getKey(),
+                'bottom_variant_id' => $variants['REMAP-ORIGINAL-BOTTOM']->getKey(),
+                'fit_y_top' => 0.38,
+                'fit_y_bottom' => 0.66,
+                'is_active' => '1',
+                'preview_top' => \\Illuminate\\Http\\UploadedFile::fake()->image('replacement-top.jpg', 420, 630),
+            ])
+            ->assertSessionHasErrors('preview_combined');
 
         $this->assertDatabaseHas('fitting_room_look_items', [
             'look_id' => $look->getKey(),

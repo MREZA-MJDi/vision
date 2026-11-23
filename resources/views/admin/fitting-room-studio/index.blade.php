@@ -317,9 +317,9 @@ function updateFittingRoomSceneGuidance(form) {
     if (!top || !bottom || !mannequin) return;
 
     const isCreate = form.dataset.frLookForm === 'create';
-    const mannequinChanged = isCreate || mannequin.value !== (mannequin.dataset.initialValue || '');
-    const topChanged = isCreate || top.value !== (top.dataset.initialValue || '');
-    const bottomChanged = isCreate || bottom.value !== (bottom.dataset.initialValue || '');
+    const mannequinChanged = isCreate || mannequin.value !== (mannequin.dataset.frInitialValue || '');
+    const topChanged = isCreate || top.value !== (top.dataset.frInitialValue || '');
+    const bottomChanged = isCreate || bottom.value !== (bottom.dataset.frInitialValue || '');
     const topSelected = Boolean(top.value);
     const bottomSelected = Boolean(bottom.value);
     const states = {
