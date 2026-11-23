@@ -29,6 +29,38 @@ class FittingRoomStudioTest extends TestCase
             ->assertOk()
             ->assertSee('Fitting Room Studio')
             ->assertSee('name="base_image"', false)
+            ->assertSee('مرحلهٔ اول هنوز تکمیل نشده است.')
+            ->assertDontSee('name="preview_top"', false)
+            ->assertDontSee('name="preview_bottom"', false)
+            ->assertDontSee('name="preview_combined"', false);
+
+        $mannequin = FittingRoomMannequin::query()->create([
+            'code' => 'admin-gallery-mannequin',
+            'label' => 'Admin gallery mannequin',
+            'audience' => 'women',
+            'pose_key' => 'front-neutral',
+            'canvas_width' => 640,
+            'canvas_height' => 960,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+        $base = $mannequin->media()->create([
+            'collection' => 'fitting-room-mannequin',
+            'disk' => 'public',
+            'path' => 'https://assets.example.test/admin-gallery-base.jpg',
+            'original_name' => 'admin-gallery-base.jpg',
+            'mime_type' => 'image/jpeg',
+            'size' => 1,
+            'width' => 640,
+            'height' => 960,
+            'alt_text' => 'Admin gallery base',
+            'sort_order' => 0,
+        ]);
+        $mannequin->forceFill(['base_media_id' => $base->getKey()])->save();
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.try-on.index'))
+            ->assertOk()
             ->assertSee('name="preview_top"', false)
             ->assertSee('name="preview_bottom"', false)
             ->assertSee('name="preview_combined"', false)
