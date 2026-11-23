@@ -229,3 +229,42 @@
 .shop-load-more {display:block;margin:28px auto 0;padding:12px 26px;border:1px solid var(--vs-line);border-radius:12px;background:var(--vs-panel);color:var(--vs-text);cursor:pointer;}
 .shop-load-more[hidden]{display:none!important;}
 .shop-load-more:hover{border-color:var(--vs-accent);color:var(--vs-accent-2);}
+
+/* Video-reference fitting room: independent left studio, orange accents, stable mannequin. */
+.storefront-body:has(.vision-shop-main) #fit{
+  display:flex;flex-direction:column;gap:10px;
+  width:clamp(290px,25vw,350px);padding:14px;
+  border:1px solid color-mix(in srgb,var(--vs-accent) 22%,var(--vs-line));
+  background:color-mix(in srgb,var(--vs-panel) 96%,#000 4%);
+  box-shadow:0 22px 75px rgba(0,0,0,.52);
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--vs-line) transparent;
+}
+.storefront-body:has(.vision-shop-main) #fit h4{position:sticky;top:-14px;z-index:4;padding:6px 0 12px;background:var(--vs-panel);border-bottom:1px solid var(--vs-line)}
+.storefront-body:has(.vision-shop-main) #fit .stage{
+  flex:0 0 auto;align-self:center;width:min(100%,270px);height:auto;
+  aspect-ratio:2/3;min-height:0;max-height:none;
+  border:1px solid color-mix(in srgb,var(--vs-accent) 16%,var(--vs-line));
+  box-shadow:inset 0 0 32px rgba(0,0,0,.18);
+}
+.storefront-body:has(.vision-shop-main) #fit .stage .mm{object-fit:contain;transform:scale(1.025);transition:opacity .42s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.storefront-body:has(.vision-shop-main) #fit .stage .mm.on{transform:scale(1)}
+.storefront-body:has(.vision-shop-main) #fit .picks{min-height:48px;flex:0 0 auto}
+.storefront-body:has(.vision-shop-main) #fit .fit-recommendations{flex:0 0 auto;min-height:0}
+.storefront-body:has(.vision-shop-main) #fit .fit-recommend-grid{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;max-height:none;padding:4px 0 9px;scroll-snap-type:x proximity}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-card{flex:0 0 132px;display:grid;grid-template-columns:42px 1fr;gap:6px;align-items:center;scroll-snap-align:start}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-card>button{grid-column:1/-1;min-height:30px}
+.storefront-body:has(.vision-shop-main) #fit .fit-rec-thumb{width:42px;height:46px}
+.storefront-body:has(.vision-shop-main) #fit .tot{margin-top:auto}
+.storefront-body:has(.vision-shop-main) .shop-product-card .try.on{background:var(--vs-accent);color:white;border-color:var(--vs-accent)}
+.storefront-body:has(.vision-shop-main) #fit :is(button,summary):focus-visible{outline:2px solid var(--vs-accent-2);outline-offset:3px}
+@media(min-width:1100px){
+ .storefront-body:has(.vision-shop-main) #fit{left:18px;bottom:18px;max-height:calc(100dvh - 36px)}
+ .storefront-body:has(.vision-shop-main) .vision-shop-main{padding-left:clamp(335px,29vw,400px)}
+}
+@media(max-width:760px){
+ .storefront-body:has(.vision-shop-main) #fit{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto;max-height:calc(100dvh - 20px - env(safe-area-inset-top,0px));padding:12px;border-radius:20px}
+ .storefront-body:has(.vision-shop-main) #fit .stage{width:min(100%,260px);aspect-ratio:2/3;min-height:0}
+ .storefront-body:has(.vision-shop-main) #fit .fit-recommend-grid{max-height:none;overflow-x:auto;overflow-y:hidden}
+}
+@media(prefers-reduced-motion:reduce){.storefront-body:has(.vision-shop-main) #fit .stage .mm{transition:none;transform:none}}
