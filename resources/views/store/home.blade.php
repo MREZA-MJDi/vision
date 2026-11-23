@@ -210,5 +210,10 @@
         <div><strong>اتاق پرو استودیویی</strong><span>پیش‌نمایش با تصاویر آماده‌شده</span></div>
         <div><strong>خرید یکپارچه</strong><span>از انتخاب استایل تا سبد خرید</span></div>
     </section>
+    <section class="vision-editorial" aria-labelledby="vision-editorial-title">
+        <div class="vision-editorial__intro"><span>VISION / CURATED COLLECTION</span><h2 id="vision-editorial-title">استایل خودت را بساز</h2><p>انتخاب لباس، دیدن ترکیب‌ها روی مانکن و خرید آسان از یک فروشگاه.</p></div>
+        <div class="vision-editorial__actions"><a href="{{ route('shop.index') }}">مشاهده محصولات</a><a href="{{ route('shop.index') }}#catalog">ورود به اتاق پرو</a></div>
+        <div class="vision-editorial__features"><article><strong>انتخاب دقیق</strong><span>محصولات واقعی فروشگاه</span></article><article><strong>پرو استودیویی</strong><span>تصاویر از پیش آماده‌شده، بدون پردازش سنگین</span></article><article><strong>استایل شخصی</strong><span>انتخاب تکی یا ست پیشنهادی</span></article></div>
+    </section>
 </main>
 @endsection
