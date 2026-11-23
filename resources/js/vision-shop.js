@@ -26,6 +26,7 @@ import { gsap } from "gsap";
     }
   })();
   let busy = false;
+  let fittingTrigger = null;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -449,6 +450,7 @@ import { gsap } from "gsap";
   }
 
   async function tryOn(product, source) {
+    if (source instanceof Element) fittingTrigger = source.closest("button") || source.closest(".shop-product-card")?.querySelector("[data-t]") || fittingTrigger;
     if (busy || !product || !product.o || !product.slot) return;
     fit.classList.add("open");
     fit.setAttribute("aria-hidden", "false");
@@ -562,7 +564,7 @@ import { gsap } from "gsap";
   $("#close").addEventListener("click", () => {
     fit.classList.remove("open");
     fit.setAttribute("aria-hidden", "true");
-    document.querySelector(".shop-results")?.scrollIntoView({ block: "nearest", behavior: RM ? "instant" : "smooth" });
+    if (fittingTrigger?.isConnected) fittingTrigger.focus({ preventScroll: true });
   });
   $("#strip").addEventListener("click", clearAll);
   $("#saveCompareA").addEventListener("click", () => saveComparison("A"));
@@ -603,6 +605,7 @@ import { gsap } from "gsap";
     if (event.key === "Escape" && fit.classList.contains("open")) {
       fit.classList.remove("open");
       fit.setAttribute("aria-hidden", "true");
+      if (fittingTrigger?.isConnected) fittingTrigger.focus({ preventScroll: true });
     }
   });
 
