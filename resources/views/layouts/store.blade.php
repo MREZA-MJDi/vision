@@ -95,13 +95,14 @@
                 <a href="{{ route('cart.index') }}">سبد خرید</a>
                 <a href="{{ route('account.show') }}">حساب کاربری</a>
                 <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
+                <a href="{{ route('contact.index') }}">تماس با ما</a>
             </nav>
             <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span><div class="vision-trust-cards" aria-label="نمادهای اعتبار فروشگاه">
 <div class="vision-trust-card" aria-label="جایگاه اینماد"><span>ENAMAD</span><strong>نماد اعتماد الکترونیکی</strong><small>محل درج تصویر و لینک مجوز</small></div>
 <div class="vision-trust-card" aria-label="جایگاه نماد کسب‌وکار"><span>BUSINESS</span><strong>نماد کسب‌وکار</strong><small>محل درج تصویر و لینک مجوز</small></div>
 </div>
         </footer>
-        @elseif (!request()->routeIs('shop.index', 'products.index'))
+        @else
         <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
             <div class="store-footer__main">
                 <div class="store-footer__brand">
@@ -116,6 +117,7 @@
                     <a href="{{ route('shop.index') }}#catalog">اتاق پرو استودیویی</a>
                     <a href="{{ route('shop.index', ['sort' => 'newest']) }}">تازه‌های فروشگاه</a>
                     <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
+                    <a href="{{ route('contact.index') }}">تماس با ما</a>
                 </nav>
 
                 <nav class="store-footer__column" aria-label="خرید و حساب کاربری">
@@ -124,6 +126,7 @@
                     <a href="{{ route('checkout.index') }}">ادامهٔ خرید</a>
                     <a href="{{ route('login') }}">ورود</a>
                     <a href="{{ route('register') }}">ساخت حساب</a>
+                    <a href="{{ route('contact.index') }}">پشتیبانی و تماس</a>
                 </nav>
             </div>
 
