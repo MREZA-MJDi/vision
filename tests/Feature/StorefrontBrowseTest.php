@@ -31,6 +31,15 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('data-fitting-room', false);
     }
 
+    public function test_shop_footer_has_contact_and_both_trust_slots(): void
+    {
+        $this->withoutVite();
+        $this->get('/shop')->assertOk()
+            ->assertSee('تماس با ما')
+            ->assertSee('نماد اعتماد الکترونیکی')
+            ->assertSee('نماد کسب‌وکار');
+    }
+
     public function test_shop_exposes_progressive_catalog_and_fitting_controls(): void
     {
         $this->withoutVite();
