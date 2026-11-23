@@ -210,10 +210,26 @@
         <div><strong>اتاق پرو استودیویی</strong><span>پیش‌نمایش با تصاویر آماده‌شده</span></div>
         <div><strong>خرید یکپارچه</strong><span>از انتخاب استایل تا سبد خرید</span></div>
     </section>
-    <section class="vision-editorial" aria-labelledby="vision-editorial-title">
-        <div class="vision-editorial__intro"><span>VISION / CURATED COLLECTION</span><h2 id="vision-editorial-title">استایل خودت را بساز</h2><p>انتخاب لباس، دیدن ترکیب‌ها روی مانکن و خرید آسان از یک فروشگاه.</p></div>
-        <div class="vision-editorial__actions"><a href="{{ route('shop.index') }}">مشاهده محصولات</a><a href="{{ route('shop.index') }}#catalog">ورود به اتاق پرو</a></div>
-        <div class="vision-editorial__features"><article><strong>انتخاب دقیق</strong><span>محصولات واقعی فروشگاه</span></article><article><strong>پرو استودیویی</strong><span>تصاویر از پیش آماده‌شده، بدون پردازش سنگین</span></article><article><strong>استایل شخصی</strong><span>انتخاب تکی یا ست پیشنهادی</span></article></div>
+    <section class="vision-shop-collections" aria-labelledby="vision-collections-title">
+        <div class="vision-section-heading"><span>SHOP THE EDIT</span><h2 id="vision-collections-title">کالکشن‌های منتخب</h2><a href="{{ route('shop.index') }}">همه محصولات ↗</a></div>
+        <div class="vision-shop-collections__grid">
+            @foreach($heroProducts->take(3) as $product)
+                @php($variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant)
+                <a href="{{ route('products.show', ['product' => $product->slug]) }}" class="vision-shop-collection">
+                    <div class="vision-shop-collection__visual">
+                        @if($variant?->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url)
+                            <img src="{{ $variant?->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url }}" loading="lazy" decoding="async" alt="{{ $product->name }}">
+                        @endif
+                    </div>
+                    <span>{{ $product->category?->name ?? 'کالکشن VISION' }}</span><strong>{{ $product->name }}</strong><small>مشاهده جزئیات ↗</small>
+                </a>
+            @endforeach
+        </div>
     </section>
+    <section class="vision-shop-story">
+        <div><span>THE VISION FITTING ROOM</span><h2>قبل از خرید، استایلت را ببین.</h2><p>لباس مورد علاقه‌ات را انتخاب کن، روی مانکن استودیویی ببین و اگر ست پیشنهادی آماده بود، ترکیب کامل را بررسی کن؛ بدون پردازش سنگین یا تصویرسازی مصنوعی.</p><a href="{{ route('shop.index') }}#catalog">شروع انتخاب استایل ↗</a></div>
+        <div class="vision-shop-story__art" aria-hidden="true"><span>VISION</span><strong>YOUR STYLE / YOUR CHOICE</strong></div>
+    </section>
+    <section class="vision-editorial" aria-label="مسیر خرید"><div class="vision-editorial__features"><article><strong>۰۱ / انتخاب محصول</strong><span>کالکشن‌های فروشگاه را مرور کن</span></article><article><strong>۰۲ / پرو استودیویی</strong><span>تصویر واقعی لباس روی مانکن را ببین</span></article><article><strong>۰۳ / تکمیل خرید</strong><span>استایلت را به سبد اضافه کن</span></article></div></section>
 </main>
 @endsection
