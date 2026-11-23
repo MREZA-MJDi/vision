@@ -452,6 +452,7 @@ import { gsap } from "gsap";
     if (busy || !product || !product.o || !product.slot) return;
     fit.classList.add("open");
     fit.setAttribute("aria-hidden", "false");
+    fit.setAttribute("aria-label", "اتاق پرو استودیویی VISION، لباس انتخاب‌شده روی مانکن");
 
     if (W.has(Number(product.id))) {
       W.delete(Number(product.id));
@@ -472,8 +473,8 @@ import { gsap } from "gsap";
       await fly(source, product.fy);
       $("#load").classList.add("on");
       await wait(RM ? 0 : 700);
-      // One item per slot. Opposite-slot items remain selected only when an
-      // exact combined studio photo exists for the new pair.
+      // Keep the opposite slot selected even without an authored combined photo.
+      // The scene resolver shows the last selected garment, never a fake composite.
       P.forEach(item => {
         if (item.slot === product.slot && W.has(Number(item.id))) W.delete(Number(item.id));
       });
@@ -488,6 +489,7 @@ import { gsap } from "gsap";
 
   function clearAll() {
     W.clear();
+    state.lastFittedId = null;
     refresh();
   }
 
@@ -552,6 +554,7 @@ import { gsap } from "gsap";
       addOne(Number(data.c), button);
     } else if (data.cat !== undefined) {
       state.cat = data.cat;
+      state.visibleCount = 12;
       render();
     }
   });
@@ -559,6 +562,7 @@ import { gsap } from "gsap";
   $("#close").addEventListener("click", () => {
     fit.classList.remove("open");
     fit.setAttribute("aria-hidden", "true");
+    document.querySelector(".shop-results")?.scrollIntoView({ block: "nearest", behavior: RM ? "instant" : "smooth" });
   });
   $("#strip").addEventListener("click", clearAll);
   $("#saveCompareA").addEventListener("click", () => saveComparison("A"));
@@ -587,7 +591,7 @@ import { gsap } from "gsap";
   $("#sort").addEventListener("change", event => { state.sort = event.target.value; state.visibleCount = 12; render(); });
   pr.addEventListener("input", event => { state.max = Number(event.target.value); state.visibleCount = 12; render(); });
   $("#reset").addEventListener("click", () => {
-    state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
+    state.visibleCount = 12; state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
     $("#q").value = ""; $("#sort").value = "new"; pr.value = state.max;
     render();
   });
