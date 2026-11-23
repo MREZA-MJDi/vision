@@ -11,7 +11,7 @@ import { gsap } from "gsap";
   const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
-  const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
+  const state = { visibleCount: 12, cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
   const W = new Set();
   const COMPARE_KEY = "vision.fit.compare.v1";
   const comparison = (() => {
@@ -77,7 +77,7 @@ import { gsap } from "gsap";
     const products = list();
     $("#n").textContent = fa(products.length) + " محصول";
     $("#prv").textContent = "تا " + fa(state.max) + " " + (S.currency || "تومان");
-    grid.innerHTML = products.length ? products.map(product => {
+    grid.innerHTML = products.length ? products.slice(0, state.visibleCount).map(product => {
       const canFit = !!(product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
       const image = product.img
         ? '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">'
@@ -106,6 +106,8 @@ import { gsap } from "gsap";
       '</article>';
     }).join("") : '<div class="shop-empty"><strong>چیزی برای این جست‌وجو پیدا نشد.</strong>عبارت یا فیلتر را عوض کن.</div>';
 
+    const more = $("#shop-load-more");
+    if (more) { more.hidden = products.length <= state.visibleCount; more.textContent = "نمایش محصولات بیشتر (" + fa(Math.min(12, products.length - state.visibleCount)) + ")"; }
     $("#cats").innerHTML = C.map(category =>
       '<button type="button" class="shop-category ' + (category === state.cat ? "on" : "") + '" data-cat="' + escapeHtml(category) + '" aria-pressed="' + (category === state.cat) + '">' + escapeHtml(category) + '</button>'
     ).join("");
@@ -580,9 +582,10 @@ import { gsap } from "gsap";
     }
   });
 
-  $("#q").addEventListener("input", event => { state.q = event.target.value || ""; render(); });
-  $("#sort").addEventListener("change", event => { state.sort = event.target.value; render(); });
-  pr.addEventListener("input", event => { state.max = Number(event.target.value); render(); });
+  $("#shop-load-more")?.addEventListener("click", () => { state.visibleCount += 12; render(); });
+  $("#q").addEventListener("input", event => { state.q = event.target.value || ""; state.visibleCount = 12; render(); });
+  $("#sort").addEventListener("change", event => { state.sort = event.target.value; state.visibleCount = 12; render(); });
+  pr.addEventListener("input", event => { state.max = Number(event.target.value); state.visibleCount = 12; render(); });
   $("#reset").addEventListener("click", () => {
     state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
     $("#q").value = ""; $("#sort").value = "new"; pr.value = state.max;
