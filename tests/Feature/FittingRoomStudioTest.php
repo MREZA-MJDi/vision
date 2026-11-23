@@ -383,7 +383,7 @@ class FittingRoomStudioTest extends TestCase
                 'fit_y_top' => 0.38,
                 'fit_y_bottom' => 0.66,
                 'is_active' => '1',
-                'preview_top' => \\Illuminate\\Http\\UploadedFile::fake()->image('replacement-top.jpg', 420, 630),
+                'preview_top' => \Illuminate\Http\UploadedFile::fake()->image('replacement-top.jpg', 420, 630),
             ])
             ->assertSessionHasErrors('preview_combined');
 
