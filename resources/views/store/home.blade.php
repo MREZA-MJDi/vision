@@ -180,5 +180,35 @@
         </div>
         <span class="home-hero__index" aria-hidden="true">V / 001</span>
     </section>
+    <section class="vision-home-discover" aria-labelledby="vision-discover-title">
+        <div class="vision-home-discover__heading">
+            <span>VISION / CURATED EDIT</span>
+            <h2 id="vision-discover-title">انتخاب‌های تازه برای استایل هر روز</h2>
+            <p>محصولات واقعی فروشگاه، با جزئیات دقیق و امکان انتخاب استایل در اتاق پرو.</p>
+        </div>
+        <div class="vision-home-discover__grid">
+            @foreach($heroProducts->take(4) as $product)
+                @php($variant = $product->primaryAvailableVariant ?? $product->primaryActiveVariant)
+                <a class="vision-home-discover__card" href="{{ route('products.show', ['product' => $product->slug]) }}">
+                    <div class="vision-home-discover__image">
+                        @if($variant?->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url)
+                            <img loading="lazy" decoding="async" src="{{ $variant?->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url }}" alt="{{ $product->name }}">
+                        @endif
+                    </div>
+                    <strong>{{ $product->name }}</strong>
+                    <span>مشاهده محصول <span aria-hidden="true">↗</span></span>
+                </a>
+            @endforeach
+        </div>
+        <div class="vision-home-discover__actions">
+            <a href="{{ route('shop.index') }}">مشاهده همه محصولات</a>
+            <a href="{{ route('shop.index') }}#catalog">انتخاب لباس در اتاق پرو</a>
+        </div>
+    </section>
+    <section class="vision-home-benefits" aria-label="ویژگی‌های فروشگاه">
+        <div><strong>انتخاب واقعی</strong><span>محصولات ثبت‌شده در فروشگاه</span></div>
+        <div><strong>اتاق پرو استودیویی</strong><span>پیش‌نمایش با تصاویر آماده‌شده</span></div>
+        <div><strong>خرید یکپارچه</strong><span>از انتخاب استایل تا سبد خرید</span></div>
+    </section>
 </main>
 @endsection
