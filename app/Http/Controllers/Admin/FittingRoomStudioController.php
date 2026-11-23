@@ -164,29 +164,54 @@ class FittingRoomStudioController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        $mannequin = FittingRoomMannequin::query()->findOrFail((int) $data['mannequin_id']);
-
-        $hasTopScene = $request->hasFile('preview_top') || (bool) $look->previewTopMedia;
-        $hasBottomScene = $request->hasFile('preview_bottom') || (bool) $look->previewBottomMedia;
-        $hasCombinedScene = $request->hasFile('preview_combined') || (bool) $look->previewCombinedMedia;
-        $topVariantRequested = (int) ($data['top_variant_id'] ?? 0) > 0;
-        $bottomVariantRequested = (int) ($data['bottom_variant_id'] ?? 0) > 0;
-
-        if (!$topVariantRequested && !$bottomVariantRequested) {
-            throw ValidationException::withMessages(['top_variant_id' => 'برای هر ست حداقل یک واریانت بالاپوش یا پایین‌تنه انتخاب کن.']);
-        }
-        if ($topVariantRequested && !$hasTopScene) {
-            throw ValidationException::withMessages(['preview_top' => 'برای واریانت بالاپوش، تصویر حالت T را آپلود کن.']);
-        }
-        if ($bottomVariantRequested && !$hasBottomScene) {
-            throw ValidationException::withMessages(['preview_bottom' => 'برای واریانت پایین‌تنه، تصویر حالت B را آپلود کن.']);
-        }
-        if ($topVariantRequested && $bottomVariantRequested && !$hasCombinedScene) {
-            throw ValidationException::withMessages(['preview_combined' => 'برای ست کامل، تصویر حالت TB را آپلود کن.']);
+        $mannequin = FittingRoomMannequin::query()->with('baseMedia')->findOrFail((int) $data['mannequin_id']);
+        if (!$mannequin->baseMedia?->url) {
+            throw ValidationException::withMessages([
+                'mannequin_id' => 'ابتدا برای مانکن انتخاب‌شده یک تصویر پایهٔ معتبر ثبت کن.',
+            ]);
         }
 
         $topVariantId = (int) ($data['top_variant_id'] ?? 0);
         $bottomVariantId = (int) ($data['bottom_variant_id'] ?? 0);
+        $existingTopVariantId = $look->exists
+            ? (int) $look->items()->where('slot', 'top')->value('product_variant_id')
+            : 0;
+        $existingBottomVariantId = $look->exists
+            ? (int) $look->items()->where('slot', 'bottom')->value('product_variant_id')
+            : 0;
+        $mannequinChanged = $look->exists && (int) $look->mannequin_id !== (int) $mannequin->getKey();
+        $topVariantChanged = $mannequinChanged || $topVariantId !== $existingTopVariantId;
+        $bottomVariantChanged = $mannequinChanged || $bottomVariantId !== $existingBottomVariantId;
+        $topVariantRequested = $topVariantId > 0;
+        $bottomVariantRequested = $bottomVariantId > 0;
+
+        // Reuse a saved scene only while both its mannequin and mapped variant
+        // remain unchanged. A different garment must never inherit old imagery.
+        $hasTopScene = $request->hasFile('preview_top')
+            || (!$topVariantChanged && filled($look->previewTopMedia?->url));
+        $hasBottomScene = $request->hasFile('preview_bottom')
+            || (!$bottomVariantChanged && filled($look->previewBottomMedia?->url));
+        $hasCombinedScene = $request->hasFile('preview_combined')
+            || (!$mannequinChanged && !$topVariantChanged && !$bottomVariantChanged && filled($look->previewCombinedMedia?->url));
+
+        if (!$topVariantRequested && !$bottomVariantRequested) {
+            throw ValidationException::withMessages(['top_variant_id' => 'برای هر ترکیب حداقل یک واریانت بالاپوش یا پایین‌تنه انتخاب کن.']);
+        }
+        if ($topVariantRequested && !$hasTopScene) {
+            throw ValidationException::withMessages([
+                'preview_top' => 'برای این مانکن و واریانت، تصویر تازهٔ حالت T را آپلود کن.',
+            ]);
+        }
+        if ($bottomVariantRequested && !$hasBottomScene) {
+            throw ValidationException::withMessages([
+                'preview_bottom' => 'برای این مانکن و واریانت، تصویر تازهٔ حالت B را آپلود کن.',
+            ]);
+        }
+        if ($topVariantRequested && $bottomVariantRequested && !$hasCombinedScene) {
+            throw ValidationException::withMessages([
+                'preview_combined' => 'برای این جفت واریانت، تصویر تازهٔ حالت TB را آپلود کن.',
+            ]);
+        }
         if ($topVariantId > 0 && $topVariantId === $bottomVariantId) {
             throw ValidationException::withMessages([
                 'bottom_variant_id' => 'بالاپوش و پایین‌تنه باید دو واریانت جدا باشند.',
@@ -224,7 +249,22 @@ class FittingRoomStudioController extends Controller
         $storedPaths = [];
         $obsoleteMedia = [];
         try {
-            DB::transaction(function () use ($request, $data, $look, $mannequin, $variants, &$storedPaths, &$obsoleteMedia): void {
+            DB::transaction(function () use (
+                $request,
+                $data,
+                $look,
+                $mannequin,
+                $variants,
+                $topVariantId,
+                $bottomVariantId,
+                $topVariantRequested,
+                $bottomVariantRequested,
+                $mannequinChanged,
+                $topVariantChanged,
+                $bottomVariantChanged,
+                &$storedPaths,
+                &$obsoleteMedia
+            ): void {
                 if ($look->exists && $look->mannequin_id != $mannequin->getKey()) {
                     $look->items()->delete();
                 }
@@ -242,23 +282,40 @@ class FittingRoomStudioController extends Controller
                     'preview_combined' => ['previewCombinedMedia', 'preview_combined_media_id', 'تصویر ست کامل'],
                     'preview_suggested' => ['previewSuggestedMedia', 'preview_suggested_media_id', 'تصویر ست پیشنهادی'],
                 ] as $input => [$relation, $foreignKey, $alt]) {
-                    if (!$request->hasFile($input)) {
+                    if ($request->hasFile($input)) {
+                        $obsolete = $look->{$relation};
+                        if ($obsolete) {
+                            $obsoleteMedia[] = $obsolete;
+                        }
+
+                        $media = $this->storeMedia(
+                            $look,
+                            $request->file($input),
+                            'fitting-room-scene',
+                            $look->label . ' — ' . $alt,
+                            $storedPaths
+                        );
+                        $look->{$foreignKey} = $media->getKey();
+
                         continue;
                     }
 
-                    $obsolete = $look->{$relation};
-                    if ($obsolete) {
-                        $obsoleteMedia[] = $obsolete;
-                    }
+                    // Remove scenes that no longer describe the saved mapping.
+                    $mustClear = match ($input) {
+                        'preview_top' => !$topVariantRequested,
+                        'preview_bottom' => !$bottomVariantRequested,
+                        'preview_combined' => !$topVariantRequested || !$bottomVariantRequested,
+                        'preview_suggested' => $mannequinChanged || $topVariantChanged || $bottomVariantChanged,
+                        default => false,
+                    };
 
-                    $media = $this->storeMedia(
-                        $look,
-                        $request->file($input),
-                        'fitting-room-scene',
-                        $look->label . ' — ' . $alt,
-                        $storedPaths
-                    );
-                    $look->{$foreignKey} = $media->getKey();
+                    if ($mustClear) {
+                        $obsolete = $look->{$relation};
+                        if ($obsolete) {
+                            $obsoleteMedia[] = $obsolete;
+                        }
+                        $look->{$foreignKey} = null;
+                    }
                 }
 
                 $look->save();
@@ -267,7 +324,9 @@ class FittingRoomStudioController extends Controller
                     'top_variant_id' => ['slot' => 'top', 'fit' => 'fit_y_top', 'default' => 0.38],
                     'bottom_variant_id' => ['slot' => 'bottom', 'fit' => 'fit_y_bottom', 'default' => 0.66],
                 ] as $field => $mapping) {
-                    $variantId = (int) ($data[$field] ?? 0);
+                    $variantId = $field === 'top_variant_id'
+                        ? $topVariantId
+                        : $bottomVariantId;
                     if (!$variantId) {
                         $look->items()->where('slot', $mapping['slot'])->delete();
                         continue;

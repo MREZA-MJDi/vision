@@ -32,12 +32,12 @@ class FittingRoomShopData
             ->orderBy('id')
             ->get();
 
-        $mannequin = $mannequins->first();
+        $mannequin = $mannequins->first(fn (FittingRoomMannequin $record) => filled($record->baseMedia?->url));
         $looks = [];
         $itemMap = [];
 
-        foreach ($mannequins as $mannequinRecord) {
-            foreach ($mannequinRecord->looks as $look) {
+        if ($mannequin) {
+            foreach ($mannequin->looks as $look) {
                 $top = $look->items->firstWhere('slot', 'top');
                 $bottom = $look->items->firstWhere('slot', 'bottom');
 
@@ -58,8 +58,8 @@ class FittingRoomShopData
                     $variant = $item->variant;
                     $product = $variant?->product;
                     $audienceMatches = $product && (
-                        $mannequinRecord->audience === 'all'
-                        || $product->audience === $mannequinRecord->audience
+                        $mannequin->audience === 'all'
+                        || $product->audience === $mannequin->audience
                     );
                     if (!$variant || !$product || !$variant->is_active || !$product->is_active || !$audienceMatches) {
                         continue;

@@ -4,6 +4,16 @@
 
 @section('content')
 <div class="fr-studio">
+    @if (session('status'))
+        <div class="fr-feedback fr-feedback--success" role="status">{{ session('status') }}</div>
+    @endif
+    @if ($errors->any())
+        <div class="fr-feedback fr-feedback--error" role="alert">
+            <strong>ذخیره انجام نشد؛ موارد زیر را اصلاح کن:</strong>
+            <ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+        </div>
+    @endif
+
     <header class="fr-hero">
         <div class="fr-hero__copy">
             <p class="fr-kicker"><span></span> VISION / CREATIVE LAB</p>
@@ -90,18 +100,19 @@
 
     <section class="fr-section" id="fr-looks">
         <div class="fr-section__head">
-            <div><p class="fr-kicker">02 / LOOK COMPOSER</p><h2>گالری ست‌ها و صحنه‌ها</h2><p>هر ست، واریانت واقعی بالاپوش/پایین‌تنه را به تصاویر T، B، TB و S متصل می‌کند. برای کارت محصول هم تصویر و قیمت از دیتابیس محصولات خوانده می‌شود.</p></div>
+            <div><p class="fr-kicker">02 / LOOK COMPOSER</p><h2>ترکیب لباس و تصاویر مانکن</h2><p>برای هر ترکیب، واریانت واقعی بالاپوش و پایین‌تنه را انتخاب کن؛ سپس سه عکس واقعی T، B و TB را برای همان مانکن و همان محصولات ثبت کن. تصویر کارت محصول و قیمت همچنان از گالری و دیتابیس محصول خوانده می‌شود.</p></div>
             <span class="fr-section__count">{{ number_format($mannequins->sum('looks_count')) }} ست</span>
         </div>
 
+        @if($mannequins->isNotEmpty())
         <section class="fr-panel fr-look-editor">
-            <div class="fr-panel__head"><span class="fr-step">CREATE A LOOK</span><span class="fr-plus">＋</span></div>
+            <div class="fr-panel__head"><span class="fr-step">STEP 02 / DEFINE GARMENTS</span><span class="fr-plus">＋</span></div>
             <h3>ساخت ست جدید</h3>
             <p class="fr-muted">عکس‌های این بخش با قاب ۲:۳ بارگذاری شوند؛ عکس محصول/واریانت جداگانه است و می‌توانی همین‌جا هم به آن اضافه‌اش کنی.</p>
-            <form method="POST" action="{{ route('commerce-admin.try-on.looks.store') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('commerce-admin.try-on.looks.store') }}" enctype="multipart/form-data" data-fr-look-form="create">
                 @csrf
                 <div class="fr-look-meta">
-                    <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required>@foreach($mannequins as $mannequin)<option value="{{ $mannequin->id }}">{{ $mannequin->label }}{{ $mannequin->is_active ? '' : ' (غیرفعال)' }}</option>@endforeach</select></label>
+                    <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required data-fr-initial-value="{{ old('mannequin_id', $mannequins->first()->id) }}">@foreach($mannequins as $mannequin)<option value="{{ $mannequin->id }}" @selected((int) old('mannequin_id', $mannequins->first()->id) === (int) $mannequin->id)>{{ $mannequin->label }}{{ $mannequin->is_active ? '' : ' (غیرفعال)' }}</option>@endforeach</select></label>
                     <label class="fr-field"><span>عنوان ست</span><input name="label" value="{{ old('label') }}" placeholder="استایل روزمره نارنجی" required maxlength="160"></label>
                     <label class="fr-field"><span>کد یکتا</span><input name="code" value="{{ old('code') }}" placeholder="orange-casual" pattern="[a-zA-Z0-9_-]+" required maxlength="80"></label>
                     <label class="fr-field"><span>اولویت گالری</span><input type="number" name="sort_order" value="0" min="0" max="65535"></label>
@@ -109,29 +120,29 @@
                 <div class="fr-look-products">
                     <div class="fr-assignment">
                         <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>واریانت واقعی + تصویر کارت</small></div></div>
-                        <label class="fr-field"><span>محصول / واریانت</span><select name="top_variant_id"><option value="">بدون بالاپوش</option>@foreach($variants as $variant)<option value="{{ $variant->id }}">{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
+                        <label class="fr-field"><span>محصول / واریانت</span><select name="top_variant_id" data-fr-initial-value="{{ old('top_variant_id', '') }}"><option value="">بدون بالاپوش</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int) old('top_variant_id', 0) === (int) $variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
                         <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img alt="" data-fr-preview hidden></label>
                         <label class="fr-field"><span>نقطهٔ حرکت انیمیشن</span><input type="number" name="fit_y_top" value="0.38" min="0" max="1" step="0.01"></label>
                     </div>
                     <div class="fr-assignment">
                         <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>واریانت واقعی + تصویر کارت</small></div></div>
-                        <label class="fr-field"><span>محصول / واریانت</span><select name="bottom_variant_id"><option value="">بدون پایین‌تنه</option>@foreach($variants as $variant)<option value="{{ $variant->id }}">{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
+                        <label class="fr-field"><span>محصول / واریانت</span><select name="bottom_variant_id" data-fr-initial-value="{{ old('bottom_variant_id', '') }}"><option value="">بدون پایین‌تنه</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int) old('bottom_variant_id', 0) === (int) $variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
                         <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img alt="" data-fr-preview hidden></label>
                         <label class="fr-field"><span>نقطهٔ حرکت انیمیشن</span><input type="number" name="fit_y_bottom" value="0.66" min="0" max="1" step="0.01"></label>
                     </div>
                 </div>
-                <div class="fr-scene-grid">
+                <div class="fr-scene-grid" aria-label="سه حالت تصویر مانکن">
                     @foreach([
-                        ['preview_top','T','نمای بالاپوش','برای حالت انتخاب بالاپوش؛ فایل ۲:۳'],
-                        ['preview_bottom','B','نمای پایین‌تنه','برای حالت انتخاب پایین‌تنه؛ فایل ۲:۳'],
-                        ['preview_combined','TB','نمای ست کامل','برای نمایش هم‌زمان بالاپوش و پایین‌تنه'],
-                        ['preview_suggested','S','ست پیشنهادی','برای اکشن «دیدن ست پیشنهادی»']
-                    ] as [$input,$code,$title,$hint])
-                        <label class="fr-scene-upload">
+                        ['preview_top','T','مانکن با بالاپوش','تصویر همان مانکن با فقط همین تی‌شرت یا بالاپوش','top'],
+                        ['preview_bottom','B','مانکن با پایین‌تنه','تصویر همان مانکن با فقط همین شلوار یا پایین‌تنه','bottom'],
+                        ['preview_combined','TB','مانکن با ست کامل','تصویر همان مانکن با هر دو واریانت انتخاب‌شده','combined']
+                    ] as [$input,$code,$title,$hint,$state])
+                        <label class="fr-scene-upload" data-fr-scene-card="{{ $state }}">
                             <span class="fr-scene-upload__code">{{ $code }}</span>
                             <span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $hint }}</small></span>
-                            <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input>
+                            <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input data-fr-scene-input="{{ $state }}" data-has-existing="0">
                             <span class="fr-scene-upload__choose">انتخاب تصویر <span>↗</span></span>
+                            <small class="fr-scene-status" data-fr-scene-status>پس از انتخاب محصول، وضعیت این تصویر مشخص می‌شود.</small>
                             <img alt="" data-fr-preview hidden>
                         </label>
                     @endforeach
@@ -140,6 +151,13 @@
                 <button class="fr-button fr-button--primary fr-button--wide" type="submit">ذخیرهٔ ست و صحنه‌ها <span>↗</span></button>
             </form>
         </section>
+        @else
+            <div class="fr-empty fr-step-note">
+                <strong>مرحلهٔ اول هنوز تکمیل نشده است.</strong>
+                <span>ابتدا در «گالری مانکن‌ها» یک مانکن همراه تصویر پایه ذخیره کن؛ بعد فرم ثبت لباس و سه حالت تصویر فعال می‌شود.</span>
+                <a class="fr-button fr-button--primary" href="#fr-mannequins">رفتن به ساخت مانکن</a>
+            </div>
+        @endif
 
         @foreach($mannequins as $mannequin)
             @if($mannequin->looks->isNotEmpty())
@@ -165,12 +183,11 @@
                                 </div>
                                 <div class="fr-look-card__body">
                                     <div class="fr-look-card__title"><h3>{{ $look->label }}</h3><span>{{ $look->items->count() }} آیتم</span></div>
-                                    <div class="fr-scenes-mini">
+                                    <div class="fr-scenes-mini" aria-label="تصاویر ثبت‌شدهٔ T، B و TB">
                                         @foreach([
                                             ['T',$look->previewTopMedia?->url],
                                             ['B',$look->previewBottomMedia?->url],
-                                            ['TB',$look->previewCombinedMedia?->url],
-                                            ['S',$look->previewSuggestedMedia?->url]
+                                            ['TB',$look->previewCombinedMedia?->url]
                                         ] as [$tag,$url])
                                             <div class="fr-scenes-mini__item"><span>{{ $tag }}</span>@if($url)<img src="{{ $url }}" alt="صحنهٔ {{ $tag }}" loading="lazy">@else<div class="fr-scenes-mini__empty">—</div>@endif</div>
                                         @endforeach
@@ -181,10 +198,10 @@
                                     </div>
                                     <details class="fr-edit-details">
                                         <summary>ویرایش ست، محصولات و عکس‌ها <span>⌄</span></summary>
-                                        <form method="POST" action="{{ route('commerce-admin.try-on.looks.update', $look) }}" enctype="multipart/form-data">
+                                        <form method="POST" action="{{ route('commerce-admin.try-on.looks.update', $look) }}" enctype="multipart/form-data" data-fr-look-form="edit">
                                             @csrf @method('PUT')
                                             <div class="fr-look-meta">
-                                                <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required>@foreach($mannequins as $option)<option value="{{ $option->id }}" @selected($option->id === $mannequin->id)>{{ $option->label }}</option>@endforeach</select></label>
+                                                <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required data-fr-initial-value="{{ $mannequin->id }}">@foreach($mannequins as $option)<option value="{{ $option->id }}" @selected($option->id === $mannequin->id)>{{ $option->label }}</option>@endforeach</select></label>
                                                 <label class="fr-field"><span>عنوان ست</span><input name="label" value="{{ $look->label }}" required maxlength="160"></label>
                                                 <label class="fr-field"><span>کد</span><input name="code" value="{{ $look->code }}" required pattern="[a-zA-Z0-9_-]+" maxlength="80"></label>
                                                 <label class="fr-field"><span>اولویت</span><input type="number" name="sort_order" value="{{ $look->sort_order }}" min="0" max="65535"></label>
@@ -192,31 +209,32 @@
                                             <div class="fr-look-products">
                                                 <div class="fr-assignment">
                                                     <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>تصویر کارت محصول واریانت</small></div></div>
-                                                    <label class="fr-field"><span>محصول / واریانت</span><select name="top_variant_id"><option value="">بدون بالاپوش</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int)($topItem?->product_variant_id ?? 0) === (int)$variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
+                                                    <label class="fr-field"><span>محصول / واریانت</span><select name="top_variant_id" data-fr-initial-value="{{ $topItem?->product_variant_id ?? '' }}"><option value="">بدون بالاپوش</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int)($topItem?->product_variant_id ?? 0) === (int)$variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
                                                     @if($topItem?->variant?->primaryGalleryMedia?->url)<img class="fr-current-product-image" src="{{ $topItem->variant->primaryGalleryMedia->url }}" alt="تصویر فعلی بالاپوش">@endif
                                                     <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img alt="" data-fr-preview hidden></label>
                                                     <label class="fr-field"><span>نقطهٔ حرکت</span><input type="number" name="fit_y_top" value="{{ $topItem?->fit_y ?? 0.38 }}" min="0" max="1" step="0.01"></label>
                                                 </div>
                                                 <div class="fr-assignment">
                                                     <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>تصویر کارت محصول واریانت</small></div></div>
-                                                    <label class="fr-field"><span>محصول / واریانت</span><select name="bottom_variant_id"><option value="">بدون پایین‌تنه</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int)($bottomItem?->product_variant_id ?? 0) === (int)$variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
+                                                    <label class="fr-field"><span>محصول / واریانت</span><select name="bottom_variant_id" data-fr-initial-value="{{ $bottomItem?->product_variant_id ?? '' }}"><option value="">بدون پایین‌تنه</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int)($bottomItem?->product_variant_id ?? 0) === (int)$variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
                                                     @if($bottomItem?->variant?->primaryGalleryMedia?->url)<img class="fr-current-product-image" src="{{ $bottomItem->variant->primaryGalleryMedia->url }}" alt="تصویر فعلی پایین‌تنه">@endif
                                                     <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img alt="" data-fr-preview hidden></label>
                                                     <label class="fr-field"><span>نقطهٔ حرکت</span><input type="number" name="fit_y_bottom" value="{{ $bottomItem?->fit_y ?? 0.66 }}" min="0" max="1" step="0.01"></label>
                                                 </div>
                                             </div>
-                                            <div class="fr-scene-grid fr-scene-grid--compact">
+                                            <div class="fr-scene-grid fr-scene-grid--compact" aria-label="سه حالت تصویر ثبت‌شدهٔ مانکن">
                                                 @foreach([
-                                                    ['preview_top','T','بالاپوش',$look->previewTopMedia?->url],
-                                                    ['preview_bottom','B','پایین‌تنه',$look->previewBottomMedia?->url],
-                                                    ['preview_combined','TB','ست کامل',$look->previewCombinedMedia?->url],
-                                                    ['preview_suggested','S','پیشنهاد',$look->previewSuggestedMedia?->url]
-                                                ] as [$input,$code,$title,$url])
-                                                    <label class="fr-scene-upload">
-                                                        <span class="fr-scene-upload__code">{{ $code }}</span><span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $url ? 'عکس فعلی محفوظ است؛ برای تعویض فایل جدید انتخاب کن.' : 'هنوز تصویری ندارد.' }}</small></span>
-                                                        <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input>
+                                                    ['preview_top','T','مانکن با بالاپوش','top',$look->previewTopMedia?->url],
+                                                    ['preview_bottom','B','مانکن با پایین‌تنه','bottom',$look->previewBottomMedia?->url],
+                                                    ['preview_combined','TB','مانکن با ست کامل','combined',$look->previewCombinedMedia?->url]
+                                                ] as [$input,$code,$title,$state,$url])
+                                                    <label class="fr-scene-upload" data-fr-scene-card="{{ $state }}">
+                                                        <span class="fr-scene-upload__code">{{ $code }}</span><span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $url ? 'تصویر فعلی ثبت شده؛ با تغییر محصول یا مانکن باید جایگزین شود.' : 'برای این حالت هنوز تصویر ثبت نشده است.' }}</small></span>
+                                                        <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input data-fr-scene-input="{{ $state }}" data-has-existing="{{ $url ? '1' : '0' }}">
                                                         @if($url)<img class="fr-scene-current" src="{{ $url }}" alt="صحنهٔ فعلی {{ $code }}">@endif
-                                                        <span class="fr-scene-upload__choose">تعویض تصویر <span>↗</span></span><img alt="" data-fr-preview hidden>
+                                                        <span class="fr-scene-upload__choose">تعویض تصویر <span>↗</span></span>
+                                                        <small class="fr-scene-status" data-fr-scene-status>تصویر ذخیره‌شده برای ترکیب فعلی.</small>
+                                                        <img alt="" data-fr-preview hidden>
                                                     </label>
                                                 @endforeach
                                             </div>
@@ -246,6 +264,10 @@
 @push('head')
 <style>
 .fr-studio{--fr-bg:#151219;--fr-panel:#201b24;--fr-card:#1b1720;--fr-line:#3a303d;--fr-text:#f8f1ea;--fr-muted:#aa9da9;--fr-ac:#e58243;--fr-glow:rgba(229,130,67,.13);color:var(--fr-text);font-family:Vazirmatn,Tahoma,sans-serif;max-width:1600px;margin:auto}
+.fr-feedback{margin:0 0 18px;padding:13px 16px;border:1px solid var(--fr-line);border-radius:12px;font-size:12px;line-height:1.9}
+.fr-feedback--success{border-color:rgba(90,190,130,.35);background:rgba(45,145,90,.09);color:#c6f0d4}
+.fr-feedback--error{border-color:rgba(220,120,120,.42);background:rgba(165,55,65,.1);color:#ffe1e1}
+.fr-feedback ul{margin:7px 0 0;padding-right:18px}
 .fr-studio *{box-sizing:border-box}.fr-studio input,.fr-studio select,.fr-studio button{font:inherit}.fr-studio input,.fr-studio select{color:var(--fr-text)}.fr-studio button,.fr-studio a{transition:color .2s,border-color .2s,background .2s,transform .2s}
 .fr-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:20px;align-items:center;padding:clamp(22px,4vw,44px);border-radius:24px;border:1px solid var(--fr-line);background:radial-gradient(ellipse at 80% 15%,rgba(229,130,67,.18),transparent 36%),linear-gradient(135deg,#211b25,#17131b 72%);box-shadow:0 24px 80px rgba(0,0,0,.17);margin-bottom:26px}
 .fr-kicker{margin:0 0 10px;color:#c2a28e;font:600 10px/1.5 "Space Grotesk",Vazirmatn,sans-serif;letter-spacing:.16em}.fr-kicker span{display:inline-block;width:6px;height:6px;background:var(--fr-ac);border-radius:50%;margin-left:8px;box-shadow:0 0 0 5px rgba(229,130,67,.12)}
@@ -266,26 +288,115 @@
 .fr-empty{grid-column:1/-1;display:grid;gap:6px;place-content:center;min-height:150px;text-align:center;border:1px dashed var(--fr-line);border-radius:16px;color:var(--fr-muted);font-size:12px}.fr-empty strong{font-size:15px;color:var(--fr-text)}
 .fr-look-editor{margin-bottom:20px;padding:22px}.fr-look-meta{display:grid;grid-template-columns:1.1fr 1.2fr 1fr .55fr;gap:12px;margin:14px 0 4px}.fr-look-meta .fr-field{margin-bottom:8px}
 .fr-look-products{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:5px 0 18px}.fr-assignment{border:1px solid var(--fr-line);border-radius:14px;padding:14px;background:rgba(10,8,13,.18);min-width:0}.fr-assignment__title{display:flex;gap:10px;align-items:center;margin-bottom:12px}.fr-slot-icon{display:grid;place-items:center;width:35px;height:35px;border-radius:10px;background:var(--fr-glow);border:1px solid rgba(229,130,67,.3);color:#f2a36e;font:600 12px "Space Grotesk",sans-serif}.fr-assignment__title strong,.fr-assignment__title small{display:block}.fr-assignment__title strong{font-size:12px}.fr-assignment__title small{color:var(--fr-muted);font-size:10px;margin-top:3px}.fr-current-product-image{display:block;width:76px;height:76px;object-fit:contain;background:#17131c;border:1px solid var(--fr-line);border-radius:10px;padding:4px;margin:0 0 10px}
-.fr-scene-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:15px 0}.fr-scene-upload{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:9px;min-height:115px;padding:12px;border:1px dashed #55445a;border-radius:12px;background:rgba(9,7,12,.23);overflow:hidden;cursor:pointer}.fr-scene-upload:hover{border-color:#bd7e56;background:var(--fr-glow)}.fr-scene-upload__code{display:grid;place-items:center;width:37px;height:37px;border-radius:11px;background:var(--fr-glow);border:1px solid rgba(229,130,67,.28);color:#f1a36e;font:600 11px "Space Grotesk",sans-serif}.fr-scene-upload__copy{display:grid;gap:4px;min-width:0}.fr-scene-upload__copy strong{font-size:11px}.fr-scene-upload__copy small{font-size:9px;color:var(--fr-muted);line-height:1.65}.fr-scene-upload__choose{grid-column:1/-1;display:flex;justify-content:space-between;border-top:1px solid var(--fr-line);padding-top:8px;font-size:10px;color:#f0a06b}.fr-scene-upload img[data-fr-preview]:not([hidden]){grid-column:1/-1;width:auto;height:100px;max-width:100%;object-fit:contain;justify-self:center;border-radius:7px}.fr-scene-current{grid-column:1/-1;width:100%;height:85px;object-fit:contain;border-radius:7px;background:#100d13}.fr-scene-grid--compact .fr-scene-upload{min-height:100px}
+.fr-scene-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}
+.fr-scene-status{grid-column:1/-1;color:var(--fr-muted);font-size:9px;line-height:1.7}
+.fr-scene-upload.is-required{border-color:#c9875c;background:rgba(229,130,67,.1)}
+.fr-scene-upload.is-ready{border-color:rgba(112,190,145,.5)}
+.fr-step-note{padding:24px}.fr-scene-upload{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:9px;min-height:115px;padding:12px;border:1px dashed #55445a;border-radius:12px;background:rgba(9,7,12,.23);overflow:hidden;cursor:pointer}.fr-scene-upload:hover{border-color:#bd7e56;background:var(--fr-glow)}.fr-scene-upload__code{display:grid;place-items:center;width:37px;height:37px;border-radius:11px;background:var(--fr-glow);border:1px solid rgba(229,130,67,.28);color:#f1a36e;font:600 11px "Space Grotesk",sans-serif}.fr-scene-upload__copy{display:grid;gap:4px;min-width:0}.fr-scene-upload__copy strong{font-size:11px}.fr-scene-upload__copy small{font-size:9px;color:var(--fr-muted);line-height:1.65}.fr-scene-upload__choose{grid-column:1/-1;display:flex;justify-content:space-between;border-top:1px solid var(--fr-line);padding-top:8px;font-size:10px;color:#f0a06b}.fr-scene-upload img[data-fr-preview]:not([hidden]){grid-column:1/-1;width:auto;height:100px;max-width:100%;object-fit:contain;justify-self:center;border-radius:7px}.fr-scene-current{grid-column:1/-1;width:100%;height:85px;object-fit:contain;border-radius:7px;background:#100d13}.fr-scene-grid--compact .fr-scene-upload{min-height:100px}
 .fr-look-group{margin:25px 0 32px}.fr-look-group__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}.fr-look-group__head h3{margin:0;font-size:17px}.fr-look-group__head>span{font-size:10px;color:var(--fr-muted)}.fr-look-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:start}
-.fr-look-card__cover{height:220px}.fr-look-card__title{align-items:center}.fr-scenes-mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0}.fr-scenes-mini__item{position:relative;border:1px solid var(--fr-line);border-radius:7px;overflow:hidden;aspect-ratio:2/3;background:#121016}.fr-scenes-mini__item span{position:absolute;top:4px;right:4px;z-index:1;border-radius:4px;background:rgba(10,8,12,.8);color:#f5ad78;padding:2px 4px;font:8px "Space Grotesk",sans-serif}.fr-scenes-mini__item img{width:100%;height:100%;object-fit:cover}.fr-scenes-mini__empty{height:100%;display:grid;place-items:center;color:#756a7b;font-size:14px}
+.fr-look-card__cover{height:220px}.fr-look-card__title{align-items:center}.fr-scenes-mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:12px 0}.fr-scenes-mini__item{position:relative;border:1px solid var(--fr-line);border-radius:7px;overflow:hidden;aspect-ratio:2/3;background:#121016}.fr-scenes-mini__item span{position:absolute;top:4px;right:4px;z-index:1;border-radius:4px;background:rgba(10,8,12,.8);color:#f5ad78;padding:2px 4px;font:8px "Space Grotesk",sans-serif}.fr-scenes-mini__item img{width:100%;height:100%;object-fit:cover}.fr-scenes-mini__empty{height:100%;display:grid;place-items:center;color:#756a7b;font-size:14px}
 .fr-look-item-list{display:grid;gap:8px;margin:12px 0}.fr-look-item-list>div{display:flex;gap:9px;align-items:center;min-width:0}.fr-look-item-list>div>span{flex:0 0 24px;width:24px;height:24px;display:grid;place-items:center;border-radius:7px;background:var(--fr-glow);color:#f1a36e;font:10px "Space Grotesk",sans-serif}.fr-look-item-list p{margin:0;min-width:0;font-size:11px;overflow-wrap:anywhere}.fr-look-item-list small{display:block;margin-top:2px;color:var(--fr-muted);font-size:9px}
 .fr-edit-details{border-top:1px solid var(--fr-line);margin-top:14px;padding-top:12px}.fr-edit-details summary{cursor:pointer;font-size:11px;color:#e3ad89;display:flex;justify-content:space-between;gap:10px}.fr-edit-details[open] summary{margin-bottom:12px}.fr-edit-details form{margin-top:10px}
 @media(max-width:1200px){.fr-mannequin-grid,.fr-look-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fr-look-meta{grid-template-columns:1fr 1fr}.fr-scene-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.fr-hero{grid-template-columns:1fr;padding:22px}.fr-hero__mark{position:absolute;left:20px;top:20px;width:68px;height:68px;border-radius:20px;opacity:.5}.fr-hero__mark span{font-size:34px}.fr-hero__mark:before{inset:6px;border-radius:14px}.fr-hero__mark:after{inset:13px;border-radius:8px}.fr-hero__actions .fr-button{flex:1}.fr-hero__stats div{padding:0 12px}.fr-hero__stats strong{font-size:18px}.fr-mannequin-grid,.fr-look-grid,.fr-look-products{grid-template-columns:1fr}.fr-section__head{align-items:flex-start}.fr-section__head h2{font-size:20px!important}.fr-section__head>div>p:last-child{max-width:none}.fr-look-meta{grid-template-columns:1fr 1fr;gap:7px}.fr-scene-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fr-panel,.fr-look-editor{padding:14px}.fr-mannequin-card__visual,.fr-look-card__cover{height:245px}}
 </style>
 <script>
+function fittingRoomSceneSignature(form, state) {
+    const mannequin = form.querySelector('[name="mannequin_id"]')?.value || '';
+    const top = form.querySelector('[name="top_variant_id"]')?.value || '';
+    const bottom = form.querySelector('[name="bottom_variant_id"]')?.value || '';
+    if (state === 'top') return [mannequin, top].join(':');
+    if (state === 'bottom') return [mannequin, bottom].join(':');
+    return [mannequin, top, bottom].join(':');
+}
+
+function updateFittingRoomSceneGuidance(form) {
+    const top = form.querySelector('[name="top_variant_id"]');
+    const bottom = form.querySelector('[name="bottom_variant_id"]');
+    const mannequin = form.querySelector('[name="mannequin_id"]');
+    if (!top || !bottom || !mannequin) return;
+
+    const isCreate = form.dataset.frLookForm === 'create';
+    const mannequinChanged = isCreate || mannequin.value !== (mannequin.dataset.initialValue || '');
+    const topChanged = isCreate || top.value !== (top.dataset.initialValue || '');
+    const bottomChanged = isCreate || bottom.value !== (bottom.dataset.initialValue || '');
+    const topSelected = Boolean(top.value);
+    const bottomSelected = Boolean(bottom.value);
+    const states = {
+        top: { active: topSelected, refresh: mannequinChanged || topChanged },
+        bottom: { active: bottomSelected, refresh: mannequinChanged || bottomChanged },
+        combined: { active: topSelected && bottomSelected, refresh: mannequinChanged || topChanged || bottomChanged }
+    };
+
+    Object.entries(states).forEach(([state, config]) => {
+        const input = form.querySelector('[data-fr-scene-input="' + state + '"]');
+        const card = form.querySelector('[data-fr-scene-card="' + state + '"]');
+        if (!input || !card) return;
+
+        const signature = fittingRoomSceneSignature(form, state);
+        if (input.dataset.selectedFor && input.dataset.selectedFor !== signature) {
+            input.value = '';
+            delete input.dataset.selectedFor;
+            const preview = card.querySelector('[data-fr-preview]');
+            if (preview) {
+                preview.hidden = true;
+                preview.removeAttribute('src');
+            }
+        }
+
+        const hasExisting = input.dataset.hasExisting === '1';
+        const hasNewFile = Boolean(input.files && input.files.length);
+        const needsUpload = config.active && (config.refresh || !hasExisting);
+        const status = card.querySelector('[data-fr-scene-status]');
+
+        card.classList.toggle('is-required', needsUpload && !hasNewFile);
+        card.classList.toggle('is-ready', config.active && (hasNewFile || (!needsUpload && hasExisting)));
+
+        if (status) {
+            if (!config.active) {
+                status.textContent = state === 'combined'
+                    ? 'وقتی هر دو واریانت انتخاب شوند، این تصویر لازم است.'
+                    : 'برای این حالت محصولی انتخاب نشده است.';
+            } else if (hasNewFile) {
+                status.textContent = 'فایل جدید انتخاب شده؛ پس از ذخیره به این ترکیب متصل می‌شود.';
+            } else if (needsUpload) {
+                status.textContent = 'برای این محصول/مانکن، بارگذاری تصویر تازه الزامی است.';
+            } else {
+                status.textContent = 'تصویر ذخیره‌شده با انتخاب فعلی مطابقت دارد.';
+            }
+        }
+    });
+}
+
+document.querySelectorAll('[data-fr-look-form]').forEach(function (form) {
+    ['top_variant_id', 'bottom_variant_id', 'mannequin_id'].forEach(function (name) {
+        form.querySelector('[name="' + name + '"]')?.addEventListener('change', function () {
+            updateFittingRoomSceneGuidance(form);
+        });
+    });
+    updateFittingRoomSceneGuidance(form);
+});
+
 document.addEventListener('change', function (event) {
     const input = event.target.closest('[data-fr-preview-input]');
-    if (!input || !input.files || !input.files[0]) return;
-    const form = input.closest('form');
-    const preview = input.closest('label')?.querySelector('[data-fr-preview]');
-    if (!preview) return;
-    const file = input.files[0];
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = function () { preview.src = String(reader.result || ''); preview.hidden = false; };
-    reader.readAsDataURL(file);
+    if (!input) return;
+
+    if (input.files && input.files[0]) {
+        const preview = input.closest('label')?.querySelector('[data-fr-preview]');
+        const file = input.files[0];
+        if (preview && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function () { preview.src = String(reader.result || ''); preview.hidden = false; };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    const form = input.closest('[data-fr-look-form]');
+    const state = input.dataset.frSceneInput;
+    if (form && state && input.files && input.files.length) {
+        input.dataset.selectedFor = fittingRoomSceneSignature(form, state);
+    }
+    if (form) updateFittingRoomSceneGuidance(form);
 });
 </script>
 @endpush
