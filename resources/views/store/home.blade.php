@@ -210,6 +210,25 @@
         <div><strong>اتاق پرو استودیویی</strong><span>پیش‌نمایش با تصاویر آماده‌شده</span></div>
         <div><strong>خرید یکپارچه</strong><span>از انتخاب استایل تا سبد خرید</span></div>
     </section>
+    @if($homeCategories->isNotEmpty())
+    <section class="vision-home-categories" aria-labelledby="vision-home-categories-title">
+        <div class="vision-section-heading"><span>EXPLORE VISION</span><h2 id="vision-home-categories-title">دسته‌بندی‌های فروشگاه</h2></div>
+        <div class="vision-home-categories__grid">
+            @foreach($homeCategories as $category)
+                <a class="vision-home-category" href="{{ route('shop.index', ['category' => $category->slug]) }}#catalog">
+                    <div class="vision-home-category__image">
+                        @if($category->coverMedia?->url)
+                            <img src="{{ $category->coverMedia->url }}" loading="lazy" decoding="async" alt="{{ $category->coverMedia->alt_text ?: $category->name }}">
+                        @else
+                            <span aria-hidden="true">VISION</span>
+                        @endif
+                    </div>
+                    <strong>{{ $category->name }}</strong><small>مشاهده محصولات ↗</small>
+                </a>
+            @endforeach
+        </div>
+    </section>
+    @endif
     <section class="vision-shop-collections" aria-labelledby="vision-collections-title">
         <div class="vision-section-heading"><span>SHOP THE EDIT</span><h2 id="vision-collections-title">کالکشن‌های منتخب</h2><a href="{{ route('shop.index') }}">همه محصولات ↗</a></div>
         <div class="vision-shop-collections__grid">
