@@ -96,7 +96,7 @@
                 <a href="{{ route('account.show') }}">حساب کاربری</a>
                 <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
             </nav>
-            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span>
+            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span><div class="vision-trust-placeholder" aria-label="جایگاه نماد اعتماد">جایگاه اینماد</div>
         </footer>
         @elseif (!request()->routeIs('shop.index', 'products.index'))
         <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
@@ -124,6 +124,7 @@
                 </nav>
             </div>
 
+            <div class="vision-trust-placeholder" aria-label="جایگاه نماد اعتماد">جایگاه اینماد</div>
             <div class="store-footer__bottom">
                 <span>© {{ now()->year }} VISION — تمام حقوق محفوظ است.</span>
                 <a href="{{ route('storefront.index') }}">بازگشت به صفحهٔ اصلی <span aria-hidden="true">↑</span></a>
