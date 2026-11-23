@@ -36,7 +36,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertDontSee('home-category-card__image', false)
             ->assertDontSee('home-featured', false)
             ->assertDontSee('home-brand-story', false)
-            ->assertDontSee('home-benefits', false)
+            ->assertSee('vision-home-benefits', false)
             ->assertSee('home-minimal-footer', false)
             ->assertDontSee('store-footer__column', false)
             ->assertDontSee('store-header', false)
