@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Services\FittingRoomShopData;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,7 +37,16 @@ class StorefrontController extends Controller
 
         $heroProducts->loadMissing(['activeVariants.primaryGalleryMedia']);
 
-        return view('store.home', compact('heroProducts'));
+        $homeCategories = Category::query()
+            ->active()
+            ->whereHas('products', fn (Builder $query) => $query->active()->whereHas('activeVariants'))
+            ->with('coverMedia')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->limit(6)
+            ->get();
+
+        return view('store.home', compact('heroProducts', 'homeCategories'));
     }
 
     public function index(Request $request): View
