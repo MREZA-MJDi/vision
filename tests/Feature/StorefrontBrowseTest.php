@@ -31,6 +31,20 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('data-fitting-room', false);
     }
 
+    public function test_shop_exposes_progressive_catalog_and_fitting_controls(): void
+    {
+        $this->withoutVite();
+
+        $this->get('/shop')
+            ->assertOk()
+            ->assertSee('id="shop-load-more"', false)
+            ->assertSee('id="fit"', false)
+            ->assertSee('id="fit-recommend-grid"', false)
+            ->assertSee('id="stage"', false)
+            ->assertSee('id="saveCompareA"', false)
+            ->assertSee('id="addset"', false);
+    }
+
     public function test_shop_contains_filters_and_the_studio_drawer(): void
     {
         $this->withoutVite();
