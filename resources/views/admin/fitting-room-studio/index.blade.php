@@ -19,7 +19,7 @@
         <div class="fr-hero__stats">
             <div><strong>{{ number_format($mannequins->count()) }}</strong><span>مدل مانکن</span></div>
             <div><strong>{{ number_format($mannequins->sum('looks_count')) }}</strong><span>ست ثبت‌شده</span></div>
-            <div><strong>{{ number_format($variants->count()) }}</strong><span>واریانت در دسترس</span></div>
+            <div><strong>{{ number_format($variants->count()) }}</strong><span>واریانت قابل انتخاب (حداکثر ۳۰۰ مورد اخیر)</span></div>
         </div>
     </header>
 
