@@ -101,9 +101,13 @@ class FittingRoomShopData
                 ->filter(fn (ProductVariant $variant): bool => isset($itemMap[$variant->getKey()]))
                 ->values();
 
+            $primaryActiveVariant = $product->activeVariants->first(
+                fn (ProductVariant $variant): bool => (int) $variant->stock > 0
+            ) ?? $product->activeVariants->first();
+
             $variants = $fittedVariants->isNotEmpty()
                 ? $fittedVariants
-                : collect([$product->primaryAvailableVariant ?? $product->primaryActiveVariant])->filter();
+                : collect([$primaryActiveVariant])->filter();
 
             return $variants->map(function (ProductVariant $variant) use ($product, $itemMap): array {
                 $fit = $itemMap[$variant->getKey()] ?? null;
