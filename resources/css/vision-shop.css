@@ -225,3 +225,7 @@
 #fit .fit-recommend-grid {max-height:150px;overflow-y:auto;}
 #fit .picks {flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px;}
 #fit .picks button {flex:0 0 40px;}
+
+.shop-load-more {display:block;margin:28px auto 0;padding:12px 26px;border:1px solid var(--vs-line);border-radius:12px;background:var(--vs-panel);color:var(--vs-text);cursor:pointer;}
+.shop-load-more[hidden]{display:none!important;}
+.shop-load-more:hover{border-color:var(--vs-accent);color:var(--vs-accent-2);}
