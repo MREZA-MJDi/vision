@@ -23,7 +23,10 @@ class StorefrontBrowseTest extends TestCase
         $response->assertSee('استایل تو؛<br>امضای تو.', false);
         $response->assertDontSee('home-featured', false);
         $response->assertDontSee('home-brand-story', false);
-        $response->assertDontSee('home-benefits', false);
+        $response->assertSee('vision-home-benefits', false);
+        $response->assertSee('vision-shop-collections', false);
+        $response->assertSee('vision-shop-story', false);
+        $response->assertSee('نماد کسب‌وکار', false);
         $response->assertSee('home-minimal-footer', false);
         $response->assertDontSee('data-fitting-room', false);
     }
