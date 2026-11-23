@@ -1201,3 +1201,18 @@ body.storefront-body .store-product-detail__lead{display:-webkit-box;-webkit-lin
 body.storefront-body .store-product-detail__accordions details>div{max-height:300px;overflow-y:auto}
 @media(max-width:900px){.vision-shop-story{grid-template-columns:1fr}.vision-shop-story__art{min-height:240px}.vision-shop-collections__grid{gap:10px}}
 @media(max-width:600px){.vision-shop-collections__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vision-shop-collections,.vision-shop-story{padding:38px 16px}.vision-shop-collection__visual{border-radius:12px}body.storefront-body .store-product-detail__image:first-child{max-height:420px}.storefront-body:has(.vision-shop-main) #fit{width:min(390px,calc(100vw - 20px));max-height:calc(100dvh - 18px);overflow-y:auto}.storefront-body:has(.vision-shop-main) #fit .stage{width:min(100%,270px);min-height:310px;flex-shrink:0;margin-inline:auto}.storefront-body:has(.vision-shop-main) #fit .fit-recommend-grid{max-height:125px;overflow:auto}}
+
+/* Shared UI contract: consistent rhythm and interactive states across public pages. */
+:root{--vision-space-1:4px;--vision-space-2:8px;--vision-space-3:12px;--vision-space-4:16px;--vision-space-6:24px;--vision-space-8:32px;--vision-container:1280px;--vision-touch-target:44px;--vision-focus:#d78e52}
+.storefront-body :is(button,input,select,textarea){font:inherit}
+.storefront-body :is(button,a){transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}
+.storefront-body :is(button,[role="button"]):not(:disabled){cursor:pointer}
+.storefront-body :is(button,input,select,textarea):disabled{cursor:not-allowed;opacity:.55}
+.storefront-body :is(.commerce-button,.store-icon-button,.store-nav__link,.store-product-detail__buy button){min-height:var(--vision-touch-target)}
+.storefront-body :is(.commerce-button,.store-icon-button,.store-product-detail__buy button):focus-visible{outline:3px solid var(--vision-focus);outline-offset:3px}
+.storefront-body :is(.store-main,.commerce-page){min-width:0}
+.storefront-body :is(.commerce-card,.store-product-detail__info,.store-product-detail__gallery){min-width:0}
+.storefront-body :is(.commerce-field input,.commerce-field select,.commerce-field textarea){max-width:100%;min-width:0}
+.storefront-body .commerce-breadcrumbs{display:flex;flex-wrap:wrap;gap:8px;line-height:1.8}
+.storefront-body .commerce-breadcrumbs>span:last-child{overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.storefront-body :is(button,a,img){transition-duration:.01ms!important;animation-duration:.01ms!important}}
