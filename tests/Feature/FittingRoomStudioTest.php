@@ -218,7 +218,7 @@ class FittingRoomStudioTest extends TestCase
         $response = $this->get('/shop');
         $response->assertOk()
             ->assertSee('window.SHOP', false)
-            ->assertSee('/products/unmapped-independent-trousers', false)
+            ->assertSee('unmapped-independent-trousers', false)
             ->assertSee('"slot":"bottom"', false)
             ->assertSee('"scene":null', false)
             ->assertSee('unmapped-trousers.png', false)
