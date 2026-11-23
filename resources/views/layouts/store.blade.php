@@ -96,7 +96,10 @@
                 <a href="{{ route('account.show') }}">حساب کاربری</a>
                 <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
             </nav>
-            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span><div class="vision-trust-placeholder" aria-label="جایگاه نماد اعتماد">جایگاه اینماد</div>
+            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span><div class="vision-trust-cards" aria-label="نمادهای اعتبار فروشگاه">
+<div class="vision-trust-card" aria-label="جایگاه اینماد"><span>ENAMAD</span><strong>نماد اعتماد الکترونیکی</strong><small>محل درج تصویر و لینک مجوز</small></div>
+<div class="vision-trust-card" aria-label="جایگاه نماد کسب‌وکار"><span>BUSINESS</span><strong>نماد کسب‌وکار</strong><small>محل درج تصویر و لینک مجوز</small></div>
+</div>
         </footer>
         @elseif (!request()->routeIs('shop.index', 'products.index'))
         <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
@@ -124,7 +127,10 @@
                 </nav>
             </div>
 
-            <div class="vision-trust-placeholder" aria-label="جایگاه نماد اعتماد">جایگاه اینماد</div>
+            <div class="vision-trust-cards" aria-label="نمادهای اعتبار فروشگاه">
+<div class="vision-trust-card" aria-label="جایگاه اینماد"><span>ENAMAD</span><strong>نماد اعتماد الکترونیکی</strong><small>محل درج تصویر و لینک مجوز</small></div>
+<div class="vision-trust-card" aria-label="جایگاه نماد کسب‌وکار"><span>BUSINESS</span><strong>نماد کسب‌وکار</strong><small>محل درج تصویر و لینک مجوز</small></div>
+</div>
             <div class="store-footer__bottom">
                 <span>© {{ now()->year }} VISION — تمام حقوق محفوظ است.</span>
                 <a href="{{ route('storefront.index') }}">بازگشت به صفحهٔ اصلی <span aria-hidden="true">↑</span></a>
