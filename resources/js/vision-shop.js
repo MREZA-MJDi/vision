@@ -8,7 +8,6 @@ import { gsap } from "gsap";
   const OF = S.looks || {};
   const $ = (selector, parent = document) => parent.querySelector(selector);
   const fa = n => Number(n || 0).toLocaleString("fa-IR");
-  const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
   const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
