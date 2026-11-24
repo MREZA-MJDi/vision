@@ -12,7 +12,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   let activation = 0;
   let showingSuggestion = false;
   let activeScene = null;
-  const fa = n => Number(n || 0).toLocaleString("fa-IR");
+  const persianNumber = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 });
+  const fa = n => persianNumber.format(Number(n || 0));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
   const state = { fav: new Set(S.favs), lastFittedId: null };
@@ -67,6 +68,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   let fittingTrigger = null;
   const catalog = $("#catalog");
   const stage = $("#stage");
+  const sceneLoading = $("#load");
   const fit = $("#fit");
   const compact = window.matchMedia("(max-width: 1039px)");
   const background = [$(".vision-shop-header"), $(".shop-filter"), $(".shop-results"), $(".vision-footer")];
@@ -83,6 +85,22 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     document.body.classList.toggle("shop-fit-modal", modal);
   };
   compact.addEventListener("change", setFitLayout);
+
+  const smallScreen = window.matchMedia("(max-width: 760px)");
+  const filterToggle = $("#shop-filter-toggle");
+  const filterFields = $("#shop-filter-fields");
+  let filtersOpen = false;
+  const setFilterLayout = () => {
+    filterToggle.hidden = !smallScreen.matches;
+    filterFields.hidden = smallScreen.matches && !filtersOpen;
+    filterToggle.setAttribute("aria-expanded", String(!filterFields.hidden));
+  };
+  filterToggle.addEventListener("click", () => {
+    filtersOpen = !filtersOpen;
+    setFilterLayout();
+  });
+  smallScreen.addEventListener("change", setFilterLayout);
+  setFilterLayout();
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -128,6 +146,11 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     });
   }
 
+  function setSceneLoading(loading) {
+    sceneLoading.hidden = !loading;
+    stage.setAttribute("aria-busy", String(loading));
+  }
+
   function makeScene(url, key) {
     if (!url) return null;
     const image = new Image();
@@ -136,7 +159,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     image.setAttribute("aria-hidden", "true");
     const finish = (failed) => {
       if (activeScene !== key) return;
-      $("#load").classList.remove("on");
+      setSceneLoading(false);
       if (failed) {
         const notice = $("#fit-scene-notice");
         notice.textContent = "تصویر صحنه بارگذاری نشد.";
@@ -145,7 +168,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     };
     image.addEventListener("load", () => finish(false));
     image.addEventListener("error", () => finish(true));
-    stage.insertBefore(image, $("#load"));
+    stage.insertBefore(image, sceneLoading);
     image.src = url;
     return image;
   }
@@ -174,7 +197,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       if (fit.hidden) return true;
       activeScene = key;
       const image = scenes[key] ??= makeScene(url, key);
-      $("#load").classList.toggle("on", !image.complete);
+      setSceneLoading(!image.complete);
       Object.values(scenes).forEach(scene => scene.classList.toggle("on", scene === image));
       return true;
     };
@@ -216,7 +239,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   function updateCart(count) {
-    $("#cnt").textContent = fa(Math.max(0, Number(count) || 0));
+    const quantity = fa(Math.max(0, Number(count) || 0));
+    $("#cnt").textContent = quantity;
+    $("#cartTarget").setAttribute("aria-label", `سبد خرید، ${quantity} کالا`);
   }
 
   function refresh() {
@@ -401,7 +426,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
     const notice = $("#fit-scene-notice");
     notice.hidden = true;
-    if (!studio) $("#load").classList.add("on");
+    if (!studio) setSceneLoading(true);
     try {
       await loadStudio();
       if (activation !== request) return;
@@ -422,7 +447,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       }
     } catch {
       if (activation !== request) return;
-      $("#load").classList.remove("on");
+      setSceneLoading(false);
       notice.textContent = "اتاق پرو بارگذاری نشد.";
       notice.hidden = false;
       $("#fit-retry").hidden = false;
@@ -504,6 +529,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       showingSuggestion = false;
       W.delete(Number(data.r));
       refresh();
+      ($("#picks button") || $("#close")).focus({ preventScroll: true });
     } else if (data.c) {
       addOne(Number(data.c), button);
     }
@@ -558,9 +584,11 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   $("#pr").addEventListener("input", event => {
     $("#prv").textContent = fa(event.target.value) + " " + S.currency;
   });
-  $("#theme").addEventListener("click", () => {
+  $("#theme").addEventListener("click", event => {
     const root = document.documentElement;
-    root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
+    const light = root.dataset.theme !== "light";
+    root.dataset.theme = light ? "light" : "dark";
+    event.currentTarget.setAttribute("aria-pressed", String(light));
   });
   document.addEventListener("keydown", event => {
     if (fit.hidden) return;
