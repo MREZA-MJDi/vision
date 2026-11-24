@@ -19,9 +19,18 @@
         <div class="fr-hero__stats">
             <div><strong>{{ number_format($mannequins->count()) }}</strong><span>مدل مانکن</span></div>
             <div><strong>{{ number_format($mannequins->sum('looks_count')) }}</strong><span>ست ثبت‌شده</span></div>
-            <div><strong>{{ number_format($variants->count()) }}</strong><span>واریانت قابل انتخاب (حداکثر ۳۰۰ مورد اخیر)</span></div>
+            <div><strong>{{ number_format($variants->count()) }}</strong><span>واریانت در فهرست فعلی (حداکثر ۳۰۰ نتیجه)</span></div>
         </div>
     </header>
+
+    <form method="GET" action="{{ route('commerce-admin.try-on.index') }}" class="fr-panel fr-variant-search" role="search">
+        <label class="fr-field" for="fr-variant-search-input"><span>جست‌وجوی واریانت برای ساخت ست</span>
+            <input id="fr-variant-search-input" type="search" name="variant_search" value="{{ $variantSearch }}" maxlength="100" placeholder="نام محصول یا کد SKU">
+        </label>
+        <button type="submit" class="fr-button fr-button--primary">جست‌وجو در کل محصولات ↗</button>
+        @if($variantSearch !== '')<a class="fr-button" href="{{ route('commerce-admin.try-on.index') }}">پاک کردن جست‌وجو</a>@endif
+        <p class="fr-muted">نتایج جست‌وجو در انتخابگرهای ست نمایش داده می‌شوند. واریانت‌های مرتبط با ست‌های موجود نیز تا حد امکان حفظ می‌شوند.</p>
+    </form>
 
     <section class="fr-section" id="fr-mannequins">
         <div class="fr-section__head">
