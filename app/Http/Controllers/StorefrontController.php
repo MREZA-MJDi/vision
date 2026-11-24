@@ -41,8 +41,7 @@ class StorefrontController extends Controller
             ->get();
 
         $homeBrands = Brand::query()->active()
-            ->whereHas('products', fn (Builder $query) => $query->active()->whereHas('activeVariants'))
-            ->with('logoMedia')->orderBy('name')->orderBy('id')->limit(8)->get();
+            ->with('logoMedia')->orderByDesc('created_at')->orderByDesc('id')->limit(8)->get();
 
         return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories', 'homeBrands'));
     }

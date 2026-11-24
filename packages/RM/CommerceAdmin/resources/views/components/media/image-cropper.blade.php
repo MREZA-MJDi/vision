@@ -8,11 +8,14 @@
     </header>
 
     <div class="rm-cropper__stage">
+        <div class="rm-cropper__frame">
         <canvas
             data-rm-canvas
             tabindex="0"
             aria-label="جابجایی تصویر با ماوس، لمس یا کلیدهای جهت"
         ></canvas>
+        @if(!empty($brandPreview))<span class="rm-cropper__brand-guide" aria-hidden="true"></span>@endif
+        </div>
     </div>
 
     <p class="rm-cropper__hint">

@@ -35,6 +35,7 @@ class ImageUploader {
 
         this.file = null;
         this.source = null;
+        this.savedCrop = null;
         this.image = null;
 
         this.previewUrl = null;
@@ -107,6 +108,7 @@ class ImageUploader {
 
             this.file = null;
             this.source = null;
+            this.savedCrop = null;
             this.removed = true;
 
             this.syncInput();
@@ -118,6 +120,7 @@ class ImageUploader {
 
             this.file = null;
             this.source = null;
+            this.savedCrop = null;
             this.removed = false;
 
             this.syncInput();
@@ -234,7 +237,7 @@ class ImageUploader {
         });
     }
 
-    async open(file) {
+    async open(file, restoreCrop = false) {
         if (this.busy || this.dialog.open) return;
 
         this.busy = true;
@@ -267,17 +270,19 @@ class ImageUploader {
             this.image = image;
             this.pendingSource = file;
 
-            this.zoom = 1;
-            this.x = 0.5;
-            this.y = 0.5;
+            const saved = restoreCrop ? this.savedCrop : null;
+            this.zoom = saved?.zoom ?? 1;
+            this.x = saved?.x ?? 0.5;
+            this.y = saved?.y ?? 0.5;
 
             this.cropError.hidden = true;
 
-            this.paint();
             this.dialog.showModal();
+            this.paint();
             this.canvas.focus();
         } catch (error) {
-            this.releaseCrop();
+            if (this.dialog.open) this.close();
+            else this.releaseCrop();
             this.showError(error.message);
         } finally {
             this.busy = false;
@@ -320,7 +325,9 @@ class ImageUploader {
     }
 
     paint() {
-        if (this.image) this.draw(this.canvas, 640);
+        if (!this.image) return;
+        this.draw(this.canvas, 640);
+        if (this.dialog.open) this.renderPreview(this.canvas.toDataURL('image/webp', 0.85));
     }
 
     async apply() {
@@ -333,11 +340,11 @@ class ImageUploader {
         try {
             const canvas = document.createElement('canvas');
 
-            this.draw(canvas, 1600);
+            this.draw(canvas, 4096);
 
             let file = null;
 
-            for (const quality of [0.9, 0.8, 0.7, 0.6]) {
+            for (const quality of [0.95, 0.9, 0.8, 0.7, 0.6]) {
                 const blob = await new Promise(resolve => {
                     canvas.toBlob(resolve, 'image/webp', quality);
                 });
@@ -370,9 +377,9 @@ class ImageUploader {
             this.input.files = transfer.files;
             this.file = file;
             this.source = this.pendingSource;
+            this.savedCrop = { zoom: this.zoom, x: this.x, y: this.y };
             this.removed = false;
             this.removeInput.value = '0';
-            this.render();
             this.close();
         } catch (error) {
             this.cropError.textContent = error.message;
@@ -387,7 +394,7 @@ class ImageUploader {
         if (this.busy || this.removed) return;
 
         if (this.source || this.file) {
-            return this.open(this.source || this.file);
+            return this.open(this.source || this.file, true);
         }
 
         if (!this.existingUrl) return;
@@ -439,23 +446,7 @@ class ImageUploader {
             url = this.previewUrl;
         }
 
-        if (url) {
-            this.preview.src = url;
-        } else {
-            this.preview.removeAttribute('src');
-        }
-
-        this.preview.hidden = !url;
-        this.placeholder.hidden = Boolean(url);
-        const caption = this.root.querySelector('[data-rm-card-caption]');
-        const secondary = this.root.querySelector('[data-rm-secondary-preview]');
-        const secondaryImage = this.root.querySelector('[data-rm-secondary-image]');
-        if (caption) caption.hidden = !url;
-        if (secondary) secondary.hidden = !url;
-        if (secondaryImage) {
-            if (url) secondaryImage.src = url;
-            else secondaryImage.removeAttribute('src');
-        }
+        this.renderPreview(url);
 
         this.cropButton.disabled = !url;
         this.removeButton.disabled = !url;
@@ -470,6 +461,22 @@ class ImageUploader {
             : this.removed
                 ? 'تصویر پس از ذخیره حذف می‌شود.'
                 : 'حداکثر حجم خروجی ۱۰ مگابایت';
+    }
+
+    renderPreview(url) {
+        if (url) this.preview.src = url;
+        else this.preview.removeAttribute('src');
+
+        this.preview.hidden = !url;
+        this.placeholder.hidden = Boolean(url);
+        const caption = this.root.querySelector('[data-rm-card-caption]');
+        const secondary = this.root.querySelector('[data-rm-secondary-preview]');
+        if (caption) caption.hidden = !url;
+        if (secondary) secondary.hidden = !url;
+        this.root.querySelectorAll('[data-rm-secondary-image]').forEach(image => {
+            if (url) image.src = url;
+            else image.removeAttribute('src');
+        });
     }
 
     releaseCrop() {
@@ -489,6 +496,7 @@ class ImageUploader {
 
         this.canvas.width = 1;
         this.canvas.height = 1;
+        this.render();
     }
 
     showError(message) {

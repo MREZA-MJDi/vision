@@ -4,7 +4,7 @@
 @endphp
 <section class="ak-panel ak-form-panel">
     <div class="ak-panel-heading"><h2>{{ $title }}</h2></div>
-    <div class="rm-uploader{{ !empty($categoryPreview) ? ' rm-uploader--category' : '' }}" data-rm-uploader data-existing-url="{{ $imageUrl ?? '' }}" data-aspect="{{ $aspect ?? 1 }}">
+    <div class="rm-uploader{{ !empty($categoryPreview) ? ' rm-uploader--category' : '' }}{{ !empty($brandPreview) ? ' rm-uploader--brand' : '' }}" data-rm-uploader data-existing-url="{{ $imageUrl ?? '' }}" data-aspect="{{ $aspect ?? 1 }}" @if(!empty($brandPreview)) data-brand-preview @endif>
         <input type="file" name="{{ $prefix }}_image" accept="image/jpeg,image/png,image/webp" data-rm-input hidden>
         <input type="hidden" name="remove_{{ $prefix }}" value="{{ old('remove_' . $prefix, 0) ? 1 : 0 }}" data-rm-remove-input>
         <button type="button" class="rm-uploader__drop" data-rm-drop aria-label="انتخاب یا تغییر تصویر">
@@ -21,6 +21,15 @@
                 </span>
             @endif
         </button>
+        @if(!empty($brandPreview))
+            <div class="rm-brand-preview" data-rm-secondary-preview @if(!$imageUrl) hidden @endif>
+                <p>قاب‌های نمایش برند در فروشگاه</p>
+                <div class="rm-brand-preview__frames">
+                    <div><img data-rm-secondary-image @if($imageUrl) src="{{ $imageUrl }}" @endif alt=""></div>
+                    <div><img data-rm-secondary-image @if($imageUrl) src="{{ $imageUrl }}" @endif alt=""></div>
+                </div>
+            </div>
+        @endif
         @if(!empty($categoryPreview))
             <div class="rm-category-preview" data-rm-secondary-preview @if(!$imageUrl) hidden @endif>
                 <p>پیش‌نمایش کارت کوچک در فروشگاه (۱:۱)</p>

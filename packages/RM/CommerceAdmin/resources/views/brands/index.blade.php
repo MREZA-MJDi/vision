@@ -9,7 +9,7 @@
         <tbody>
         @forelse($items as $item)
             <tr>
-                <td>@if($item->logoMedia?->url)<img src="{{ $item->logoMedia->url }}" alt="{{ $item->logoMedia->alt_text ?: $item->name }}" loading="lazy" width="56" height="56">@else<span class="rm-taxonomy-thumbnail">—</span>@endif</td>
+                <td>@php($logoUrl = $item->logoMedia?->url) @if($logoUrl)<img src="{{ $logoUrl }}" alt="{{ $item->logoMedia->alt_text ?: $item->name }}" loading="lazy" width="56" height="56">@else<span class="rm-taxonomy-thumbnail">—</span>@endif</td>
                 <td><strong>{{ $item->name }}</strong></td>
                 <td dir="ltr">{{ $item->slug }}</td>
                 <td>{{ $item->products_count }}</td><td>{{ $item->is_active ? 'فعال' : 'غیرفعال' }}</td>
