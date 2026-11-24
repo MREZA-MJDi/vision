@@ -55,6 +55,7 @@
     <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها">
         <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال آماده‌سازی</b></div>
     </div>
+    <p class="fit-scene-notice" id="fit-scene-notice" role="status" aria-live="polite" hidden></p>
     <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
     <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
 
