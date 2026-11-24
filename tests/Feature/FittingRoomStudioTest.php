@@ -226,7 +226,7 @@ class FittingRoomStudioTest extends TestCase
             $look->save();
         }
 
-        $payload = app(\\App\\Services\\FittingRoomShopData::class)->payload();
+        $payload = app(\App\Services\FittingRoomShopData::class)->payload();
         $this->assertStringContainsString('base-first-studio.jpg', $payload['base']);
         $this->assertCount(1, $payload['looks']);
         $this->assertArrayHasKey((string) $first->looks()->first()->getKey(), $payload['looks']);
