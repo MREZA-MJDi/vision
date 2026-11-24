@@ -268,3 +268,8 @@
  .storefront-body:has(.vision-shop-main) #fit .fit-recommend-grid{max-height:none;overflow-x:auto;overflow-y:hidden}
 }
 @media(prefers-reduced-motion:reduce){.storefront-body:has(.vision-shop-main) #fit .stage .mm{transition:none;transform:none}}
+
+/* Truthful state for outfits without an authored combined mannequin photograph. */
+.fit-scene-notice{margin:10px 14px 12px;padding:10px 12px;border:1px solid rgba(239,156,87,.45);border-radius:12px;background:rgba(239,156,87,.10);color:#f6c99f;font-size:12px;line-height:1.9;text-align:right}
+.fit-scene-notice[hidden]{display:none!important}
+#addset:disabled{cursor:not-allowed;opacity:.55}
