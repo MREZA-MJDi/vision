@@ -61,11 +61,6 @@ class StorefrontController extends Controller
         return view('store.index', app(FittingRoomShopData::class)->payload($request));
     }
 
-    public function fittingRoom(Request $request): View
-    {
-        return view('store.fitting-room', app(FittingRoomShopData::class)->payload($request, true));
-    }
-
     public function studio(FittingRoomShopData $shop): JsonResponse
     {
         return response()->json($shop->studio());

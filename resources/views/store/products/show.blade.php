@@ -129,7 +129,7 @@
                 @endif
             </form>
 
-            <a class="commerce-text-link" href="{{ route('try-on.index', ['q' => $product->name]) }}#catalog">امتحان این محصول در اتاق پرو استودیویی <span aria-hidden="true">↗</span></a>
+            <a class="commerce-text-link" href="{{ route('shop.index', ['q' => $product->name]) }}#catalog">امتحان این محصول در اتاق پرو استودیویی <span aria-hidden="true">↗</span></a>
 
             <div class="store-product-detail__accordions">
                 <details open><summary>توضیحات محصول</summary><div>{{ $product->description ?: $product->short_description ?: 'محصولی از مجموعهٔ منتخب VISION.' }}</div></details>

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class FittingRoomShopData
 {
-    public function payload(?Request $request = null, bool $fittingOnly = false): array
+    public function payload(?Request $request = null): array
     {
         $mannequin = $this->publicMannequin();
         $fitItems = $mannequin ? $this->fittingItems($mannequin, $this->missingSceneMediaIds($mannequin)) : null;
@@ -43,14 +43,7 @@ class FittingRoomShopData
             ->orderBy('product_variants.id')
             ->limit(1);
 
-        if ($fittingOnly) {
-            if ($fitItems) {
-                $catalog->whereIn('product_variants.id', (clone $fitItems)->select('product_variant_id'))
-                    ->where('product_variants.stock', '>', 0);
-            } else {
-                $catalog->whereRaw('1 = 0');
-            }
-        } elseif ($fitItems) {
+        if ($fitItems) {
             $fitProducts = (clone $fitItems)
                 ->join('product_variants as fit_variants', 'fit_variants.id', '=', 'fitting_room_look_items.product_variant_id')
                 ->select('fit_variants.product_id');
@@ -92,8 +85,8 @@ class FittingRoomShopData
                 ->orWhereLike('product_variants.color', $pattern)
                 ->orWhereLike('product_variants.size', $pattern));
         }
-        if ($category !== '') {
-            $catalog->whereIn('products.category_id', Category::query()->active()->where('slug', $category)->select('id'));
+        if ($categoryId !== null) {
+            $catalog->where('products.category_id', $categoryId);
         }
         if ($saleOnly) {
             $catalog->where('product_variants.sale_price', '>=', 0)
@@ -134,8 +127,7 @@ class FittingRoomShopData
             'categories' => $categories,
             'filters' => [
                 'q' => $search,
-                'brand' => $brand,
-                'category' => $category,
+                'category' => $categoryId === null ? '' : $category,
                 'sale' => $saleOnly,
                 'sort' => $sort,
                 'priceMax' => $priceMax === false ? $max : min($max, max(0, $priceMax)),

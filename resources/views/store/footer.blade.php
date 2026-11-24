@@ -10,7 +10,7 @@
             <a href="{{ route('shop.index') }}#catalog">همهٔ محصولات</a>
             <a href="{{ route('shop.index', ['sort' => 'newest']) }}#catalog">تازه‌ها</a>
             <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog">تخفیف‌ها</a>
-            <a href="{{ route('try-on.index') }}">اتاق پرو استودیویی</a>
+            <a href="{{ route('shop.index') }}#catalog">اتاق پرو استودیویی</a>
         </nav>
         <nav aria-label="راهنمای سفارش و حساب">
             <h2>سفارش و حساب</h2>

@@ -4,7 +4,12 @@
                 aria-label="علاقه‌مندی {{ $product['name'] }}" aria-pressed="{{ $isFavourite ? 'true' : 'false' }}">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>
         </button>
-
+        @if($product['fitReady'] && $product['stock'] > 0)
+            <button type="button" class="try" data-t="{{ $product['id'] }}" aria-controls="fit"
+                    aria-label="امتحان {{ $product['name'] }} روی مانکن" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg>
+            </button>
+        @endif
     </div>
     @if($product['rate'] !== null)
         <span class="shop-rate">★ {{ \App\Support\Money::persianDigits(str_replace('.', '٫', (string) $product['rate'])) }}</span>
@@ -37,17 +42,9 @@
         @if($product['stock'] > 0)
             <button type="button" class="shop-cart-add" data-c="{{ $product['id'] }}" aria-label="افزودن {{ $product['name'] }} به سبد خرید">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2M12 12v4m-2-2h4"/></svg>
-                <span>افزودن به سبد</span>
             </button>
         @else
             <span class="shop-stock">ناموجود</span>
         @endif
     </div>
-    @if($product['fitReady'] && $product['stock'] > 0)
-        @if($fittingPage ?? false)
-            <button type="button" class="try shop-try-action" data-t="{{ $product['id'] }}" aria-controls="fit" aria-pressed="false">پرو روی مانکن</button>
-        @else
-            <a class="shop-try-action" href="{{ route('try-on.index', ['variant_id' => $product['id']]) }}">پرو روی مانکن</a>
-        @endif
-    @endif
 </article>
