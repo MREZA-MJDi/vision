@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\FittingRoomMannequin;
-use App\Models\Product;
+use App\Models\Category;
+use App\Models\ProductReview;
 use App\Models\ProductVariant;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class FittingRoomShopData
@@ -22,7 +24,6 @@ class FittingRoomShopData
                     'previewSuggestedMedia',
                     'items' => fn ($items) => $items->active()->with([
                         'variant.primaryGalleryMedia',
-                        'variant.product.category',
                         'variant.product.primaryGalleryMedia',
                         'variant.product' => fn ($product) => $product->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating'),
                     ]),
@@ -37,6 +38,8 @@ class FittingRoomShopData
         $mannequin = $mannequins->first(fn ($record) => (bool) $record->baseMedia?->url);
         $mannequins = $mannequin ? collect([$mannequin]) : collect();
         $looks = [];
+        $combinations = [];
+        $suggestions = [];
         $itemMap = [];
 
         foreach ($mannequins as $mannequinRecord) {
@@ -61,145 +64,161 @@ class FittingRoomShopData
                     's' => array_filter($previews, static fn ($url) => is_string($url) && $url !== ''),
                 ];
 
+                if ($eligible($top) && !empty($previews['T']) && !empty($previews['S'])) {
+                    $suggestions[$top->variant->id] ??= $previews['S'];
+                }
+                if ($eligible($top) && $eligible($bottom) && !empty($previews['TB'])) {
+                    $combinations[$top->variant->id][$bottom->variant->id] ??= $previews['TB'];
+                }
+
                 foreach ($look->items as $item) {
-                    $variant = $item->variant;
-                    $product = $variant?->product;
-                    $audienceMatches = $product && (
-                        $mannequinRecord->audience === 'all'
-                        || $product->audience === $mannequinRecord->audience
-                    );
-                    if (!$variant || !$product || !$variant->is_active || !$product->is_active || !$audienceMatches) {
+                    $preview = $item->slot === 'top' ? 'T' : 'B';
+                    if (! $eligible($item) || empty($previews[$preview])) {
                         continue;
                     }
 
-                    // Each variant owns one storefront card. If it is assigned
-                    // to more than one curated look, the lowest-order look wins.
-                    $itemMap[$variant->getKey()] ??= [
-                        'look_id' => $look->getKey(),
+                    $variant = $item->variant;
+                    $itemMap[$variant->getKey()] ??= $this->card($variant, [
                         'slot' => $item->slot,
-                        'fit_y' => (float) $item->fit_y,
-                        'look' => $look,
-                    ];
+                        'o' => (int) $look->getKey(),
+                        'fy' => (float) $item->fit_y,
+                    ]);
                 }
             }
         }
 
-        // Keep the catalogue product-first. Products without fitting-room
-        // mapping appear once with their primary purchasable variant. If an
-        // administrator maps several variants into curated looks, those
-        // fit-ready variants appear as selectable garment cards.
-        $catalog = Product::query()
-            ->active()
-            ->whereHas('activeVariants')
-            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
-            ->with([
-                'category',
-                'primaryGalleryMedia',
-                'activeVariants.primaryGalleryMedia',
-                'primaryAvailableVariant.primaryGalleryMedia',
-                'primaryActiveVariant.primaryGalleryMedia',
-            ])
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->get();
+        $catalog = ProductVariant::query()
+            ->select('product_variants.*')
+            ->join('products', 'products.id', '=', 'product_variants.product_id')
+            ->where('products.is_active', true)
+            ->whereNull('products.deleted_at')
+            ->where('product_variants.is_active', true)
+            ->where(function (Builder $variants) use ($itemMap): void {
+                $variants->whereIntegerInRaw('product_variants.id', array_keys($itemMap))
+                    ->orWhere(function (Builder $primary) use ($itemMap): void {
+                        $primary->whereIntegerNotInRaw('product_variants.product_id', array_unique(array_column($itemMap, 'product_id')))
+                            ->where('product_variants.id', ProductVariant::query()
+                                ->select('product_variants.id')
+                                ->whereColumn('product_variants.product_id', 'products.id')
+                                ->where('product_variants.is_active', true)
+                                ->orderByRaw('CASE WHEN product_variants.stock > 0 THEN 0 ELSE 1 END')
+                                ->orderBy('product_variants.sort_order')
+                                ->orderBy('product_variants.id')
+                                ->limit(1));
+                    });
+            });
 
-        $products = $catalog->flatMap(function (Product $product) use ($itemMap): array {
-            $fittedVariants = $product->activeVariants
-                ->filter(function (ProductVariant $variant) use ($itemMap): bool {
-                    $fit = $itemMap[$variant->getKey()] ?? null;
-                    $look = $fit['look'] ?? null;
-                    if (!$fit || !$look) {
-                        return false;
-                    }
+        $price = 'CASE WHEN product_variants.sale_price >= 0 AND product_variants.sale_price < product_variants.price THEN product_variants.sale_price ELSE product_variants.price END';
+        $priceRange = (clone $catalog)->selectRaw("MAX({$price}) AS highest")->toBase()->first();
+        $step = 100000;
+        $max = max($step, (int) ceil(($priceRange->highest ?? $step) / $step) * $step);
 
-                    return ($fit['slot'] === 'top' && (bool) $look->previewTopMedia?->url)
-                        || ($fit['slot'] === 'bottom' && (bool) $look->previewBottomMedia?->url);
-                })
-                ->values();
+        $categories = Category::query()
+            ->whereIn('id', (clone $catalog)->select('products.category_id')->distinct()->toBase())
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'name', 'slug']);
+        $read = static fn (string $key): string => is_string($value = $request?->query($key)) ? trim($value) : '';
+        $search = mb_substr($read('q'), 0, 120);
+        $category = $read('category');
+        $categoryId = $categories->firstWhere('slug', $category)?->id;
+        $saleOnly = $request?->boolean('sale') ?? false;
+        $priceMax = filter_var($read('price_max'), FILTER_VALIDATE_INT);
+        $sort = match ($read('sort')) {
+            'lo', 'price_asc' => 'price_asc',
+            'hi', 'price_desc' => 'price_desc',
+            'rt', 'rating' => 'rating',
+            default => 'newest',
+        };
 
-            $variants = $fittedVariants->isNotEmpty()
-                ? $fittedVariants
-                : collect([$product->primaryAvailableVariant ?? $product->primaryActiveVariant])->filter();
-
-            return $variants->map(function (ProductVariant $variant) use ($product, $itemMap): array {
-                $fit = $itemMap[$variant->getKey()] ?? null;
-                $look = $fit['look'] ?? null;
-                $slot = $fit['slot'] ?? null;
-                $lookPreviews = $look ? [
-                    'top' => $look->previewTopMedia?->url,
-                    'bottom' => $look->previewBottomMedia?->url,
-                ] : [];
-
-                $fitReady = $fit && (
-                    ($slot === 'top' && !empty($lookPreviews['top']))
-                    || ($slot === 'bottom' && !empty($lookPreviews['bottom']))
-                );
-                $isOnSale = (bool) ($variant->is_on_sale ?? false);
-                $variantLabel = ($variant->color || $variant->size) ? ' · ' . $variant->display_name : '';
-                $colorCode = preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) $variant->color_code)
-                    ? (string) $variant->color_code
-                    : '#8b8490';
-
-                return [
-                    'id' => (int) $variant->getKey(),
-                    'product_id' => (int) $product->getKey(),
-                    'name' => (string) $product->name . $variantLabel,
-                    'price' => (int) round((float) $variant->effective_price),
-                    'old' => $isOnSale ? (int) round((float) $variant->price) : null,
-                    'rate' => is_numeric($product->approved_reviews_avg_rating)
-                        ? round((float) $product->approved_reviews_avg_rating, 1)
-                        : null,
-                    'cat' => (string) ($product->category?->name ?? 'سایر'),
-                    'img' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
-                    'color' => trim((string) $variant->color),
-                    'colorCode' => $colorCode,
-                    'stock' => (int) $variant->stock,
-                    'fy' => $fitReady ? (float) $fit['fit_y'] : ($slot === 'bottom' ? 0.66 : 0.38),
-                    'slot' => $fitReady ? $slot : null,
-                    'o' => $fitReady ? (int) $fit['look_id'] : null,
-                    'url' => route('products.show', ['product' => $product->slug]),
-                ];
-            })->all();
-        })->values();
-
-        $requestedSort = $request?->query('sort');
-        $initialSort = is_string($requestedSort) ? match ($requestedSort) {
-            'new', 'newest' => 'new',
-            'lo', 'price_asc' => 'lo',
-            'hi', 'price_desc' => 'hi',
-            'rt', 'rating' => 'rt',
-            default => 'new',
-        } : 'new';
-
-        $categories = $products->pluck('cat')->filter()->unique()->values()->all();
-        $prices = $products->pluck('price')->filter(fn ($price) => is_numeric($price) && $price >= 0);
-        $min = $prices->isNotEmpty() ? (int) floor($prices->min() / 100000) * 100000 : 0;
-        $max = $prices->isNotEmpty() ? (int) ceil($prices->max() / 100000) * 100000 : 4000000;
-        if ($max <= $min) {
-            $max = $min + 100000;
+        if ($search !== '') {
+            $pattern = '%' . $search . '%';
+            $catalog->where(fn (Builder $query) => $query
+                ->whereLike('products.name', $pattern)
+                ->orWhereLike('product_variants.color', $pattern)
+                ->orWhereLike('product_variants.size', $pattern));
+        }
+        if ($categoryId !== null) {
+            $catalog->where('products.category_id', $categoryId);
+        }
+        if ($saleOnly) {
+            $catalog->where('product_variants.sale_price', '>=', 0)
+                ->whereColumn('product_variants.sale_price', '<', 'product_variants.price');
+        }
+        if ($priceMax !== false) {
+            $catalog->whereRaw("({$price}) <= ?", [max(0, $priceMax)]);
         }
 
+        if ($sort === 'price_asc' || $sort === 'price_desc') {
+            $catalog->orderByRaw("({$price}) " . ($sort === 'price_asc' ? 'asc' : 'desc'));
+        } elseif ($sort === 'rating') {
+            $catalog->orderByDesc(ProductReview::query()->selectRaw('COALESCE(AVG(rating), 0)')
+                ->whereColumn('product_id', 'products.id')->where('status', 'approved'));
+        }
+
+        $products = $catalog
+            ->with([
+                'primaryGalleryMedia',
+                'product.primaryGalleryMedia',
+                'product' => fn ($product) => $product->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating'),
+            ])
+            ->orderByDesc('products.created_at')
+            ->orderByDesc('products.id')
+            ->orderBy('product_variants.sort_order')
+            ->orderBy('product_variants.id')
+            ->paginate(12)
+            ->withQueryString()
+            ->through(fn (ProductVariant $variant) => $itemMap[$variant->id] ?? $this->card($variant));
+
         return [
-            'products' => $products->all(),
-            'cats' => $categories,
-            'min' => $min,
-            'max' => $max,
-            'base' => $mannequin?->baseMedia?->url,
-            'looks' => $looks,
-            'favs' => array_values(array_unique(array_map('intval', (array) ($request?->session()->get('shop_favourites', []))))),
-            'cart' => 0,
-            'currency' => (string) config('commerce-admin.currency_symbol', 'تومان'),
-            'routes' => [
-                'cart' => route('cart.items.store'),
-                'cartMany' => route('cart.items.bulk'),
-                'fav' => url('/shop/favourites'),
-                'cartSummary' => route('cart.summary'),
+            'products' => $products,
+            'categories' => $categories,
+            'filters' => [
+                'q' => $search,
+                'category' => $categoryId === null ? '' : $category,
+                'sale' => $saleOnly,
+                'sort' => $sort,
+                'priceMax' => $priceMax === false ? $max : min($max, max(0, $priceMax)),
+                'max' => $max,
             ],
-            'initialQuery' => $request && is_string($request->query('q'))
-                ? mb_substr(trim($request->query('q')), 0, 120)
-                : '',
-            'initialSaleOnly' => $request?->boolean('sale') ?? false,
-            'initialSort' => $initialSort,
+            'studio' => [
+                'garments' => array_values($itemMap),
+                'base' => $mannequin?->baseMedia?->url,
+                'looks' => $looks,
+                'combinations' => $combinations,
+                'suggestions' => $suggestions,
+                'favs' => array_values(array_unique(array_map('intval', (array) ($request?->session()->get('shop_favourites', []))))),
+                'currency' => (string) config('commerce-admin.currency_symbol', 'تومان'),
+                'routes' => [
+                    'cart' => route('cart.items.store'),
+                    'cartMany' => route('cart.items.bulk'),
+                    'fav' => url('/shop/favourites'),
+                    'cartSummary' => route('cart.summary'),
+                ],
+            ],
+        ];
+    }
+
+    private function card(ProductVariant $variant, array $fit = []): array
+    {
+        $product = $variant->product;
+        $color = (string) $variant->color_code;
+
+        return [
+            'id' => (int) $variant->getKey(),
+            'product_id' => (int) $product->getKey(),
+            'name' => $product->name . (($variant->color || $variant->size) ? ' · ' . $variant->display_name : ''),
+            'price' => $variant->effective_price,
+            'old' => $variant->is_on_sale ? (float) $variant->price : null,
+            'rate' => is_numeric($product->approved_reviews_avg_rating) ? round((float) $product->approved_reviews_avg_rating, 1) : null,
+            'img' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+            'color' => trim((string) $variant->color),
+            'colorCode' => preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/D', $color) ? $color : '#8b8490',
+            'stock' => $variant->stock,
+            'slot' => $fit['slot'] ?? null,
+            'o' => $fit['o'] ?? null,
+            'fy' => $fit['fy'] ?? null,
+            'url' => route('products.show', ['product' => $product->slug, 'variant_id' => $variant->id]),
         ];
     }
 }

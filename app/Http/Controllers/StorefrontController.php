@@ -45,11 +45,7 @@ class StorefrontController extends Controller
 
     public function index(Request $request): View
     {
-        // The approved catalog interactions run client-side; all visible product
-        // values and fitting-room mappings still originate from active DB records.
-        $shop = app(FittingRoomShopData::class)->payload($request);
-
-        return view('store.index', compact('shop'));
+        return view('store.index', app(FittingRoomShopData::class)->payload($request));
     }
 
     /**

@@ -24,37 +24,30 @@ class FittingRoomStudioController extends Controller
     public function index(Request $request): View
     {
         $mannequins = FittingRoomMannequin::query()
-            ->with(['baseMedia', 'looks.previewTopMedia', 'looks.previewBottomMedia', 'looks.previewCombinedMedia', 'looks.previewSuggestedMedia', 'looks.items.variant.product'])
+            ->with(['baseMedia', 'looks.previewTopMedia', 'looks.previewBottomMedia', 'looks.previewCombinedMedia', 'looks.previewSuggestedMedia', 'looks.items.variant.primaryGalleryMedia', 'looks.items.variant.product.primaryGalleryMedia'])
             ->withCount('looks')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
 
-        $variantSearch = trim((string) $request->query('variant_search', ''));
-        $variantSearch = mb_substr($variantSearch, 0, 100);
-        $mappedIds = $mannequins->flatMap(fn ($model) => $model->looks)
-            ->flatMap(fn ($look) => $look->items)
-            ->pluck('product_variant_id')->filter()->unique()->values()->all();
+        $query = $request->query('variant_search');
+        $variantSearch = is_string($query) ? mb_substr(trim($query), 0, 100) : '';
 
         $variants = ProductVariant::query()
             ->where('is_active', true)
             ->whereHas('product', fn ($query) => $query->where('is_active', true))
-            ->when($variantSearch !== '', function ($query) use ($variantSearch, $mappedIds) {
-                $query->where(function ($query) use ($variantSearch, $mappedIds) {
-                    $query->where('sku', 'like', '%' . $variantSearch . '%')
-                        ->orWhereHas('product', fn ($product) => $product->where('name', 'like', '%' . $variantSearch . '%'));
-                    if ($mappedIds !== []) {
-                        $query->orWhereIn('id', $mappedIds);
-                    }
-                });
-            })
-            ->with(['product:id,name,slug,audience', 'primaryGalleryMedia'])
+            ->when($variantSearch !== '', fn ($query) => $query->where(fn ($search) => $search
+                ->whereLike('sku', '%' . $variantSearch . '%')
+                ->orWhereHas('product', fn ($product) => $product->whereLike('name', '%' . $variantSearch . '%'))))
+            ->with(['product:id,name,slug,audience', 'product.primaryGalleryMedia', 'primaryGalleryMedia'])
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
             ->paginate(100, ['*'], 'variant_page')
             ->withQueryString();
 
-        return view('admin.fitting-room-studio.index', compact('mannequins', 'variants', 'variantSearch'));
+        $publicMannequinId = $mannequins->first(fn ($mannequin) => $mannequin->is_active && $mannequin->baseMedia?->url)?->id;
+
+        return view('admin.fitting-room-studio.index', compact('mannequins', 'variants', 'variantSearch', 'publicMannequinId'));
     }
 
     public function storeMannequin(Request $request): RedirectResponse
@@ -188,6 +181,14 @@ class FittingRoomStudioController extends Controller
         $topVariantRequested = (int) ($data['top_variant_id'] ?? 0) > 0;
         $bottomVariantRequested = (int) ($data['bottom_variant_id'] ?? 0) > 0;
 
+        foreach (['top', 'bottom'] as $slot) {
+            if ($request->hasFile($slot . '_product_image') && empty($data[$slot . '_variant_id'])) {
+                throw ValidationException::withMessages([
+                    $slot . '_variant_id' => 'قبل از آپلود عکس کارت، وریانت محصول را انتخاب کن.',
+                ]);
+            }
+        }
+
         if (!$topVariantRequested && !$bottomVariantRequested) {
             throw ValidationException::withMessages(['top_variant_id' => 'برای هر ست حداقل یک واریانت بالاپوش یا پایین‌تنه انتخاب کن.']);
         }
@@ -248,7 +249,7 @@ class FittingRoomStudioController extends Controller
                 $look->mannequin_id = $mannequin->getKey();
                 $look->code = trim($data['code']);
                 $look->label = trim($data['label']);
-                $look->is_active = $request->boolean('is_active', true);
+                $look->is_active = $request->boolean('is_active');
                 $look->sort_order = (int) ($data['sort_order'] ?? 0);
                 $look->save();
 

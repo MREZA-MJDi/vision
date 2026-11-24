@@ -1,18 +1,32 @@
 import { flyToCart, pulseCartTarget } from "./cart-motion";
 
-/* VISION shop: approved store-fa interactions, backed by Laravel records. */
 (() => {
-  const S = window.SHOP || {};
-  const P = Array.isArray(S.products) ? S.products : [];
-  const C = ["همه دسته‌ها", ...(S.cats || [])];
-  const OF = S.looks || {};
   const $ = (selector, parent = document) => parent.querySelector(selector);
+  const studioData = $("#shop-studio-data");
+  if (!studioData) return;
+
+  const S = JSON.parse(studioData.textContent);
+  const P = S.garments;
+  const OF = S.looks;
+  let showingSuggestion = false;
+  let activeScene = null;
   const fa = n => Number(n || 0).toLocaleString("fa-IR");
-  const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
-  const state = { visibleCount: 12, cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
+  const state = { fav: new Set(S.favs), lastFittedId: null };
+  const selectionKey = "vision.fit.selection";
   const W = new Set();
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(selectionKey) || "{}");
+    for (const slot of ["top", "bottom"]) {
+      const item = P.find(garment => garment.slot === slot && garment.id === stored[slot] && garment.stock > 0);
+      if (item) W.add(item.id);
+    }
+    state.lastFittedId = stored.lastFittedId;
+  } catch {
+    // Selection can still be used on this page when session storage is unavailable.
+  }
+
   const COMPARE_KEY = "vision.fit.compare.v1";
   const comparison = (() => {
     try {
@@ -27,15 +41,28 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   })();
   let busy = false;
   let fittingTrigger = null;
-  const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
+  const catalog = $("#catalog");
+  const stage = $("#stage");
+  const fit = $("#fit");
+  const compact = window.matchMedia("(max-width: 1039px)");
+  const background = [$(".vision-shop-header"), $(".shop-filter"), $(".shop-results"), $(".vision-footer")];
+  const setFitLayout = () => {
+    const modal = compact.matches && !fit.hidden;
+    background.forEach(element => { if (element) element.inert = modal; });
+    if (modal) {
+      fit.setAttribute("role", "dialog");
+      fit.setAttribute("aria-modal", "true");
+    } else {
+      fit.removeAttribute("role");
+      fit.removeAttribute("aria-modal");
+    }
+    document.body.classList.toggle("shop-fit-modal", modal);
+  };
+  compact.addEventListener("change", setFitLayout);
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[char]);
-  const safeColorCode = value => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || ""))
-    ? String(value)
-    : "#8b8490";
-
   async function post(url, body = {}) {
     const response = await fetch(url, {
       method: "POST",
@@ -56,91 +83,44 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     return data;
   }
 
-  const formatMoney = amount => fa(amount) + " <small>" + escapeHtml(S.currency || "تومان") + "</small>";
-
-  function list() {
-    let products = P.filter(product =>
-      (state.cat === C[0] || product.cat === state.cat)
-      && String(product.name || "").toLocaleLowerCase("fa").includes(state.q.toLocaleLowerCase("fa"))
-      && Number(product.price || 0) <= state.max
-      && (!state.saleOnly || (Number(product.old || 0) > Number(product.price || 0)))
-    );
-    const sorters = {
-      lo: (a, b) => Number(a.price) - Number(b.price),
-      hi: (a, b) => Number(b.price) - Number(a.price),
-      rt: (a, b) => Number(b.rate || 0) - Number(a.rate || 0)
-    };
-    if (sorters[state.sort]) products = [...products].sort(sorters[state.sort]);
-    return products;
+  function syncCardActions() {
+    document.querySelectorAll("#grid [data-f], #grid [data-t]").forEach(button => {
+      const selected = button.dataset.f
+        ? state.fav.has(Number(button.dataset.f))
+        : W.has(Number(button.dataset.t));
+      button.classList.toggle("on", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
   }
 
-  function render() {
-    const products = list();
-    $("#n").textContent = fa(products.length) + " محصول";
-    $("#prv").textContent = "تا " + fa(state.max) + " " + (S.currency || "تومان");
-    grid.innerHTML = products.length ? products.slice(0, state.visibleCount).map(product => {
-      const canFit = !!(Number(product.stock || 0) > 0 && product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
-      const image = product.img
-        ? '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">'
-        : '<span class="shop-pic-empty" aria-label="تصویر محصول ثبت نشده">V.</span>';
-      return '<article class="shop-product-card" data-product="' + Number(product.id) + '">' +
-        '<div class="shop-product-side">' +
-          '<button type="button" class="fav ' + (state.fav.has(Number(product.id)) ? "on" : "") + '" data-f="' + Number(product.id) + '" aria-pressed="' + state.fav.has(Number(product.id)) + '" aria-label="ذخیرهٔ ' + escapeHtml(product.name) + '" title="علاقه‌مندی">' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>' +
-          '</button>' +
-          '<button type="button" class="try ' + (state.worn.has(Number(product.id)) ? "on" : "") + '" data-t="' + Number(product.id) + '" aria-pressed="' + state.worn.has(Number(product.id)) + '" aria-label="امتحان ' + escapeHtml(product.name) + ' روی مانکن" title="' + (canFit ? "امتحان روی مانکن" : "تصویر مانکن برای این محصول ثبت نشده") + '"' + (canFit ? "" : " disabled") + '>' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg>' +
-          '</button>' +
-        '</div>' +
-        (product.rate !== null && product.rate !== undefined ? '<span class="shop-rate">★ ' + fa(product.rate) + '</span>' : "") +
-        '<a class="shop-pic store-media" href="' + escapeHtml(product.url || "#") + '" aria-label="مشاهدهٔ ' + escapeHtml(product.name) + '">' + image + '</a>' +
-        '<div class="shop-product-details">' +
-          '<a class="shop-product-name" href="' + escapeHtml(product.url || "#") + '">' + escapeHtml(product.name) + '</a>' +
-          (product.color ? '<span class="shop-product-colour" aria-label="رنگ ' + escapeHtml(product.color) + '"><i style="--shop-swatch:' + safeColorCode(product.colorCode) + '" aria-hidden="true"></i><span>' + escapeHtml(product.color) + '</span></span>' : '') +
-        '</div>' +
-        '<div class="shop-product-price">' + formatMoney(product.price) +
-          (product.old && Number(product.old) > Number(product.price) ? '<s>' + fa(product.old) + '</s><em>حراج</em>' : "") +
-        '</div>' +
-        '<button type="button" class="shop-cart-add" data-c="' + Number(product.id) + '" aria-label="افزودن ' + escapeHtml(product.name) + ' به سبد خرید" ' + (Number(product.stock || 0) < 1 ? "disabled" : "") + '>' +
-          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2M12 12v4m-2-2h4"/></svg>' +
-        '</button>' +
-      '</article>';
-    }).join("") : '<div class="shop-empty"><strong>چیزی برای این جست‌وجو پیدا نشد.</strong>عبارت یا فیلتر را عوض کن.</div>';
-
-    const more = $("#shop-load-more");
-    if (more) { more.hidden = products.length <= state.visibleCount; more.textContent = "نمایش محصولات بیشتر (" + fa(Math.min(12, products.length - state.visibleCount)) + ")"; }
-    $("#cats").innerHTML = C.map(category =>
-      '<button type="button" class="shop-category ' + (category === state.cat ? "on" : "") + '" data-cat="' + escapeHtml(category) + '" aria-pressed="' + (category === state.cat) + '">' + escapeHtml(category) + '</button>'
-    ).join("");
-  }
-
-  // Preload one canonical mannequin canvas and the four scene states per look.
-  function makeScene(url, active) {
+  function makeScene(url, key) {
     if (!url) return null;
     const image = new Image();
-    image.src = url;
-    image.className = "mm" + (active ? " on" : "");
+    image.className = "mm";
     image.alt = "";
     image.setAttribute("aria-hidden", "true");
+    const finish = (failed) => {
+      if (activeScene !== key) return;
+      $("#load").classList.remove("on");
+      if (failed) {
+        const notice = $("#fit-scene-notice");
+        notice.textContent = "تصویر صحنه بارگذاری نشد.";
+        notice.hidden = false;
+      }
+    };
+    image.addEventListener("load", () => finish(false));
+    image.addEventListener("error", () => finish(true));
     stage.insertBefore(image, $("#load"));
+    image.src = url;
     return image;
   }
-  const scenes = { base: makeScene(S.base, true) };
+  const scenes = {};
+  const sceneUrls = { base: S.base };
   Object.entries(OF).forEach(([lookId, look]) => {
     Object.entries(look.s || {}).forEach(([key, url]) => {
-      scenes[lookId + ":" + key] = makeScene(url, false);
+      sceneUrls[lookId + ":" + key] = url;
     });
   });
-
-  function exactOutfitScene(top, bottom) {
-    if (!top || !bottom || String(top.o) !== String(bottom.o)) return null;
-    const lookId = String(top.o);
-    const look = OF[lookId];
-    const scene = look?.s?.TB;
-    if (!look || !scene || !scenes[lookId + ":TB"]) return null;
-    if (Number(look.t) !== Number(top.id) || Number(look.b) !== Number(bottom.id)) return null;
-    return lookId + ":TB";
-  }
 
   function setScene() {
     const selected = P.filter(product => W.has(Number(product.id)));
@@ -153,18 +133,27 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       notice.hidden = !message;
     };
 
-    Object.values(scenes).forEach(image => {
-      if (!image) return;
-      image.classList.remove("on");
-      image.style.clipPath = "";
-      image.style.zIndex = "";
-    });
-    const activate = key => {
-      const image = scenes[key];
-      if (!image) return false;
-      image.classList.add("on");
+    const suggestion = !bottom && top ? S.suggestions[top.id] : null;
+    const suggestionButton = $("#sugg");
+    suggestionButton.hidden = !suggestion;
+    if (!suggestion) showingSuggestion = false;
+    suggestionButton.textContent = showingSuggestion ? "برگشت به لباس انتخاب‌شده" : "دیدن ست پیشنهادی";
+    suggestionButton.setAttribute("aria-pressed", String(showingSuggestion));
+
+    const activate = (key, url = sceneUrls[key]) => {
+      if (!url) return false;
+      if (fit.hidden) return true;
+      activeScene = key;
+      const image = scenes[key] ??= makeScene(url, key);
+      $("#load").classList.toggle("on", !image.complete);
+      Object.values(scenes).forEach(scene => scene.classList.toggle("on", scene === image));
       return true;
     };
+
+    if (showingSuggestion && activate("suggestion:" + top.id, suggestion)) {
+      announce("پیش‌نمایش پیشنهادی است. در سبد فقط لباس‌های انتخاب‌شده قرار می‌گیرند.");
+      return;
+    }
 
     if (!top && !bottom) {
       activate("base");
@@ -173,8 +162,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
 
     if (top && bottom) {
-      const pairScene = exactOutfitScene(top, bottom);
-      if (pairScene && activate(pairScene)) {
+      const pairScene = S.combinations[top.id]?.[bottom.id];
+      if (pairScene && activate("combined:" + top.id + ":" + bottom.id, pairScene)) {
         announce("نمای واقعی ست کامل");
         return;
       }
@@ -198,14 +187,21 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   function updateCart(count) {
-    state.cart = Math.max(0, Number(count) || 0);
-    $("#cnt").textContent = fa(state.cart);
+    $("#cnt").textContent = fa(Math.max(0, Number(count) || 0));
   }
 
   function refresh() {
-    state.worn = new Set(W);
     setScene();
     const items = P.filter(product => W.has(Number(product.id)));
+    try {
+      sessionStorage.setItem(selectionKey, JSON.stringify({
+        top: items.find(item => item.slot === "top")?.id,
+        bottom: items.find(item => item.slot === "bottom")?.id,
+        lastFittedId: state.lastFittedId
+      }));
+    } catch {
+      // The current selection remains available in memory.
+    }
     $("#pcount").textContent = fa(items.length) + " تکه";
     $("#tot").textContent = items.length
       ? "جمع: " + fa(items.reduce((sum, product) => sum + Number(product.price || 0), 0)) + " " + (S.currency || "تومان")
@@ -216,7 +212,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       '</button>'
     ).join("");
     $("#addset").disabled = items.length === 0;
-    render();
+    syncCardActions();
     renderRecommendations();
     renderComparison();
   }
@@ -248,15 +244,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
           || !product.img
           || !product.o) return false;
 
-        const look = OF[String(product.o)];
-        if (!look || !look.s || !look.s.TB) return false;
-
-        // A recommendation is allowed only when the database has a complete
-        // mannequin image for this exact pair of variants—not merely a shared
-        // look ID or a separate top/bottom photo.
         return recommendationSlot === "bottom"
-          ? Number(look.t) === Number(anchor.id) && Number(look.b) === Number(product.id)
-          : Number(look.t) === Number(product.id) && Number(look.b) === Number(anchor.id);
+          ? Boolean(S.combinations[anchor.id]?.[product.id])
+          : Boolean(S.combinations[product.id]?.[anchor.id]);
       })
       .sort((a, b) => Number(b.rate || 0) - Number(a.rate || 0))
       .slice(0, 2);
@@ -363,12 +353,22 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     element.remove();
   }
 
+  function openFit(trigger) {
+    if (trigger instanceof HTMLElement) fittingTrigger = trigger;
+    const wasHidden = fit.hidden;
+    fit.hidden = false;
+    catalog.classList.add("fit-open");
+    setFitLayout();
+    if (wasHidden) {
+      setScene();
+      $("#close").focus({ preventScroll: true });
+    }
+  }
+
   async function tryOn(product, source, trigger = null) {
     if (busy || !product || !product.o || !product.slot || Number(product.stock || 0) < 1) return;
-    if (trigger instanceof HTMLElement) fittingTrigger = trigger;
-    fit.classList.add("open");
-    fit.setAttribute("aria-hidden", "false");
-    fit.setAttribute("aria-label", "اتاق پرو استودیویی VISION، لباس انتخاب‌شده روی مانکن");
+    showingSuggestion = false;
+    openFit(trigger?.matches("[data-t]") ? trigger : null);
 
     if (W.has(Number(product.id))) {
       W.delete(Number(product.id));
@@ -376,19 +376,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       return;
     }
 
-    const oppositeSlot = product.slot === "top" ? "bottom" : "top";
-    const opposite = P.find(item => item.slot === oppositeSlot && W.has(Number(item.id))) || null;
-    const nextTop = product.slot === "top" ? product : opposite;
-    const nextBottom = product.slot === "bottom" ? product : opposite;
-    // Selecting an item must never be blocked by a missing combined image.
-    // The scene resolver falls back to a real single-garment mannequin photo.
-
     busy = true;
     try {
-      await wait(RM ? 0 : 260);
       await fly(source, product.fy);
-      $("#load").classList.add("on");
-      await wait(RM ? 0 : 700);
       // Keep the opposite slot selected even without an authored combined photo.
       // The scene resolver shows the last selected garment, never a fake composite.
       P.forEach(item => {
@@ -397,13 +387,13 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       W.add(Number(product.id));
       state.lastFittedId = Number(product.id);
     } finally {
-      $("#load").classList.remove("on");
       busy = false;
       refresh();
     }
   }
 
   function clearAll() {
+    showingSuggestion = false;
     W.clear();
     state.lastFittedId = null;
     refresh();
@@ -433,7 +423,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
   }
 
-  document.addEventListener("click", event => {
+  document.addEventListener("click", async event => {
     const button = event.target instanceof Element ? event.target.closest("button") : null;
     if (!button) return;
     const data = button.dataset;
@@ -441,44 +431,46 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       const id = Number(data.f);
       const wasFavourite = state.fav.has(id);
       wasFavourite ? state.fav.delete(id) : state.fav.add(id);
-      render();
-      if (S.routes?.fav) {
-        post(S.routes.fav + "/" + id).catch(() => {
-          wasFavourite ? state.fav.add(id) : state.fav.delete(id);
-          render();
-          showToast("ذخیرهٔ علاقه‌مندی انجام نشد.");
-        });
+      syncCardActions();
+      button.disabled = true;
+      try {
+        await post(S.routes.fav + "/" + id);
+      } catch {
+        wasFavourite ? state.fav.add(id) : state.fav.delete(id);
+        syncCardActions();
+        showToast("ذخیرهٔ علاقه‌مندی انجام نشد.");
+      } finally {
+        button.disabled = false;
       }
     } else if (data.t) {
       const product = P.find(item => Number(item.id) === Number(data.t));
       const image = button.closest(".shop-product-card")?.querySelector(".shop-pic img");
-      if (product && (!product.slot || !product.o || !OF[String(product.o)] || !OF[String(product.o)].s || !Object.keys(OF[String(product.o)].s).length)) {
-        fit.classList.add("open");
-        fit.setAttribute("aria-hidden", "false");
-        showToast("برای پرو مجازی، این محصول را در استودیو به ست و تصویر مانکن وصل کن.");
-      } else if (product) {
-        tryOn(product, image, button);
-      }
+      if (product) tryOn(product, image, button);
     } else if (data.rec) {
       const product = P.find(item => Number(item.id) === Number(data.rec));
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
       if (product) tryOn(product, image, button);
     } else if (data.r) {
+      showingSuggestion = false;
       W.delete(Number(data.r));
       refresh();
     } else if (data.c) {
       addOne(Number(data.c), button);
-    } else if (data.cat !== undefined) {
-      state.cat = data.cat;
-      state.visibleCount = 12;
-      render();
     }
   });
 
-  $("#close").addEventListener("click", () => {
-    fit.classList.remove("open");
-    fit.setAttribute("aria-hidden", "true");
+  function closeFit() {
+    fit.hidden = true;
+    catalog.classList.remove("fit-open");
+    setFitLayout();
     if (fittingTrigger?.isConnected) fittingTrigger.focus({ preventScroll: true });
+  }
+
+  $("#close").addEventListener("click", closeFit);
+  $("#open-fit")?.addEventListener("click", event => openFit(event.currentTarget));
+  $("#sugg").addEventListener("click", () => {
+    showingSuggestion = !showingSuggestion;
+    setScene();
   });
   $("#strip").addEventListener("click", clearAll);
   $("#saveCompareA").addEventListener("click", () => saveComparison("A"));
@@ -507,33 +499,32 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
   });
 
-  $("#shop-load-more")?.addEventListener("click", () => { state.visibleCount += 12; render(); });
-  $("#q").addEventListener("input", event => { state.q = event.target.value || ""; state.visibleCount = 12; render(); });
-  $("#sort").addEventListener("change", event => { state.sort = event.target.value; state.visibleCount = 12; render(); });
-  pr.addEventListener("input", event => { state.max = Number(event.target.value); state.visibleCount = 12; render(); });
-  $("#reset").addEventListener("click", () => {
-    state.visibleCount = 12; state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
-    $("#q").value = ""; $("#sort").value = "new"; pr.value = state.max;
-    render();
+  $("#pr").addEventListener("input", event => {
+    $("#prv").textContent = fa(event.target.value) + " " + S.currency;
   });
   $("#theme").addEventListener("click", () => {
     const root = document.documentElement;
     root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
   });
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && fit.classList.contains("open")) {
-      fit.classList.remove("open");
-      fit.setAttribute("aria-hidden", "true");
-      if (fittingTrigger?.isConnected) fittingTrigger.focus({ preventScroll: true });
+    if (fit.hidden) return;
+    if (event.key === "Escape") {
+      closeFit();
+    } else if (event.key === "Tab" && compact.matches) {
+      const focusable = Array.from(fit.querySelectorAll("button:not(:disabled), summary"))
+        .filter(element => element.getClientRects().length);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
   });
 
-
-  $("#q").value = state.q;
-  $("#sort").value = state.sort;
-  if (pr) { pr.min = Number(S.min || 0); pr.max = Number(S.max || 4000000); pr.value = state.max; }
-  updateCart(S.cart);
-  render();
   refresh();
 
   if (S.routes?.cartSummary) {

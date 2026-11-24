@@ -4,7 +4,7 @@ VISION is a Laravel 12 storefront backed by Eloquent, Blade and Vite. The reusab
 
 ## Customer routes
 
-- \`/\` and \`/shop\` — product discovery with search, category/brand filters, sorting and pagination.
+- \`/\` and \`/shop\` — product discovery. The catalog uses server-rendered search, category and price filters, sorting and 12-card pages.
 - \`/products/{slug}\` — active product detail with selectable variants, current server-backed price and stock.
 - \`/cart\` — database-backed bag for guest sessions and signed-in customers.
 - \`/checkout\` — guest or signed-in checkout. The server validates availability and recalculates prices, tax and shipping.
@@ -36,7 +36,7 @@ php artisan commerce-admin:make-admin admin@example.com
 
 The command changes only the configured administrator flag on an existing user by default. To create a new administrator deliberately, run `php artisan commerce-admin:make-admin admin@example.com --create`; it requests the name and a confirmed password interactively. No account is created without `--create`.
 
-An optional `AdminSeeder` can bootstrap the first admin from environment values; it skips when credentials are blank and never resets an existing user's password. `DatabaseSeeder` also creates the two launch-catalog products as ordinary Eloquent records, so their database IDs are used for editing and archiving in Commerce Admin. The launch seeder attaches an image only when the referenced file really exists on the configured public disk; it never creates a Media row pointing at a missing file. The broader demo seeders below remain opt-in. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
+An optional `AdminSeeder` can bootstrap the first admin from environment values; it skips when credentials are blank and never resets an existing user's password. The default `DatabaseSeeder` only bootstraps an administrator. Import approved products and mannequin artwork explicitly or create them in Commerce Admin. `StorefrontLaunchSeeder` is an opt-in launch catalog. The launch seeder attaches an image only when the referenced file really exists on the configured public disk; it never creates a Media row pointing at a missing file. The broader demo seeders below remain opt-in. Online card processing and automated bank-transfer reconciliation are not enabled. Available customer payment methods are cash on delivery and bank transfer, with payment instructions handled outside this application. A manual admin payment update records the status in both the order and its latest payment record; it does not contact a payment provider.
 
 ## Configuration
 

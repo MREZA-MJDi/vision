@@ -46,7 +46,6 @@ class StorefrontBrowseTest extends TestCase
 
         $this->get('/shop')
             ->assertOk()
-            ->assertSee('id="shop-load-more"', false)
             ->assertSee('id="fit"', false)
             ->assertSee('id="fit-recommend-grid"', false)
             ->assertSee('id="stage"', false)
@@ -67,7 +66,7 @@ class StorefrontBrowseTest extends TestCase
             ->assertSee('اتاق پرو')
             ->assertDontSee('data-virtual-try-on', false)
             ->assertDontSee('data-vto-inline', false)
-            ->assertSee('window.SHOP', false);
+            ->assertSee('id="shop-studio-data"', false);
 
         $html = (string) $this->get('/shop')->getContent();
         $this->assertNotFalse(strpos($html, 'id="fit"'), 'The fitting-room drawer must render on Shop.');
@@ -109,7 +108,7 @@ class StorefrontBrowseTest extends TestCase
             ->assertOk()
             ->assertSee('photo-1583743814966-8936f5b7be1a', false)
             ->assertSee($product->slug, false)
-            ->assertSee('"id":' . $variant->getKey(), false)
+            ->assertSee('data-product="' . $variant->getKey() . '"', false)
             ->assertDontSee('data-virtual-try-on', false)
             ->assertDontSee('data-vto-select-product', false)
             ->assertDontSee('data-fit-product', false);
@@ -193,8 +192,8 @@ class StorefrontBrowseTest extends TestCase
 
         $this->get('/products')
             ->assertOk()
-            ->assertSee('"id":' . $available->getKey(), false)
-            ->assertDontSee('"id":' . $soldOut->getKey(), false);
+            ->assertSee('data-product="' . $available->getKey() . '"', false)
+            ->assertDontSee('data-product="' . $soldOut->getKey() . '"', false);
     }
 
     public function test_product_detail_shows_variant_and_returns_404_for_inactive_product(): void
@@ -234,4 +233,33 @@ class StorefrontBrowseTest extends TestCase
         $product->update(['is_active' => false]);
         $this->get('/products/the-everyday-icon')->assertNotFound();
     }
+
+    public function test_shop_returns_one_page_of_cards_and_keeps_filters_on_next_page(): void
+    {
+        $this->withoutVite();
+        $category = Category::query()->create(['name' => 'پوشاک', 'slug' => 'paged-clothing', 'is_active' => true]);
+        foreach (range(1, 14) as $index) {
+            $product = Product::query()->create([
+                'name' => "Paged Garment {$index}",
+                'slug' => "paged-garment-{$index}",
+                'category_id' => $category->id,
+                'is_active' => true,
+            ]);
+            $product->variants()->create([
+                'sku' => "PAGED-{$index}",
+                'price' => $index * 100,
+                'stock' => 2,
+                'is_active' => true,
+            ]);
+        }
+
+        $filters = ['category' => $category->slug, 'sort' => 'price_asc'];
+        $first = $this->get(route('shop.index', $filters))->assertOk();
+        $this->assertSame(12, substr_count($first->getContent(), 'class="shop-product-card"'));
+        $first->assertSee('rel="next"', false)->assertDontSee('paged-garment-14?', false);
+        $next = $this->get(route('shop.index', $filters + ['page' => 2]))->assertOk();
+        $this->assertSame(2, substr_count($next->getContent(), 'class="shop-product-card"'));
+        $next->assertSee('paged-garment-14?', false)->assertSee('rel="prev"', false);
+    }
+
 }
