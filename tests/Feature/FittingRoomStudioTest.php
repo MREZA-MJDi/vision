@@ -179,7 +179,7 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('fit-compare-grid', false)
             ->assertSee('saveCompareA', false)
             ->assertSee('saveCompareB', false)
-            ->assertDontSee('اتاق پرو استودیویی</a>', false);
+            ->assertSee('اتاق پرو استودیویی</a>', false);
     }
 
     public function test_selected_outfit_variants_are_added_to_the_database_cart_together(): void
