@@ -404,9 +404,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     const dy = end.top + end.height * Number(fitY || .38) - (start.top + start.height / 2);
     const animation = element.animate([
       { transform: "none", opacity: 1 },
-      { transform: `translate(${dx * .45}px,${dy * .4 - 55}px) rotate(-10deg) scale(.65)`, offset: .48 },
-      { transform: `translate(${dx}px,${dy}px) rotate(4deg) scale(.24)`, opacity: .15 }
-    ], { duration: 560, easing: "cubic-bezier(.3,.1,.25,1)" });
+      { transform: `translate(${dx * .45}px,${dy * .4 - 55}px) rotate(-7deg) scale(.78)`, offset: .46 },
+      { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(.34)`, opacity: .05 }
+    ], { duration: 1050, easing: "cubic-bezier(.42,0,.32,1)" });
     fittingFlight = animation;
     $("#sugg").hidden = true;
     setSceneLoading(true);
