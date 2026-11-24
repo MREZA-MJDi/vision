@@ -1,212 +1,165 @@
+
 <?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Category;
-use App\Services\MediaService;
-use App\Support\SeoDefaults;
-use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\Admin\SaveCategoryRequest;
+use App\Services\Catalog\CategoryService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
-class CategoryController
+final class CategoryController
 {
-    private function model(): string
-    {
-        return (string) config('commerce-admin.models.category', Category::class);
-    }
+    public function __construct(
+        private readonly CategoryService $categories,
+    ) {}
 
     public function index(Request $request): View
     {
-        $model = $this->model();
-        $search = trim((string) $request->query('q', ''));
-        $status = (string) $request->query('status', 'all');
-        $query = $model::query()->with(['parent', 'coverMedia'])->withCount(['products', 'children']);
+        $model = $this->categories->model();
 
-        if ($search !== '') {
-            $query->where(fn ($q) => $q->where('name', 'like', '%' . $search . '%')
-                ->orWhere('slug', 'like', '%' . $search . '%'));
-        }
+        $search = mb_substr(
+            trim($request->string('q')->toString()),
+            0,
+            120
+        );
 
-        if ($status === 'active') {
-            $query->where('is_active', true);
-        } elseif ($status === 'inactive') {
-            $query->where('is_active', false);
-        } else {
+        $status = $request->string('status', 'all')->toString();
+
+        if (! in_array($status, ['all', 'active', 'inactive'], true)) {
             $status = 'all';
         }
 
-        $items = $query->orderBy('sort_order')->orderBy('name')
-            ->paginate((int) config('commerce-admin.items_per_page', 10))
+        $items = $model::query()
+            ->with(['parent', 'coverMedia'])
+            ->withCount(['products', 'children'])
+            ->when(
+                $search !== '',
+                fn ($query) => $query->where(
+                    fn ($q) => $q
+                        ->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('slug', 'like', '%' . $search . '%')
+                )
+            )
+            ->when(
+                $status !== 'all',
+                fn ($query) => $query->where(
+                    'is_active',
+                    $status === 'active'
+                )
+            )
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate((int) config(
+                'commerce-admin.items_per_page',
+                10
+            ))
             ->withQueryString();
 
         $stats = [
             'all' => $model::query()->count(),
-            'active' => $model::query()->where('is_active', true)->count(),
+            'active' => $model::query()
+                ->where('is_active', true)->count(),
             'used' => $model::query()->whereHas('products')->count(),
         ];
 
-        return view('commerce-admin::catalog.taxonomy-index', [
-            'items' => $items,
-            'search' => $search,
-            'status' => $status,
-            'stats' => $stats,
-            'type' => 'categories',
-            'taxonomyTitle' => 'دسته‌بندی',
-            'taxonomyPlural' => 'دسته‌بندی‌ها',
-            'routePrefix' => 'commerce-admin.categories',
-            'showParent' => true,
-        ]);
+        return view('commerce-admin::categories.index', compact(
+            'items',
+            'search',
+            'status',
+            'stats',
+        ));
     }
 
     public function create(): View
     {
-        $model = $this->model();
+        $model = $this->categories->model();
 
-        return $this->formView(new $model(), false);
+        return view('commerce-admin::categories.create', [
+            'record' => new $model(),
+            'parents' => $this->parents(),
+        ]);
     }
 
-    public function store(SaveCategoryRequest $request, MediaService $mediaService): RedirectResponse
-    {
-        $model = $this->model();
-        $record = new $model();
-        $data = $request->validated();
+    public function store(
+        SaveCategoryRequest $request
+    ): RedirectResponse {
+        $model = $this->categories->model();
 
-        DB::transaction(function () use ($record, $data, $model, $request, $mediaService): void {
-            $record->fill([
-                'name' => $data['name'],
-                'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name']),
-                'parent_id' => $data['parent_id'] ?? null,
-                'description' => $data['description'] ?? null,
-                'meta_title' => SeoDefaults::title((string) $data['name'], $data['meta_title'] ?? null),
-                'meta_description' => SeoDefaults::description((string) $data['name'], $data['meta_description'] ?? null, $data['description'] ?? null),
-                'is_active' => ($data['status'] ?? 'active') === 'active',
-                'sort_order' => (int) ($data['sort_order'] ?? 0),
-            ]);
-            $record->save();
-            $this->persistCover($record, $request, $data, $mediaService);
-        });
+        $this->categories->save(
+            new $model(),
+            $request->validated(),
+            $request->file('cover_image')
+        );
 
-        return redirect()->route('commerce-admin.categories.index')
+        return redirect()
+            ->route('commerce-admin.categories.index')
             ->with('status', 'دسته‌بندی با موفقیت ایجاد شد.');
     }
 
     public function edit(int $category): View
     {
-        $model = $this->model();
-        $record = $model::query()->findOrFail($category);
+        $model = $this->categories->model();
 
-        return $this->formView($record, true);
+        return view('commerce-admin::categories.edit', [
+            'record' => $model::query()
+                ->with('coverMedia')
+                ->findOrFail($category),
+
+            'parents' => $this->parents($category),
+        ]);
     }
 
-    public function update(SaveCategoryRequest $request, int $category, MediaService $mediaService): RedirectResponse
-    {
-        $model = $this->model();
-        $record = $model::query()->findOrFail($category);
-        $data = $request->validated();
+    public function update(
+        SaveCategoryRequest $request,
+        int $category
+    ): RedirectResponse {
+        $model = $this->categories->model();
 
-        DB::transaction(function () use ($record, $data, $model, $request, $mediaService): void {
-            $record->fill([
-                'name' => $data['name'],
-                'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name'], $record->getKey(), $record->slug),
-                'parent_id' => $data['parent_id'] ?? null,
-                'description' => $data['description'] ?? null,
-                'meta_title' => SeoDefaults::title((string) $data['name'], $data['meta_title'] ?? null),
-                'meta_description' => SeoDefaults::description((string) $data['name'], $data['meta_description'] ?? null, $data['description'] ?? null),
-                'is_active' => ($data['status'] ?? 'active') === 'active',
-                'sort_order' => (int) ($data['sort_order'] ?? 0),
-            ]);
-            $record->save();
-            $this->persistCover($record, $request, $data, $mediaService);
-        });
+        $this->categories->save(
+            $model::query()->findOrFail($category),
+            $request->validated(),
+            $request->file('cover_image')
+        );
 
-        return redirect()->route('commerce-admin.categories.index')
+        return redirect()
+            ->route('commerce-admin.categories.index')
             ->with('status', 'تغییرات دسته‌بندی ذخیره شد.');
     }
 
     public function destroy(int $category): RedirectResponse
     {
-        $model = $this->model();
-        $record = $model::query()->findOrFail($category);
+        $model = $this->categories->model();
 
-        if ($record->products()->withTrashed()->exists() || $record->children()->withTrashed()->exists()) {
-            $record->forceFill(['is_active' => false])->save();
+        $deleted = $this->categories->destroy(
+            $model::query()->findOrFail($category)
+        );
 
-            return redirect()->route('commerce-admin.categories.index')
-                ->with('status', 'این دسته‌بندی هنوز محصول یا زیر‌دسته دارد؛ برای حفظ ارتباط‌ها غیرفعال شد.');
-        }
-
-        $record->delete();
-
-        return redirect()->route('commerce-admin.categories.index')
-            ->with('status', 'دسته‌بندی حذف شد.');
+        return redirect()
+            ->route('commerce-admin.categories.index')
+            ->with(
+                'status',
+                $deleted
+                    ? 'دسته‌بندی حذف شد.'
+                    : 'دسته‌بندی دارای وابستگی است و غیرفعال شد.'
+            );
     }
 
-    private function formView(object $record, bool $editing): View
+    private function parents(?int $except = null)
     {
-        $model = $this->model();
-        $parents = $model::query()
-            ->when($record->getKey(), fn ($query) => $query->where($record->getKeyName(), '<>', $record->getKey()))
+        $model = $this->categories->model();
+
+        return $model::query()
+            ->when(
+                $except !== null,
+                fn ($query) => $query->where('id', '<>', $except)
+            )
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->get();
-
-        return view('commerce-admin::catalog.taxonomy-form', [
-            'record' => $record,
-            'editing' => $editing,
-            'type' => 'categories',
-            'taxonomyTitle' => 'دسته‌بندی',
-            'routePrefix' => 'commerce-admin.categories',
-            'parents' => $parents,
-            'showParent' => true,
-        ]);
-    }
-
-    private function persistCover(object $record, SaveCategoryRequest $request, array $data, MediaService $mediaService): void
-    {
-        if ($request->hasFile('cover_image')) {
-            $altText = trim((string) ($data['cover_alt'] ?? ''));
-
-            $mediaService->replace(
-                $record,
-                'cover',
-                $request->file('cover_image'),
-                (string) config('commerce-admin.category_media_directory', 'categories'),
-                $altText !== '' ? $altText : (string) $data['name']
-            );
-
-            return;
-        }
-
-        if ((bool) ($data['remove_cover'] ?? false)) {
-            $mediaService->removeCollection($record, 'cover');
-        }
-    }
-
-    private function resolveSlug(string $model, string $requestedSlug, string $name, ?int $ignoreId = null, ?string $currentSlug = null): string
-    {
-        $requestedSlug = trim($requestedSlug);
-        if ($requestedSlug === '' && $currentSlug !== null) {
-            return $currentSlug;
-        }
-
-        $base = Str::slug($requestedSlug !== '' ? $requestedSlug : $name);
-        if ($base === '') {
-            $base = 'category-' . Str::lower(Str::random(8));
-        }
-
-        $candidate = $base;
-        $suffix = 2;
-
-        while ($model::withTrashed()->where('slug', $candidate)
-            ->when($ignoreId, fn ($query) => $query->where($query->getModel()->getKeyName(), '<>', $ignoreId))
-            ->exists()) {
-            $candidate = $base . '-' . $suffix++;
-        }
-
-        return $candidate;
+            ->get(['id', 'name', 'parent_id']);
     }
 }
