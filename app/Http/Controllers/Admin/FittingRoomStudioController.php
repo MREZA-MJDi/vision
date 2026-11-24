@@ -50,8 +50,8 @@ class FittingRoomStudioController extends Controller
             })
             ->with(['product:id,name,slug,audience', 'primaryGalleryMedia'])
             ->orderByDesc('updated_at')
-            ->limit(300)
-            ->get();
+            ->paginate(100, ['*'], 'variant_page')
+            ->withQueryString();
 
         return view('admin.fitting-room-studio.index', compact('mannequins', 'variants', 'variantSearch'));
     }
