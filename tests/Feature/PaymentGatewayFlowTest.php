@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Http;
@@ -62,6 +63,7 @@ class PaymentGatewayFlowTest extends TestCase
             return Http::response(['error' => 'unexpected test request'], 500);
         });
 
+        $this->actingAs(User::query()->create(['name' => 'Snap Customer', 'email' => 'snap-customer@example.test', 'password' => 'test-password']));
         [, $variant] = $this->createProduct(price: 12.50, salePrice: 10.00, stock: 3);
         $this->postJson('/cart/items', ['variant_id' => $variant->getKey(), 'quantity' => 1])
             ->assertCreated();
@@ -138,6 +140,7 @@ class PaymentGatewayFlowTest extends TestCase
             return Http::response(['error' => 'unexpected test request'], 500);
         });
 
+        $this->actingAs(User::query()->create(['name' => 'Digi Customer', 'email' => 'digi-customer@example.test', 'password' => 'test-password']));
         [, $variant] = $this->createProduct(price: 25.00, salePrice: null, stock: 2);
         $this->postJson('/cart/items', ['variant_id' => $variant->getKey(), 'quantity' => 1])
             ->assertCreated();
