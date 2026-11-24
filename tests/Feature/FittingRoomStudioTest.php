@@ -284,6 +284,25 @@ class FittingRoomStudioTest extends TestCase
         $this->getJson(route('shop.studio'))->assertOk()
             ->assertJsonPath('suggestions.' . $variant->id, $look->previewSuggestedMedia->url);
 
+        $fallback = $product->variants()->create([
+            'sku' => 'STUDIO-UPLOAD-FALLBACK',
+            'price' => 920000,
+            'stock' => 4,
+            'sort_order' => 0,
+            'is_active' => true,
+        ]);
+        $variant->update(['sort_order' => 1]);
+        $this->get(route('shop.index'))->assertOk()
+            ->assertViewHas('filters', fn (array $filters) => $filters['max'] === 200000)
+            ->assertDontSee('data-product="' . $fallback->id . '"', false);
+
+        Storage::disk('public')->delete($look->previewTopMedia->path);
+        $this->get(route('shop.index'))->assertOk()
+            ->assertViewHas('filters', fn (array $filters) => $filters['max'] === 1000000)
+            ->assertDontSee('data-t="' . $variant->id . '"', false)
+            ->assertSee('data-product="' . $fallback->id . '"', false);
+        $this->getJson(route('shop.studio'))->assertOk()->assertJsonCount(0, 'garments');
+
         $this->put(route('commerce-admin.try-on.looks.update', $look), $fields)
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertFalse($look->fresh()->is_active);
