@@ -61,6 +61,38 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('جست‌وجو در کل محصولات');
     }
 
+    public function test_admin_variant_picker_paginates_large_catalogues(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Pagination Admin',
+            'email' => 'pagination-admin@example.test',
+            'password' => 'test-password',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+        $product = Product::query()->create([
+            'name' => 'Bulk Studio Product', 'slug' => 'bulk-studio-product',
+            'audience' => 'women', 'is_active' => true,
+        ]);
+        foreach (range(1, 101) as $index) {
+            ProductVariant::query()->create([
+                'product_id' => $product->getKey(),
+                'sku' => sprintf('STUDIO-BULK-%03d', $index),
+                'price' => 100000, 'stock' => 2, 'is_active' => true,
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.try-on.index', ['variant_search' => 'STUDIO-BULK']))
+            ->assertOk()
+            ->assertSee('صفحه بعد')
+            ->assertSee('STUDIO-BULK-101')
+            ->assertDontSee('STUDIO-BULK-001');
+
+        $this->get(route('commerce-admin.try-on.index', ['variant_search' => 'STUDIO-BULK', 'variant_page' => 2]))
+            ->assertOk()
+            ->assertSee('STUDIO-BULK-001');
+    }
+
     public function test_shop_payload_uses_database_scene_urls_and_variant_mappings(): void
     {
         $mannequin = FittingRoomMannequin::query()->create([
