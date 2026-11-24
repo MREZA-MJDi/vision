@@ -94,6 +94,10 @@ class CommerceAdminManagementTest extends TestCase
         $firstPath = (string) $firstMedia->path;
         Storage::disk('public')->assertExists($firstPath);
 
+        // The homepage only shows categories with at least one active purchasable product.
+        $visibleProduct = $this->makeProduct('clothing-cover-visible-product', $category->getKey());
+        $this->makeVariant($visibleProduct, 'COVER-VISIBLE-01', 3);
+
         $this->get(route('storefront.index'))->assertOk()
             ->assertSee((string) $firstMedia->url, false);
 
