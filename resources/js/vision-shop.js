@@ -91,9 +91,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   const filterFields = $("#shop-filter-fields");
   let filtersOpen = false;
   const setFilterLayout = () => {
-    filterToggle.hidden = !smallScreen.matches;
-    filterFields.hidden = smallScreen.matches && !filtersOpen;
-    filterToggle.setAttribute("aria-expanded", String(!filterFields.hidden));
+    filterFields.closest("form").dataset.expanded = String(filtersOpen);
+    filterToggle.setAttribute("aria-expanded", String(!smallScreen.matches || filtersOpen));
   };
   filterToggle.addEventListener("click", () => {
     filtersOpen = !filtersOpen;

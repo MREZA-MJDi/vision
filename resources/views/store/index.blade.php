@@ -31,7 +31,7 @@
     <form id="shop-filters" class="shop-filter" action="{{ route('shop.index') }}" method="get" aria-label="فیلترهای فروشگاه">
         <div class="shop-filter-heading">
             <h2>فیلترها</h2>
-            <button type="button" id="shop-filter-toggle" aria-controls="shop-filter-fields" aria-expanded="true" hidden>
+            <button type="button" id="shop-filter-toggle" aria-controls="shop-filter-fields" aria-expanded="false">
                 فیلترها <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <a href="{{ route('shop.index') }}">حذف فیلترها</a>
