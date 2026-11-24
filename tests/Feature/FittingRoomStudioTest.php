@@ -165,6 +165,50 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('"slot":"bottom"', false);
     }
 
+    public function test_public_fitting_studio_never_mixes_scenes_from_different_mannequins(): void
+    {
+        $first = FittingRoomMannequin::query()->create([
+            'code' => 'first-studio', 'label' => 'First', 'audience' => 'all',
+            'pose_key' => 'front-neutral', 'canvas_width' => 420, 'canvas_height' => 630,
+            'is_active' => true, 'sort_order' => 0,
+        ]);
+        $second = FittingRoomMannequin::query()->create([
+            'code' => 'second-studio', 'label' => 'Second', 'audience' => 'all',
+            'pose_key' => 'front-neutral', 'canvas_width' => 420, 'canvas_height' => 630,
+            'is_active' => true, 'sort_order' => 1,
+        ]);
+        foreach ([$first, $second] as $mannequin) {
+            $media = $mannequin->media()->create([
+                'collection' => 'fitting-room-mannequin', 'disk' => 'public',
+                'path' => 'https://assets.example.test/base-' . $mannequin->code . '.jpg',
+                'original_name' => 'base.jpg', 'mime_type' => 'image/jpeg',
+                'size' => 1, 'width' => 420, 'height' => 630, 'sort_order' => 0,
+            ]);
+            $mannequin->base_media_id = $media->getKey();
+            $mannequin->save();
+
+            $look = FittingRoomLook::query()->create([
+                'mannequin_id' => $mannequin->getKey(),
+                'code' => 'look-' . $mannequin->code, 'label' => 'Look',
+                'is_active' => true, 'sort_order' => 0,
+            ]);
+            $scene = $look->media()->create([
+                'collection' => 'fitting-room-scene', 'disk' => 'public',
+                'path' => 'https://assets.example.test/scene-' . $mannequin->code . '.jpg',
+                'original_name' => 'scene.jpg', 'mime_type' => 'image/jpeg',
+                'size' => 1, 'width' => 420, 'height' => 630, 'sort_order' => 0,
+            ]);
+            $look->preview_top_media_id = $scene->getKey();
+            $look->save();
+        }
+
+        $payload = app(\\App\\Services\\FittingRoomShopData::class)->payload();
+        $this->assertStringContainsString('base-first-studio.jpg', $payload['base']);
+        $this->assertCount(1, $payload['looks']);
+        $this->assertArrayHasKey((string) $first->looks()->first()->getKey(), $payload['looks']);
+        $this->assertArrayNotHasKey((string) $second->looks()->first()->getKey(), $payload['looks']);
+    }
+
     public function test_shop_includes_outfit_recommendations_and_saved_style_comparison(): void
     {
         $this->get('/shop')
