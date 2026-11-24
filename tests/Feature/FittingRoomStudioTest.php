@@ -37,6 +37,30 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('name="bottom_variant_id"', false);
     }
 
+    public function test_admin_can_search_variants_outside_the_default_recent_list(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Studio Search Admin',
+            'email' => 'studio-search@example.test',
+            'password' => 'studio-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+        $product = Product::query()->create([
+            'name' => 'Unique Studio Garment', 'slug' => 'unique-studio-garment',
+            'audience' => 'women', 'is_active' => true,
+        ]);
+        ProductVariant::query()->create([
+            'product_id' => $product->getKey(), 'sku' => 'STUDIO-SEARCH-UNIQUE',
+            'price' => 120000, 'stock' => 2, 'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.try-on.index', ['variant_search' => 'STUDIO-SEARCH-UNIQUE']))
+            ->assertOk()
+            ->assertSee('STUDIO-SEARCH-UNIQUE')
+            ->assertSee('جست‌وجو در کل محصولات');
+    }
+
     public function test_shop_payload_uses_database_scene_urls_and_variant_mappings(): void
     {
         $mannequin = FittingRoomMannequin::query()->create([
