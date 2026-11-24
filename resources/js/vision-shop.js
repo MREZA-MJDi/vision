@@ -484,12 +484,14 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   function clearAll() {
+    const resetHasFocus = document.activeElement === $("#strip");
     activation++;
     stopFittingFlight();
     showingSuggestion = false;
     W.clear();
     state.lastFittedId = null;
     refresh();
+    if (resetHasFocus) $("#close").focus({ preventScroll: true });
   }
 
   async function addOne(productId, trigger) {
