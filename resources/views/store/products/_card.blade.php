@@ -5,7 +5,7 @@
     $isSale = $variant?->is_on_sale;
 @endphp
 <article class="product-card">
-    <a class="product-card__image" href="{{ route('products.show', ['product' => $product->slug]) }}" aria-label="مشاهدهٔ {{ $product->name }}">
+    <a class="product-card__image store-media" href="{{ route('products.show', ['product' => $product->slug]) }}" aria-label="مشاهدهٔ {{ $product->name }}">
         @if($image)
             <img src="{{ $image }}" alt="{{ $product->name }}" loading="lazy" decoding="async">
         @else

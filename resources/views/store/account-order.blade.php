@@ -15,17 +15,19 @@
 
     <div class="commerce-layout">
         <section class="commerce-panel commerce-cart-items">
-            <div class="commerce-panel-heading"><h2>کالاهای سفارش</h2><span>{{ number_format($model->items->sum('quantity')) }} عدد</span></div>
+            <div class="commerce-panel-heading"><h2>کالاهای سفارش</h2><span>{{ \App\Support\Money::number($model->items->sum('quantity')) }} عدد</span></div>
             @foreach($model->items as $item)
                 <article class="commerce-cart-row">
-                    @if($item->product_image)
-                        <img class="commerce-cart-row__image" src="{{ $item->product_image }}" alt="{{ $item->product_name }}" loading="lazy">
-                    @else
-                        <div class="commerce-cart-row__image commerce-cart-row__image--empty" aria-hidden="true">V.</div>
-                    @endif
+                    <div class="store-media store-media--thumb commerce-cart-row__image">
+                        @if($item->product_image)
+                            <img src="{{ $item->product_image }}" alt="{{ $item->product_name }}" loading="lazy">
+                        @else
+                            <span>بدون تصویر</span>
+                        @endif
+                    </div>
                     <div class="commerce-cart-row__details">
                         <div class="commerce-cart-row__title">
-                            <div><h3>{{ $item->product_name }}</h3><p>{{ $item->variant_name ?: $item->sku ?: 'گزینهٔ استاندارد' }} · تعداد {{ number_format((int) $item->quantity) }}</p></div>
+                            <div><h3>{{ $item->product_name }}</h3><p>{{ $item->variant_name ?: $item->sku ?: 'گزینهٔ استاندارد' }} · تعداد {{ \App\Support\Money::number((int) $item->quantity) }}</p></div>
                             <strong>@money($item->line_total)</strong>
                         </div>
                         <p class="commerce-muted">@money($item->unit_price) برای هر عدد</p>

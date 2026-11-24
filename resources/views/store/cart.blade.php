@@ -34,7 +34,7 @@
     @else
         <div class="commerce-layout">
             <section class="commerce-panel commerce-cart-items" aria-label="کالاهای سبد خرید">
-                <div class="commerce-panel-heading"><h2>کالاهای انتخاب‌شده</h2><span>{{ number_format($summary['itemCount']) }} کالا</span></div>
+                <div class="commerce-panel-heading"><h2>کالاهای انتخاب‌شده</h2><span>{{ \App\Support\Money::number($summary['itemCount']) }} کالا</span></div>
 
                 @foreach($items as $item)
                     @php
@@ -43,11 +43,13 @@
                         $image = $variant?->primaryGalleryMedia?->url ?? $product?->primaryGalleryMedia?->url;
                     @endphp
                     <article class="commerce-cart-row">
-                        @if($image)
-                            <img class="commerce-cart-row__image" src="{{ $image }}" alt="{{ $product?->name ?? 'تصویر محصول' }}" loading="lazy">
-                        @else
-                            <div class="commerce-cart-row__image commerce-cart-row__image--empty" aria-hidden="true">V.</div>
-                        @endif
+                        <div class="store-media store-media--thumb commerce-cart-row__image">
+                            @if($image)
+                                <img src="{{ $image }}" alt="{{ $product?->name ?? 'تصویر محصول' }}" loading="lazy">
+                            @else
+                                <span>بدون تصویر</span>
+                            @endif
+                        </div>
                         <div class="commerce-cart-row__details">
                             <div class="commerce-cart-row__title">
                                 <div>
@@ -59,7 +61,7 @@
                             @if(!$item->checkout_available)
                                 <p class="commerce-inline-error">این کالا ناموجود است یا تعداد انتخاب‌شده از موجودی بیشتر است. کالا را حذف کن یا تعداد را تغییر بده.</p>
                             @else
-                                <p class="commerce-muted">هر عدد @money($item->display_unit_price) · موجودی: {{ number_format((int) $variant->stock) }} عدد</p>
+                                <p class="commerce-muted">هر عدد @money($item->display_unit_price) · موجودی: {{ \App\Support\Money::number((int) $variant->stock) }} عدد</p>
                             @endif
                             <div class="commerce-cart-row__actions">
                                 @if($variant && $product)

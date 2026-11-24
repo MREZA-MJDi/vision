@@ -6,7 +6,10 @@
 @section('og-image', $heroSlides->first()['image'] ?? '')
 
 @section('content')
-@php($featured = $heroSlides->first())
+@php
+    $heroGroups = $heroSlides->groupBy('productId');
+    $featured = $heroSlides->first();
+@endphp
 
 <main class="store-main store-home">
     <section class="home-hero" aria-labelledby="home-hero-title" data-home-hero
@@ -24,15 +27,15 @@
                     <a href="{{ route('account.show') }}" aria-label="حساب کاربری">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"></circle><path d="M5.3 20c.5-3.4 2.8-5.3 6.7-5.3s6.2 1.9 6.7 5.3"></path></svg>
                     </a>
-                    <a href="{{ route('cart.index') }}" aria-label="مشاهدهٔ سبد خرید">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg>
-                        <span data-cart-count>0</span>
-                    </a>
+                    @include('store.home-cart-link', ['floating' => false])
                 </div>
             </header>
 
             <div class="home-hero__content">
                 <div class="home-hero__copy">
+                    @if($heroGroups->count() > 1)
+                        @include('store.home-carousel-controls', ['controls' => 'home-hero-stage', 'attribute' => 'data-home-hero-step'])
+                    @endif
                     <h1 id="home-hero-title" class="home-hero__title">استایل تو؛<br>امضای تو.</h1>
                     <p data-home-hero-description>{{ $featured['description'] ?? 'پوشاک روزمره و انتخاب‌های تازهٔ VISION را در فروشگاه ببینید.' }}</p>
                     <a class="home-hero__cta" href="{{ route('shop.index') }}">مشاهدهٔ فروشگاه</a>
@@ -40,7 +43,7 @@
                 </div>
 
                 @if($featured)
-                    <div class="home-hero__image-stage">
+                    <div class="home-hero__image-stage" id="home-hero-stage">
                         <img data-home-hero-image @if($featured['image']) src="{{ $featured['image'] }}" @else hidden @endif
                              alt="{{ $featured['alt'] }}" fetchpriority="high" decoding="async">
                         <span class="home-hero__image-missing" data-home-hero-image-missing @if($featured['image']) hidden @endif>
@@ -57,33 +60,48 @@
                             <span data-home-hero-stock>{{ $featured['stock'] }}</span>
                         </div>
                         <a class="home-hero__cta home-hero__cta--secondary" href="{{ $featured['url'] }}" data-home-hero-product-link>جزئیات محصول</a>
+                        @if($heroSlides->count() > 1)
+                            <div class="home-hero__variants" role="group" aria-label="رنگ‌های محصول">
+                                @foreach($heroSlides as $slide)
+                                    <button type="button" class="home-hero__variant"
+                                            data-home-hero-slide
+                                            data-product-id="{{ $slide['productId'] }}"
+                                            data-image="{{ $slide['image'] }}"
+                                            data-image-alt="{{ $slide['alt'] }}"
+                                            data-theme="{{ $slide['theme'] }}"
+                                            data-title="{{ $slide['title'] }}"
+                                            data-description="{{ $slide['description'] }}"
+                                            data-url="{{ $slide['url'] }}"
+                                            data-price="{{ $slide['price'] }}"
+                                            data-original-price="{{ $slide['originalPrice'] }}"
+                                            data-stock="{{ $slide['stock'] }}"
+                                            data-label="{{ $slide['label'] }}"
+                                            aria-label="{{ $slide['label'] }}"
+                                            title="{{ $slide['label'] }}"
+                                            aria-pressed="{{ $loop->first ? 'true' : 'false' }}"
+                                            @if($slide['productId'] !== $featured['productId']) hidden @endif>
+                                        <span class="home-hero__swatch" style="--home-hero-swatch: {{ $slide['theme'] }}" aria-hidden="true"></span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 @endif
             </div>
 
-            @if($heroSlides->count() > 1)
-                <div class="home-hero__picker">
-                    <p id="hero-picker-label">انتخاب محصول و رنگ</p>
-                    <div class="home-hero__variants" role="group" aria-labelledby="hero-picker-label">
-                        @foreach($heroSlides as $slide)
-                            <button type="button" class="home-hero__variant"
-                                    data-home-hero-slide
-                                    data-image="{{ $slide['image'] }}"
-                                    data-image-alt="{{ $slide['alt'] }}"
-                                    data-theme="{{ $slide['theme'] }}"
-                                    data-title="{{ $slide['title'] }}"
-                                    data-description="{{ $slide['description'] }}"
-                                    data-url="{{ $slide['url'] }}"
-                                    data-price="{{ $slide['price'] }}"
-                                    data-original-price="{{ $slide['originalPrice'] }}"
-                                    data-stock="{{ $slide['stock'] }}"
-                                    data-label="{{ $slide['label'] }}"
-                                    aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
-                                <span class="home-hero__swatch" style="--home-hero-swatch: {{ $slide['theme'] }}" aria-hidden="true"></span>
-                                <span>{{ $slide['title'] }} · {{ $slide['label'] }}</span>
-                            </button>
-                        @endforeach
-                    </div>
+            @if($heroGroups->count() > 1)
+                <div class="home-hero__products" role="group" aria-label="محصولات منتخب اسلایدر">
+                    @foreach($heroGroups as $productId => $variants)
+                        @php($preview = $variants->first())
+                        <button type="button" class="home-hero__thumbnail store-media store-media--thumb" data-home-hero-product="{{ $productId }}"
+                                title="{{ $preview['title'] }}" aria-label="{{ $preview['title'] }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
+                            @if($preview['image'])
+                                <img src="{{ $preview['image'] }}" alt="" width="54" height="54" decoding="async">
+                            @else
+                                <span>{{ $loop->iteration }}</span>
+                            @endif
+                        </button>
+                    @endforeach
                 </div>
             @endif
         </div>
@@ -94,8 +112,9 @@
             <div class="home-content-heading">
                 <h2 id="home-new-title">تازه‌های فروشگاه</h2>
                 <a href="{{ route('shop.index', ['sort' => 'newest']) }}#catalog">همهٔ تازه‌ها</a>
+                @include('store.home-carousel-controls', ['controls' => 'home-new-rail', 'attribute' => 'data-home-rail-step'])
             </div>
-            <div class="home-product-grid">
+            <div class="home-product-grid home-rail" id="home-new-rail" role="group" aria-labelledby="home-new-title" tabindex="0">
                 @foreach($newProducts as $product)
                     @include('store.home-product-card', ['product' => $product])
                 @endforeach
@@ -107,8 +126,9 @@
         <section class="home-content-section" aria-labelledby="home-categories-title">
             <div class="home-content-heading">
                 <h2 id="home-categories-title">خرید بر اساس دسته‌بندی</h2>
+                @include('store.home-carousel-controls', ['controls' => 'home-category-rail', 'attribute' => 'data-home-rail-step'])
             </div>
-            <div class="home-category-list">
+            <div class="home-category-list home-rail" id="home-category-rail" role="group" aria-labelledby="home-categories-title" tabindex="0">
                 @foreach($homeCategories as $category)
                     <a class="home-category-tile" href="{{ route('shop.index', ['category' => $category->slug]) }}#catalog">
                         @if($category->coverMedia?->url)
@@ -141,13 +161,15 @@
             <div class="home-content-heading">
                 <h2 id="home-collections-title">منتخب VISION</h2>
                 <a href="{{ route('shop.index') }}#catalog">همهٔ محصولات</a>
+                @include('store.home-carousel-controls', ['controls' => 'home-curated-rail', 'attribute' => 'data-home-rail-step'])
             </div>
-            <div class="home-product-grid">
-                @foreach($heroProducts->take(4) as $product)
+            <div class="home-product-grid home-rail" id="home-curated-rail" role="group" aria-labelledby="home-collections-title" tabindex="0">
+                @foreach($heroProducts as $product)
                     @include('store.home-product-card', ['product' => $product])
                 @endforeach
             </div>
         </section>
     @endif
+    @include('store.home-cart-link', ['floating' => true])
 </main>
 @endsection

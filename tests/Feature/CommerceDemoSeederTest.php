@@ -61,8 +61,8 @@ class CommerceDemoSeederTest extends TestCase
             ->assertSee('data-variant-pick', false)
             ->assertSee('data-image=', false)
             ->assertSee('photo-1583743814966-8936f5b7be1a')
-            ->assertSee('1,290,000 تومان')
-            ->assertSee('1,090,000 تومان');
+            ->assertSee('۱٬۲۹۰٬۰۰۰ تومان')
+            ->assertSee('۱٬۰۹۰٬۰۰۰ تومان');
     }
 
     public function test_demo_seeders_are_idempotent(): void

@@ -27,7 +27,7 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('vision-shop-collections', false);
         $response->assertSee('vision-shop-story', false);
         $response->assertSee('نماد کسب‌وکار', false);
-        $response->assertSee('home-minimal-footer', false);
+        $response->assertSee('vision-footer', false);
         $response->assertDontSee('data-fitting-room', false);
     }
 
@@ -229,7 +229,7 @@ class StorefrontBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee('The Everyday Icon');
         $response->assertSee('An everyday statement.');
-        $response->assertSee('10,900');
+        $response->assertSee('۱۰٬۹۰۰');
 
         $product->update(['is_active' => false]);
         $this->get('/products/the-everyday-icon')->assertNotFound();

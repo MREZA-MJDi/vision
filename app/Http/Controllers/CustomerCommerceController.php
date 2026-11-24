@@ -206,7 +206,7 @@ class CustomerCommerceController extends Controller
             $nextQuantity = (int) ($existing?->quantity ?? 0) + $quantity;
             if ((int) $variant->stock < $nextQuantity) {
                 throw ValidationException::withMessages([
-                    'quantity' => 'در حال حاضر فقط ' . number_format((int) $variant->stock) . ' عدد موجود است.',
+                    'quantity' => 'در حال حاضر فقط ' . \App\Support\Money::number((int) $variant->stock) . ' عدد موجود است.',
                 ]);
             }
 
@@ -330,7 +330,7 @@ class CustomerCommerceController extends Controller
             $quantity = (int) $validated['quantity'];
             if ((int) $variant->stock < $quantity) {
                 throw ValidationException::withMessages([
-                    'quantity' => 'در حال حاضر فقط ' . number_format((int) $variant->stock) . ' عدد موجود است.',
+                    'quantity' => 'در حال حاضر فقط ' . \App\Support\Money::number((int) $variant->stock) . ' عدد موجود است.',
                 ]);
             }
 

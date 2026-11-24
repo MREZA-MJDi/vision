@@ -59,4 +59,43 @@ class HomeHeroPlaylistTest extends TestCase
             ->assertSee('data-home-hero-price', false)
             ->assertSee('data-home-hero-product-link', false);
     }
+
+    public function test_home_hero_contains_at_most_seven_dashboard_products(): void
+    {
+        $this->withoutVite();
+
+        $included = [];
+        $excluded = [];
+
+        foreach (range(0, 8) as $position) {
+            $product = Product::query()->create([
+                'name' => "Hero test {$position}",
+                'slug' => "hero-test-{$position}",
+                'is_active' => true,
+                'is_hero' => $position > 0,
+                'sort_order' => $position,
+            ]);
+            $product->variants()->create([
+                'sku' => "HERO-TEST-{$position}",
+                'price' => 100,
+                'stock' => 2,
+                'low_stock_threshold' => 1,
+                'is_active' => true,
+            ]);
+
+            if ($position === 0 || $position === 8) {
+                $excluded[] = $product->getKey();
+            } else {
+                $included[] = $product->getKey();
+            }
+        }
+
+        $response = $this->get(route('storefront.index'))->assertOk();
+
+        $response->assertSeeInOrder(array_map(fn ($id) => "data-home-hero-product=\"{$id}\"", $included), false);
+
+        foreach ($excluded as $id) {
+            $response->assertDontSee("data-home-hero-product=\"{$id}\"", false);
+        }
+    }
 }

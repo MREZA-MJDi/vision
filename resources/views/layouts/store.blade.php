@@ -5,13 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0b090d">
-    <meta name="description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    @php
+        $pageTitle = \App\Support\Money::persianDigits($__env->yieldContent('title', 'فروشگاه پوشاک VISION'));
+        $pageDescription = \App\Support\Money::persianDigits($__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.'));
+    @endphp
+    <meta name="description" content="{{ $pageDescription }}">
+    @if (request()->routeIs('cart.*', 'checkout.*', 'account.*', 'login', 'register'))
+        <meta name="robots" content="noindex,follow">
+    @endif
     <link rel="canonical" href="{{ $__env->yieldContent('canonical', url()->current()) }}">
     <meta property="og:site_name" content="VISION">
     <meta property="og:locale" content="fa_IR">
     <meta property="og:type" content="{{ $__env->yieldContent('og-type', 'website') }}">
-    <meta property="og:title" content="{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}">
-    <meta property="og:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
     <meta property="og:url" content="{{ $__env->yieldContent('canonical', url()->current()) }}">
     @if (filled(trim($__env->yieldContent('og-image'))))
         <meta property="og:image" content="{{ trim($__env->yieldContent('og-image')) }}">
@@ -20,9 +27,9 @@
     @else
         <meta name="twitter:card" content="summary">
     @endif
-    <meta name="twitter:title" content="{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}">
-    <meta name="twitter:description" content="{{ $__env->yieldContent('meta-description', 'مجموعه‌ای منتخب از پوشاک روزمره و محصولات فروشگاه VISION.') }}">
-    <title>{{ $__env->yieldContent('title', 'VISION — فروشگاه پوشاک') }}</title>
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+    <title>{{ $pageTitle }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -79,7 +86,7 @@
                 </button>
                 <button class="store-icon-button store-cart-button" type="button" data-cart-toggle aria-label="مشاهده سبد خرید" title="سبد خرید">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg>
-                    <span class="store-cart-count" data-cart-count>0</span>
+                    <span class="store-cart-count" data-cart-count>۰</span>
                 </button>
                 <button class="store-icon-button store-mobile-filter" type="button" data-store-filter-toggle aria-controls="store-sidebar" aria-expanded="false" aria-label="باز کردن فیلترها">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10m-7 6h4"></path></svg>
@@ -90,55 +97,7 @@
 
         @yield('content')
 
-        @if (request()->routeIs('storefront.index'))
-        <footer class="home-minimal-footer" aria-label="پاورقی VISION">
-            <a class="home-minimal-footer__brand" href="{{ route('storefront.index') }}">VISION</a>
-            <nav aria-label="پیوندهای ضروری">
-                <a href="{{ route('shop.index') }}">فروشگاه</a>
-                <a href="{{ route('cart.index') }}">سبد خرید</a>
-                <a href="{{ route('account.show') }}">حساب کاربری</a>
-                <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
-                <a href="{{ route('contact.index') }}">تماس با ما</a>
-            </nav>
-            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span>
-            @include('store.trust-slots')
-        </footer>
-        @else
-        <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
-            <div class="store-footer__main">
-                <div class="store-footer__brand">
-                    <a class="store-footer__wordmark" href="{{ route('storefront.index') }}" aria-label="صفحهٔ اصلی VISION">VISION</a>
-                    <p>انتخاب دقیق‌تر، شلوغی کمتر؛ محصولات و اطلاعات سفارش در یک فروشگاه یکپارچه.</p>
-                </div>
-
-                <nav class="store-footer__column" aria-label="دسترسی سریع">
-                    <h2>دسترسی سریع</h2>
-                    <a href="{{ route('storefront.index') }}">خانه</a>
-                    <a href="{{ route('shop.index') }}">فروشگاه</a>
-                    <a href="{{ route('shop.index') }}#catalog">اتاق پرو استودیویی</a>
-                    <a href="{{ route('shop.index', ['sort' => 'newest']) }}">تازه‌های فروشگاه</a>
-                    <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
-                    <a href="{{ route('contact.index') }}">تماس با ما</a>
-                </nav>
-
-                <nav class="store-footer__column" aria-label="خرید و حساب کاربری">
-                    <h2>خرید و حساب کاربری</h2>
-                    <a href="{{ route('cart.index') }}">سبد خرید</a>
-                    <a href="{{ route('checkout.index') }}">ادامهٔ خرید</a>
-                    <a href="{{ route('login') }}">ورود</a>
-                    <a href="{{ route('register') }}">ساخت حساب</a>
-                    <a href="{{ route('contact.index') }}">پشتیبانی و تماس</a>
-                </nav>
-            </div>
-
-
-            @include('store.trust-slots')
-            <div class="store-footer__bottom">
-                <span>© {{ now()->year }} VISION — تمام حقوق محفوظ است.</span>
-                <a href="{{ route('storefront.index') }}">بازگشت به صفحهٔ اصلی <span aria-hidden="true">↑</span></a>
-            </div>
-        </footer>
-        @endif
+        @include('store.footer')
 
         @if (!request()->routeIs('shop.index', 'products.index'))
         <div class="store-toast" data-store-toast role="status" aria-live="polite"></div>
