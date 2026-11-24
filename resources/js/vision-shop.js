@@ -79,7 +79,7 @@ import { gsap } from "gsap";
     $("#n").textContent = fa(products.length) + " محصول";
     $("#prv").textContent = "تا " + fa(state.max) + " " + (S.currency || "تومان");
     grid.innerHTML = products.length ? products.slice(0, state.visibleCount).map(product => {
-      const canFit = !!(product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
+      const canFit = !!(Number(product.stock || 0) > 0 && product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
       const image = product.img
         ? '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">'
         : '<span class="shop-pic-empty" aria-label="تصویر محصول ثبت نشده">V.</span>';
