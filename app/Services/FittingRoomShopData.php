@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Category;
+use App\Models\FittingRoomLook;
 use App\Models\FittingRoomLookItem;
 use App\Models\FittingRoomMannequin;
-use App\Models\Category;
+use App\Models\Media;
 use App\Models\ProductReview;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +18,7 @@ class FittingRoomShopData
     public function payload(?Request $request = null): array
     {
         $mannequin = $this->publicMannequin();
-        $fitItems = $mannequin ? $this->fittingItems($mannequin) : null;
+        $fitItems = $mannequin ? $this->fittingItems($mannequin, $this->missingSceneMediaIds($mannequin)) : null;
 
         $catalog = ProductVariant::query()
             ->select('product_variants.*')
@@ -26,10 +28,6 @@ class FittingRoomShopData
             ->where('product_variants.is_active', true);
 
         $price = 'CASE WHEN product_variants.sale_price >= 0 AND product_variants.sale_price < product_variants.price THEN product_variants.sale_price ELSE product_variants.price END';
-        $highest = (clone $catalog)->toBase()->max(DB::raw($price));
-        $step = 100000;
-        $max = max($step, (int) ceil(($highest ?? $step) / $step) * $step);
-
         $categories = Category::query()
             ->whereIn('id', (clone $catalog)->select('products.category_id')->distinct()->toBase())
             ->orderBy('sort_order')
@@ -57,6 +55,10 @@ class FittingRoomShopData
         } else {
             $catalog->where('product_variants.id', $primaryVariant);
         }
+
+        $highest = (clone $catalog)->toBase()->max(DB::raw($price));
+        $step = 100000;
+        $max = max($step, (int) ceil(($highest ?? $step) / $step) * $step);
 
         $read = static fn (string $key): string => is_string($value = $request?->query($key)) ? trim($value) : '';
         $search = mb_substr($read('q'), 0, 120);
@@ -207,9 +209,22 @@ class FittingRoomShopData
             ->lazy(16)->first(fn (FittingRoomMannequin $mannequin) => (bool) $mannequin->baseMedia?->url);
     }
 
-    private function fittingItems(FittingRoomMannequin $mannequin): Builder
+    private function missingSceneMediaIds(FittingRoomMannequin $mannequin): array
     {
-        $hasPhoto = static fn ($media) => $media->whereRaw("TRIM(path) <> ''");
+        $looks = FittingRoomLook::query()->active()->where('mannequin_id', $mannequin->id);
+        $sceneIds = (clone $looks)->select('preview_top_media_id')->toBase()
+            ->union($looks->select('preview_bottom_media_id')->toBase());
+
+        return Media::query()->select(['id', 'path', 'disk'])->whereIn('id', $sceneIds)
+            ->lazyById(100)
+            ->filter(fn (Media $media) => $media->url === null)
+            ->pluck('id')->all();
+    }
+
+    private function fittingItems(FittingRoomMannequin $mannequin, array $missingSceneMediaIds = []): Builder
+    {
+        $hasPhoto = static fn ($media) => $media->whereRaw("TRIM(path) <> ''")
+            ->whereIntegerNotInRaw('media.id', $missingSceneMediaIds);
 
         return FittingRoomLookItem::query()->where('fitting_room_look_items.is_active', true)
             ->whereHas('variant', fn ($variant) => $variant->active()->whereHas('product', fn ($product) => $product

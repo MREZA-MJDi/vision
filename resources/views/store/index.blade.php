@@ -117,7 +117,7 @@
     </details>
 
     <div class="tot" id="tot">هنوز چیزی انتخاب نشده</div>
-    <div class="btns"><button class="pri" id="addset" type="button" disabled>افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
+    <div class="btns"><button class="pri" id="addset" type="button" disabled>افزودن ست به سبد</button><button id="strip" type="button" disabled>شروع دوباره</button></div>
 </aside>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

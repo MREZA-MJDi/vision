@@ -60,7 +60,10 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
     return studioRequest;
   }
-  let busy = false;
+  let fittingFlight = null;
+  let cartQueue = Promise.resolve();
+  let cartUpdated = false;
+  let addingSet = false;
   let fittingTrigger = null;
   const catalog = $("#catalog");
   const stage = $("#stage");
@@ -102,6 +105,17 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       throw new Error(message);
     }
     return data;
+  }
+
+  function addToCart(url, body) {
+    const request = cartQueue.then(async () => {
+      const response = await post(url, body);
+      cartUpdated = true;
+      updateCart(response.count);
+      return response;
+    });
+    cartQueue = request.catch(() => undefined);
+    return request;
   }
 
   function syncCardActions() {
@@ -227,7 +241,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
         (product.img ? '<img src="' + escapeHtml(product.img) + '" alt="">' : '<span>V.</span>') +
       '</button>'
     ).join("");
-    $("#addset").disabled = items.length === 0;
+    $("#addset").disabled = addingSet || items.length === 0;
+    $("#strip").disabled = items.length === 0;
     syncCardActions();
     renderRecommendations();
     renderComparison();
@@ -349,13 +364,15 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1700);
   }
 
-  async function fly(source, fitY) {
+  function fly(source, fitY) {
     if (RM || !source || !source.getBoundingClientRect) return;
     const start = source.getBoundingClientRect(), end = stage.getBoundingClientRect();
     if (start.width < 1 || start.height < 1 || end.width < 1 || end.height < 1) return;
     const element = document.createElement("img");
     element.src = source.currentSrc || source.src;
     element.className = "fly";
+    element.alt = "";
+    element.setAttribute("aria-hidden", "true");
     Object.assign(element.style, { left: start.left + "px", top: start.top + "px", width: start.width + "px", height: start.height + "px" });
     document.body.appendChild(element);
     const dx = end.left + end.width / 2 - (start.left + start.width / 2);
@@ -365,13 +382,16 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       { transform: `translate(${dx * .5}px,${dy * .4 - 70}px) rotate(-16deg) scale(.62)`, offset: .5 },
       { transform: `translate(${dx}px,${dy}px) rotate(8deg) scale(.3)`, opacity: .15 }
     ], { duration: 780, easing: "cubic-bezier(.5,0,.25,1)" });
-    await animation.finished.catch(() => undefined);
-    element.remove();
+    fittingFlight = animation;
+    animation.finished.catch(() => undefined).then(() => {
+      element.remove();
+      if (fittingFlight === animation) fittingFlight = null;
+    });
   }
 
   async function openStudio(trigger, variantId = null) {
-    if (!S.routes.studio || busy) return;
-    const request = ++activation;
+    if (!S.routes.studio) return;
+    const request = activation;
     fittingTrigger = trigger;
     const wasHidden = fit.hidden;
     fit.hidden = false;
@@ -385,18 +405,20 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     try {
       await loadStudio();
       if (activation !== request) return;
-      $("#load").classList.remove("on");
-      refresh();
+      $("#fit-retry").hidden = true;
 
       if (variantId !== null) {
         const product = P.find(item => item.id === variantId);
         if (product && product.stock > 0) {
           const source = trigger.closest(".shop-product-card")?.querySelector(".shop-pic img");
-          await tryOn(product, source);
-        } else {
-          notice.textContent = "این لباس در حال حاضر برای پرو در دسترس نیست.";
-          notice.hidden = false;
+          tryOn(product, source);
+          return;
         }
+      }
+      refresh();
+      if (variantId !== null) {
+        notice.textContent = "این لباس در حال حاضر برای پرو در دسترس نیست.";
+        notice.hidden = false;
       }
     } catch {
       if (activation !== request) return;
@@ -407,8 +429,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
   }
 
-  async function tryOn(product, source) {
-    if (busy || !product || !product.scene || !product.slot || Number(product.stock || 0) < 1) return;
+  function tryOn(product, source) {
+    if (!product?.scene || !product.slot || Number(product.stock || 0) < 1) return;
+    fittingFlight?.cancel();
     showingSuggestion = false;
 
     if (W.has(Number(product.id))) {
@@ -417,23 +440,17 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       return;
     }
 
-    busy = true;
-    try {
-      await fly(source, product.fy);
-      // Keep the opposite slot selected even without an authored combined photo.
-      // The scene resolver shows the last selected garment, never a fake composite.
-      P.forEach(item => {
-        if (item.slot === product.slot && W.has(Number(item.id))) W.delete(Number(item.id));
-      });
-      W.add(Number(product.id));
-      state.lastFittedId = Number(product.id);
-    } finally {
-      busy = false;
-      refresh();
-    }
+    const previous = P.find(item => item.slot === product.slot && W.has(Number(item.id)));
+    if (previous) W.delete(Number(previous.id));
+    W.add(Number(product.id));
+    state.lastFittedId = Number(product.id);
+    fly(source, product.fy);
+    refresh();
   }
 
   function clearAll() {
+    activation++;
+    fittingFlight?.cancel();
     showingSuggestion = false;
     W.clear();
     state.lastFittedId = null;
@@ -441,26 +458,19 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   async function addOne(productId, trigger) {
-    if (trigger?.disabled) return;
-    const wasDisabled = !!trigger?.disabled;
-    if (trigger) trigger.disabled = true;
-    let flight = Promise.resolve();
-
+    if (trigger.disabled) return;
+    trigger.disabled = true;
     try {
-      const card = trigger?.closest(".shop-product-card");
+      const response = await addToCart(S.routes.cart, { variant_id: productId, quantity: 1 });
+      const card = trigger.closest(".shop-product-card");
       const source = card?.querySelector(".shop-pic img") || card?.querySelector(".shop-pic");
-      flight = flyToCart(source, $("#cartTarget"));
-
-      const response = await post(S.routes.cart, { variant_id: Number(productId), quantity: 1 });
-      await flight;
-      updateCart(response.count);
-      pulseCartTarget($("#cartTarget"));
+      const target = $("#cartTarget");
+      flyToCart(source, target).then(() => pulseCartTarget(target));
       showToast(response.message || "به سبد خرید اضافه شد.");
     } catch (error) {
-      await flight.catch(() => undefined);
       showToast(error.message || "افزودن به سبد خرید انجام نشد.");
     } finally {
-      if (trigger?.isConnected) trigger.disabled = wasDisabled;
+      trigger.disabled = false;
     }
   }
 
@@ -488,8 +498,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     } else if (data.rec) {
       const product = P.find(item => Number(item.id) === Number(data.rec));
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
-      if (product) await tryOn(product, image);
+      if (product) tryOn(product, image);
     } else if (data.r) {
+      fittingFlight?.cancel();
       showingSuggestion = false;
       W.delete(Number(data.r));
       refresh();
@@ -500,6 +511,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   function closeFit() {
     activation++;
+    fittingFlight?.cancel();
     fit.hidden = true;
     catalog.classList.remove("fit-open");
     setFitLayout();
@@ -531,14 +543,14 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     if (button.disabled) return;
     const ids = [...W].map(Number);
     if (!ids.length) { showToast("اول یک لباس انتخاب کن."); return; }
-    button.disabled = true;
+    addingSet = button.disabled = true;
     try {
-      const response = await post(S.routes.cartMany, { variant_ids: ids });
-      updateCart(response.count);
+      const response = await addToCart(S.routes.cartMany, { variant_ids: ids });
       showToast(response.message || "ست به سبد خرید اضافه شد.");
     } catch (error) {
       showToast(error.message || "افزودن ست به سبد خرید انجام نشد.");
     } finally {
+      addingSet = false;
       button.disabled = W.size === 0;
     }
   });
@@ -574,7 +586,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   if (S.routes?.cartSummary) {
     fetch(S.routes.cartSummary, { credentials: "same-origin", headers: { "Accept": "application/json" } })
       .then(response => response.ok ? response.json() : null)
-      .then(response => { if (response && response.count !== undefined) updateCart(response.count); })
+      .then(response => { if (!cartUpdated && response?.count !== undefined) updateCart(response.count); })
       .catch(() => undefined);
   }
 })();
