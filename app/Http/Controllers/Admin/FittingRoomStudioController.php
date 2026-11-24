@@ -50,6 +50,7 @@ class FittingRoomStudioController extends Controller
             })
             ->with(['product:id,name,slug,audience', 'primaryGalleryMedia'])
             ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->paginate(100, ['*'], 'variant_page')
             ->withQueryString();
 
