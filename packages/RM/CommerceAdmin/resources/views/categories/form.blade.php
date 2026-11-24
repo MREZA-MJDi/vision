@@ -18,7 +18,7 @@
             @include('commerce-admin::components.catalog.seo-fields')
         </div>
         <aside class="rm-taxonomy-column">
-            @include('commerce-admin::components.media.image-uploader', ['media' => $record->coverMedia, 'prefix' => 'cover', 'title' => 'تصویر دسته‌بندی', 'aspect' => 0.75])
+            @include('commerce-admin::components.media.image-uploader', ['media' => $editing ? $record->coverMedia : null, 'prefix' => 'cover', 'title' => 'تصویر دسته‌بندی', 'aspect' => 0.75, 'categoryPreview' => true, 'previewName' => old('name', $record->name)])
         </aside>
     </div>
     <div class="rm-taxonomy-footer"><a class="ak-button ak-button-light" href="{{ route('commerce-admin.categories.index') }}">انصراف</a><button type="submit" class="ak-button ak-button-dark">ذخیره</button></div>

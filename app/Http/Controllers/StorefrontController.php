@@ -34,7 +34,6 @@ class StorefrontController extends Controller
 
         $homeCategories = Category::query()
             ->active()
-            ->whereHas('products', fn (Builder $query) => $query->active()->whereHas('activeVariants'))
             ->with('coverMedia')
             ->orderBy('sort_order')
             ->orderBy('id')

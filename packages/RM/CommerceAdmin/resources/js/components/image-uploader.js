@@ -49,7 +49,20 @@ class ImageUploader {
         this.removed = this.removeInput.value === '1';
 
         this.bind();
+        this.bindCardPreview();
         this.render();
+    }
+
+    bindCardPreview() {
+        const captions = this.root.querySelectorAll('[data-rm-card-name]');
+        if (!captions.length) return;
+        const input = this.root.closest('form')?.querySelector('[name="name"]');
+        if (!input) return;
+        const update = () => captions.forEach(caption => {
+            caption.textContent = input.value.trim() || 'نام دسته‌بندی';
+        });
+        input.addEventListener('input', update);
+        update();
     }
 
     bind() {
@@ -434,6 +447,15 @@ class ImageUploader {
 
         this.preview.hidden = !url;
         this.placeholder.hidden = Boolean(url);
+        const caption = this.root.querySelector('[data-rm-card-caption]');
+        const secondary = this.root.querySelector('[data-rm-secondary-preview]');
+        const secondaryImage = this.root.querySelector('[data-rm-secondary-image]');
+        if (caption) caption.hidden = !url;
+        if (secondary) secondary.hidden = !url;
+        if (secondaryImage) {
+            if (url) secondaryImage.src = url;
+            else secondaryImage.removeAttribute('src');
+        }
 
         this.cropButton.disabled = !url;
         this.removeButton.disabled = !url;
