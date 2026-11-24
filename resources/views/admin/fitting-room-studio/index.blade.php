@@ -19,7 +19,7 @@
         <div class="fr-hero__stats">
             <div><strong>{{ number_format($mannequins->count()) }}</strong><span>مدل مانکن</span></div>
             <div><strong>{{ number_format($mannequins->sum('looks_count')) }}</strong><span>ست ثبت‌شده</span></div>
-            <div><strong>{{ number_format($variants->count()) }}</strong><span>واریانت در فهرست فعلی (حداکثر ۳۰۰ نتیجه)</span></div>
+            <div><strong>{{ number_format($variants->count()) }}</strong><span>واریانت صفحهٔ فعلی از {{ number_format($variants->total()) }} مورد</span></div>
         </div>
     </header>
 
@@ -29,8 +29,24 @@
         </label>
         <button type="submit" class="fr-button fr-button--primary">جست‌وجو در کل محصولات ↗</button>
         @if($variantSearch !== '')<a class="fr-button" href="{{ route('commerce-admin.try-on.index') }}">پاک کردن جست‌وجو</a>@endif
-        <p class="fr-muted">نتایج جست‌وجو در انتخابگرهای ست نمایش داده می‌شوند. واریانت‌های مرتبط با ست‌های موجود نیز تا حد امکان حفظ می‌شوند.</p>
+        <p class="fr-muted">نتایج در صفحه‌های ۱۰۰تایی قابل مرورند؛ برای پیدا کردن هر واریانت، نام محصول یا SKU را جست‌وجو کن. هنگام تغییر صفحه، انتخاب‌های ذخیره‌نشده فرم حفظ نمی‌شوند.</p>
     </form>
+
+    @if($variants->hasPages())
+        <nav class="fr-variant-pages" aria-label="صفحه‌بندی واریانت‌های استودیو">
+            @if($variants->onFirstPage())
+                <span aria-disabled="true">صفحه قبل</span>
+            @else
+                <a href="{{ $variants->previousPageUrl() }}">صفحه قبل</a>
+            @endif
+            <span>صفحه {{ number_format($variants->currentPage()) }} از {{ number_format($variants->lastPage()) }}</span>
+            @if($variants->hasMorePages())
+                <a href="{{ $variants->nextPageUrl() }}">صفحه بعد</a>
+            @else
+                <span aria-disabled="true">صفحه بعد</span>
+            @endif
+        </nav>
+    @endif
 
     <section class="fr-section" id="fr-mannequins">
         <div class="fr-section__head">
