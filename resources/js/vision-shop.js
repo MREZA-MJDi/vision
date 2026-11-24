@@ -146,6 +146,12 @@ import { gsap } from "gsap";
     const selected = P.filter(product => W.has(Number(product.id)));
     const top = selected.find(product => product.slot === "top") || null;
     const bottom = selected.find(product => product.slot === "bottom") || null;
+    const notice = $("#fit-scene-notice");
+    const announce = message => {
+      if (!notice) return;
+      notice.textContent = message;
+      notice.hidden = !message;
+    };
 
     Object.values(scenes).forEach(image => {
       if (!image) return;
@@ -153,7 +159,6 @@ import { gsap } from "gsap";
       image.style.clipPath = "";
       image.style.zIndex = "";
     });
-
     const activate = key => {
       const image = scenes[key];
       if (!image) return false;
@@ -163,28 +168,33 @@ import { gsap } from "gsap";
 
     if (!top && !bottom) {
       activate("base");
+      announce("");
       return;
     }
 
     if (top && bottom) {
       const pairScene = exactOutfitScene(top, bottom);
-      // Only use the studio photograph that was actually authored for this
-      // exact combination. Never imply a visual try-on that is not in the DB.
-      // When an exact combined photograph is unavailable, retain the most
-      // recently chosen garment's real single-item mannequin photograph.
-      // Never substitute an unrelated combined outfit or a fabricated composite.
-      if (pairScene && activate(pairScene)) return;
+      if (pairScene && activate(pairScene)) {
+        announce("نمای واقعی ست کامل");
+        return;
+      }
       const preferred = Number(state.lastFittedId) === Number(bottom.id) ? bottom : top;
       const fallback = preferred === top ? bottom : top;
-      if (activate(String(preferred.o) + ":" + (preferred.slot === "top" ? "T" : "B"))) return;
-      if (activate(String(fallback.o) + ":" + (fallback.slot === "top" ? "T" : "B"))) return;
+      const showSingle = item => activate(String(item.o) + ":" + (item.slot === "top" ? "T" : "B"));
+      if (showSingle(preferred) || showSingle(fallback)) {
+        announce("هر دو لباس انتخاب شده‌اند، اما تصویر واقعی این ترکیب ثبت نشده است؛ فقط نمای یکی از لباس‌ها نمایش داده می‌شود.");
+        return;
+      }
       activate("base");
+      announce("تصویر این ترکیب در استودیو موجود نیست.");
       return;
     }
 
-    if (top && activate(String(top.o) + ":T")) return;
-    if (bottom && activate(String(bottom.o) + ":B")) return;
-    activate("base");
+    const shown = top
+      ? activate(String(top.o) + ":T")
+      : activate(String(bottom.o) + ":B");
+    if (!shown) activate("base");
+    announce(shown ? "" : "تصویر این لباس روی مانکن موجود نیست.");
   }
 
   function updateCart(count) {
@@ -449,9 +459,9 @@ import { gsap } from "gsap";
     element.remove();
   }
 
-  async function tryOn(product, source) {
-    if (source instanceof Element) fittingTrigger = source.closest("button") || source.closest(".shop-product-card")?.querySelector("[data-t]") || fittingTrigger;
-    if (busy || !product || !product.o || !product.slot) return;
+  async function tryOn(product, source, trigger = null) {
+    if (busy || !product || !product.o || !product.slot || Number(product.stock || 0) < 1) return;
+    if (trigger instanceof HTMLElement) fittingTrigger = trigger;
     fit.classList.add("open");
     fit.setAttribute("aria-hidden", "false");
     fit.setAttribute("aria-label", "اتاق پرو استودیویی VISION، لباس انتخاب‌شده روی مانکن");
@@ -543,12 +553,12 @@ import { gsap } from "gsap";
         fit.setAttribute("aria-hidden", "false");
         showToast("برای پرو مجازی، این محصول را در استودیو به ست و تصویر مانکن وصل کن.");
       } else if (product) {
-        tryOn(product, image);
+        tryOn(product, image, button);
       }
     } else if (data.rec) {
       const product = P.find(item => Number(item.id) === Number(data.rec));
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
-      if (product) tryOn(product, image);
+      if (product) tryOn(product, image, button);
     } else if (data.r) {
       W.delete(Number(data.r));
       refresh();
@@ -576,15 +586,20 @@ import { gsap } from "gsap";
     renderComparison();
     showToast(persisted ? "استایل‌های مقایسه پاک شدند." : "استایل‌ها در همین صفحه پاک شدند.");
   });
-  $("#addset").addEventListener("click", async () => {
+  $("#addset").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    if (button.disabled) return;
     const ids = [...W].map(Number);
     if (!ids.length) { showToast("اول یک لباس انتخاب کن."); return; }
+    button.disabled = true;
     try {
       const response = await post(S.routes.cartMany, { variant_ids: ids });
       updateCart(response.count);
       showToast(response.message || "ست به سبد خرید اضافه شد.");
     } catch (error) {
       showToast(error.message || "افزودن ست به سبد خرید انجام نشد.");
+    } finally {
+      button.disabled = W.size === 0;
     }
   });
 
