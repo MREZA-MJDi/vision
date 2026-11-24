@@ -262,6 +262,7 @@ class ImageUploader {
 
             this.paint();
             this.dialog.showModal();
+            this.canvas.focus();
         } catch (error) {
             this.releaseCrop();
             this.showError(error.message);
@@ -351,11 +352,13 @@ class ImageUploader {
                 throw new Error('آماده‌سازی تصویر انجام نشد.');
             }
 
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            this.input.files = transfer.files;
             this.file = file;
             this.source = this.pendingSource;
             this.removed = false;
-
-            this.syncInput();
+            this.removeInput.value = '0';
             this.render();
             this.close();
         } catch (error) {
