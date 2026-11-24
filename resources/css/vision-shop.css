@@ -1,4 +1,5 @@
 @import "../iranyekanx/font-face.css";
+@import "./product-media.css";
 
 :root {
     --vs-bg: #121115;
@@ -6,7 +7,7 @@
     --vs-card: #18161a;
     --vs-line: #2b272d;
     --vs-text: #f2ece6;
-    --vs-muted: #8f8790;
+    --vs-muted: #a49ba4;
     --vs-accent: #d9742b;
     --vs-accent-2: #f2a265;
     --vs-glow: rgba(217,116,43,.12);
@@ -20,6 +21,7 @@
     --vs-line: #e5dcd2;
     --vs-text: #241e21;
     --vs-muted: #7c7279;
+    --vs-accent-2: #94471d;
     --vs-glow: rgba(217,116,43,.13);
     color-scheme: light;
 }
@@ -53,10 +55,11 @@
 }
 
 .vision-shop-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    gap: 16px;
-    padding: 16px 32px;
+    gap: 12px;
+    padding: 7px max(16px, calc((100% - 1340px) / 2));
     border-bottom: 1px solid var(--vs-line);
     background: color-mix(in srgb,var(--vs-bg) 86%,transparent);
     backdrop-filter: blur(18px);
@@ -66,46 +69,57 @@
 
 .vision-shop-nav {
     display: flex;
-    gap: 24px;
-    flex: 1;
-    font-size: 13px;
+    gap: clamp(8px, 1.5vw, 22px);
+    font-size: .78rem;
     color: var(--vs-muted);
 }
 
 .vision-shop-nav a {
+    position: relative;
+    display: grid;
+    align-items: center;
+    min-height: 44px;
+    white-space: nowrap;
     color: inherit;
     text-decoration: none;
     transition: color .2s;
 }
 
-.vision-shop-nav a:hover {
+.vision-shop-nav a:is(:hover, [aria-current]) {
     color: var(--vs-text);
 }
 
+.vision-shop-nav a[aria-current]::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 6px;
+    height: 1px;
+    background: var(--vs-accent);
+}
+
 .vision-wordmark {
-    flex: 1;
     text-align: center;
+    color: var(--vs-text);
     padding-inline-start: .34em;
-    font: 600 26px/1.2 "Space Grotesk",sans-serif;
+    font: 650 clamp(18px, 2vw, 24px)/1.2 system-ui, sans-serif;
     letter-spacing: .34em;
     text-decoration: none;
 }
 
 .vision-shop-tools {
-    flex: 1;
     display: flex;
-    gap: 10px;
+    gap: 6px;
     justify-content: flex-end;
     align-items: center;
 }
 
 .vision-shop-tools .ibtn {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     display: grid;
     place-items: center;
     border-radius: 50%;
-    border: 1px solid var(--vs-line);
+    border: 1px solid transparent;
     position: relative;
     color: var(--vs-muted);
     transition: border-color .2s,color .2s,background .2s;
@@ -131,7 +145,7 @@
 .vision-shop-tools .badge {
     position: absolute;
     top: -4px;
-    left: -4px;
+    inset-inline-end: 0;
     background: var(--vs-accent);
     color: #fff;
     font: 10px/16px "IRANYekanX Variable", Tahoma, sans-serif;
@@ -145,10 +159,10 @@
 
 .vision-shop-main {
     display: grid;
-    grid-template-columns: minmax(165px, 210px) minmax(0, 1fr);
-    gap: clamp(12px, 2vw, 28px);
-    width: min(100%, 1440px);
-    padding: 26px clamp(12px, 2.5vw, 32px) 54px;
+    grid-template-columns: minmax(148px, 180px) minmax(0, 1fr);
+    gap: clamp(12px, 1.6vw, 22px);
+    width: min(100%, 1392px);
+    padding: 18px clamp(12px, 2vw, 26px) 46px;
     margin-inline: auto;
 }
 
@@ -162,27 +176,29 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-    margin-block-end: 18px;
+    margin-block-end: 12px;
 }
 
 .shop-topline h1 {
     margin: 0;
-    font-size: clamp(22px, 3vw, 32px);
-    font-weight: 800;
+    font-size: clamp(20px, 2vw, 26px);
+    font-weight: 740;
 }
 
 .shop-topline small {
-    font-size: .875rem;
+    font-size: .75rem;
+    margin-inline-start: 4px;
     color: var(--vs-muted);
     font-weight: 500;
 }
 
 .shop-open-fit, .shop-fit-suggestion {
-    min-height: 44px;
+    min-height: 38px;
     flex-shrink: 0;
     padding-inline: 12px;
     border: 1px solid var(--vs-accent);
-    border-radius: 12px;
+    border-radius: 8px;
+    font-size: .78rem;
     color: var(--vs-accent-2);
     background: var(--vs-glow);
 }
@@ -199,40 +215,73 @@
 
 .shop-filter {
     display: grid;
-    gap: 8px;
+    gap: 10px;
     align-self: start;
     min-width: 0;
-    padding: 14px;
+    padding: 11px;
     border: 1px solid var(--vs-line);
-    border-radius: 18px;
+    border-radius: 12px;
     background: var(--vs-panel);
 }
 
-.shop-filter h2 {
+.shop-filter-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 6px;
-    margin: 0 0 4px;
-    font-weight: 800;
+    min-width: 0;
 }
 
-.shop-filter h2 a {
+.shop-filter-heading h2, #shop-filter-toggle {
+    margin: 0;
+    font-weight: 700;
+    font-size: .88rem;
+}
+
+.shop-filter-heading a {
     color: var(--vs-accent-2);
-    font-size: .875rem;
+    font-size: .73rem;
+}
+
+#shop-filter-toggle:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+}
+
+.shop-filter-heading:has(#shop-filter-toggle:not([hidden])) h2 {
+    display: none;
+}
+
+#shop-filter-toggle svg {
+    width: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+#shop-filter-toggle[aria-expanded="true"] svg {
+    rotate: 180deg;
+}
+
+.shop-filter-fields:not([hidden]) {
+    display: grid;
+    gap: 7px;
 }
 
 .shop-filter label {
-    font-size: .875rem;
+    font-size: .78rem;
 }
 
 .shop-filter :is(select, input[type="search"]), .shop-sort :is(select, button), .shop-apply {
-    min-height: 44px;
+    min-height: 38px;
     min-width: 0;
     padding: 8px 10px;
     border: 1px solid var(--vs-line);
-    border-radius: 10px;
+    border-radius: 8px;
+    font-size: .78rem;
     background: var(--vs-panel);
     color: var(--vs-text);
 }
@@ -256,7 +305,7 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    min-height: 44px;
+    min-height: 34px;
 }
 
 .shop-sale input {
@@ -265,7 +314,7 @@
 
 .shop-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 182px), 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
 }
 
@@ -274,20 +323,22 @@
     flex-direction: column;
     position: relative;
     min-width: 0;
-    padding: clamp(8px, 1vw, 14px);
+    padding: 7px;
     border: 1px solid var(--vs-line);
-    border-radius: 18px;
-    background: var(--vs-card);
+    border-radius: 13px;
+    background: linear-gradient(155deg, var(--vs-panel), var(--vs-card));
+    isolation: isolate;
     transition: border-color .25s, transform .25s, box-shadow .25s;
 }
 
-.shop-product-card:focus-within {
-    border-color: var(--vs-accent);
+.shop-product-card:focus-within,
+.shop-product-card:has(.try[aria-pressed="true"]) {
+    border-color: color-mix(in srgb, var(--vs-accent) 66%, var(--vs-line));
 }
 
 .shop-pic {
-    border-radius: 12px;
-    background: radial-gradient(ellipse at 50% 45%, var(--vs-glow), transparent 75%), var(--vs-bg);
+    border-radius: 8px;
+    background: radial-gradient(ellipse at 50% 44%, var(--vs-glow), transparent 72%);
 }
 
 .shop-pic img {
@@ -297,32 +348,32 @@
 
 .shop-pic-empty, .shop-stock {
     color: var(--vs-muted);
-    font-size: .875rem;
+    font-size: .72rem;
 }
 
 .shop-product-side {
-    min-height: 44px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px;
-    margin-block-end: 8px;
+    position: absolute;
+    z-index: 2;
+    inset-block-start: 8px;
+    inset-inline-end: 8px;
+    display: grid;
+    gap: 4px;
 }
 
 .shop-product-side button, .shop-cart-add {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
     display: grid;
     place-items: center;
     border: 1px solid var(--vs-line);
     border-radius: 50%;
-    background: var(--vs-panel);
+    background: color-mix(in srgb, var(--vs-panel) 82%, transparent);
     color: var(--vs-text);
 }
 
 .shop-product-side button svg, .shop-cart-add svg {
-    width: 19px;
+    width: 17px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.7;
@@ -330,32 +381,40 @@
     stroke-linejoin: round;
 }
 
-.shop-product-side :is(.fav, .try).on {
+.shop-product-side button:is(:hover, .on) {
     border-color: var(--vs-accent);
     color: var(--vs-accent-2);
     background: var(--vs-glow);
 }
 
+.shop-product-side .fav.on svg {
+    fill: currentColor;
+}
+
 .shop-rate {
     position: absolute;
     z-index: 1;
-    inset-block-start: 20px;
-    inset-inline-start: 12px;
+    inset-block-start: 10px;
+    inset-inline-start: 10px;
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: var(--vs-panel);
     color: var(--vs-accent-2);
-    font-size: .8rem;
+    font-size: .7rem;
 }
 
 .shop-product-details {
     display: grid;
-    gap: 5px;
-    margin-block: 10px 8px;
+    gap: 3px;
+    margin: 6px 4px 4px;
+    padding-inline-end: 30px;
 }
 
 .shop-product-name {
     color: var(--vs-text);
     text-decoration: none;
     overflow-wrap: anywhere;
-    font-size: .9rem;
+    font-size: .82rem;
     font-weight: 650;
 }
 
@@ -367,14 +426,14 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: .8rem;
+    font-size: .72rem;
     color: var(--vs-muted);
 }
 
 .shop-product-colour i {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 14px;
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
     border: 1px solid var(--vs-muted);
     border-radius: 50%;
     background: var(--shop-swatch);
@@ -382,29 +441,61 @@
 
 .shop-product-actions {
     display: flex;
-    align-items: end;
+    align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
     gap: 6px;
-    margin-block-start: auto;
+    margin: auto 4px 0;
+    min-height: 38px;
 }
 
 .shop-product-price {
     display: grid;
     min-width: 0;
-    gap: 4px;
-    font-size: .95rem;
+    gap: 1px;
+    font-size: .83rem;
+    font-variant-numeric: tabular-nums;
 }
 
 .shop-product-price del {
     color: var(--vs-muted);
-    font-size: .8rem;
+    font-size: .71rem;
 }
 
 .shop-cart-add {
-    background: var(--vs-glow);
-    border-color: var(--vs-accent);
-    color: var(--vs-accent-2);
+    z-index: 1;
+    isolation: isolate;
+    color: var(--vs-text);
+}
+
+.shop-cart-add::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset-block-end: -1px;
+    inset-inline-end: -1px;
+    width: 64px;
+    height: 59px;
+    border-start-start-radius: 100%;
+    border-end-end-radius: 13px;
+    background: var(--vs-accent);
+    transform: scale(.35);
+    transform-origin: left bottom;
+    opacity: 0;
+    transition: transform .24s, opacity .2s;
+    pointer-events: none;
+}
+
+.shop-product-card:has(.shop-cart-add:focus-visible) .shop-cart-add,
+.shop-product-card:has(.try[aria-pressed="true"]) .shop-cart-add {
+    border-color: transparent;
+    background: transparent;
+    color: #190f0a;
+}
+
+.shop-product-card:has(.shop-cart-add:focus-visible) .shop-cart-add::before,
+.shop-product-card:has(.try[aria-pressed="true"]) .shop-cart-add::before {
+    transform: scale(1);
+    opacity: 1;
 }
 
 .shop-cart-add:disabled {
@@ -450,20 +541,31 @@
     .shop-product-card:hover .shop-pic img {
         transform: scale(1.045);
     }
+
+    .shop-product-card:hover .shop-cart-add {
+        border-color: transparent;
+        background: transparent;
+        color: #190f0a;
+    }
+
+    .shop-product-card:hover .shop-cart-add::before {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 #fit {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     align-self: start;
     position: sticky;
     top: 16px;
     min-width: 0;
     max-height: calc(100dvh - 32px);
-    padding: 14px;
+    padding: 11px;
     border: 1px solid var(--vs-line);
-    border-radius: 20px;
+    border-radius: 13px;
     background: var(--vs-panel);
     box-shadow: 0 16px 38px rgb(0 0 0 / 25%);
     overflow-y: auto;
@@ -477,16 +579,22 @@
 #fit .fit-heading {
     position: sticky;
     z-index: 4;
-    top: -14px;
+    top: -11px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
     margin: 0;
-    padding-block: 4px 8px;
+    padding-block: 0 4px;
     border-block-end: 1px solid var(--vs-line);
     background: var(--vs-panel);
-    font-size: 1rem;
+    font-size: .88rem;
+}
+
+.fit-guide {
+    margin: 0;
+    color: var(--vs-muted);
+    font-size: .74rem;
 }
 
 #close {
@@ -494,8 +602,8 @@
     place-items: center;
     width: 44px;
     height: 44px;
-    border: 1px solid var(--vs-line);
-    border-radius: 50%;
+    border: 1px solid transparent;
+    border-radius: 8px;
 }
 
 #close svg {
@@ -507,8 +615,7 @@
 
 @media (min-width: 1040px) {
     .vision-shop-main.fit-open {
-        width: min(100%, 1720px);
-        grid-template-columns: minmax(155px, 210px) minmax(0, 1fr) clamp(265px, 27vw, 340px);
+        grid-template-columns: minmax(148px, 180px) minmax(0, 1fr) clamp(198px, 18vw, 242px);
     }
 }
 
@@ -539,37 +646,46 @@
     }
 
     .vision-shop-header {
-        flex-wrap: wrap;
-        padding: 8px 14px;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: 6px 12px 0;
+        gap: 0 8px;
     }
 
     .vision-shop-nav {
-        order: 3;
-        flex: 1 0 100%;
+        grid-column: 1 / -1;
+        grid-row: 2;
         justify-content: space-between;
         gap: 8px;
         flex-wrap: wrap;
     }
 
-    .vision-shop-nav a {
-        display: grid;
-        align-items: center;
+    .vision-shop-tools .ibtn, .shop-open-fit, .shop-fit-suggestion {
         min-height: 44px;
     }
 
     .vision-wordmark {
         text-align: right;
-        font-size: 22px;
+        padding-inline-start: 0;
     }
 
     .shop-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
     }
+
+    .shop-product-side button, .shop-cart-add {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+    }
+
+    .shop-product-side {
+        inset-block-start: 5px;
+        inset-inline-end: 5px;
+    }
 }
 
-@media (max-width: 345px) {
+@media (max-width: 350px) {
     .shop-grid {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -577,12 +693,12 @@
 
 .stage {
     flex: 0 0 auto;
-    width: min(100%, 260px);
+    width: min(100%, 255px, 35dvh);
     margin-inline: auto;
     position: relative;
     aspect-ratio: 2/3;
     background: #09090b;
-    border-radius: 14px;
+    border-radius: 9px;
     overflow: hidden;
     isolation: isolate;
 }
@@ -641,23 +757,16 @@
     text-align: center;
     color: #eee;
     font-size: 12px;
-    opacity: 0;
     pointer-events: none;
-    transition: opacity .25s;
     z-index: 9;
 }
 
-.load.on {
-    opacity: 1;
+.load[hidden] {
+    display: none;
 }
 
 .load b {
     font-size: 13px;
-}
-
-.load span {
-    color: #b9b0b6;
-    font-size: 11px;
 }
 
 .spin {
@@ -679,20 +788,22 @@
     display: flex;
     justify-content: space-between;
     font-size: 12px;
-    margin: 10px 0 6px;
+    margin: 4px 0 0;
     color: var(--vs-muted);
 }
 
 .picks {
     display: flex;
     gap: 6px;
-    min-height: 40px;
-    flex-wrap: wrap;
+    min-height: 44px;
+    padding: 2px;
+    overflow-x: auto;
 }
 
 .picks button {
-    width: 40px;
-    height: 40px;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
     border-radius: 9px;
     border: 1px solid var(--vs-line);
     background: var(--vs-card);
@@ -714,7 +825,7 @@
 .picks button::after {
     content: "×";
     position: absolute;
-    inset: auto 1px 1px auto;
+    inset: 1px auto auto 1px;
     background: var(--vs-panel);
     color: var(--vs-muted);
     font-size: 10px;
@@ -728,25 +839,6 @@
     font-size: 12px;
     color: var(--vs-muted);
     margin: 8px 0;
-}
-
-.sg {
-    display: none;
-    width: 100%;
-    margin: 0 0 8px;
-    border: 1px dashed var(--vs-accent);
-    border-radius: 10px;
-    padding: 7px;
-    font-size: 12px;
-    color: var(--vs-accent-2);
-}
-
-.sg.show {
-    display: block;
-}
-
-.sg.on {
-    background: var(--vs-glow);
 }
 
 .btns {
@@ -1082,7 +1174,7 @@
 #fit .btns {
     position: sticky;
     z-index: 4;
-    bottom: -14px;
+    bottom: -11px;
     padding-block: 8px;
     background: var(--vs-panel);
 }
@@ -1101,7 +1193,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .shop-product-card, .shop-pic img, #fit .mm, .toast {
+    .shop-product-card, .shop-pic img, .shop-cart-add::before, #fit .mm, .toast {
         transition: none;
+    }
+    .shop-product-card:hover, .shop-product-card:hover .shop-pic img {
+        transform: none;
+    }
+    .spin {
+        animation: none;
     }
 }

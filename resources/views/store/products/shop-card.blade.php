@@ -14,7 +14,7 @@
     @if($product['rate'] !== null)
         <span class="shop-rate">★ {{ \App\Support\Money::persianDigits(str_replace('.', '٫', (string) $product['rate'])) }}</span>
     @endif
-    <a class="shop-pic store-media" href="{{ $product['url'] }}" aria-label="مشاهدهٔ {{ $product['name'] }}">
+    <a class="shop-pic product-media-frame" href="{{ $product['url'] }}" aria-label="مشاهدهٔ {{ $product['name'] }}">
         @if($product['img'])
             <img src="{{ $product['img'] }}" alt="" loading="lazy" decoding="async">
         @else
@@ -22,10 +22,14 @@
         @endif
     </a>
     <div class="shop-product-details">
-        <a class="shop-product-name" href="{{ $product['url'] }}">{{ $product['name'] }}</a>
-        @if($product['color'] !== '')
+        <a class="shop-product-name" href="{{ $product['url'] }}">{{ \App\Support\Money::persianDigits($product['title']) }}</a>
+        @if($product['color'] !== '' || $product['size'] !== '')
             <span class="shop-product-colour">
-                <i style="--shop-swatch: {{ $product['colorCode'] }}" aria-hidden="true"></i>{{ $product['color'] }}
+                @if($product['color'] !== '')
+                    <i style="--shop-swatch: {{ $product['colorCode'] }}" aria-hidden="true"></i>{{ \App\Support\Money::persianDigits($product['color']) }}
+                @endif
+                @if($product['color'] !== '' && $product['size'] !== '')<span aria-hidden="true">·</span>@endif
+                @if($product['size'] !== '')<bdi>{{ \App\Support\Money::persianDigits($product['size']) }}</bdi>@endif
             </span>
         @endif
     </div>
@@ -34,10 +38,12 @@
             @if($product['old'] !== null)<del>@money($product['old'])</del>@endif
             <strong>@money($product['price'])</strong>
         </div>
-        <button type="button" class="shop-cart-add" data-c="{{ $product['id'] }}"
-                aria-label="افزودن {{ $product['name'] }} به سبد خرید" @disabled($product['stock'] < 1)>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2M12 12v4m-2-2h4"/></svg>
-        </button>
+        @if($product['stock'] > 0)
+            <button type="button" class="shop-cart-add" data-c="{{ $product['id'] }}" aria-label="افزودن {{ $product['name'] }} به سبد خرید">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2M12 12v4m-2-2h4"/></svg>
+            </button>
+        @else
+            <span class="shop-stock">ناموجود</span>
+        @endif
     </div>
-    @if($product['stock'] < 1)<span class="shop-stock">ناموجود</span>@endif
 </article>

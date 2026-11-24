@@ -8,40 +8,53 @@
 <header class="vision-shop-header">
     <nav class="vision-shop-nav" aria-label="ناوبری اصلی">
         <a href="{{ route('storefront.index') }}">خانه</a>
-        <a href="{{ route('shop.index') }}">فروشگاه</a>
+        <a href="{{ route('shop.index') }}" @unless($filters['sale']) aria-current="page" @endunless>فروشگاه</a>
         <a href="{{ route('shop.index', ['sort' => 'newest']) }}#catalog">تازه‌ها</a>
-        <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog">حراج</a>
+        <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog" @if($filters['sale']) aria-current="page" @endif>حراج</a>
     </nav>
     <a class="vision-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION صفحهٔ اصلی">VISION</a>
     <div class="vision-shop-tools">
         @if($studio['routes']['studio'])
             <button class="shop-open-fit" id="open-fit" type="button" aria-controls="fit">اتاق پرو</button>
         @endif
-        <button class="ibtn" id="theme" type="button" aria-label="تغییر تم">◐</button>
-        <a class="ibtn" id="cartTarget" href="{{ route('cart.index') }}" aria-label="سبد خرید">🛒<span class="badge" id="cnt">۰</span></a>
+        <button class="ibtn" id="theme" type="button" aria-label="تم روشن" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M19 5l-1.5 1.5m-11 11L5 19"/></svg>
+        </button>
+        <a class="ibtn" id="cartTarget" href="{{ route('cart.index') }}" aria-label="سبد خرید">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>
+            <span class="badge" id="cnt" aria-hidden="true">۰</span>
+        </a>
     </div>
 </header>
 
 <main class="vision-shop-main" id="catalog">
     <form id="shop-filters" class="shop-filter" action="{{ route('shop.index') }}" method="get" aria-label="فیلترهای فروشگاه">
-        <h2>فیلترها <a href="{{ route('shop.index') }}">حذف فیلترها</a></h2>
-        <label for="q">جست‌وجوی محصول</label>
-        <input class="shop-search" type="search" id="q" name="q" value="{{ $filters['q'] }}" maxlength="120">
+        <div class="shop-filter-heading">
+            <h2>فیلترها</h2>
+            <button type="button" id="shop-filter-toggle" aria-controls="shop-filter-fields" aria-expanded="true" hidden>
+                فیلترها <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <a href="{{ route('shop.index') }}">حذف فیلترها</a>
+        </div>
+        <div id="shop-filter-fields" class="shop-filter-fields">
+            <label for="q">جست‌وجوی محصول</label>
+            <input class="shop-search" type="search" id="q" name="q" value="{{ $filters['q'] }}" maxlength="120">
 
-        <label for="cats">دسته‌بندی</label>
-        <select id="cats" name="category">
-            <option value="">همه دسته‌ها</option>
-            @foreach($categories as $category)
-                <option value="{{ $category->slug }}" @selected($filters['category'] === $category->slug)>{{ $category->name }}</option>
-            @endforeach
-        </select>
+            <label for="cats">دسته‌بندی</label>
+            <select id="cats" name="category">
+                <option value="">همه دسته‌ها</option>
+                @foreach($categories as $category)
+                    <option value="{{ $category->slug }}" @selected($filters['category'] === $category->slug)>{{ $category->name }}</option>
+                @endforeach
+            </select>
 
-        <label for="pr">حداکثر قیمت</label>
-        <input type="range" id="pr" name="price_max" min="0" max="{{ $filters['max'] }}" step="any" value="{{ $filters['priceMax'] }}">
-        <output class="prv" id="prv" for="pr">@money($filters['priceMax'])</output>
+            <label for="pr">حداکثر قیمت</label>
+            <input type="range" id="pr" name="price_max" min="0" max="{{ $filters['max'] }}" step="1" value="{{ $filters['priceMax'] }}">
+            <output class="prv" id="prv" for="pr">@money($filters['priceMax'])</output>
 
-        <label class="shop-sale"><input type="checkbox" name="sale" value="1" @checked($filters['sale'])> فقط تخفیف‌ها</label>
-        <button class="shop-apply" type="submit">اعمال فیلترها</button>
+            <label class="shop-sale"><input type="checkbox" name="sale" value="1" @checked($filters['sale'])> فقط تخفیف‌ها</label>
+            <button class="shop-apply" type="submit">اعمال فیلترها</button>
+        </div>
     </form>
 
     <section class="shop-results" aria-labelledby="shop-title">
@@ -83,13 +96,14 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
         </button>
     </h2>
-    <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها">
-        <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال آماده‌سازی</b></div>
+    <p class="fit-guide">با چوب‌لباسی روی هر کارت، لباس را روی مانکن ببین.</p>
+    <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها" aria-busy="false">
+        <div class="load" id="load" role="status" hidden><span class="spin" aria-hidden="true"></span><b>در حال آماده‌سازی</b></div>
     </div>
     <button type="button" id="sugg" class="shop-fit-suggestion" aria-pressed="false" hidden>دیدن ست پیشنهادی</button>
     <p class="fit-scene-notice" id="fit-scene-notice" role="status" aria-live="polite" hidden></p>
     <button type="button" id="fit-retry" class="shop-fit-suggestion" hidden>تلاش دوباره</button>
-    <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
+    <div class="pk"><span>انتخاب‌های تو</span><span id="pcount" role="status">۰ تکه</span></div>
     <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
 
     <section class="fit-recommendations" aria-labelledby="fit-recommend-title" hidden>

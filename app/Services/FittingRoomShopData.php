@@ -254,6 +254,8 @@ class FittingRoomShopData
         $color = (string) $variant->color_code;
 
         return $this->productData($variant) + [
+            'title' => $variant->product->name,
+            'size' => trim((string) $variant->size),
             'old' => $variant->is_on_sale ? (float) $variant->price : null,
             'color' => trim((string) $variant->color),
             'colorCode' => preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/D', $color) ? $color : '#8b8490',
