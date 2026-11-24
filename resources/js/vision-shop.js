@@ -2,12 +2,14 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
 (() => {
   const $ = (selector, parent = document) => parent.querySelector(selector);
-  const studioData = $("#shop-studio-data");
+  const studioData = $("#shop-config");
   if (!studioData) return;
 
   const S = JSON.parse(studioData.textContent);
-  const P = S.garments;
-  const OF = S.looks;
+  let P = [];
+  let studio = null;
+  let studioRequest = null;
+  let activation = 0;
   let showingSuggestion = false;
   let activeScene = null;
   const fa = n => Number(n || 0).toLocaleString("fa-IR");
@@ -16,29 +18,48 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   const state = { fav: new Set(S.favs), lastFittedId: null };
   const selectionKey = "vision.fit.selection";
   const W = new Set();
-  try {
-    const stored = JSON.parse(sessionStorage.getItem(selectionKey) || "{}");
-    for (const slot of ["top", "bottom"]) {
-      const item = P.find(garment => garment.slot === slot && garment.id === stored[slot] && garment.stock > 0);
-      if (item) W.add(item.id);
+  const COMPARE_KEY = "vision.fit.compare.v1";
+  let comparison = { A: [], B: [] };
+
+  function restoreStudioSelections() {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(selectionKey) || "{}");
+      for (const slot of ["top", "bottom"]) {
+        const item = P.find(garment => garment.slot === slot && garment.id === stored[slot] && garment.stock > 0);
+        if (item) W.add(item.id);
+      }
+      state.lastFittedId = stored.lastFittedId;
+    } catch {
+      // Selection is still available for the current page.
     }
-    state.lastFittedId = stored.lastFittedId;
-  } catch {
-    // Selection can still be used on this page when session storage is unavailable.
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(COMPARE_KEY) || "{}");
+      const clean = ids => Array.isArray(ids)
+        ? ids.map(Number).filter(id => P.some(garment => garment.id === id))
+        : [];
+      comparison = { A: clean(saved.A), B: clean(saved.B) };
+    } catch {
+      // Comparison is still available for the current page.
+    }
   }
 
-  const COMPARE_KEY = "vision.fit.compare.v1";
-  const comparison = (() => {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(COMPARE_KEY) || "{}");
-      const clean = ids => Array.isArray(ids)
-        ? ids.map(Number).filter(id => P.some(product => Number(product.id) === id && product.slot))
-        : [];
-      return { A: clean(saved.A), B: clean(saved.B) };
-    } catch (_) {
-      return { A: [], B: [] };
+  function loadStudio() {
+    if (!studioRequest) {
+      studioRequest = fetch(S.routes.studio, {
+        credentials: "same-origin", headers: { Accept: "application/json" }
+      }).then(async response => {
+        if (!response.ok) throw new Error("اتاق پرو در دسترس نیست.");
+        studio = await response.json();
+        P = studio.garments;
+        restoreStudioSelections();
+      }).catch(error => {
+        studioRequest = null;
+        throw error;
+      });
     }
-  })();
+    return studioRequest;
+  }
   let busy = false;
   let fittingTrigger = null;
   const catalog = $("#catalog");
@@ -115,12 +136,6 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     return image;
   }
   const scenes = {};
-  const sceneUrls = { base: S.base };
-  Object.entries(OF).forEach(([lookId, look]) => {
-    Object.entries(look.s || {}).forEach(([key, url]) => {
-      sceneUrls[lookId + ":" + key] = url;
-    });
-  });
 
   function setScene() {
     const selected = P.filter(product => W.has(Number(product.id)));
@@ -133,14 +148,14 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       notice.hidden = !message;
     };
 
-    const suggestion = !bottom && top ? S.suggestions[top.id] : null;
+    const suggestion = !bottom && top ? studio.suggestions[top.id] : null;
     const suggestionButton = $("#sugg");
     suggestionButton.hidden = !suggestion;
     if (!suggestion) showingSuggestion = false;
     suggestionButton.textContent = showingSuggestion ? "برگشت به لباس انتخاب‌شده" : "دیدن ست پیشنهادی";
     suggestionButton.setAttribute("aria-pressed", String(showingSuggestion));
 
-    const activate = (key, url = sceneUrls[key]) => {
+    const activate = (key, url) => {
       if (!url) return false;
       if (fit.hidden) return true;
       activeScene = key;
@@ -156,33 +171,33 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
 
     if (!top && !bottom) {
-      activate("base");
+      activate("base", studio.base);
       announce("");
       return;
     }
 
     if (top && bottom) {
-      const pairScene = S.combinations[top.id]?.[bottom.id];
+      const pairScene = studio.combinations[top.id]?.[bottom.id];
       if (pairScene && activate("combined:" + top.id + ":" + bottom.id, pairScene)) {
         announce("نمای واقعی ست کامل");
         return;
       }
       const preferred = Number(state.lastFittedId) === Number(bottom.id) ? bottom : top;
       const fallback = preferred === top ? bottom : top;
-      const showSingle = item => activate(String(item.o) + ":" + (item.slot === "top" ? "T" : "B"));
+      const showSingle = item => activate("variant:" + item.id, item.scene);
       if (showSingle(preferred) || showSingle(fallback)) {
         announce("هر دو لباس انتخاب شده‌اند، اما تصویر واقعی این ترکیب ثبت نشده است؛ فقط نمای یکی از لباس‌ها نمایش داده می‌شود.");
         return;
       }
-      activate("base");
+      activate("base", studio.base);
       announce("تصویر این ترکیب در استودیو موجود نیست.");
       return;
     }
 
     const shown = top
-      ? activate(String(top.o) + ":T")
-      : activate(String(bottom.o) + ":B");
-    if (!shown) activate("base");
+      ? activate("variant:" + top.id, top.scene)
+      : activate("variant:" + bottom.id, bottom.scene);
+    if (!shown) activate("base", studio.base);
     announce(shown ? "" : "تصویر این لباس روی مانکن موجود نیست.");
   }
 
@@ -191,6 +206,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   function refresh() {
+    if (!studio) return;
     setScene();
     const items = P.filter(product => W.has(Number(product.id)));
     try {
@@ -242,11 +258,11 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
           || W.has(Number(product.id))
           || Number(product.stock || 0) < 1
           || !product.img
-          || !product.o) return false;
+          || !product.scene) return false;
 
         return recommendationSlot === "bottom"
-          ? Boolean(S.combinations[anchor.id]?.[product.id])
-          : Boolean(S.combinations[product.id]?.[anchor.id]);
+          ? Boolean(studio.combinations[anchor.id]?.[product.id])
+          : Boolean(studio.combinations[product.id]?.[anchor.id]);
       })
       .sort((a, b) => Number(b.rate || 0) - Number(a.rate || 0))
       .slice(0, 2);
@@ -353,22 +369,47 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     element.remove();
   }
 
-  function openFit(trigger) {
-    if (trigger instanceof HTMLElement) fittingTrigger = trigger;
+  async function openStudio(trigger, variantId = null) {
+    if (!S.routes.studio || busy) return;
+    const request = ++activation;
+    fittingTrigger = trigger;
     const wasHidden = fit.hidden;
     fit.hidden = false;
     catalog.classList.add("fit-open");
     setFitLayout();
-    if (wasHidden) {
-      setScene();
-      $("#close").focus({ preventScroll: true });
+    if (wasHidden) $("#close").focus({ preventScroll: true });
+
+    const notice = $("#fit-scene-notice");
+    notice.hidden = true;
+    if (!studio) $("#load").classList.add("on");
+    try {
+      await loadStudio();
+      if (activation !== request) return;
+      $("#load").classList.remove("on");
+      refresh();
+
+      if (variantId !== null) {
+        const product = P.find(item => item.id === variantId);
+        if (product && product.stock > 0) {
+          const source = trigger.closest(".shop-product-card")?.querySelector(".shop-pic img");
+          await tryOn(product, source);
+        } else {
+          notice.textContent = "این لباس در حال حاضر برای پرو در دسترس نیست.";
+          notice.hidden = false;
+        }
+      }
+    } catch {
+      if (activation !== request) return;
+      $("#load").classList.remove("on");
+      notice.textContent = "اتاق پرو بارگذاری نشد.";
+      notice.hidden = false;
+      $("#fit-retry").hidden = false;
     }
   }
 
-  async function tryOn(product, source, trigger = null) {
-    if (busy || !product || !product.o || !product.slot || Number(product.stock || 0) < 1) return;
+  async function tryOn(product, source) {
+    if (busy || !product || !product.scene || !product.slot || Number(product.stock || 0) < 1) return;
     showingSuggestion = false;
-    openFit(trigger?.matches("[data-t]") ? trigger : null);
 
     if (W.has(Number(product.id))) {
       W.delete(Number(product.id));
@@ -443,13 +484,11 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
         button.disabled = false;
       }
     } else if (data.t) {
-      const product = P.find(item => Number(item.id) === Number(data.t));
-      const image = button.closest(".shop-product-card")?.querySelector(".shop-pic img");
-      if (product) tryOn(product, image, button);
+      await openStudio(button, Number(data.t));
     } else if (data.rec) {
       const product = P.find(item => Number(item.id) === Number(data.rec));
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
-      if (product) tryOn(product, image, button);
+      if (product) await tryOn(product, image);
     } else if (data.r) {
       showingSuggestion = false;
       W.delete(Number(data.r));
@@ -460,6 +499,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   });
 
   function closeFit() {
+    activation++;
     fit.hidden = true;
     catalog.classList.remove("fit-open");
     setFitLayout();
@@ -467,7 +507,11 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   $("#close").addEventListener("click", closeFit);
-  $("#open-fit")?.addEventListener("click", event => openFit(event.currentTarget));
+  $("#open-fit")?.addEventListener("click", event => openStudio(event.currentTarget));
+  $("#fit-retry").addEventListener("click", event => {
+    event.currentTarget.hidden = true;
+    openStudio(fittingTrigger);
+  });
   $("#sugg").addEventListener("click", () => {
     showingSuggestion = !showingSuggestion;
     setScene();
@@ -525,7 +569,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
   });
 
-  refresh();
+  syncCardActions();
 
   if (S.routes?.cartSummary) {
     fetch(S.routes.cartSummary, { credentials: "same-origin", headers: { "Accept": "application/json" } })

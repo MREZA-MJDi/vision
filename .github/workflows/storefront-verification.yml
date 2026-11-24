@@ -60,6 +60,38 @@ jobs:
       - name: Run existing feature and unit tests
         run: php artisan test
 
+  mysql-storefront:
+    name: Storefront on MySQL
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: storefront-ci
+          MYSQL_DATABASE: vision_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=3s --health-retries=20
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: vision_test
+      DB_USERNAME: root
+      DB_PASSWORD: storefront-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring
+          coverage: none
+      - run: composer install --prefer-dist --no-interaction --no-progress
+      - run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test tests/Feature/StorefrontBrowseTest.php tests/Feature/FittingRoomStudioTest.php
+
   frontend-build:
     name: Vite production build
     runs-on: ubuntu-latest

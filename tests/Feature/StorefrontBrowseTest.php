@@ -66,7 +66,7 @@ class StorefrontBrowseTest extends TestCase
             ->assertSee('اتاق پرو')
             ->assertDontSee('data-virtual-try-on', false)
             ->assertDontSee('data-vto-inline', false)
-            ->assertSee('id="shop-studio-data"', false);
+            ->assertSee('id="shop-config"', false);
 
         $html = (string) $this->get('/shop')->getContent();
         $this->assertNotFalse(strpos($html, 'id="fit"'), 'The fitting-room drawer must render on Shop.');

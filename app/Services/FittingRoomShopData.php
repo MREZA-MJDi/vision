@@ -2,122 +2,62 @@
 
 namespace App\Services;
 
+use App\Models\FittingRoomLookItem;
 use App\Models\FittingRoomMannequin;
 use App\Models\Category;
 use App\Models\ProductReview;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FittingRoomShopData
 {
     public function payload(?Request $request = null): array
     {
-        $mannequins = FittingRoomMannequin::query()
-            ->active()
-            ->with([
-                'baseMedia',
-                'looks' => fn ($query) => $query->active()->with([
-                    'previewTopMedia',
-                    'previewBottomMedia',
-                    'previewCombinedMedia',
-                    'previewSuggestedMedia',
-                    'items' => fn ($items) => $items->active()->with([
-                        'variant.primaryGalleryMedia',
-                        'variant.product.primaryGalleryMedia',
-                        'variant.product' => fn ($product) => $product->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating'),
-                    ]),
-                ]),
-            ])
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
-
-        // The public studio has one canvas. Never mix looks from other
-        // mannequins with the first mannequin's base photograph.
-        $mannequin = $mannequins->first(fn ($record) => (bool) $record->baseMedia?->url);
-        $mannequins = $mannequin ? collect([$mannequin]) : collect();
-        $looks = [];
-        $combinations = [];
-        $suggestions = [];
-        $itemMap = [];
-
-        foreach ($mannequins as $mannequinRecord) {
-            foreach ($mannequinRecord->looks as $look) {
-                $top = $look->items->firstWhere('slot', 'top');
-                $bottom = $look->items->firstWhere('slot', 'bottom');
-
-                $previews = [
-                    'T' => $look->previewTopMedia?->url,
-                    'B' => $look->previewBottomMedia?->url,
-                    'TB' => $look->previewCombinedMedia?->url,
-                    'S' => $look->previewSuggestedMedia?->url,
-                ];
-
-                $eligible = static fn ($item) => $item?->variant?->is_active
-                    && $item->variant->product?->is_active
-                    && ($mannequinRecord->audience === 'all'
-                        || $item->variant->product->audience === $mannequinRecord->audience);
-                $looks[(string) $look->getKey()] = [
-                    't' => $eligible($top) ? $top->variant->getKey() : null,
-                    'b' => $eligible($bottom) ? $bottom->variant->getKey() : null,
-                    's' => array_filter($previews, static fn ($url) => is_string($url) && $url !== ''),
-                ];
-
-                if ($eligible($top) && !empty($previews['T']) && !empty($previews['S'])) {
-                    $suggestions[$top->variant->id] ??= $previews['S'];
-                }
-                if ($eligible($top) && $eligible($bottom) && !empty($previews['TB'])) {
-                    $combinations[$top->variant->id][$bottom->variant->id] ??= $previews['TB'];
-                }
-
-                foreach ($look->items as $item) {
-                    $preview = $item->slot === 'top' ? 'T' : 'B';
-                    if (! $eligible($item) || empty($previews[$preview])) {
-                        continue;
-                    }
-
-                    $variant = $item->variant;
-                    $itemMap[$variant->getKey()] ??= $this->card($variant, [
-                        'slot' => $item->slot,
-                        'o' => (int) $look->getKey(),
-                        'fy' => (float) $item->fit_y,
-                    ]);
-                }
-            }
-        }
+        $mannequin = $this->publicMannequin();
+        $fitItems = $mannequin ? $this->fittingItems($mannequin) : null;
 
         $catalog = ProductVariant::query()
             ->select('product_variants.*')
             ->join('products', 'products.id', '=', 'product_variants.product_id')
             ->where('products.is_active', true)
             ->whereNull('products.deleted_at')
-            ->where('product_variants.is_active', true)
-            ->where(function (Builder $variants) use ($itemMap): void {
-                $variants->whereIntegerInRaw('product_variants.id', array_keys($itemMap))
-                    ->orWhere(function (Builder $primary) use ($itemMap): void {
-                        $primary->whereIntegerNotInRaw('product_variants.product_id', array_unique(array_column($itemMap, 'product_id')))
-                            ->where('product_variants.id', ProductVariant::query()
-                                ->select('product_variants.id')
-                                ->whereColumn('product_variants.product_id', 'products.id')
-                                ->where('product_variants.is_active', true)
-                                ->orderByRaw('CASE WHEN product_variants.stock > 0 THEN 0 ELSE 1 END')
-                                ->orderBy('product_variants.sort_order')
-                                ->orderBy('product_variants.id')
-                                ->limit(1));
-                    });
-            });
+            ->where('product_variants.is_active', true);
 
         $price = 'CASE WHEN product_variants.sale_price >= 0 AND product_variants.sale_price < product_variants.price THEN product_variants.sale_price ELSE product_variants.price END';
-        $priceRange = (clone $catalog)->selectRaw("MAX({$price}) AS highest")->toBase()->first();
+        $highest = (clone $catalog)->toBase()->max(DB::raw($price));
         $step = 100000;
-        $max = max($step, (int) ceil(($priceRange->highest ?? $step) / $step) * $step);
+        $max = max($step, (int) ceil(($highest ?? $step) / $step) * $step);
 
         $categories = Category::query()
             ->whereIn('id', (clone $catalog)->select('products.category_id')->distinct()->toBase())
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get(['id', 'name', 'slug']);
+        $primaryVariant = ProductVariant::query()
+            ->select('product_variants.id')
+            ->whereColumn('product_variants.product_id', 'products.id')
+            ->active()
+            ->orderByRaw('CASE WHEN product_variants.stock > 0 THEN 0 ELSE 1 END')
+            ->orderBy('product_variants.sort_order')
+            ->orderBy('product_variants.id')
+            ->limit(1);
+
+        if ($fitItems) {
+            $fitProducts = (clone $fitItems)
+                ->join('product_variants as fit_variants', 'fit_variants.id', '=', 'fitting_room_look_items.product_variant_id')
+                ->select('fit_variants.product_id');
+
+            $catalog->where(fn (Builder $variants) => $variants
+                ->whereIn('product_variants.id', (clone $fitItems)->select('product_variant_id'))
+                ->orWhere(fn (Builder $primary) => $primary
+                    ->whereNotIn('product_variants.product_id', $fitProducts)
+                    ->where('product_variants.id', $primaryVariant)));
+        } else {
+            $catalog->where('product_variants.id', $primaryVariant);
+        }
+
         $read = static fn (string $key): string => is_string($value = $request?->query($key)) ? trim($value) : '';
         $search = mb_substr($read('q'), 0, 120);
         $category = $read('category');
@@ -167,8 +107,13 @@ class FittingRoomShopData
             ->orderBy('product_variants.sort_order')
             ->orderBy('product_variants.id')
             ->paginate(12)
-            ->withQueryString()
-            ->through(fn (ProductVariant $variant) => $itemMap[$variant->id] ?? $this->card($variant));
+            ->withQueryString();
+
+        $pageFitIds = $fitItems
+            ? (clone $fitItems)->whereIntegerInRaw('product_variant_id', $products->getCollection()->modelKeys())
+                ->distinct()->pluck('product_variant_id')->flip()
+            : collect();
+        $products->through(fn (ProductVariant $variant) => $this->card($variant) + ['fitReady' => $pageFitIds->has($variant->id)]);
 
         return [
             'products' => $products,
@@ -182,14 +127,10 @@ class FittingRoomShopData
                 'max' => $max,
             ],
             'studio' => [
-                'garments' => array_values($itemMap),
-                'base' => $mannequin?->baseMedia?->url,
-                'looks' => $looks,
-                'combinations' => $combinations,
-                'suggestions' => $suggestions,
                 'favs' => array_values(array_unique(array_map('intval', (array) ($request?->session()->get('shop_favourites', []))))),
                 'currency' => (string) config('commerce-admin.currency_symbol', 'تومان'),
                 'routes' => [
+                    'studio' => $mannequin ? route('shop.studio') : null,
                     'cart' => route('cart.items.store'),
                     'cartMany' => route('cart.items.bulk'),
                     'fav' => url('/shop/favourites'),
@@ -199,26 +140,109 @@ class FittingRoomShopData
         ];
     }
 
-    private function card(ProductVariant $variant, array $fit = []): array
+    public function studio(): array
+    {
+        $mannequin = $this->publicMannequin();
+        abort_unless($mannequin, 404);
+
+        $items = $this->fittingItems($mannequin)
+            ->with([
+                'look.previewTopMedia',
+                'look.previewBottomMedia',
+                'look.previewCombinedMedia',
+                'look.previewSuggestedMedia',
+                'variant.primaryGalleryMedia',
+                'variant.product.primaryGalleryMedia',
+                'variant.product' => fn ($product) => $product->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating'),
+            ])
+            ->join('fitting_room_looks as ordered_looks', 'ordered_looks.id', '=', 'fitting_room_look_items.look_id')
+            ->orderBy('ordered_looks.sort_order')
+            ->orderBy('ordered_looks.id')
+            ->orderBy('fitting_room_look_items.id')
+            ->get(['fitting_room_look_items.*']);
+
+        $garments = [];
+        $combinations = [];
+        $suggestions = [];
+        foreach ($items->groupBy('look_id') as $lookItems) {
+            $look = $lookItems->first()->look;
+            $top = $lookItems->firstWhere('slot', 'top');
+            $bottom = $lookItems->firstWhere('slot', 'bottom');
+            $scenes = [
+                'top' => $look->previewTopMedia?->url,
+                'bottom' => $look->previewBottomMedia?->url,
+            ];
+            if ($top && $scenes['top'] && ($suggested = $look->previewSuggestedMedia?->url)) {
+                $suggestions[$top->product_variant_id] ??= $suggested;
+            }
+            if ($top && $bottom && $scenes['top'] && $scenes['bottom'] && ($combined = $look->previewCombinedMedia?->url)) {
+                $combinations[$top->product_variant_id][$bottom->product_variant_id] ??= $combined;
+            }
+            foreach ($lookItems as $item) {
+                $scene = $scenes[$item->slot];
+                if (! $scene || isset($garments[$item->product_variant_id])) {
+                    continue;
+                }
+                $garments[$item->product_variant_id] = $this->productData($item->variant) + [
+                    'slot' => $item->slot,
+                    'fy' => $item->fit_y,
+                    'scene' => $scene,
+                ];
+            }
+        }
+
+        return [
+            'base' => $mannequin->baseMedia->url,
+            'garments' => array_values($garments),
+            'combinations' => $combinations,
+            'suggestions' => $suggestions,
+        ];
+    }
+
+    private function publicMannequin(): ?FittingRoomMannequin
+    {
+        return FittingRoomMannequin::query()->active()
+            ->with('baseMedia')->whereHas('baseMedia', fn ($media) => $media->whereNotNull('path'))
+            ->orderBy('sort_order')->orderBy('id')
+            ->lazy(16)->first(fn (FittingRoomMannequin $mannequin) => (bool) $mannequin->baseMedia?->url);
+    }
+
+    private function fittingItems(FittingRoomMannequin $mannequin): Builder
+    {
+        $hasPhoto = static fn ($media) => $media->whereRaw("TRIM(path) <> ''");
+
+        return FittingRoomLookItem::query()->where('fitting_room_look_items.is_active', true)
+            ->whereHas('variant', fn ($variant) => $variant->active()->whereHas('product', fn ($product) => $product
+                ->active()->when($mannequin->audience !== 'all', fn ($audience) => $audience->where('audience', $mannequin->audience))))
+            ->whereHas('look', fn ($look) => $look->active()->where('mannequin_id', $mannequin->id))
+            ->where(fn ($slot) => $slot
+                ->where(fn ($top) => $top->where('slot', 'top')->whereHas('look.previewTopMedia', $hasPhoto))
+                ->orWhere(fn ($bottom) => $bottom->where('slot', 'bottom')->whereHas('look.previewBottomMedia', $hasPhoto)));
+    }
+
+    private function productData(ProductVariant $variant): array
     {
         $product = $variant->product;
-        $color = (string) $variant->color_code;
 
         return [
             'id' => (int) $variant->getKey(),
-            'product_id' => (int) $product->getKey(),
             'name' => $product->name . (($variant->color || $variant->size) ? ' · ' . $variant->display_name : ''),
             'price' => $variant->effective_price,
-            'old' => $variant->is_on_sale ? (float) $variant->price : null,
             'rate' => is_numeric($product->approved_reviews_avg_rating) ? round((float) $product->approved_reviews_avg_rating, 1) : null,
             'img' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+            'stock' => $variant->stock,
+        ];
+    }
+
+    private function card(ProductVariant $variant): array
+    {
+        $color = (string) $variant->color_code;
+
+        return $this->productData($variant) + [
+            'old' => $variant->is_on_sale ? (float) $variant->price : null,
             'color' => trim((string) $variant->color),
             'colorCode' => preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/D', $color) ? $color : '#8b8490',
-            'stock' => $variant->stock,
-            'slot' => $fit['slot'] ?? null,
-            'o' => $fit['o'] ?? null,
-            'fy' => $fit['fy'] ?? null,
-            'url' => route('products.show', ['product' => $product->slug, 'variant_id' => $variant->id]),
+            'url' => route('products.show', ['product' => $variant->product->slug, 'variant_id' => $variant->id]),
         ];
     }
 }

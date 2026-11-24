@@ -58,7 +58,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('id="fit"', false)
             ->assertSee('id="stage"', false)
             ->assertSee('id="grid"', false)
-            ->assertSee('id="shop-studio-data"', false)
+            ->assertSee('id="shop-config"', false)
             ->assertSee('id="sort"', false)
             ->assertSee('id="cats"', false)
             ->assertSee('اتاق پرو')

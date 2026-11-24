@@ -1,3 +1,5 @@
+@import "../iranyekanx/font-face.css";
+
 :root {
     --vs-bg: #121115;
     --vs-panel: #1a181c;
@@ -25,7 +27,7 @@
 .storefront-body:has(.vision-shop-main) {
     background: var(--vs-bg);
     color: var(--vs-text);
-    font-family: Vazirmatn,Tahoma,system-ui,sans-serif;
+    font-family: "IRANYekanX Variable", Tahoma, sans-serif;
     font-size: 15px;
     line-height: 1.5;
 }
@@ -132,7 +134,7 @@
     left: -4px;
     background: var(--vs-accent);
     color: #fff;
-    font: 10px/16px Vazirmatn,sans-serif;
+    font: 10px/16px "IRANYekanX Variable", Tahoma, sans-serif;
     min-width: 16px;
     height: 16px;
     border-radius: 8px;

@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Services\FittingRoomShopData;
 use App\Services\HeroService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -46,6 +47,11 @@ class StorefrontController extends Controller
     public function index(Request $request): View
     {
         return view('store.index', app(FittingRoomShopData::class)->payload($request));
+    }
+
+    public function studio(FittingRoomShopData $shop): JsonResponse
+    {
+        return response()->json($shop->studio());
     }
 
     /**
