@@ -7,7 +7,7 @@
 @endphp
 <nav class="home-hero__support" aria-label="راه‌های ارتباط با فروشگاه">
     @foreach($channels as $channel => [$label, $href])
-        <a href="{{ $href ?: route('storefront.index') . '#home-contact' }}" data-channel="{{ $channel }}"
+        <a href="{{ $href ?: route('contact.index') }}" data-channel="{{ $channel }}"
            aria-label="{{ $href ? $label : $label . '، فرم تماس فروشگاه' }}">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 @switch($channel)

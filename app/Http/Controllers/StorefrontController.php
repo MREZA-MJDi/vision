@@ -29,8 +29,18 @@ class StorefrontController extends Controller
         $newProducts = $this->catalogProducts()
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->limit(10)
+            ->limit(8)
             ->get();
+
+        $editorialProducts = $this->catalogProducts()
+            ->where('is_featured', true)
+            ->whereHas('primaryAvailableVariant')
+            ->orderBy('sort_order')->orderByDesc('id')->limit(4)->get();
+
+        $saleProducts = $this->catalogProducts()
+            ->whereHas('primaryAvailableVariant', fn (Builder $query) => $query
+                ->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price'))
+            ->orderByDesc('created_at')->orderByDesc('id')->limit(4)->get();
 
         $homeCategories = Category::query()
             ->active()
@@ -43,7 +53,7 @@ class StorefrontController extends Controller
         $homeBrands = Brand::query()->active()
             ->with('logoMedia')->orderByDesc('created_at')->orderByDesc('id')->limit(8)->get();
 
-        return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories', 'homeBrands'));
+        return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories', 'homeBrands', 'editorialProducts', 'saleProducts'));
     }
 
     public function index(Request $request): View

@@ -11,7 +11,7 @@
         @endif
     </a>
     <div class="home-product-card__body">
-        <strong>{{ $product->name }}</strong>
+        <strong><a href="{{ route('products.show', ['product' => $product->slug, 'variant_id' => $variant?->getKey()]) }}">{{ $product->name }}</a></strong>
         @if($variant)
             <span>{{ \App\Support\Money::format($variant->effective_price) }}</span>
             @if($variant->stock > 0)
