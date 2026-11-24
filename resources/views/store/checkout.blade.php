@@ -94,11 +94,11 @@
         </div>
 
         <aside class="commerce-panel commerce-summary">
-            <div class="commerce-panel-heading"><h2>سفارش شما</h2><span>{{ number_format($summary['itemCount']) }} کالا</span></div>
+            <div class="commerce-panel-heading"><h2>سفارش شما</h2><span>{{ \App\Support\Money::number($summary['itemCount']) }} کالا</span></div>
             <div class="commerce-summary__products">
                 @foreach($items as $item)
                     @php($variant = $item->productVariant)
-                    <div><span>{{ $variant?->product?->name ?? 'کالای ناموجود' }} × {{ (int) $item->quantity }}</span><strong>@money($item->display_line_total)</strong></div>
+                    <div><span>{{ $variant?->product?->name ?? 'کالای ناموجود' }} × {{ \App\Support\Money::number((int) $item->quantity) }}</span><strong>@money($item->display_line_total)</strong></div>
                 @endforeach
             </div>
             <div class="commerce-summary__lines">

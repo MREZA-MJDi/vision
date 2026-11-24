@@ -27,7 +27,7 @@
         </div>
         <div class="commerce-complete__items">
             @foreach($order->items as $item)
-                <div><span>{{ $item->product_name }} × {{ (int) $item->quantity }}</span><strong>@money($item->line_total)</strong></div>
+                <div><span>{{ $item->product_name }} × {{ \App\Support\Money::number((int) $item->quantity) }}</span><strong>@money($item->line_total)</strong></div>
             @endforeach
         </div>
         @if($order->payment_method === 'bank_transfer')

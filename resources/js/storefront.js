@@ -1,3 +1,6 @@
+import { gsap } from "gsap";
+import { flyToCart, pulseCartTarget, prefersReducedMotion } from "./cart-motion";
+
 (() => {
     function initTiamirIntro(intro) {
         const storageKey = 'tiamir_intro_seen';
@@ -258,7 +261,9 @@
     if (!root) return;
 
     const currencySymbol = root.dataset.currencySymbol || 'تومان';
-    const formatMoney = (value) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(value) || 0) + ' ' + currencySymbol;
+    const numberFormatter = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 });
+    const formatNumber = (value) => numberFormatter.format(Number(value) || 0);
+    const formatMoney = (value) => formatNumber(value) + ' ' + currencySymbol;
 
     const sidebar = root.querySelector('[data-store-sidebar]');
     const filterToggle = root.querySelector('[data-store-filter-toggle]');
@@ -286,8 +291,8 @@
     function updateCartCount(count = 0) {
         const safeCount = Math.max(0, Number(count) || 0);
         root.querySelectorAll('[data-cart-count]').forEach((element) => {
-            element.textContent = String(safeCount);
-            element.setAttribute('aria-label', 'سبد خرید، ' + safeCount + ' محصول');
+            element.textContent = formatNumber(safeCount);
+            element.setAttribute('aria-label', 'سبد خرید، ' + formatNumber(safeCount) + ' محصول');
         });
         return safeCount;
     }
@@ -319,12 +324,25 @@
         return payload;
     }
 
+    const homeCartTarget = root.querySelector('[data-home-cart-target]');
+    const floatingCart = root.querySelector('[data-home-cart-floating]');
+    if (floatingCart && homeCartTarget && 'IntersectionObserver' in window) {
+        const cartObserver = new IntersectionObserver(([entry]) => {
+            floatingCart.hidden = entry.isIntersecting;
+        });
+        cartObserver.observe(homeCartTarget);
+    }
+
+    let homeCartPending = false;
+    let homeCartRevision = 0;
+
     async function syncCartCount() {
         const url = root.dataset.cartSummaryUrl;
         if (!url) return;
+        const revision = homeCartRevision;
         try {
             const response = await requestCart(url);
-            updateCartCount(response.count);
+            if (revision === homeCartRevision) updateCartCount(response.count);
         } catch {
             // Keep the storefront usable even if the count endpoint is temporarily unavailable.
         }
@@ -383,6 +401,8 @@
 
     root.querySelectorAll('[data-cart-add]').forEach((button) => {
         button.addEventListener('click', async () => {
+            if (homeCartPending) return;
+
             const variantId = Number(button.dataset.cartAdd || 0);
             const addUrl = root.dataset.cartAddUrl;
             if (!Number.isInteger(variantId) || variantId < 1 || !addUrl) {
@@ -391,17 +411,26 @@
             }
 
             button.disabled = true;
+            homeCartPending = Boolean(homeCartTarget);
             try {
                 const result = await requestCart(addUrl, 'POST', {
                     variant_id: variantId,
                     quantity: 1
                 });
+                if (homeCartTarget) homeCartRevision++;
                 updateCartCount(result.count);
-                showToast('به سبد خرید اضافه شد · تعداد محصولات: ' + result.count);
+                if (homeCartTarget) {
+                    const source = button.closest('.home-product-card')?.querySelector('[data-home-cart-source]');
+                    const target = floatingCart && !floatingCart.hidden ? floatingCart : homeCartTarget;
+                    await flyToCart(source?.querySelector('img') || source, target);
+                    pulseCartTarget(target);
+                }
+                showToast('به سبد خرید اضافه شد · تعداد محصولات: ' + formatNumber(result.count));
             } catch (error) {
                 showToast(error.message || 'افزودن محصول به سبد خرید انجام نشد.');
             } finally {
                 button.disabled = false;
+                homeCartPending = false;
             }
         });
     });
@@ -426,11 +455,6 @@
         const quantityInput = root.querySelector('[data-variant-quantity]');
         const addButton = root.querySelector('[data-product-add]');
         const normalizeColor = (value) => String(value || '').trim().toLocaleLowerCase();
-        const currency = root.dataset.currencySymbol || 'تومان';
-        const formatVariantMoney = (value) => Number(value || 0).toLocaleString('en-US', {
-            maximumFractionDigits: 0
-        }) + ' ' + currency;
-
         const refreshVariant = () => {
             const option = select.selectedOptions?.[0];
             if (!option) {
@@ -453,11 +477,11 @@
                 priceDisplay.replaceChildren();
                 if (onSale && Number.isFinite(originalPrice)) {
                     const original = document.createElement('del');
-                    original.textContent = formatVariantMoney(originalPrice);
+                    original.textContent = formatMoney(originalPrice);
                     priceDisplay.append(original);
                 }
                 const current = document.createElement('strong');
-                current.textContent = formatVariantMoney(price);
+                current.textContent = formatMoney(price);
                 priceDisplay.append(current);
             }
 
@@ -503,7 +527,7 @@
 
             if (stockDisplay) {
                 stockDisplay.textContent = stock > 0
-                    ? stock.toLocaleString('fa-IR') + ' عدد موجود'
+                    ? formatNumber(stock) + ' عدد موجود'
                     : 'فعلاً موجود نیست';
             }
             if (quantityInput) {
@@ -566,6 +590,9 @@
     const hero = root.querySelector('[data-home-hero]');
     if (hero) {
         const slides = Array.from(hero.querySelectorAll('[data-home-hero-slide]'));
+        const products = Array.from(hero.querySelectorAll('[data-home-hero-product]'));
+        const selectedByProduct = new Map();
+        let activeProductIndex = 0;
         const image = hero.querySelector('[data-home-hero-image]');
         const missingImage = hero.querySelector('[data-home-hero-image-missing]');
         const originalPrice = hero.querySelector('[data-home-hero-original]');
@@ -579,16 +606,33 @@
             missingImage.hidden = visible;
         };
 
-        image?.addEventListener('load', () => showImage(true));
+        image?.addEventListener('load', () => {
+            showImage(true);
+            if (!prefersReducedMotion()) {
+                gsap.fromTo(image, { opacity: 0.35, y: 12, scale: 0.98 }, {
+                    opacity: 1, y: 0, scale: 1, duration: 0.42, ease: 'power2.out', overwrite: true, clearProps: 'transform,opacity'
+                });
+            }
+        });
         image?.addEventListener('error', () => showImage(false));
         if (image?.getAttribute('src') && image.complete && !image.naturalWidth) {
             showImage(false);
         }
 
-        slides.forEach((slide) => slide.addEventListener('click', () => {
+        const selectSlide = (slide) => {
             if (slide.getAttribute('aria-pressed') === 'true') return;
 
-            slides.forEach((item) => item.setAttribute('aria-pressed', String(item === slide)));
+            const productId = slide.dataset.productId;
+            selectedByProduct.set(productId, slide);
+            slides.forEach((item) => {
+                item.hidden = item.dataset.productId !== productId;
+                item.setAttribute('aria-pressed', String(item === slide));
+            });
+            products.forEach((product, index) => {
+                const active = product.dataset.homeHeroProduct === productId;
+                product.setAttribute('aria-pressed', String(active));
+                if (active) activeProductIndex = index;
+            });
 
             const { theme, title, description, price, stock, label, url, imageAlt, originalPrice: salePrice } = slide.dataset;
             hero.style.setProperty('--home-hero-base', theme);
@@ -610,7 +654,54 @@
                 missingImage.hidden = true;
                 image.src = slide.dataset.image;
             }
+        };
+
+        const selectProduct = (index) => {
+            const product = products[(index + products.length) % products.length];
+            const productId = product.dataset.homeHeroProduct;
+            selectSlide(selectedByProduct.get(productId) || slides.find((slide) => slide.dataset.productId === productId));
+        };
+
+        slides.forEach((slide) => slide.addEventListener('click', () => selectSlide(slide)));
+        products.forEach((product, index) => product.addEventListener('click', () => selectProduct(index)));
+        hero.querySelectorAll('[data-home-hero-step]').forEach((button) => {
+            button.addEventListener('click', () => selectProduct(activeProductIndex + Number(button.dataset.homeHeroStep)));
+        });
+    }
+
+    root.querySelectorAll('.home-rail').forEach((rail) => {
+        const controls = Array.from(root.querySelectorAll(`[data-home-rail-step][aria-controls="${rail.id}"]`));
+        const updateControls = () => {
+            const max = rail.scrollWidth - rail.clientWidth;
+            const position = Math.abs(rail.scrollLeft);
+            controls.forEach((button) => {
+                button.disabled = Number(button.dataset.homeRailStep) < 0 ? position < 2 : max - position < 2;
+            });
+        };
+
+        controls.forEach((button) => button.addEventListener('click', () => {
+            const next = Number(button.dataset.homeRailStep);
+            rail.scrollBy({
+                left: -next * rail.clientWidth * 0.8,
+                behavior: prefersReducedMotion() ? 'instant' : 'smooth'
+            });
         }));
+        rail.addEventListener('scroll', updateControls, { passive: true });
+        new ResizeObserver(updateControls).observe(rail);
+        updateControls();
+    });
+
+    if (!prefersReducedMotion() && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(({ target, isIntersecting }) => {
+                if (!isIntersecting) return;
+                observer.unobserve(target);
+                gsap.fromTo(target, { opacity: 0.7, y: 18 }, {
+                    opacity: 1, y: 0, duration: 0.52, ease: 'power2.out', clearProps: 'transform,opacity'
+                });
+            });
+        }, { threshold: 0.2 });
+        root.querySelectorAll('.home-rail > *, .vision-shop-story').forEach((element) => observer.observe(element));
     }
 
     updateCartCount(0);

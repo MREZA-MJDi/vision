@@ -30,18 +30,18 @@
 
     <section class="store-product-detail">
         <div class="store-product-detail__gallery" aria-label="گالری تصاویر محصول">
-            <div class="store-product-detail__image store-product-detail__image--main" data-product-main-stage data-base-image="{{ $baseImage ?? '' }}">
+            <div class="store-product-detail__image store-product-detail__image--main store-media store-media--gallery" data-product-main-stage data-base-image="{{ $baseImage ?? '' }}">
                 @if($primaryImage)
                     <img data-product-main-image data-fallback-src="{{ $baseImage ?? '' }}" src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager" fetchpriority="high">
                 @else
-                    <img data-product-main-image data-fallback-src="" src="" alt="{{ $product->name }}" hidden>
+                    <img data-product-main-image data-fallback-src="" alt="{{ $product->name }}" hidden>
                 @endif
-                <div class="store-product-detail__image--empty" data-product-image-placeholder @if($primaryImage) hidden @endif><span>VISION<br>STUDIO</span></div>
+                <div class="store-product-detail__image--empty" data-product-image-placeholder @if($primaryImage) hidden @endif><span>تصویر محصول موجود نیست</span></div>
             </div>
             @if($product->galleryMedia->isNotEmpty())
                 <div class="store-product-detail__thumbnails" role="group" aria-label="انتخاب تصویر محصول">
                     @foreach($product->galleryMedia as $media)
-                        <button type="button" class="store-product-detail__thumbnail {{ $loop->first ? 'is-selected' : '' }}" data-gallery-image="{{ $media->url }}" data-gallery-alt="{{ $media->alt_text ?: $product->name }}" aria-label="نمایش تصویر {{ $loop->iteration }} از {{ $product->name }}">
+                        <button type="button" class="store-product-detail__thumbnail store-media store-media--thumb {{ $loop->first ? 'is-selected' : '' }}" data-gallery-image="{{ $media->url }}" data-gallery-alt="{{ $media->alt_text ?: $product->name }}" aria-label="نمایش تصویر {{ $loop->iteration }} از {{ $product->name }}">
                             <img src="{{ $media->url }}" alt="" loading="lazy" decoding="async">
                         </button>
                     @endforeach
@@ -120,7 +120,7 @@
                         <input type="number" name="quantity" value="1" min="1" max="{{ min(100, max(1, (int) $defaultVariant->stock)) }}" data-variant-quantity required>
                     </label>
                     <p class="commerce-stock-note" data-variant-stock>
-                        {{ (int) $defaultVariant->stock > 0 ? ((int) $defaultVariant->stock . ' عدد موجود') : 'فعلاً موجود نیست' }}
+                        {{ (int) $defaultVariant->stock > 0 ? (\App\Support\Money::number((int) $defaultVariant->stock) . ' عدد موجود') : 'فعلاً موجود نیست' }}
                     </p>
                     <button class="commerce-button commerce-button--primary commerce-button--wide" type="submit" data-product-add @disabled((int) $defaultVariant->stock < 1)>افزودن به سبد خرید ↗</button>
                     <p class="commerce-muted">قیمت، گزینهٔ انتخاب‌شده و موجودی هنگام افزودن به سبد و ثبت سفارش، در سرور دوباره بررسی می‌شوند.</p>
@@ -162,7 +162,13 @@
                         $relatedImage = $relatedVariant?->primaryGalleryMedia?->url ?? $related->primaryGalleryMedia?->url;
                     @endphp
                     <a class="commerce-related-card" href="{{ route('products.show', ['product' => $related->slug]) }}">
-                        @if($relatedImage)<img src="{{ $relatedImage }}" alt="{{ $related->name }}" loading="lazy">@else<div class="commerce-related-card__empty">V.</div>@endif
+                        <div class="store-media commerce-related-card__media">
+                            @if($relatedImage)
+                                <img src="{{ $relatedImage }}" alt="" loading="lazy" decoding="async">
+                            @else
+                                <span>بدون تصویر</span>
+                            @endif
+                        </div>
                         <span>{{ $related->brand?->name ?? $related->category?->name ?? 'VISION STUDIO' }}</span>
                         <strong>{{ $related->name }}</strong>
                         @if($relatedVariant)<b>{{ $formatPrice($relatedVariant->effective_price) }}</b>@endif

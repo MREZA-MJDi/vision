@@ -18,20 +18,9 @@ class StorefrontController extends Controller
         $heroProducts = $this->catalogProducts()
             ->where('is_hero', true)
             ->orderBy('sort_order')
-            ->orderByDesc('updated_at')
-            ->orderByDesc('id')
-            ->limit(HeroService::MAX_SLIDES)
+            ->orderBy('id')
+            ->limit(HeroService::MAX_HOME_PRODUCTS)
             ->get();
-
-        if ($heroProducts->isEmpty()) {
-            $heroProducts = $this->catalogProducts()
-                ->orderByDesc('is_featured')
-                ->orderBy('sort_order')
-                ->orderByDesc('created_at')
-                ->orderByDesc('id')
-                ->limit(8)
-                ->get();
-        }
 
         $heroProducts->loadMissing(['activeVariants.primaryGalleryMedia']);
         $heroSlides = $hero->storefrontSlides($heroProducts);
@@ -39,7 +28,7 @@ class StorefrontController extends Controller
         $newProducts = $this->catalogProducts()
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->limit(4)
+            ->limit(10)
             ->get();
 
         $homeCategories = Category::query()

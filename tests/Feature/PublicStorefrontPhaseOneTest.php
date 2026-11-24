@@ -17,6 +17,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
     {
         $this->withoutVite();
         $this->seed(CommerceDemoSeeder::class);
+        Product::query()->where('slug', 'demo-essential-cotton-tee')->update(['is_hero' => true]);
 
         $response = $this->get('/');
 
@@ -37,10 +38,9 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertDontSee('home-featured', false)
             ->assertDontSee('home-brand-story', false)
             ->assertSee('vision-home-benefits', false)
-            ->assertSee('home-minimal-footer', false)
-            ->assertDontSee('store-footer__column', false)
+            ->assertSee('vision-footer', false)
             ->assertDontSee('store-header', false)
-            ->assertDontSee('data-cart-add=', false)
+            ->assertSee('data-cart-add=', false)
             ->assertDontSee('data-fitting-room', false)
             ->assertSee('images.unsplash.com');
     }
@@ -84,7 +84,7 @@ class PublicStorefrontPhaseOneTest extends TestCase
             ->assertSee('افزودن به سبد خرید')
             ->assertSee('محصولات منتخب')
             ->assertSee('قهوه‌ای')
-            ->assertSee('1,090,000 تومان');
+            ->assertSee('۱٬۰۹۰٬۰۰۰ تومان');
     }
 
     public function test_product_detail_variant_media_queries_remain_bounded_as_variant_count_grows(): void

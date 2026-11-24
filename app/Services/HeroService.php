@@ -15,6 +15,8 @@ final class HeroService
 {
     public const MAX_SLIDES = 30;
 
+    public const MAX_HOME_PRODUCTS = 7;
+
     private const VERSION_KEY = 'store:home:hero:products:version';
     private const CACHE_PREFIX = 'store:home:hero:products:';
     private const CACHE_TTL_MINUTES = 30;
@@ -58,6 +60,7 @@ final class HeroService
                     $color = $variant->color_code;
 
                     return [
+                        'productId' => $product->getKey(),
                         'title' => $product->name,
                         'description' => Str::limit($product->short_description ?: $product->description ?: 'انتخابی از فروشگاه VISION.', 220),
                         'image' => $variant->primaryGalleryMedia?->url ?: $product->primaryGalleryMedia?->url,
@@ -66,7 +69,7 @@ final class HeroService
                         'url' => route('products.show', ['product' => $product->slug, 'variant_id' => $variant->getKey()]),
                         'price' => Money::format($variant->effective_price),
                         'originalPrice' => $variant->is_on_sale ? Money::format($variant->price) : '',
-                        'stock' => $variant->stock > 0 ? number_format($variant->stock) . ' عدد موجود' : 'فعلاً ناموجود',
+                        'stock' => $variant->stock > 0 ? Money::number($variant->stock) . ' عدد موجود' : 'فعلاً ناموجود',
                         'label' => $variant->color ?: ($variant->size ?: 'محصول منتخب'),
                     ];
                 })

@@ -27,7 +27,7 @@
                     </div>
                     <div class="ak-checkbox-row">
                         <label class="ak-check-card"><input type="checkbox" name="is_featured" value="1" @checked(old('is_featured', $product?->is_featured ?? false))><span><strong>محصول ویژه</strong><small>این محصول را در بخش محصولات ویژه اولویت بده.</small></span></label>
-                        <label class="ak-check-card"><input type="checkbox" name="is_hero" value="1" @checked(old('is_hero', $product?->is_hero ?? false))><span><strong>قابل استفاده در هِرو</strong><small>اجازه بده این محصول در بخش هِرو صفحهٔ اصلی انتخاب شود.</small></span></label>
+                        <label class="ak-check-card"><input type="checkbox" name="is_hero" value="1" @checked(old('is_hero', $product?->is_hero ?? false))><span><strong>نمایش در اسلایدر صفحهٔ اصلی</strong><small>حداکثر هفت محصول فعالِ انتخاب‌شده، به ترتیب فروشگاه نمایش داده می‌شوند.</small></span></label>
                     </div>
                 </section>
 

@@ -19,7 +19,7 @@
     @if(session('status'))<p class="commerce-alert commerce-alert--success" role="status">{{ session('status') }}</p>@endif
 
     <section class="commerce-panel commerce-account-panel">
-        <div class="commerce-panel-heading"><h2>سفارش‌های شما</h2><span>{{ number_format($orders->total()) }} سفارش</span></div>
+        <div class="commerce-panel-heading"><h2>سفارش‌های شما</h2><span>{{ \App\Support\Money::number($orders->total()) }} سفارش</span></div>
         @if($orders->isEmpty())
             <div class="commerce-empty commerce-empty--compact">
                 <h2>هنوز سفارشی ثبت نکرده‌ای.</h2>
