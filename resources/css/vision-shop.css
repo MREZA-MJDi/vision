@@ -562,14 +562,13 @@
     position: sticky;
     top: 16px;
     min-width: 0;
-    max-height: calc(100dvh - 32px);
+    height: min(670px, calc(100dvh - 86px));
     padding: 11px;
     border: 1px solid var(--vs-line);
     border-radius: 13px;
     background: var(--vs-panel);
     box-shadow: 0 16px 38px rgb(0 0 0 / 25%);
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    overflow: hidden;
 }
 
 #fit[hidden] {
@@ -577,10 +576,8 @@
 }
 
 #fit .fit-heading {
-    position: sticky;
-    z-index: 4;
-    top: -11px;
     display: flex;
+    flex: 0 0 auto;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
@@ -589,6 +586,22 @@
     border-block-end: 1px solid var(--vs-line);
     background: var(--vs-panel);
     font-size: .88rem;
+}
+
+.fit-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    padding: 3px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.fit-content > * {
+    flex-shrink: 0;
 }
 
 .fit-guide {
@@ -628,13 +641,13 @@
         position: fixed;
         z-index: 1200;
         inset: 0;
-        max-height: none;
+        height: 100dvh;
         border: 0;
         border-radius: 0;
         padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
     }
 
-    #fit > :not(.stage) {
+    #fit > .fit-heading, #fit > .fit-footer, .fit-content > :not(.stage) {
         width: min(100%, 520px);
         margin-inline: auto;
     }
@@ -838,7 +851,7 @@
 .tot {
     font-size: 12px;
     color: var(--vs-muted);
-    margin: 8px 0;
+    margin: 0 0 6px;
 }
 
 .btns {
@@ -1171,16 +1184,14 @@
     line-height: 1.8;
 }
 
-#fit .btns {
-    position: sticky;
-    z-index: 4;
-    bottom: -11px;
-    padding-block: 8px;
-    background: var(--vs-panel);
+.fit-footer {
+    flex: 0 0 auto;
+    border-block-start: 1px solid var(--vs-line);
+    padding-block-start: 8px;
 }
 
 #fit .btns button {
-    min-height: 44px;
+    min-height: 48px;
 }
 
 .fit-scene-notice {
