@@ -8,6 +8,7 @@ use App\Models\FittingRoomLookItem;
 use App\Models\FittingRoomMannequin;
 use App\Models\Media;
 use App\Models\ProductVariant;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,30 @@ class FittingRoomStudioController extends Controller
 
         $publicMannequinId = $mannequins->first(fn ($mannequin) => $mannequin->is_active && $mannequin->baseMedia?->url)?->id;
 
-        return view('admin.fitting-room-studio.index', compact('mannequins', 'variants', 'variantSearch', 'publicMannequinId'));
+        $assignedVariants = $mannequins->flatMap(fn ($mannequin) => $mannequin->looks
+            ->flatMap(fn ($look) => $look->items->pluck('variant')->filter()));
+        $variantCards = $variants->getCollection()->concat($assignedVariants)->unique('id')
+            ->mapWithKeys(function (ProductVariant $variant): array {
+                $media = $variant->primaryGalleryMedia;
+                $image = $media?->url;
+                $editable = $image !== null;
+                if (! $editable) {
+                    $media = $variant->product?->primaryGalleryMedia;
+                    $image = $media?->url;
+                }
+
+                return [$variant->id => [
+                    'image' => $image,
+                    'editable' => $editable,
+                    'frame' => $media?->cardFrame() ?? Media::DEFAULT_CARD_FRAME,
+                    'name' => Money::persianDigits((string) $variant->product?->name),
+                    'variant' => Money::persianDigits($variant->display_name),
+                    'price' => Money::format($variant->effective_price),
+                    'stock' => $variant->stock > 0 ? Money::number($variant->stock) . ' عدد موجود' : 'ناموجود',
+                ]];
+            });
+
+        return view('admin.fitting-room-studio.index', compact('mannequins', 'variants', 'variantSearch', 'publicMannequinId', 'variantCards'));
     }
 
     public function storeMannequin(Request $request): RedirectResponse
@@ -170,19 +194,30 @@ class FittingRoomStudioController extends Controller
             'preview_suggested' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:ratio=2/3'],
             'top_product_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             'bottom_product_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'top_card_frame' => ['sometimes', 'array:scale,x,y'],
+            'top_card_frame.scale' => ['required_with:top_card_frame', 'integer', 'between:80,125'],
+            'top_card_frame.x' => ['required_with:top_card_frame', 'integer', 'between:-12,12'],
+            'top_card_frame.y' => ['required_with:top_card_frame', 'integer', 'between:-12,12'],
+            'bottom_card_frame' => ['sometimes', 'array:scale,x,y'],
+            'bottom_card_frame.scale' => ['required_with:bottom_card_frame', 'integer', 'between:80,125'],
+            'bottom_card_frame.x' => ['required_with:bottom_card_frame', 'integer', 'between:-12,12'],
+            'bottom_card_frame.y' => ['required_with:bottom_card_frame', 'integer', 'between:-12,12'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $mannequin = FittingRoomMannequin::query()->findOrFail((int) $data['mannequin_id']);
 
-        $hasTopScene = $request->hasFile('preview_top') || (bool) $look->previewTopMedia;
-        $hasBottomScene = $request->hasFile('preview_bottom') || (bool) $look->previewBottomMedia;
-        $hasCombinedScene = $request->hasFile('preview_combined') || (bool) $look->previewCombinedMedia;
+        $publishing = $request->boolean('is_active');
+        $hasScene = static fn (string $field, ?Media $media): bool => $request->hasFile($field)
+            || ($publishing ? $media?->url !== null : $media !== null);
+        $hasTopScene = $hasScene('preview_top', $look->previewTopMedia);
+        $hasBottomScene = $hasScene('preview_bottom', $look->previewBottomMedia);
+        $hasCombinedScene = $hasScene('preview_combined', $look->previewCombinedMedia);
         $topVariantRequested = (int) ($data['top_variant_id'] ?? 0) > 0;
         $bottomVariantRequested = (int) ($data['bottom_variant_id'] ?? 0) > 0;
 
         foreach (['top', 'bottom'] as $slot) {
-            if ($request->hasFile($slot . '_product_image') && empty($data[$slot . '_variant_id'])) {
+            if (($request->hasFile($slot . '_product_image') || isset($data[$slot . '_card_frame'])) && empty($data[$slot . '_variant_id'])) {
                 throw ValidationException::withMessages([
                     $slot . '_variant_id' => 'قبل از آپلود عکس کارت، وریانت محصول را انتخاب کن.',
                 ]);
@@ -241,7 +276,7 @@ class FittingRoomStudioController extends Controller
         $storedPaths = [];
         $obsoleteMedia = [];
         try {
-            DB::transaction(function () use ($request, $data, $look, $mannequin, $variants, &$storedPaths, &$obsoleteMedia): void {
+            DB::transaction(function () use ($request, $data, $look, $mannequin, &$storedPaths, &$obsoleteMedia): void {
                 if ($look->exists && $look->mannequin_id != $mannequin->getKey()) {
                     $look->items()->delete();
                 }
@@ -301,19 +336,22 @@ class FittingRoomStudioController extends Controller
                     );
                 }
 
-                foreach ([
-                    'top_product_image' => 'top_variant_id',
-                    'bottom_product_image' => 'bottom_variant_id',
-                ] as $input => $variantField) {
-                    $variantId = (int) ($data[$variantField] ?? 0);
-                    if ($variantId && $request->hasFile($input)) {
-                        $variant = $variants->get($variantId);
-                        if (!$variant) {
-                            throw ValidationException::withMessages([
-                                $variantField => 'برای آپلود تصویر، یک واریانت معتبر انتخاب کن.',
-                            ]);
-                        }
-                        $this->storeVariantGalleryImage($variant, $request->file($input), $storedPaths);
+                $cardEdits = collect(['top', 'bottom'])->filter(fn ($slot) => $request->hasFile($slot . '_product_image')
+                    || isset($data[$slot . '_card_frame']))
+                    ->sortBy(fn ($slot) => (int) $data[$slot . '_variant_id']);
+                foreach ($cardEdits as $slot) {
+                    $variant = ProductVariant::query()->lockForUpdate()->findOrFail((int) $data[$slot . '_variant_id']);
+                    $file = $request->file($slot . '_product_image');
+                    $frame = isset($data[$slot . '_card_frame']) ? array_map('intval', $data[$slot . '_card_frame']) : null;
+
+                    $media = $file ? $this->storeVariantGalleryImage($variant, $file, $storedPaths) : $variant->primaryGalleryMedia;
+                    if ($media === null || (! $file && $media->url === null)) {
+                        throw ValidationException::withMessages([
+                            $slot . '_product_image' => 'برای تنظیم کادر، ابتدا عکس اختصاصی واریانت را بارگذاری کن.',
+                        ]);
+                    }
+                    if ($frame !== null && $media->cardFrame() !== $frame) {
+                        $media->update(['metadata' => array_replace($media->metadata ?? [], ['card_frame' => $frame])]);
                     }
                 }
             });

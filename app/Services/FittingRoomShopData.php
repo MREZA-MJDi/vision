@@ -238,13 +238,20 @@ class FittingRoomShopData
     private function productData(ProductVariant $variant): array
     {
         $product = $variant->product;
+        $media = $variant->primaryGalleryMedia;
+        $image = $media?->url;
+        if ($image === null) {
+            $media = $product->primaryGalleryMedia;
+            $image = $media?->url;
+        }
 
         return [
             'id' => (int) $variant->getKey(),
             'name' => $product->name . (($variant->color || $variant->size) ? ' · ' . $variant->display_name : ''),
             'price' => $variant->effective_price,
             'rate' => is_numeric($product->approved_reviews_avg_rating) ? round((float) $product->approved_reviews_avg_rating, 1) : null,
-            'img' => $variant->primaryGalleryMedia?->url ?? $product->primaryGalleryMedia?->url,
+            'img' => $image,
+            'frame' => $media?->cardFrame() ?? Media::DEFAULT_CARD_FRAME,
             'stock' => $variant->stock,
         ];
     }

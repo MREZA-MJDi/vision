@@ -158,7 +158,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     image.alt = "";
     image.setAttribute("aria-hidden", "true");
     const finish = (failed) => {
-      if (activeScene !== key) return;
+      if (activeScene !== key || fittingFlight) return;
       setSceneLoading(false);
       if (failed) {
         const notice = $("#fit-scene-notice");
@@ -246,7 +246,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   function refresh() {
     if (!studio) return;
-    setScene();
+    if (!fittingFlight) setScene();
     const items = P.filter(product => W.has(Number(product.id)));
     try {
       sessionStorage.setItem(selectionKey, JSON.stringify({
@@ -404,14 +404,24 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     const dy = end.top + end.height * Number(fitY || .38) - (start.top + start.height / 2);
     const animation = element.animate([
       { transform: "none", opacity: 1 },
-      { transform: `translate(${dx * .5}px,${dy * .4 - 70}px) rotate(-16deg) scale(.62)`, offset: .5 },
-      { transform: `translate(${dx}px,${dy}px) rotate(8deg) scale(.3)`, opacity: .15 }
-    ], { duration: 780, easing: "cubic-bezier(.5,0,.25,1)" });
+      { transform: `translate(${dx * .45}px,${dy * .4 - 55}px) rotate(-10deg) scale(.65)`, offset: .48 },
+      { transform: `translate(${dx}px,${dy}px) rotate(4deg) scale(.24)`, opacity: .15 }
+    ], { duration: 560, easing: "cubic-bezier(.3,.1,.25,1)" });
     fittingFlight = animation;
+    $("#sugg").hidden = true;
+    setSceneLoading(true);
     animation.finished.catch(() => undefined).then(() => {
       element.remove();
-      if (fittingFlight === animation) fittingFlight = null;
+      if (fittingFlight !== animation) return;
+      fittingFlight = null;
+      setScene();
     });
+  }
+
+  function stopFittingFlight() {
+    const animation = fittingFlight;
+    fittingFlight = null;
+    animation?.cancel();
   }
 
   async function openStudio(trigger, variantId = null) {
@@ -456,7 +466,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   function tryOn(product, source) {
     if (!product?.scene || !product.slot || Number(product.stock || 0) < 1) return;
-    fittingFlight?.cancel();
+    stopFittingFlight();
     showingSuggestion = false;
 
     if (W.has(Number(product.id))) {
@@ -475,7 +485,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   function clearAll() {
     activation++;
-    fittingFlight?.cancel();
+    stopFittingFlight();
     showingSuggestion = false;
     W.clear();
     state.lastFittedId = null;
@@ -525,7 +535,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
       if (product) tryOn(product, image);
     } else if (data.r) {
-      fittingFlight?.cancel();
+      stopFittingFlight();
       showingSuggestion = false;
       W.delete(Number(data.r));
       refresh();
@@ -537,7 +547,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   function closeFit() {
     activation++;
-    fittingFlight?.cancel();
+    stopFittingFlight();
     fit.hidden = true;
     catalog.classList.remove("fit-open");
     setFitLayout();
