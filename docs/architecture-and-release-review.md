@@ -26,7 +26,7 @@
 - Added escaped Open Graph/Twitter metadata to the shared layout and product-specific sharing metadata.
 - Reworked the mobile campaign hero for a readable two-column information layout, touch-friendly controls, and reduced-motion preferences while keeping desktop styles unchanged.
 - CI smoke-tests the storefront on PHP 8.2, runs the full suite on PHP 8.3, and installs frontend dependencies from the lockfile using `npm ci`.
-- The default `DatabaseSeeder` creates editable launch-catalog Eloquent records, not the opt-in demo catalog. A media row is created only when its file really exists on the configured public disk; missing files must not generate broken image URLs.
+- The default `DatabaseSeeder` only bootstraps an administrator. Catalog and fitting-room imports are explicit. A media row is created only when its file really exists on the configured public disk; missing files must not generate broken image URLs.
 - Dashboard hardening verifies CRUD persistence, variant-specific media, deletion flows, validation, query bounds, and idempotent seed behavior.
 
 ## Release risks to resolve

@@ -37,9 +37,9 @@
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @if (request()->routeIs('shop.index', 'products.index'))
-            @vite(['resources/css/app.css', 'resources/css/vision-shop.css', 'resources/css/vision-polish.css', 'resources/js/vision-shop.js'])
+            @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/vision-shop.css', 'resources/js/vision-shop.js'])
         @else
-            @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/vision-polish.css', 'resources/js/storefront.js'])
+            @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/js/storefront.js'])
             @if (request()->routeIs('storefront.index'))
                 @vite('resources/css/home-hero.css')
             @endif

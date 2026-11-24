@@ -177,7 +177,21 @@ class CommerceDemoSeederTest extends TestCase
         $this->assertDatabaseCount('products', 2);
     }
 
-    public function test_normal_database_seeder_creates_idempotent_editable_launch_records_without_demo_or_phantom_media(): void
+    public function test_default_database_seed_does_not_publish_catalog_or_fitting_room_data(): void
+    {
+        config([
+            'commerce-admin.bootstrap_admin.email' => null,
+            'commerce-admin.bootstrap_admin.password' => null,
+        ]);
+
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertDatabaseCount('products', 0);
+        $this->assertDatabaseCount('product_variants', 0);
+        $this->assertDatabaseCount('fitting_room_mannequins', 0);
+    }
+
+    public function test_explicit_launch_seeder_creates_idempotent_editable_launch_records_without_demo_or_phantom_media(): void
     {
         $this->withoutVite();
         config([
@@ -189,11 +203,10 @@ class CommerceDemoSeederTest extends TestCase
         // must not persist media records for assets that are not present.
         Storage::fake('public');
 
-        $this->seed(DatabaseSeeder::class);
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(\Database\Seeders\StorefrontLaunchSeeder::class);
+        $this->seed(\Database\Seeders\StorefrontLaunchSeeder::class);
 
         $this->assertDatabaseCount('users', 0);
-        // The bundled fitting-room archive seeds additional real catalog records.\n        $this->assertGreaterThanOrEqual(1, \\App\\Models\\Category::query()->count());\n        $this->assertGreaterThanOrEqual(1, \\App\\Models\\Brand::query()->count());\n        $this->assertGreaterThanOrEqual(2, \\App\\Models\\Product::query()->count());\n        $this->assertGreaterThanOrEqual(2, \\App\\Models\\ProductVariant::query()->count());
 
         $this->assertDatabaseHas('categories', ['slug' => 'outerwear', 'name' => 'پوشاک رویی']);
         $this->assertDatabaseHas('brands', ['slug' => 'vision', 'name' => 'VISION']);

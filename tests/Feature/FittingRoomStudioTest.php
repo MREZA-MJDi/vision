@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class FittingRoomStudioTest extends TestCase
@@ -211,7 +213,7 @@ class FittingRoomStudioTest extends TestCase
 
         $response = $this->get('/shop');
         $response->assertOk()
-            ->assertSee('window.SHOP', false)
+            ->assertSee('id="shop-studio-data"', false)
             ->assertSee('assets.example.test', false)
             ->assertSee('"T":', false)
             ->assertSee('"B":', false)
@@ -219,6 +221,68 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('"S":', false)
             ->assertSee('"slot":"top"', false)
             ->assertSee('"slot":"bottom"', false);
+    }
+
+    public function test_admin_can_upload_shop_media_and_unpublish_a_look(): void
+    {
+        $this->withoutVite();
+        Storage::fake('public');
+        $admin = User::query()->create([
+            'name' => 'Studio Media Admin',
+            'email' => 'studio-media@example.test',
+            'password' => 'studio-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+        $product = Product::query()->create([
+            'name' => 'Studio Upload Garment',
+            'slug' => 'studio-upload-garment',
+            'is_active' => true,
+        ]);
+        $variant = $product->variants()->create([
+            'sku' => 'STUDIO-UPLOAD',
+            'price' => 150000,
+            'stock' => 4,
+            'is_active' => true,
+        ]);
+        $image = static fn (string $name) => UploadedFile::fake()->createWithContent($name, base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAEklEQVR4nGM4cPb9hVX7GVAoAJUuDiBJkuwvAAAAAElFTkSuQmCC'
+        ));
+
+        $this->actingAs($admin)
+            ->post(route('commerce-admin.try-on.mannequins.store'), [
+                'code' => 'upload-mannequin',
+                'label' => 'Upload mannequin',
+                'audience' => 'all',
+                'is_active' => 1,
+                'base_image' => $image('base.png'),
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $mannequin = FittingRoomMannequin::query()->firstOrFail();
+        $fields = [
+            'mannequin_id' => $mannequin->id,
+            'code' => 'upload-look',
+            'label' => 'Upload look',
+            'top_variant_id' => $variant->id,
+        ];
+
+        $this->post(route('commerce-admin.try-on.looks.store'), $fields + [
+            'is_active' => 1,
+            'preview_top' => $image('top.png'),
+            'preview_suggested' => $image('suggestion.png'),
+            'top_product_image' => $image('card.png'),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $look = FittingRoomLook::query()->firstOrFail();
+        $this->assertTrue($look->is_active);
+        Storage::disk('public')->assertExists($variant->primaryGalleryMedia()->firstOrFail()->path);
+        $this->get(route('shop.index'))->assertOk()
+            ->assertSee('data-t="' . $variant->id . '"', false)
+            ->assertViewHas('studio', fn (array $studio) => $studio['suggestions'][$variant->id] === $look->previewSuggestedMedia->url);
+
+        $this->put(route('commerce-admin.try-on.looks.update', $look), $fields)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertFalse($look->fresh()->is_active);
+        $this->get(route('shop.index'))->assertOk()->assertDontSee('data-t="' . $variant->id . '"', false);
     }
 
     public function test_public_fitting_studio_never_mixes_scenes_from_different_mannequins(): void
@@ -259,10 +323,10 @@ class FittingRoomStudioTest extends TestCase
         }
 
         $payload = app(\App\Services\FittingRoomShopData::class)->payload();
-        $this->assertStringContainsString('base-first-studio.jpg', $payload['base']);
-        $this->assertCount(1, $payload['looks']);
-        $this->assertArrayHasKey((string) $first->looks()->first()->getKey(), $payload['looks']);
-        $this->assertArrayNotHasKey((string) $second->looks()->first()->getKey(), $payload['looks']);
+        $this->assertStringContainsString('base-first-studio.jpg', $payload['studio']['base']);
+        $this->assertCount(1, $payload['studio']['looks']);
+        $this->assertArrayHasKey((string) $first->looks()->first()->getKey(), $payload['studio']['looks']);
+        $this->assertArrayNotHasKey((string) $second->looks()->first()->getKey(), $payload['studio']['looks']);
     }
 
     public function test_shop_includes_outfit_recommendations_and_saved_style_comparison(): void

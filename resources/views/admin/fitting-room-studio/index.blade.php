@@ -1,13 +1,12 @@
 @extends('commerce-admin::layout')
 
-@section('title', 'Fitting Room Studio')
+@section('title', 'استودیوی اتاق پرو')
 
 @section('content')
 <div class="fr-studio">
     <header class="fr-hero">
         <div class="fr-hero__copy">
-            <p class="fr-kicker"><span></span> VISION / CREATIVE LAB</p>
-            <h1>Fitting Room <em>Studio</em></h1>
+            <h1>استودیوی <em>اتاق پرو</em></h1>
             <p>مانکن‌ها، تصویر لباس‌ها و ست‌های پیشنهادی را در یک گالری منظم بساز و کنترل کن. داده‌ها مستقیم به کاتالوگ و واریانت‌های واقعی متصل هستند.</p>
             <div class="fr-hero__actions">
                 <a class="fr-button fr-button--primary" href="#fr-looks">ساخت ست جدید <span>↗</span></a>
@@ -17,9 +16,9 @@
         </div>
         <div class="fr-hero__mark" aria-hidden="true"><span>V</span><i></i><b></b></div>
         <div class="fr-hero__stats">
-            <div><strong>{{ number_format($mannequins->count()) }}</strong><span>مدل مانکن</span></div>
-            <div><strong>{{ number_format($mannequins->sum('looks_count')) }}</strong><span>ست ثبت‌شده</span></div>
-            <div><strong>{{ number_format($variants->count()) }}</strong><span>واریانت صفحهٔ فعلی از {{ number_format($variants->total()) }} مورد</span></div>
+            <div><strong>{{ \App\Support\Money::number($mannequins->count()) }}</strong><span>مدل مانکن</span></div>
+            <div><strong>{{ \App\Support\Money::number($mannequins->sum('looks_count')) }}</strong><span>ست ثبت‌شده</span></div>
+            <div><strong>{{ \App\Support\Money::number($variants->count()) }}</strong><span>واریانت صفحهٔ فعلی از {{ \App\Support\Money::number($variants->total()) }} مورد</span></div>
         </div>
     </header>
 
@@ -39,7 +38,7 @@
             @else
                 <a href="{{ $variants->previousPageUrl() }}">صفحه قبل</a>
             @endif
-            <span>صفحه {{ number_format($variants->currentPage()) }} از {{ number_format($variants->lastPage()) }}</span>
+            <span>صفحه {{ \App\Support\Money::number($variants->currentPage()) }} از {{ \App\Support\Money::number($variants->lastPage()) }}</span>
             @if($variants->hasMorePages())
                 <a href="{{ $variants->nextPageUrl() }}">صفحه بعد</a>
             @else
@@ -50,13 +49,13 @@
 
     <section class="fr-section" id="fr-mannequins">
         <div class="fr-section__head">
-            <div><p class="fr-kicker">01 / MANNEQUIN GALLERY</p><h2>گالری مانکن‌ها</h2><p>عکس پایهٔ مانکن را با قاب ۲:۳ آپلود کن. اولین مانکن فعال با اولویت کمتر، پیش‌فرض ویترین است.</p></div>
-            <span class="fr-section__count">{{ number_format($mannequins->count()) }} مدل</span>
+            <div><h2>گالری مانکن‌ها</h2><p>عکس پایهٔ مانکن را با قاب ۲:۳ آپلود کن. اولین مانکن فعال با اولویت کمتر، پیش‌فرض ویترین است.</p></div>
+            <span class="fr-section__count">{{ \App\Support\Money::number($mannequins->count()) }} مدل</span>
         </div>
 
         <div class="fr-mannequin-grid">
             <section class="fr-panel fr-new-mannequin">
-                <div class="fr-panel__head"><span class="fr-step">NEW MODEL</span><span class="fr-plus">＋</span></div>
+                <div class="fr-panel__head"><span class="fr-step">مانکن تازه</span><span class="fr-plus">＋</span></div>
                 <h3>افزودن مانکن</h3>
                 <p class="fr-muted">فایل پایهٔ تصویر مانکن؛ فرمت JPG، PNG یا WebP.</p>
                 <form method="POST" action="{{ route('commerce-admin.try-on.mannequins.store') }}" enctype="multipart/form-data">
@@ -70,7 +69,8 @@
                     <label class="fr-upload">
                         <input type="file" name="base_image" accept="image/png,image/webp,image/jpeg" required data-fr-preview-input>
                         <span class="fr-upload__icon">＋</span><strong>انتخاب تصویر مانکن</strong><small>نسبت تصویر ۲:۳ · حداکثر ۸ مگابایت</small>
-                        <img alt="" data-fr-preview hidden>
+                        <img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small>
                     </label>
                     <label class="fr-check"><input type="checkbox" name="is_active" value="1" checked><span>در فروشگاه فعال باشد</span></label>
                     <button class="fr-button fr-button--primary fr-button--wide" type="submit">افزودن به گالری <span>↗</span></button>
@@ -85,7 +85,7 @@
                         @else
                             <div class="fr-image-empty"><span>V.</span><small>تصویر پایه ثبت نشده</small></div>
                         @endif
-                        <span class="fr-chip {{ $mannequin->is_active ? 'is-live' : '' }}">{{ $mannequin->is_active ? 'فعال' : 'غیرفعال' }}</span>
+                        <span class="fr-chip {{ $mannequin->is_active ? 'is-live' : '' }}">{{ $mannequin->id === $publicMannequinId ? 'در ویترین فروشگاه' : ($mannequin->is_active ? 'فعال در استودیو' : 'غیرفعال') }}</span>
                         <span class="fr-count-chip">{{ $mannequin->looks_count }} ست</span>
                     </div>
                     <div class="fr-mannequin-card__body">
@@ -97,7 +97,8 @@
                                 <label class="fr-field"><span>گروه</span><select name="audience"><option value="women" @selected($mannequin->audience === 'women')>زنانه</option><option value="men" @selected($mannequin->audience === 'men')>مردانه</option><option value="all" @selected($mannequin->audience === 'all')>عمومی</option></select></label>
                                 <label class="fr-field"><span>اولویت</span><input type="number" name="sort_order" value="{{ $mannequin->sort_order }}" min="0" max="65535"></label>
                             </div>
-                            <label class="fr-upload fr-upload--compact"><input type="file" name="base_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس پایه</strong><small>در صورت نیاز عکس جدید انتخاب کن</small><img alt="" data-fr-preview hidden></label>
+                            <label class="fr-upload fr-upload--compact"><input type="file" name="base_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس پایه</strong><small>در صورت نیاز عکس جدید انتخاب کن</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
                             <label class="fr-check"><input type="checkbox" name="is_active" value="1" @checked($mannequin->is_active)><span>فعال در ویترین</span></label>
                             <button class="fr-button fr-button--primary fr-button--wide" type="submit">ذخیرهٔ مدل</button>
                         </form>
@@ -115,14 +116,17 @@
 
     <section class="fr-section" id="fr-looks">
         <div class="fr-section__head">
-            <div><p class="fr-kicker">02 / LOOK COMPOSER</p><h2>گالری ست‌ها و صحنه‌ها</h2><p>هر ست، واریانت واقعی بالاپوش/پایین‌تنه را به تصاویر T، B، TB و S متصل می‌کند. برای کارت محصول هم تصویر و قیمت از دیتابیس محصولات خوانده می‌شود.</p></div>
-            <span class="fr-section__count">{{ number_format($mannequins->sum('looks_count')) }} ست</span>
+            <div><h2>گالری ست‌ها و صحنه‌ها</h2><p>هر ست، واریانت واقعی بالاپوش/پایین‌تنه را به تصاویر T، B، TB و S متصل می‌کند. برای کارت محصول هم تصویر و قیمت از دیتابیس محصولات خوانده می‌شود.</p></div>
+            <span class="fr-section__count">{{ \App\Support\Money::number($mannequins->sum('looks_count')) }} ست</span>
         </div>
 
         <section class="fr-panel fr-look-editor">
-            <div class="fr-panel__head"><span class="fr-step">CREATE A LOOK</span><span class="fr-plus">＋</span></div>
+            <div class="fr-panel__head"><span class="fr-step">ست تازه</span><span class="fr-plus">＋</span></div>
             <h3>ساخت ست جدید</h3>
-            <p class="fr-muted">عکس‌های این بخش با قاب ۲:۳ بارگذاری شوند؛ عکس محصول/واریانت جداگانه است و می‌توانی همین‌جا هم به آن اضافه‌اش کنی.</p>
+            @if($mannequins->isEmpty())
+                <p class="fr-muted"><a href="#fr-mannequins">برای ذخیرهٔ ست، ابتدا یک مانکن اضافه کن.</a></p>
+            @endif
+            <p class="fr-muted">صحنه‌ها در قاب ۲:۳ و عکس کارت‌ها در قاب ۴:۵ پیش‌نمایش داده می‌شوند. تغییر تصویر کارت روی وریانت محصول ذخیره می‌شود.</p>
             <form method="POST" action="{{ route('commerce-admin.try-on.looks.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="fr-look-meta">
@@ -134,14 +138,16 @@
                 <div class="fr-look-products">
                     <div class="fr-assignment">
                         <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>واریانت واقعی + تصویر کارت</small></div></div>
-                        <label class="fr-field"><span>محصول / واریانت</span><select name="top_variant_id"><option value="">بدون بالاپوش</option>@foreach($variants as $variant)<option value="{{ $variant->id }}">{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
-                        <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img alt="" data-fr-preview hidden></label>
+                        @include('admin.fitting-room-studio.variant-picker', ['slot' => 'top', 'slotLabel' => 'بالاپوش', 'currentVariant' => null])
+                        <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
                         <label class="fr-field"><span>نقطهٔ حرکت انیمیشن</span><input type="number" name="fit_y_top" value="0.38" min="0" max="1" step="0.01"></label>
                     </div>
                     <div class="fr-assignment">
                         <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>واریانت واقعی + تصویر کارت</small></div></div>
-                        <label class="fr-field"><span>محصول / واریانت</span><select name="bottom_variant_id"><option value="">بدون پایین‌تنه</option>@foreach($variants as $variant)<option value="{{ $variant->id }}">{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
-                        <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img alt="" data-fr-preview hidden></label>
+                        @include('admin.fitting-room-studio.variant-picker', ['slot' => 'bottom', 'slotLabel' => 'پایین‌تنه', 'currentVariant' => null])
+                        <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
                         <label class="fr-field"><span>نقطهٔ حرکت انیمیشن</span><input type="number" name="fit_y_bottom" value="0.66" min="0" max="1" step="0.01"></label>
                     </div>
                 </div>
@@ -150,26 +156,27 @@
                         ['preview_top','T','نمای بالاپوش','برای حالت انتخاب بالاپوش؛ فایل ۲:۳'],
                         ['preview_bottom','B','نمای پایین‌تنه','برای حالت انتخاب پایین‌تنه؛ فایل ۲:۳'],
                         ['preview_combined','TB','نمای ست کامل','برای نمایش هم‌زمان بالاپوش و پایین‌تنه'],
-                        ['preview_suggested','S','ست پیشنهادی','برای اکشن «دیدن ست پیشنهادی»']
+                        ['preview_suggested','S','ست پیشنهادی','برای دکمهٔ «دیدن ست پیشنهادی» پس از انتخاب بالاپوش']
                     ] as [$input,$code,$title,$hint])
                         <label class="fr-scene-upload">
                             <span class="fr-scene-upload__code">{{ $code }}</span>
                             <span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $hint }}</small></span>
                             <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input>
                             <span class="fr-scene-upload__choose">انتخاب تصویر <span>↗</span></span>
-                            <img alt="" data-fr-preview hidden>
+                            <img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small>
                         </label>
                     @endforeach
                 </div>
                 <label class="fr-check"><input type="checkbox" name="is_active" value="1" checked><span>ست در فروشگاه فعال باشد</span></label>
-                <button class="fr-button fr-button--primary fr-button--wide" type="submit">ذخیرهٔ ست و صحنه‌ها <span>↗</span></button>
+                <button class="fr-button fr-button--primary fr-button--wide" type="submit" @disabled($mannequins->isEmpty())>ذخیرهٔ ست و صحنه‌ها <span>↗</span></button>
             </form>
         </section>
 
         @foreach($mannequins as $mannequin)
             @if($mannequin->looks->isNotEmpty())
                 <div class="fr-look-group">
-                    <div class="fr-look-group__head"><div><span class="fr-kicker">{{ $mannequin->code }}</span><h3>{{ $mannequin->label }}</h3></div><span>{{ number_format($mannequin->looks->count()) }} ترکیب</span></div>
+                    <div class="fr-look-group__head"><div><span class="fr-kicker">{{ $mannequin->code }}</span><h3>{{ $mannequin->label }}</h3></div><span>{{ \App\Support\Money::number($mannequin->looks->count()) }} ترکیب</span></div>
                     <div class="fr-look-grid">
                         @foreach($mannequin->looks as $look)
                             @php
@@ -185,7 +192,7 @@
                                     @else
                                         <div class="fr-image-empty"><span>TB</span><small>تصویر ست ثبت نشده</small></div>
                                     @endif
-                                    <span class="fr-chip {{ $look->is_active ? 'is-live' : '' }}">{{ $look->is_active ? 'فعال' : 'غیرفعال' }}</span>
+                                    <span class="fr-chip {{ $look->is_active ? 'is-live' : '' }}">{{ $look->is_active ? ($mannequin->id === $publicMannequinId ? 'مانکن ویترین' : 'فعال در استودیو') : 'غیرفعال' }}</span>
                                     <span class="fr-look-code">{{ $look->code }}</span>
                                 </div>
                                 <div class="fr-look-card__body">
@@ -217,16 +224,16 @@
                                             <div class="fr-look-products">
                                                 <div class="fr-assignment">
                                                     <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>تصویر کارت محصول واریانت</small></div></div>
-                                                    <label class="fr-field"><span>محصول / واریانت</span><select name="top_variant_id"><option value="">بدون بالاپوش</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int)($topItem?->product_variant_id ?? 0) === (int)$variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
-                                                    @if($topItem?->variant?->primaryGalleryMedia?->url)<img class="fr-current-product-image" src="{{ $topItem->variant->primaryGalleryMedia->url }}" alt="تصویر فعلی بالاپوش">@endif
-                                                    <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img alt="" data-fr-preview hidden></label>
+                                                    @include('admin.fitting-room-studio.variant-picker', ['slot' => 'top', 'slotLabel' => 'بالاپوش', 'currentVariant' => $topItem?->variant])
+                                                    <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
                                                     <label class="fr-field"><span>نقطهٔ حرکت</span><input type="number" name="fit_y_top" value="{{ $topItem?->fit_y ?? 0.38 }}" min="0" max="1" step="0.01"></label>
                                                 </div>
                                                 <div class="fr-assignment">
                                                     <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>تصویر کارت محصول واریانت</small></div></div>
-                                                    <label class="fr-field"><span>محصول / واریانت</span><select name="bottom_variant_id"><option value="">بدون پایین‌تنه</option>@foreach($variants as $variant)<option value="{{ $variant->id }}" @selected((int)($bottomItem?->product_variant_id ?? 0) === (int)$variant->id)>{{ $variant->product?->name }} — {{ $variant->display_name }} · #{{ $variant->id }}</option>@endforeach</select></label>
-                                                    @if($bottomItem?->variant?->primaryGalleryMedia?->url)<img class="fr-current-product-image" src="{{ $bottomItem->variant->primaryGalleryMedia->url }}" alt="تصویر فعلی پایین‌تنه">@endif
-                                                    <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img alt="" data-fr-preview hidden></label>
+                                                    @include('admin.fitting-room-studio.variant-picker', ['slot' => 'bottom', 'slotLabel' => 'پایین‌تنه', 'currentVariant' => $bottomItem?->variant])
+                                                    <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
                                                     <label class="fr-field"><span>نقطهٔ حرکت</span><input type="number" name="fit_y_bottom" value="{{ $bottomItem?->fit_y ?? 0.66 }}" min="0" max="1" step="0.01"></label>
                                                 </div>
                                             </div>
@@ -241,7 +248,8 @@
                                                         <span class="fr-scene-upload__code">{{ $code }}</span><span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $url ? 'عکس فعلی محفوظ است؛ برای تعویض فایل جدید انتخاب کن.' : 'هنوز تصویری ندارد.' }}</small></span>
                                                         <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input>
                                                         @if($url)<img class="fr-scene-current" src="{{ $url }}" alt="صحنهٔ فعلی {{ $code }}">@endif
-                                                        <span class="fr-scene-upload__choose">تعویض تصویر <span>↗</span></span><img alt="" data-fr-preview hidden>
+                                                        <span class="fr-scene-upload__choose">تعویض تصویر <span>↗</span></span><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
+                        <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small>
                                                     </label>
                                                 @endforeach
                                             </div>
@@ -269,48 +277,7 @@
 @endsection
 
 @push('head')
-<style>
-.fr-studio{--fr-bg:#151219;--fr-panel:#201b24;--fr-card:#1b1720;--fr-line:#3a303d;--fr-text:#f8f1ea;--fr-muted:#aa9da9;--fr-ac:#e58243;--fr-glow:rgba(229,130,67,.13);color:var(--fr-text);font-family:Vazirmatn,Tahoma,sans-serif;max-width:1600px;margin:auto}
-.fr-studio *{box-sizing:border-box}.fr-studio input,.fr-studio select,.fr-studio button{font:inherit}.fr-studio input,.fr-studio select{color:var(--fr-text)}.fr-studio button,.fr-studio a{transition:color .2s,border-color .2s,background .2s,transform .2s}
-.fr-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:20px;align-items:center;padding:clamp(22px,4vw,44px);border-radius:24px;border:1px solid var(--fr-line);background:radial-gradient(ellipse at 80% 15%,rgba(229,130,67,.18),transparent 36%),linear-gradient(135deg,#211b25,#17131b 72%);box-shadow:0 24px 80px rgba(0,0,0,.17);margin-bottom:26px}
-.fr-kicker{margin:0 0 10px;color:#c2a28e;font:600 10px/1.5 "Space Grotesk",Vazirmatn,sans-serif;letter-spacing:.16em}.fr-kicker span{display:inline-block;width:6px;height:6px;background:var(--fr-ac);border-radius:50%;margin-left:8px;box-shadow:0 0 0 5px rgba(229,130,67,.12)}
-.fr-hero h1{font:600 clamp(30px,4vw,46px)/1.05 "Space Grotesk",Vazirmatn,sans-serif!important;letter-spacing:-.04em;margin:0 0 14px;color:var(--fr-text)!important}.fr-hero h1 em{color:#f1a36e;font-style:normal}.fr-hero__copy>p:not(.fr-kicker){margin:0;max-width:680px;color:#c8bcc7;font-size:13px;line-height:2}
-.fr-hero__actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.fr-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid #514252;border-radius:10px;padding:10px 14px;color:#e5d8e4!important;background:rgba(255,255,255,.025);font-size:12px;text-decoration:none!important;cursor:pointer}.fr-button:hover{border-color:#ad7755!important;color:#fff!important;transform:translateY(-1px)}.fr-button--primary{background:var(--fr-ac)!important;border-color:var(--fr-ac)!important;color:#26160d!important;font-weight:700}.fr-button--primary:hover{background:#f1a36e!important;border-color:#f1a36e!important;color:#26160d!important}.fr-button--wide{width:100%;margin-top:8px}
-.fr-hero__mark{width:150px;height:150px;display:grid;place-items:center;position:relative;border:1px solid rgba(241,163,110,.35);border-radius:42px;background:linear-gradient(145deg,rgba(229,130,67,.12),rgba(255,255,255,.015));transform:rotate(-7deg);justify-self:center}.fr-hero__mark:before,.fr-hero__mark:after{content:"";position:absolute;inset:12px;border:1px solid rgba(241,163,110,.12);border-radius:32px}.fr-hero__mark:after{inset:26px;border-radius:22px}.fr-hero__mark span{font:700 72px/1 "Space Grotesk",sans-serif;color:#f1a36e;text-shadow:0 10px 45px rgba(229,130,67,.25)}.fr-hero__mark i,.fr-hero__mark b{position:absolute;width:6px;height:6px;background:#ef9b62;border-radius:50%;top:19px;right:20px}.fr-hero__mark b{top:auto;right:auto;bottom:24px;left:22px}
-.fr-hero__stats{grid-column:1/-1;display:flex;gap:0;border-top:1px solid rgba(255,255,255,.09);margin-top:8px;padding-top:18px}.fr-hero__stats div{display:grid;gap:3px;padding:0 26px;border-left:1px solid rgba(255,255,255,.09)}.fr-hero__stats div:first-child{padding-right:0}.fr-hero__stats strong{font:600 22px/1.2 "Space Grotesk",sans-serif;color:#f4a66e}.fr-hero__stats span{font-size:11px;color:#b8aab9}
-.fr-section{margin:30px 0 44px;scroll-margin-top:20px}.fr-section__head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:17px}.fr-section__head h2{font-size:23px!important;margin:0 0 5px;color:var(--fr-text)!important;letter-spacing:-.035em}.fr-section__head>div>p:last-child{margin:0;max-width:780px;color:var(--fr-muted);font-size:12px;line-height:1.9}.fr-section__count{white-space:nowrap;padding:7px 11px;border:1px solid var(--fr-line);border-radius:9px;color:#f4a66e;background:rgba(229,130,67,.06);font-size:11px}
-.fr-mannequin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:start}.fr-panel,.fr-mannequin-card,.fr-look-card{min-width:0;overflow:hidden;border:1px solid var(--fr-line);background:linear-gradient(150deg,rgba(255,255,255,.025),transparent 45%),var(--fr-panel);border-radius:17px;box-shadow:0 15px 38px rgba(0,0,0,.06)}
-.fr-panel{padding:20px}.fr-panel__head{display:flex;align-items:center;justify-content:space-between}.fr-step{font:600 9px/1.3 "Space Grotesk",sans-serif;letter-spacing:.16em;color:#d79b76}.fr-plus{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(229,130,67,.35);border-radius:9px;background:var(--fr-glow);color:#f3a66f;font-size:18px}.fr-panel h3{font-size:17px;margin:12px 0 5px;color:var(--fr-text)}.fr-muted{font-size:11px;line-height:1.8;color:var(--fr-muted);margin:0 0 16px}
-.fr-field{display:grid;gap:6px;min-width:0;margin-bottom:12px}.fr-field>span{font-size:11px;color:#c6b9c6}.fr-field input,.fr-field select{width:100%;min-width:0;background:#141118;border:1px solid #403444;border-radius:9px;padding:10px 11px;min-height:41px;color:#f3eaf1!important;outline-offset:2px;font-size:12px}.fr-field input:focus,.fr-field select:focus{border-color:#bd7e56;outline:1px solid rgba(229,130,67,.2)}.fr-field input::placeholder{color:#796d7b}.fr-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fr-upload{display:grid;justify-items:center;gap:7px;position:relative;overflow:hidden;text-align:center;border:1px dashed #615064;border-radius:12px;padding:18px 12px;background:rgba(10,8,13,.22);cursor:pointer;min-height:126px}.fr-upload input,.fr-scene-upload input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}.fr-upload__icon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--fr-glow);color:#efa36f;font-size:20px}.fr-upload strong{font-size:11px;color:#f6e8e0}.fr-upload small{font-size:10px;color:var(--fr-muted)}.fr-upload img[data-fr-preview]:not([hidden]){max-height:135px;max-width:100%;object-fit:contain;border-radius:8px}.fr-upload--compact{min-height:82px;padding:12px 10px}.fr-upload--compact .fr-upload__icon{width:25px;height:25px;font-size:15px}.fr-check{display:flex;align-items:center;gap:8px;margin:8px 0;color:#c6b9c6;font-size:11px}.fr-check input{accent-color:var(--fr-ac)}
-.fr-mannequin-card__visual,.fr-look-card__cover{height:210px;position:relative;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 25%,rgba(229,130,67,.12),transparent 55%),#100d13}.fr-mannequin-card__visual>img,.fr-look-card__cover>img{width:100%;height:100%;object-fit:cover;display:block}.fr-chip,.fr-count-chip,.fr-look-code{position:absolute;top:12px;padding:5px 8px;border-radius:7px;background:rgba(19,15,22,.78);border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(9px);color:#e6dce5;font-size:9px}.fr-chip{right:12px}.fr-chip.is-live{color:#a8edc2}.fr-count-chip{left:12px;color:#f4a66e}.fr-look-code{left:12px;font:10px "Space Grotesk",sans-serif}
-.fr-image-empty{display:grid;place-content:center;justify-items:center;gap:5px;height:100%;width:100%;color:#847688;background:radial-gradient(ellipse at 50% 30%,rgba(229,130,67,.12),transparent 60%)}.fr-image-empty span{font:600 32px "Space Grotesk",sans-serif;color:#d99971}.fr-image-empty small{font-size:10px}
-.fr-mannequin-card__body,.fr-look-card__body{padding:15px}.fr-mannequin-card__title,.fr-look-card__title{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:13px}.fr-mannequin-card__title h3,.fr-look-card__title h3{font-size:14px;color:var(--fr-text);margin:0 0 4px}.fr-mannequin-card__title p{font:10px "Space Grotesk",sans-serif;color:var(--fr-muted);margin:0;direction:ltr;text-align:right}.fr-order,.fr-look-card__title>span{font-size:10px;color:#d69b74;white-space:nowrap}
-.fr-compact-form{display:grid;gap:0}.fr-compact-form .fr-field{margin-bottom:10px}
-.fr-danger-link{display:block;margin:10px auto 0;padding:5px 8px;background:none;border:0;color:#d68e91;font-size:10px;cursor:pointer}.fr-danger-link:hover{color:#ffb7b7}
-.fr-empty{grid-column:1/-1;display:grid;gap:6px;place-content:center;min-height:150px;text-align:center;border:1px dashed var(--fr-line);border-radius:16px;color:var(--fr-muted);font-size:12px}.fr-empty strong{font-size:15px;color:var(--fr-text)}
-.fr-look-editor{margin-bottom:20px;padding:22px}.fr-look-meta{display:grid;grid-template-columns:1.1fr 1.2fr 1fr .55fr;gap:12px;margin:14px 0 4px}.fr-look-meta .fr-field{margin-bottom:8px}
-.fr-look-products{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:5px 0 18px}.fr-assignment{border:1px solid var(--fr-line);border-radius:14px;padding:14px;background:rgba(10,8,13,.18);min-width:0}.fr-assignment__title{display:flex;gap:10px;align-items:center;margin-bottom:12px}.fr-slot-icon{display:grid;place-items:center;width:35px;height:35px;border-radius:10px;background:var(--fr-glow);border:1px solid rgba(229,130,67,.3);color:#f2a36e;font:600 12px "Space Grotesk",sans-serif}.fr-assignment__title strong,.fr-assignment__title small{display:block}.fr-assignment__title strong{font-size:12px}.fr-assignment__title small{color:var(--fr-muted);font-size:10px;margin-top:3px}.fr-current-product-image{display:block;width:76px;height:76px;object-fit:contain;background:#17131c;border:1px solid var(--fr-line);border-radius:10px;padding:4px;margin:0 0 10px}
-.fr-scene-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:15px 0}.fr-scene-upload{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:9px;min-height:115px;padding:12px;border:1px dashed #55445a;border-radius:12px;background:rgba(9,7,12,.23);overflow:hidden;cursor:pointer}.fr-scene-upload:hover{border-color:#bd7e56;background:var(--fr-glow)}.fr-scene-upload__code{display:grid;place-items:center;width:37px;height:37px;border-radius:11px;background:var(--fr-glow);border:1px solid rgba(229,130,67,.28);color:#f1a36e;font:600 11px "Space Grotesk",sans-serif}.fr-scene-upload__copy{display:grid;gap:4px;min-width:0}.fr-scene-upload__copy strong{font-size:11px}.fr-scene-upload__copy small{font-size:9px;color:var(--fr-muted);line-height:1.65}.fr-scene-upload__choose{grid-column:1/-1;display:flex;justify-content:space-between;border-top:1px solid var(--fr-line);padding-top:8px;font-size:10px;color:#f0a06b}.fr-scene-upload img[data-fr-preview]:not([hidden]){grid-column:1/-1;width:auto;height:100px;max-width:100%;object-fit:contain;justify-self:center;border-radius:7px}.fr-scene-current{grid-column:1/-1;width:100%;height:85px;object-fit:contain;border-radius:7px;background:#100d13}.fr-scene-grid--compact .fr-scene-upload{min-height:100px}
-.fr-look-group{margin:25px 0 32px}.fr-look-group__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}.fr-look-group__head h3{margin:0;font-size:17px}.fr-look-group__head>span{font-size:10px;color:var(--fr-muted)}.fr-look-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:start}
-.fr-look-card__cover{height:220px}.fr-look-card__title{align-items:center}.fr-scenes-mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0}.fr-scenes-mini__item{position:relative;border:1px solid var(--fr-line);border-radius:7px;overflow:hidden;aspect-ratio:2/3;background:#121016}.fr-scenes-mini__item span{position:absolute;top:4px;right:4px;z-index:1;border-radius:4px;background:rgba(10,8,12,.8);color:#f5ad78;padding:2px 4px;font:8px "Space Grotesk",sans-serif}.fr-scenes-mini__item img{width:100%;height:100%;object-fit:cover}.fr-scenes-mini__empty{height:100%;display:grid;place-items:center;color:#756a7b;font-size:14px}
-.fr-look-item-list{display:grid;gap:8px;margin:12px 0}.fr-look-item-list>div{display:flex;gap:9px;align-items:center;min-width:0}.fr-look-item-list>div>span{flex:0 0 24px;width:24px;height:24px;display:grid;place-items:center;border-radius:7px;background:var(--fr-glow);color:#f1a36e;font:10px "Space Grotesk",sans-serif}.fr-look-item-list p{margin:0;min-width:0;font-size:11px;overflow-wrap:anywhere}.fr-look-item-list small{display:block;margin-top:2px;color:var(--fr-muted);font-size:9px}
-.fr-edit-details{border-top:1px solid var(--fr-line);margin-top:14px;padding-top:12px}.fr-edit-details summary{cursor:pointer;font-size:11px;color:#e3ad89;display:flex;justify-content:space-between;gap:10px}.fr-edit-details[open] summary{margin-bottom:12px}.fr-edit-details form{margin-top:10px}
-@media(max-width:1200px){.fr-mannequin-grid,.fr-look-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fr-look-meta{grid-template-columns:1fr 1fr}.fr-scene-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:760px){.fr-hero{grid-template-columns:1fr;padding:22px}.fr-hero__mark{position:absolute;left:20px;top:20px;width:68px;height:68px;border-radius:20px;opacity:.5}.fr-hero__mark span{font-size:34px}.fr-hero__mark:before{inset:6px;border-radius:14px}.fr-hero__mark:after{inset:13px;border-radius:8px}.fr-hero__actions .fr-button{flex:1}.fr-hero__stats div{padding:0 12px}.fr-hero__stats strong{font-size:18px}.fr-mannequin-grid,.fr-look-grid,.fr-look-products{grid-template-columns:1fr}.fr-section__head{align-items:flex-start}.fr-section__head h2{font-size:20px!important}.fr-section__head>div>p:last-child{max-width:none}.fr-look-meta{grid-template-columns:1fr 1fr;gap:7px}.fr-scene-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fr-panel,.fr-look-editor{padding:14px}.fr-mannequin-card__visual,.fr-look-card__cover{height:245px}}
-</style>
-<script>
-document.addEventListener('change', function (event) {
-    const input = event.target.closest('[data-fr-preview-input]');
-    if (!input || !input.files || !input.files[0]) return;
-    const form = input.closest('form');
-    const preview = input.closest('label')?.querySelector('[data-fr-preview]');
-    if (!preview) return;
-    const file = input.files[0];
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = function () { preview.src = String(reader.result || ''); preview.hidden = false; };
-    reader.readAsDataURL(file);
-});
-</script>
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite(['resources/css/fitting-room-studio.css', 'resources/js/fitting-room-studio.js'])
+    @endif
 @endpush

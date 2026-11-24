@@ -14,54 +14,86 @@
     </nav>
     <a class="vision-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION صفحهٔ اصلی">VISION</a>
     <div class="vision-shop-tools">
+        @if($studio['garments'])
+            <button class="shop-open-fit" id="open-fit" type="button" aria-controls="fit">اتاق پرو</button>
+        @endif
         <button class="ibtn" id="theme" type="button" aria-label="تغییر تم">◐</button>
         <a class="ibtn" id="cartTarget" href="{{ route('cart.index') }}" aria-label="سبد خرید">🛒<span class="badge" id="cnt">۰</span></a>
     </div>
 </header>
 
 <main class="vision-shop-main" id="catalog">
-    <aside class="shop-filter" aria-label="فیلترهای فروشگاه">
-        <h3>فیلترها <button id="reset" type="button">حذف فیلترها</button></h3>
-        <input class="shop-search" id="q" value="{{ $shop['initialQuery'] ?? '' }}" placeholder="جستجوی محصول…" aria-label="جستجوی محصول" autocomplete="off">
-        <h3>دسته‌بندی</h3>
-        <div id="cats" class="shop-categories" aria-label="دسته‌بندی‌ها"></div>
-        <h3>حداکثر قیمت</h3>
-        <input type="range" id="pr" min="{{ $shop['min'] }}" max="{{ $shop['max'] }}" step="100000" value="{{ $shop['max'] }}" aria-label="حداکثر قیمت">
-        <div class="prv" id="prv"></div>
-    </aside>
+    <form id="shop-filters" class="shop-filter" action="{{ route('shop.index') }}" method="get" aria-label="فیلترهای فروشگاه">
+        <h2>فیلترها <a href="{{ route('shop.index') }}">حذف فیلترها</a></h2>
+        <label for="q">جست‌وجوی محصول</label>
+        <input class="shop-search" type="search" id="q" name="q" value="{{ $filters['q'] }}" maxlength="120">
+
+        <label for="cats">دسته‌بندی</label>
+        <select id="cats" name="category">
+            <option value="">همه دسته‌ها</option>
+            @foreach($categories as $category)
+                <option value="{{ $category->slug }}" @selected($filters['category'] === $category->slug)>{{ $category->name }}</option>
+            @endforeach
+        </select>
+
+        <label for="pr">حداکثر قیمت</label>
+        <input type="range" id="pr" name="price_max" min="0" max="{{ $filters['max'] }}" step="any" value="{{ $filters['priceMax'] }}">
+        <output class="prv" id="prv" for="pr">@money($filters['priceMax'])</output>
+
+        <label class="shop-sale"><input type="checkbox" name="sale" value="1" @checked($filters['sale'])> فقط تخفیف‌ها</label>
+        <button class="shop-apply" type="submit">اعمال فیلترها</button>
+    </form>
 
     <section class="shop-results" aria-labelledby="shop-title">
         <div class="shop-topline">
-            <h1 id="shop-title">تازه‌ها <small id="n"></small></h1>
-            <select id="sort" aria-label="مرتب‌سازی">
-                <option value="new">جدیدترین</option>
-                <option value="lo">ارزان‌ترین</option>
-                <option value="hi">گران‌ترین</option>
-                <option value="rt">بیشترین امتیاز</option>
-            </select>
+            <h1 id="shop-title">فروشگاه <small>{{ \App\Support\Money::number($products->total()) }} کالا</small></h1>
+            <div class="shop-sort">
+                <select id="sort" name="sort" form="shop-filters" aria-label="مرتب‌سازی">
+                    @foreach(['newest' => 'جدیدترین', 'price_asc' => 'ارزان‌ترین', 'price_desc' => 'گران‌ترین', 'rating' => 'بیشترین امتیاز'] as $sort => $label)
+                        <option value="{{ $sort }}" @selected($filters['sort'] === $sort)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" form="shop-filters">مرتب‌سازی</button>
+            </div>
         </div>
-        <div class="shop-grid" id="grid" aria-live="polite"></div>
-        <button type="button" id="shop-load-more" class="shop-load-more" hidden>نمایش محصولات بیشتر</button>
+        <div class="shop-grid" id="grid">
+            @forelse($products as $product)
+                @include('store.products.shop-card', ['product' => $product, 'isFavourite' => in_array($product['id'], $studio['favs'], true)])
+            @empty
+                <p class="shop-empty">محصولی با این فیلترها پیدا نشد.</p>
+            @endforelse
+        </div>
+        @if($products->hasPages())
+            <nav class="shop-pagination" aria-label="صفحه‌بندی فروشگاه">
+                @if($products->previousPageUrl())
+                    <a rel="prev" href="{{ $products->previousPageUrl() }}#catalog">صفحهٔ قبل</a>
+                @endif
+                <span>صفحهٔ {{ \App\Support\Money::number($products->currentPage()) }} از {{ \App\Support\Money::number($products->lastPage()) }}</span>
+                @if($products->nextPageUrl())
+                    <a rel="next" href="{{ $products->nextPageUrl() }}#catalog">صفحهٔ بعد</a>
+                @endif
+            </nav>
+        @endif
     </section>
-</main>
 
-<aside id="fit" aria-label="اتاق پرو استودیویی VISION" aria-hidden="true">
-    <h4>
-        <span>اتاق پرو</span>
+    <aside id="fit" aria-labelledby="fit-title" hidden tabindex="-1">
+    <h2 class="fit-heading">
+        <span id="fit-title">اتاق پرو</span>
         <button id="close" type="button" aria-label="بستن اتاق پرو">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
         </button>
-    </h4>
+    </h2>
     <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها">
         <div class="load" id="load" aria-live="polite"><div class="spin"></div><b>در حال آماده‌سازی</b></div>
     </div>
+    <button type="button" id="sugg" class="shop-fit-suggestion" aria-pressed="false" hidden>دیدن ست پیشنهادی</button>
     <p class="fit-scene-notice" id="fit-scene-notice" role="status" aria-live="polite" hidden></p>
     <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
     <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
 
     <section class="fit-recommendations" aria-labelledby="fit-recommend-title" hidden>
         <div class="fit-section-head">
-            <h5 id="fit-recommend-title">با این ست کن</h5>
+            <h3 id="fit-recommend-title">با این ست کن</h3>
         </div>
         <div class="fit-recommend-grid" id="fit-recommend-grid" aria-live="polite"></div>
     </section>
@@ -86,9 +118,8 @@
     <div class="tot" id="tot">هنوز چیزی انتخاب نشده</div>
     <div class="btns"><button class="pri" id="addset" type="button">افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
 </aside>
+</main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>
-window.SHOP = @json($shop);
-</script>
+<script type="application/json" id="shop-studio-data">{!! \Illuminate\Support\Js::encode($studio) !!}</script>
 @endsection
