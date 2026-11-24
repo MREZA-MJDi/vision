@@ -37,6 +37,9 @@
             <a href="{{ route('shop.index') }}">حذف فیلترها</a>
         </div>
         <div id="shop-filter-fields" class="shop-filter-fields">
+            @if(filled($filters['brand'] ?? null))
+                <input type="hidden" name="brand" value="{{ $filters['brand'] }}">
+            @endif
             <label for="q">جست‌وجوی محصول</label>
             <input class="shop-search" type="search" id="q" name="q" value="{{ $filters['q'] }}" maxlength="120">
 

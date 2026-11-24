@@ -1214,3 +1214,20 @@
         animation: none;
     }
 }
+
+/* Catalog alignment: do not change fitting-room geometry or its modal breakpoint. */
+body.store-shop-body { font-size: var(--vision-body-size); }
+.vision-shop-header { padding-inline: max(var(--vision-gutter), calc((100% - var(--vision-container)) / 2)); }
+.vision-shop-main:not(.fit-open) { width: min(100%, var(--vision-container)); padding-inline: var(--vision-gutter); gap: var(--vision-gap); }
+.shop-topline { margin-block-end: 18px; padding-block-end: 12px; border-bottom: 1px solid var(--vs-line); }
+.shop-topline h1 { font-size: var(--vision-heading-size); font-weight: 650; }
+.vision-shop-main:not(.fit-open) .shop-grid { gap: var(--vision-gap); }
+.shop-product-card { border-radius: var(--vision-radius); padding: 8px; }
+@media(min-width:1100px) {
+    .vision-shop-main:not(.fit-open) .shop-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+    .vision-shop-header { padding-inline: 12px; }
+    .vision-shop-main:not(.fit-open) { padding-inline: 12px; }
+    .vision-shop-main:not(.fit-open) .shop-grid { gap: 8px; }
+}

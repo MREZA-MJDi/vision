@@ -99,6 +99,7 @@
         </div>
     </section>
 
+    <div class="home-page-content">
     @include('store.home.brands')
 
     <section class="home-content-section home-trust" aria-labelledby="home-trust-title">
@@ -166,6 +167,7 @@
         </div>
         <div class="home-contact-form">@include('store.contact-form', ['onHome' => true])</div>
     </section>
+    </div>
     @include('store.home-cart-link', ['floating' => true])
 </main>
 @endsection

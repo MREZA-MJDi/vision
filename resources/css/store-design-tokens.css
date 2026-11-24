@@ -1,0 +1,13 @@
+/* Shared storefront geometry. No viewport zoom or global transforms. */
+:root {
+    --vision-shell: 1440px;
+    --vision-container: 1200px;
+    --vision-editorial: 880px;
+    --vision-gutter: clamp(16px, 3vw, 36px);
+    --vision-section: clamp(32px, 4vw, 56px);
+    --vision-gap: clamp(12px, 1.6vw, 20px);
+    --vision-radius: 12px;
+    --vision-font: "Vazirmatn", "IRANYekanX Variable", Tahoma, sans-serif;
+    --vision-body-size: 14px;
+    --vision-heading-size: clamp(24px, 2.4vw, 32px);
+}

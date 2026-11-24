@@ -218,3 +218,11 @@
 .rm-cropper__brand-guide::after { content: ""; position: absolute; inset: 0; background: rgb(15 23 42 / 45%); }
 .rm-cropper__brand-guide::before { clip-path: polygon(0 0,50% 0,0 100%); }
 .rm-cropper__brand-guide::after { clip-path: polygon(50% 0,100% 0,100% 100%); }
+
+/* A preview is a reference thumbnail, not the dominant form column. */
+.rm-taxonomy-grid { grid-template-columns: minmax(0,1fr) minmax(260px,340px); }
+.rm-uploader--category .rm-uploader__drop,
+.rm-uploader--brand .rm-uploader__drop { max-width: 280px; margin-inline: auto; }
+.rm-category-preview { max-width: 200px; width: 100%; margin-inline: auto; }
+.rm-brand-preview { max-width: 280px; width: 100%; margin-inline: auto; }
+@media(max-width:900px) { .rm-taxonomy-grid { grid-template-columns: minmax(0,1fr); } }
