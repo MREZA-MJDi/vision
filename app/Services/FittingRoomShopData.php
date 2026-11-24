@@ -51,9 +51,13 @@ class FittingRoomShopData
                     'S' => $look->previewSuggestedMedia?->url,
                 ];
 
+                $eligible = static fn ($item) => $item?->variant?->is_active
+                    && $item->variant->product?->is_active
+                    && ($mannequinRecord->audience === 'all'
+                        || $item->variant->product->audience === $mannequinRecord->audience);
                 $looks[(string) $look->getKey()] = [
-                    't' => $top?->variant?->getKey(),
-                    'b' => $bottom?->variant?->getKey(),
+                    't' => $eligible($top) ? $top->variant->getKey() : null,
+                    'b' => $eligible($bottom) ? $bottom->variant->getKey() : null,
                     's' => array_filter($previews, static fn ($url) => is_string($url) && $url !== ''),
                 ];
 
