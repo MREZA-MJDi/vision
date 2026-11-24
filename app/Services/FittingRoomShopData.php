@@ -32,7 +32,10 @@ class FittingRoomShopData
             ->orderBy('id')
             ->get();
 
-        $mannequin = $mannequins->first();
+        // The public studio has one canvas. Never mix looks from other
+        // mannequins with the first mannequin's base photograph.
+        $mannequin = $mannequins->first(fn ($record) => (bool) $record->baseMedia?->url);
+        $mannequins = $mannequin ? collect([$mannequin]) : collect();
         $looks = [];
         $itemMap = [];
 
