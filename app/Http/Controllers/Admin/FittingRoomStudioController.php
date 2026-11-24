@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class FittingRoomStudioController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $mannequins = FittingRoomMannequin::query()
             ->with(['baseMedia', 'looks.previewTopMedia', 'looks.previewBottomMedia', 'looks.previewCombinedMedia', 'looks.previewSuggestedMedia', 'looks.items.variant.product'])
@@ -30,15 +30,30 @@ class FittingRoomStudioController extends Controller
             ->orderBy('id')
             ->get();
 
+        $variantSearch = trim((string) $request->query('variant_search', ''));
+        $variantSearch = mb_substr($variantSearch, 0, 100);
+        $mappedIds = $mannequins->flatMap(fn ($model) => $model->looks)
+            ->flatMap(fn ($look) => $look->items)
+            ->pluck('product_variant_id')->filter()->unique()->values()->all();
+
         $variants = ProductVariant::query()
             ->where('is_active', true)
             ->whereHas('product', fn ($query) => $query->where('is_active', true))
+            ->when($variantSearch !== '', function ($query) use ($variantSearch, $mappedIds) {
+                $query->where(function ($query) use ($variantSearch, $mappedIds) {
+                    $query->where('sku', 'like', '%' . $variantSearch . '%')
+                        ->orWhereHas('product', fn ($product) => $product->where('name', 'like', '%' . $variantSearch . '%'));
+                    if ($mappedIds !== []) {
+                        $query->orWhereIn('id', $mappedIds);
+                    }
+                });
+            })
             ->with(['product:id,name,slug,audience', 'primaryGalleryMedia'])
             ->orderByDesc('updated_at')
             ->limit(300)
             ->get();
 
-        return view('admin.fitting-room-studio.index', compact('mannequins', 'variants'));
+        return view('admin.fitting-room-studio.index', compact('mannequins', 'variants', 'variantSearch'));
     }
 
     public function storeMannequin(Request $request): RedirectResponse
