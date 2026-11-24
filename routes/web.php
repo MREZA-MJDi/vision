@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\CustomerCommerceController;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/', [StorefrontController::class, 'home'])->name('storefront.index');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
+Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/shop', [StorefrontController::class, 'index'])->name('shop.index');
 Route::get('/products', [StorefrontController::class, 'index'])->name('products.index');
 Route::redirect('/try-on', '/shop')->name('try-on.index');

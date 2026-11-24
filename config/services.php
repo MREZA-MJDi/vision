@@ -78,4 +78,10 @@ return [
         'public_key' => env('TOROB_PUBLIC_KEY', 'MCowBQYDK2VwAyEAt6Mu4T0pBORY11W+QeM35UsmLO3vsf+6yKpFDEImFk0='),
     ],
 
+    'storefront' => [
+        'phone' => env('STOREFRONT_PHONE_LINK'),
+        'instagram' => env('STOREFRONT_INSTAGRAM_URL'),
+        'whatsapp' => env('STOREFRONT_WHATSAPP_URL'),
+    ],
+
 ];

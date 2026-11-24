@@ -23,9 +23,35 @@ class StorefrontBrowseTest extends TestCase
         $response->assertSee('استایل تو؛<br>امضای تو.', false);
         $response->assertDontSee('home-featured', false);
         $response->assertDontSee('home-brand-story', false);
-        $response->assertDontSee('home-benefits', false);
+        $response->assertSee('vision-home-benefits', false);
+        $response->assertDontSee('vision-shop-collections', false);
+        $response->assertSee('vision-shop-story', false);
+        $response->assertSee('نماد کسب‌وکار', false);
         $response->assertSee('home-minimal-footer', false);
         $response->assertDontSee('data-fitting-room', false);
+    }
+
+    public function test_shop_footer_has_contact_and_both_trust_slots(): void
+    {
+        $this->withoutVite();
+        $this->get('/shop')->assertOk()
+            ->assertSee('تماس با ما')
+            ->assertSee('نماد اعتماد الکترونیکی')
+            ->assertSee('نماد کسب‌وکار');
+    }
+
+    public function test_shop_exposes_progressive_catalog_and_fitting_controls(): void
+    {
+        $this->withoutVite();
+
+        $this->get('/shop')
+            ->assertOk()
+            ->assertSee('id="shop-load-more"', false)
+            ->assertSee('id="fit"', false)
+            ->assertSee('id="fit-recommend-grid"', false)
+            ->assertSee('id="stage"', false)
+            ->assertSee('id="saveCompareA"', false)
+            ->assertSee('id="addset"', false);
     }
 
     public function test_shop_contains_filters_and_the_studio_drawer(): void

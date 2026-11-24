@@ -32,7 +32,10 @@ class FittingRoomShopData
             ->orderBy('id')
             ->get();
 
-        $mannequin = $mannequins->first();
+        // The public studio has one canvas. Never mix looks from other
+        // mannequins with the first mannequin's base photograph.
+        $mannequin = $mannequins->first(fn ($record) => (bool) $record->baseMedia?->url);
+        $mannequins = $mannequin ? collect([$mannequin]) : collect();
         $looks = [];
         $itemMap = [];
 
@@ -48,9 +51,13 @@ class FittingRoomShopData
                     'S' => $look->previewSuggestedMedia?->url,
                 ];
 
+                $eligible = static fn ($item) => $item?->variant?->is_active
+                    && $item->variant->product?->is_active
+                    && ($mannequinRecord->audience === 'all'
+                        || $item->variant->product->audience === $mannequinRecord->audience);
                 $looks[(string) $look->getKey()] = [
-                    't' => $top?->variant?->getKey(),
-                    'b' => $bottom?->variant?->getKey(),
+                    't' => $eligible($top) ? $top->variant->getKey() : null,
+                    'b' => $eligible($bottom) ? $bottom->variant->getKey() : null,
                     's' => array_filter($previews, static fn ($url) => is_string($url) && $url !== ''),
                 ];
 

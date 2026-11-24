@@ -37,6 +37,62 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('name="bottom_variant_id"', false);
     }
 
+    public function test_admin_can_search_variants_outside_the_default_recent_list(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Studio Search Admin',
+            'email' => 'studio-search@example.test',
+            'password' => 'studio-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+        $product = Product::query()->create([
+            'name' => 'Unique Studio Garment', 'slug' => 'unique-studio-garment',
+            'audience' => 'women', 'is_active' => true,
+        ]);
+        ProductVariant::query()->create([
+            'product_id' => $product->getKey(), 'sku' => 'STUDIO-SEARCH-UNIQUE',
+            'price' => 120000, 'stock' => 2, 'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.try-on.index', ['variant_search' => 'STUDIO-SEARCH-UNIQUE']))
+            ->assertOk()
+            ->assertSee('STUDIO-SEARCH-UNIQUE')
+            ->assertSee('جست‌وجو در کل محصولات');
+    }
+
+    public function test_admin_variant_picker_paginates_large_catalogues(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Pagination Admin',
+            'email' => 'pagination-admin@example.test',
+            'password' => 'test-password',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+        $product = Product::query()->create([
+            'name' => 'Bulk Studio Product', 'slug' => 'bulk-studio-product',
+            'audience' => 'women', 'is_active' => true,
+        ]);
+        foreach (range(1, 101) as $index) {
+            ProductVariant::query()->create([
+                'product_id' => $product->getKey(),
+                'sku' => sprintf('STUDIO-BULK-%03d', $index),
+                'price' => 100000, 'stock' => 2, 'is_active' => true,
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get(route('commerce-admin.try-on.index', ['variant_search' => 'STUDIO-BULK']))
+            ->assertOk()
+            ->assertSee('صفحه بعد')
+            ->assertSee('STUDIO-BULK-101')
+            ->assertDontSee('STUDIO-BULK-001');
+
+        $this->get(route('commerce-admin.try-on.index', ['variant_search' => 'STUDIO-BULK', 'variant_page' => 2]))
+            ->assertOk()
+            ->assertSee('STUDIO-BULK-001');
+    }
+
     public function test_shop_payload_uses_database_scene_urls_and_variant_mappings(): void
     {
         $mannequin = FittingRoomMannequin::query()->create([
@@ -165,6 +221,50 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('"slot":"bottom"', false);
     }
 
+    public function test_public_fitting_studio_never_mixes_scenes_from_different_mannequins(): void
+    {
+        $first = FittingRoomMannequin::query()->create([
+            'code' => 'first-studio', 'label' => 'First', 'audience' => 'all',
+            'pose_key' => 'front-neutral', 'canvas_width' => 420, 'canvas_height' => 630,
+            'is_active' => true, 'sort_order' => 0,
+        ]);
+        $second = FittingRoomMannequin::query()->create([
+            'code' => 'second-studio', 'label' => 'Second', 'audience' => 'all',
+            'pose_key' => 'front-neutral', 'canvas_width' => 420, 'canvas_height' => 630,
+            'is_active' => true, 'sort_order' => 1,
+        ]);
+        foreach ([$first, $second] as $mannequin) {
+            $media = $mannequin->media()->create([
+                'collection' => 'fitting-room-mannequin', 'disk' => 'public',
+                'path' => 'https://assets.example.test/base-' . $mannequin->code . '.jpg',
+                'original_name' => 'base.jpg', 'mime_type' => 'image/jpeg',
+                'size' => 1, 'width' => 420, 'height' => 630, 'sort_order' => 0,
+            ]);
+            $mannequin->base_media_id = $media->getKey();
+            $mannequin->save();
+
+            $look = FittingRoomLook::query()->create([
+                'mannequin_id' => $mannequin->getKey(),
+                'code' => 'look-' . $mannequin->code, 'label' => 'Look',
+                'is_active' => true, 'sort_order' => 0,
+            ]);
+            $scene = $look->media()->create([
+                'collection' => 'fitting-room-scene', 'disk' => 'public',
+                'path' => 'https://assets.example.test/scene-' . $mannequin->code . '.jpg',
+                'original_name' => 'scene.jpg', 'mime_type' => 'image/jpeg',
+                'size' => 1, 'width' => 420, 'height' => 630, 'sort_order' => 0,
+            ]);
+            $look->preview_top_media_id = $scene->getKey();
+            $look->save();
+        }
+
+        $payload = app(\App\Services\FittingRoomShopData::class)->payload();
+        $this->assertStringContainsString('base-first-studio.jpg', $payload['base']);
+        $this->assertCount(1, $payload['looks']);
+        $this->assertArrayHasKey((string) $first->looks()->first()->getKey(), $payload['looks']);
+        $this->assertArrayNotHasKey((string) $second->looks()->first()->getKey(), $payload['looks']);
+    }
+
     public function test_shop_includes_outfit_recommendations_and_saved_style_comparison(): void
     {
         $this->get('/shop')
@@ -179,7 +279,7 @@ class FittingRoomStudioTest extends TestCase
             ->assertSee('fit-compare-grid', false)
             ->assertSee('saveCompareA', false)
             ->assertSee('saveCompareB', false)
-            ->assertDontSee('اتاق پرو استودیویی</a>', false);
+            ->assertSee('اتاق پرو استودیویی</a>', false);
     }
 
     public function test_selected_outfit_variants_are_added_to_the_database_cart_together(): void

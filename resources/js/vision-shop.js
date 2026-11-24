@@ -11,7 +11,7 @@ import { gsap } from "gsap";
   const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const CSRF = $('meta[name="csrf-token"]')?.content || "";
-  const state = { cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
+  const state = { visibleCount: 12, cat: C[0], q: S.initialQuery || "", sort: S.initialSort || "new", saleOnly: !!S.initialSaleOnly, max: Number(S.max || 4000000), fav: new Set((S.favs || []).map(Number)), worn: new Set(), cart: 0 };
   const W = new Set();
   const COMPARE_KEY = "vision.fit.compare.v1";
   const comparison = (() => {
@@ -26,6 +26,7 @@ import { gsap } from "gsap";
     }
   })();
   let busy = false;
+  let fittingTrigger = null;
   const pr = $("#pr"), grid = $("#grid"), stage = $("#stage"), fit = $("#fit");
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -77,8 +78,8 @@ import { gsap } from "gsap";
     const products = list();
     $("#n").textContent = fa(products.length) + " محصول";
     $("#prv").textContent = "تا " + fa(state.max) + " " + (S.currency || "تومان");
-    grid.innerHTML = products.length ? products.map(product => {
-      const canFit = !!(product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
+    grid.innerHTML = products.length ? products.slice(0, state.visibleCount).map(product => {
+      const canFit = !!(Number(product.stock || 0) > 0 && product.slot && product.o && OF[String(product.o)]?.s?.[product.slot === "top" ? "T" : "B"]);
       const image = product.img
         ? '<img src="' + escapeHtml(product.img) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" decoding="async">'
         : '<span class="shop-pic-empty" aria-label="تصویر محصول ثبت نشده">V.</span>';
@@ -106,6 +107,8 @@ import { gsap } from "gsap";
       '</article>';
     }).join("") : '<div class="shop-empty"><strong>چیزی برای این جست‌وجو پیدا نشد.</strong>عبارت یا فیلتر را عوض کن.</div>';
 
+    const more = $("#shop-load-more");
+    if (more) { more.hidden = products.length <= state.visibleCount; more.textContent = "نمایش محصولات بیشتر (" + fa(Math.min(12, products.length - state.visibleCount)) + ")"; }
     $("#cats").innerHTML = C.map(category =>
       '<button type="button" class="shop-category ' + (category === state.cat ? "on" : "") + '" data-cat="' + escapeHtml(category) + '" aria-pressed="' + (category === state.cat) + '">' + escapeHtml(category) + '</button>'
     ).join("");
@@ -143,6 +146,12 @@ import { gsap } from "gsap";
     const selected = P.filter(product => W.has(Number(product.id)));
     const top = selected.find(product => product.slot === "top") || null;
     const bottom = selected.find(product => product.slot === "bottom") || null;
+    const notice = $("#fit-scene-notice");
+    const announce = message => {
+      if (!notice) return;
+      notice.textContent = message;
+      notice.hidden = !message;
+    };
 
     Object.values(scenes).forEach(image => {
       if (!image) return;
@@ -150,7 +159,6 @@ import { gsap } from "gsap";
       image.style.clipPath = "";
       image.style.zIndex = "";
     });
-
     const activate = key => {
       const image = scenes[key];
       if (!image) return false;
@@ -160,28 +168,33 @@ import { gsap } from "gsap";
 
     if (!top && !bottom) {
       activate("base");
+      announce("");
       return;
     }
 
     if (top && bottom) {
       const pairScene = exactOutfitScene(top, bottom);
-      // Only use the studio photograph that was actually authored for this
-      // exact combination. Never imply a visual try-on that is not in the DB.
-      // When an exact combined photograph is unavailable, retain the most
-      // recently chosen garment's real single-item mannequin photograph.
-      // Never substitute an unrelated combined outfit or a fabricated composite.
-      if (pairScene && activate(pairScene)) return;
+      if (pairScene && activate(pairScene)) {
+        announce("نمای واقعی ست کامل");
+        return;
+      }
       const preferred = Number(state.lastFittedId) === Number(bottom.id) ? bottom : top;
       const fallback = preferred === top ? bottom : top;
-      if (activate(String(preferred.o) + ":" + (preferred.slot === "top" ? "T" : "B"))) return;
-      if (activate(String(fallback.o) + ":" + (fallback.slot === "top" ? "T" : "B"))) return;
+      const showSingle = item => activate(String(item.o) + ":" + (item.slot === "top" ? "T" : "B"));
+      if (showSingle(preferred) || showSingle(fallback)) {
+        announce("هر دو لباس انتخاب شده‌اند، اما تصویر واقعی این ترکیب ثبت نشده است؛ فقط نمای یکی از لباس‌ها نمایش داده می‌شود.");
+        return;
+      }
       activate("base");
+      announce("تصویر این ترکیب در استودیو موجود نیست.");
       return;
     }
 
-    if (top && activate(String(top.o) + ":T")) return;
-    if (bottom && activate(String(bottom.o) + ":B")) return;
-    activate("base");
+    const shown = top
+      ? activate(String(top.o) + ":T")
+      : activate(String(bottom.o) + ":B");
+    if (!shown) activate("base");
+    announce(shown ? "" : "تصویر این لباس روی مانکن موجود نیست.");
   }
 
   function updateCart(count) {
@@ -446,10 +459,12 @@ import { gsap } from "gsap";
     element.remove();
   }
 
-  async function tryOn(product, source) {
-    if (busy || !product || !product.o || !product.slot) return;
+  async function tryOn(product, source, trigger = null) {
+    if (busy || !product || !product.o || !product.slot || Number(product.stock || 0) < 1) return;
+    if (trigger instanceof HTMLElement) fittingTrigger = trigger;
     fit.classList.add("open");
     fit.setAttribute("aria-hidden", "false");
+    fit.setAttribute("aria-label", "اتاق پرو استودیویی VISION، لباس انتخاب‌شده روی مانکن");
 
     if (W.has(Number(product.id))) {
       W.delete(Number(product.id));
@@ -470,8 +485,8 @@ import { gsap } from "gsap";
       await fly(source, product.fy);
       $("#load").classList.add("on");
       await wait(RM ? 0 : 700);
-      // One item per slot. Opposite-slot items remain selected only when an
-      // exact combined studio photo exists for the new pair.
+      // Keep the opposite slot selected even without an authored combined photo.
+      // The scene resolver shows the last selected garment, never a fake composite.
       P.forEach(item => {
         if (item.slot === product.slot && W.has(Number(item.id))) W.delete(Number(item.id));
       });
@@ -486,6 +501,7 @@ import { gsap } from "gsap";
 
   function clearAll() {
     W.clear();
+    state.lastFittedId = null;
     refresh();
   }
 
@@ -537,12 +553,12 @@ import { gsap } from "gsap";
         fit.setAttribute("aria-hidden", "false");
         showToast("برای پرو مجازی، این محصول را در استودیو به ست و تصویر مانکن وصل کن.");
       } else if (product) {
-        tryOn(product, image);
+        tryOn(product, image, button);
       }
     } else if (data.rec) {
       const product = P.find(item => Number(item.id) === Number(data.rec));
       const image = button.closest(".fit-rec-card")?.querySelector(".fit-rec-thumb img");
-      if (product) tryOn(product, image);
+      if (product) tryOn(product, image, button);
     } else if (data.r) {
       W.delete(Number(data.r));
       refresh();
@@ -550,6 +566,7 @@ import { gsap } from "gsap";
       addOne(Number(data.c), button);
     } else if (data.cat !== undefined) {
       state.cat = data.cat;
+      state.visibleCount = 12;
       render();
     }
   });
@@ -557,6 +574,7 @@ import { gsap } from "gsap";
   $("#close").addEventListener("click", () => {
     fit.classList.remove("open");
     fit.setAttribute("aria-hidden", "true");
+    if (fittingTrigger?.isConnected) fittingTrigger.focus({ preventScroll: true });
   });
   $("#strip").addEventListener("click", clearAll);
   $("#saveCompareA").addEventListener("click", () => saveComparison("A"));
@@ -568,23 +586,29 @@ import { gsap } from "gsap";
     renderComparison();
     showToast(persisted ? "استایل‌های مقایسه پاک شدند." : "استایل‌ها در همین صفحه پاک شدند.");
   });
-  $("#addset").addEventListener("click", async () => {
+  $("#addset").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    if (button.disabled) return;
     const ids = [...W].map(Number);
     if (!ids.length) { showToast("اول یک لباس انتخاب کن."); return; }
+    button.disabled = true;
     try {
       const response = await post(S.routes.cartMany, { variant_ids: ids });
       updateCart(response.count);
       showToast(response.message || "ست به سبد خرید اضافه شد.");
     } catch (error) {
       showToast(error.message || "افزودن ست به سبد خرید انجام نشد.");
+    } finally {
+      button.disabled = W.size === 0;
     }
   });
 
-  $("#q").addEventListener("input", event => { state.q = event.target.value || ""; render(); });
-  $("#sort").addEventListener("change", event => { state.sort = event.target.value; render(); });
-  pr.addEventListener("input", event => { state.max = Number(event.target.value); render(); });
+  $("#shop-load-more")?.addEventListener("click", () => { state.visibleCount += 12; render(); });
+  $("#q").addEventListener("input", event => { state.q = event.target.value || ""; state.visibleCount = 12; render(); });
+  $("#sort").addEventListener("change", event => { state.sort = event.target.value; state.visibleCount = 12; render(); });
+  pr.addEventListener("input", event => { state.max = Number(event.target.value); state.visibleCount = 12; render(); });
   $("#reset").addEventListener("click", () => {
-    state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
+    state.visibleCount = 12; state.cat = C[0]; state.q = ""; state.sort = "new"; state.saleOnly = false; state.max = Number(S.max || 4000000);
     $("#q").value = ""; $("#sort").value = "new"; pr.value = state.max;
     render();
   });
@@ -596,6 +620,7 @@ import { gsap } from "gsap";
     if (event.key === "Escape" && fit.classList.contains("open")) {
       fit.classList.remove("open");
       fit.setAttribute("aria-hidden", "true");
+      if (fittingTrigger?.isConnected) fittingTrigger.focus({ preventScroll: true });
     }
   });
 

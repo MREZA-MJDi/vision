@@ -29,26 +29,24 @@
     </nav>
 
     <section class="store-product-detail">
-        <div class="store-product-detail__gallery">
-            @forelse($product->galleryMedia as $media)
-                <div class="store-product-detail__image" @if($loop->first) data-product-main-stage data-base-image="{{ $baseImage ?? '' }}" @endif>
-                    <img src="{{ $loop->first ? ($defaultVariant?->primaryGalleryMedia?->url ?? $media->url) : $media->url }}" alt="{{ $media->alt_text ?: $product->name }}" @if($loop->first) data-product-main-image data-fallback-src="{{ $baseImage ?? '' }}" @endif loading="{{ $loop->first ? 'eager' : 'lazy' }}">
-                    @if($loop->first)<div class="store-product-detail__image--empty" data-product-image-placeholder hidden><span>تصویر<br>محصول</span></div>@endif
-                </div>
-            @empty
+        <div class="store-product-detail__gallery" aria-label="گالری تصاویر محصول">
+            <div class="store-product-detail__image store-product-detail__image--main" data-product-main-stage data-base-image="{{ $baseImage ?? '' }}">
                 @if($primaryImage)
-                    <div class="store-product-detail__image" data-product-main-stage data-base-image="{{ $baseImage ?? '' }}">
-                        <img data-product-main-image data-fallback-src="{{ $baseImage ?? '' }}" src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager">
-                        <div class="store-product-detail__image--empty" data-product-image-placeholder hidden><span>VISION<br>STUDIO</span></div>
-                    </div>
+                    <img data-product-main-image data-fallback-src="{{ $baseImage ?? '' }}" src="{{ $primaryImage }}" alt="{{ $product->name }}" loading="eager" fetchpriority="high">
                 @else
-                    <div class="store-product-detail__image" data-product-main-stage data-base-image="">
-                        <img data-product-main-image data-fallback-src="" src="" alt="{{ $product->name }}" loading="eager" hidden>
-                        <div class="store-product-detail__image--empty" data-product-image-placeholder><span>VISION<br>STUDIO</span></div>
-                    </div>
+                    <img data-product-main-image data-fallback-src="" src="" alt="{{ $product->name }}" hidden>
                 @endif
-            @endforelse
-
+                <div class="store-product-detail__image--empty" data-product-image-placeholder @if($primaryImage) hidden @endif><span>VISION<br>STUDIO</span></div>
+            </div>
+            @if($product->galleryMedia->isNotEmpty())
+                <div class="store-product-detail__thumbnails" role="group" aria-label="انتخاب تصویر محصول">
+                    @foreach($product->galleryMedia as $media)
+                        <button type="button" class="store-product-detail__thumbnail {{ $loop->first ? 'is-selected' : '' }}" data-gallery-image="{{ $media->url }}" data-gallery-alt="{{ $media->alt_text ?: $product->name }}" aria-label="نمایش تصویر {{ $loop->iteration }} از {{ $product->name }}">
+                            <img src="{{ $media->url }}" alt="" loading="lazy" decoding="async">
+                        </button>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
         <div class="store-product-detail__info">
