@@ -126,7 +126,7 @@
             @if($mannequins->isEmpty())
                 <p class="fr-muted"><a href="#fr-mannequins">برای ذخیرهٔ ست، ابتدا یک مانکن اضافه کن.</a></p>
             @endif
-            <p class="fr-muted">صحنه‌ها در قاب ۲:۳ و عکس کارت‌ها در قاب ۴:۵ پیش‌نمایش داده می‌شوند. تغییر تصویر کارت روی وریانت محصول ذخیره می‌شود.</p>
+            <p class="fr-muted">صحنه‌ها در قاب ۲ به ۳ و عکس کارت‌ها در قاب ۵ به ۴ فروشگاه پیش‌نمایش داده می‌شوند. برای تغییر کادر، عکس اختصاصی وریانت را انتخاب کن.</p>
             <form method="POST" action="{{ route('commerce-admin.try-on.looks.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="fr-look-meta">
@@ -273,6 +273,7 @@
             <div class="fr-empty"><strong>اولین مانکن را اضافه کن.</strong><span>برای ساخت ست‌ها، حداقل یک مانکن فعال لازم است.</span></div>
         @endif
     </section>
+    <script type="application/json" id="fr-variant-cards">{!! \Illuminate\Support\Js::encode($variantCards) !!}</script>
 </div>
 @endsection
 

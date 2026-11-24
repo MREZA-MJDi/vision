@@ -1,3 +1,5 @@
+@import "./product-media.css";
+
 .fr-studio {
     --fr-bg: #151219;
     --fr-panel: #201b24;
@@ -1008,11 +1010,6 @@
     background: var(--fr-bg);
 }
 
-.fr-assignment .fr-preview-image,
-.fr-product-frame {
-    aspect-ratio: 4 / 5;
-}
-
 .fr-preview-status {
     grid-column: 1 / -1;
     font-size: .875rem;
@@ -1025,25 +1022,15 @@
 
 .fr-variant-preview {
     display: grid;
-    grid-template-columns: minmax(55px, 95px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 170px) minmax(0, 1fr);
     align-items: center;
     gap: 12px;
     margin: 0 0 12px;
 }
 
 .fr-product-frame {
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-    background: var(--fr-bg);
+    background: radial-gradient(ellipse at 50% 44%, var(--fr-glow), transparent 72%), var(--fr-bg);
     border-radius: 10px;
-}
-
-.fr-product-frame img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 7px;
 }
 
 .fr-product-frame span {
@@ -1060,4 +1047,51 @@
 
 .fr-variant-preview figcaption small {
     color: var(--fr-muted);
+}
+
+.fr-card-framing {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    margin: 0 0 12px;
+    padding: 8px 12px 12px;
+    border: 1px solid var(--fr-line);
+    border-radius: 10px;
+    font-size: .8rem;
+}
+
+.fr-card-framing legend {
+    padding-inline: 6px;
+    color: var(--fr-muted);
+}
+
+.fr-card-framing label {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px 8px;
+}
+
+.fr-card-framing input[type="range"] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-height: 30px;
+    padding: 0;
+    accent-color: var(--fr-ac);
+}
+
+.fr-card-framing output {
+    color: var(--fr-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.fr-card-framing button {
+    justify-self: start;
+}
+
+@media (max-width: 430px) {
+    .fr-variant-preview {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }

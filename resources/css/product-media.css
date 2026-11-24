@@ -18,6 +18,8 @@
     padding: 8cqi;
     object-fit: contain;
     object-position: center;
+    translate: var(--product-image-x, 0%) var(--product-image-y, 0%);
+    scale: var(--product-image-scale, 1);
 }
 
 .product-media-frame > [hidden] {

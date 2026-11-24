@@ -274,15 +274,34 @@ class FittingRoomStudioTest extends TestCase
             'preview_top' => $image('top.png'),
             'preview_suggested' => $image('suggestion.png'),
             'top_product_image' => $image('card.png'),
+            'top_card_frame' => ['scale' => 120, 'x' => -5, 'y' => 8],
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $look = FittingRoomLook::query()->firstOrFail();
         $this->assertTrue($look->is_active);
-        Storage::disk('public')->assertExists($variant->primaryGalleryMedia()->firstOrFail()->path);
+        $card = $variant->primaryGalleryMedia()->firstOrFail();
+        Storage::disk('public')->assertExists($card->path);
+        $this->assertSame(['scale' => 120, 'x' => -5, 'y' => 8], $card->cardFrame());
+        $this->get(route('commerce-admin.try-on.index'))->assertOk()
+            ->assertViewHas('variantCards', fn ($cards) => $cards[$variant->id]['frame'] === $card->cardFrame());
         $this->get(route('shop.index'))->assertOk()
-            ->assertSee('data-t="' . $variant->id . '"', false);
+            ->assertSee('data-t="' . $variant->id . '"', false)
+            ->assertSee('--product-image-scale: 1.2; --product-image-x: -5%; --product-image-y: 8%', false);
         $this->getJson(route('shop.studio'))->assertOk()
             ->assertJsonPath('suggestions.' . $variant->id, $look->previewSuggestedMedia->url);
+
+        $this->put(route('commerce-admin.try-on.looks.update', $look), $fields + [
+            'is_active' => 1,
+            'top_card_frame' => ['scale' => 130, 'x' => 0, 'y' => 0],
+        ])->assertSessionHasErrors('top_card_frame.scale');
+
+        $this->put(route('commerce-admin.try-on.looks.update', $look), $fields + [
+            'is_active' => 1,
+            'top_card_frame' => ['scale' => 105, 'x' => 1, 'y' => -3],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(['scale' => 105, 'x' => 1, 'y' => -3], $card->fresh()->cardFrame());
+        $this->get(route('shop.index'))->assertOk()
+            ->assertSee('--product-image-scale: 1.05; --product-image-x: 1%; --product-image-y: -3%', false);
 
         $fallback = $product->variants()->create([
             'sku' => 'STUDIO-UPLOAD-FALLBACK',
@@ -302,6 +321,8 @@ class FittingRoomStudioTest extends TestCase
             ->assertDontSee('data-t="' . $variant->id . '"', false)
             ->assertSee('data-product="' . $fallback->id . '"', false);
         $this->getJson(route('shop.studio'))->assertOk()->assertJsonCount(0, 'garments');
+        $this->put(route('commerce-admin.try-on.looks.update', $look), $fields + ['is_active' => 1])
+            ->assertSessionHasErrors('preview_top');
 
         $this->put(route('commerce-admin.try-on.looks.update', $look), $fields)
             ->assertRedirect()->assertSessionHasNoErrors();

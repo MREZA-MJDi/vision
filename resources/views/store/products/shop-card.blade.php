@@ -14,7 +14,8 @@
     @if($product['rate'] !== null)
         <span class="shop-rate">★ {{ \App\Support\Money::persianDigits(str_replace('.', '٫', (string) $product['rate'])) }}</span>
     @endif
-    <a class="shop-pic product-media-frame" href="{{ $product['url'] }}" aria-label="مشاهدهٔ {{ $product['name'] }}">
+    <a class="shop-pic product-media-frame" href="{{ $product['url'] }}" aria-label="مشاهدهٔ {{ $product['name'] }}"
+       style="--product-image-scale: {{ $product['frame']['scale'] / 100 }}; --product-image-x: {{ $product['frame']['x'] }}%; --product-image-y: {{ $product['frame']['y'] }}%">
         @if($product['img'])
             <img src="{{ $product['img'] }}" alt="" loading="lazy" decoding="async">
         @else

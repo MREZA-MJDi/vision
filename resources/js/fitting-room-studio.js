@@ -3,26 +3,54 @@ const studio = document.querySelector('.fr-studio');
 if (studio) {
     const files = new WeakMap();
     const sizeFormatter = new Intl.NumberFormat('fa-IR');
+    const cards = JSON.parse(document.querySelector('#fr-variant-cards').textContent);
+
+    function updateFrame(assignment, frame = null) {
+        const imageFrame = assignment.querySelector('.product-media-frame');
+        assignment.querySelectorAll('[data-fr-frame]').forEach(input => {
+            const key = input.dataset.frFrame;
+            if (frame) input.value = frame[key] ?? input.defaultValue;
+            input.nextElementSibling.textContent = sizeFormatter.format(input.value) + '٪';
+            imageFrame.style.setProperty(`--product-image-${key}`, key === 'scale' ? input.value / 100 : `${input.value}%`);
+        });
+    }
 
     function updateCard(assignment) {
-        const option = assignment.querySelector('[data-fr-variant]').selectedOptions[0];
+        const id = assignment.querySelector('[data-fr-variant]').value;
+        const card = cards[id];
         const preview = assignment.querySelector('[data-fr-variant-preview]');
-        preview.hidden = !option?.value;
-        if (!option?.value) return;
-
         const image = preview.querySelector('[data-fr-card-image]');
         const newFile = files.get(assignment.querySelector('[data-fr-preview-input]'));
-        const source = newFile?.valid ? newFile.url : option.dataset.image;
+        const controls = assignment.querySelector('[data-fr-frame-controls]');
+        controls.hidden = controls.disabled = !(card && (newFile?.valid || card.editable));
+        preview.hidden = !card;
+        if (!card) {
+            image.removeAttribute('src');
+            return;
+        }
+
+        const source = newFile?.valid ? newFile.url : card.image;
         image.hidden = !source;
         if (source) image.src = source;
         else image.removeAttribute('src');
         preview.querySelector('[data-fr-card-empty]').hidden = Boolean(source);
-        preview.querySelector('[data-fr-card-name]').textContent = option.dataset.name;
-        preview.querySelector('[data-fr-card-price]').textContent = option.dataset.price;
-        preview.querySelector('[data-fr-card-stock]').textContent = option.dataset.stock;
+        preview.querySelector('[data-fr-card-name]').textContent = card.name;
+        preview.querySelector('[data-fr-variant-name]').textContent = card.variant;
+        preview.querySelector('[data-fr-card-price]').textContent = card.price;
+        preview.querySelector('[data-fr-card-stock]').textContent = card.stock;
+        updateFrame(assignment, newFile?.valid ? {} : card.frame);
     }
 
     studio.querySelectorAll('.fr-assignment').forEach(updateCard);
+
+    studio.addEventListener('input', event => {
+        if (event.target.matches('[data-fr-frame]')) updateFrame(event.target.closest('.fr-assignment'));
+    });
+
+    studio.addEventListener('click', event => {
+        const reset = event.target.closest('[data-fr-frame-reset]');
+        if (reset) updateFrame(reset.closest('.fr-assignment'), {});
+    });
 
     studio.addEventListener('change', (event) => {
         const input = event.target;
@@ -68,7 +96,7 @@ if (studio) {
                 ? sizeFormatter.format(image.naturalWidth) + ' × ' + sizeFormatter.format(image.naturalHeight) + ' پیکسل'
                 : 'نسبت عکس مانکن یا صحنه باید ۲ به ۳ باشد.';
             input.setCustomValidity(entry.valid ? '' : status.textContent);
-            image.hidden = false;
+            image.hidden = Boolean(assignment);
             if (!entry.valid) input.reportValidity();
             if (assignment) updateCard(assignment);
         };
