@@ -31,14 +31,14 @@
     <meta name="twitter:description" content="{{ $pageDescription }}">
     <title>{{ $pageTitle }}</title>
 
-    @unless(request()->routeIs('shop.index', 'products.index'))
+    @unless(request()->routeIs('shop.index', 'products.index', 'try-on.index'))
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     @endunless
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @if (request()->routeIs('shop.index', 'products.index'))
+        @if (request()->routeIs('shop.index', 'products.index', 'try-on.index'))
             @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/vision-shop.css', 'resources/js/vision-shop.js'])
         @else
             @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/js/storefront.js'])
@@ -51,7 +51,7 @@
     @endif
     @stack('styles')
 </head>
-<body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }} {{ request()->routeIs('shop.index', 'products.index') ? 'store-shop-body' : '' }}">
+<body class="storefront-body {{ request()->routeIs('storefront.index') ? 'storefront-home-body' : '' }} {{ request()->routeIs('shop.index', 'products.index', 'try-on.index') ? 'store-shop-body' : '' }} {{ request()->routeIs('try-on.index') ? 'store-fitting-body' : '' }}">
     <div class="store-atmosphere" aria-hidden="true"></div>
 
     <div class="store-shell" data-storefront
@@ -60,11 +60,11 @@
          data-cart-summary-url="{{ route('cart.summary') }}"
          data-cart-add-url="{{ route('cart.items.store') }}"
          data-account-url="{{ route('account.show') }}">
-        @if (!request()->routeIs('storefront.index', 'shop.index', 'products.index'))
+        @if (!request()->routeIs('storefront.index', 'shop.index', 'products.index', 'try-on.index'))
         <header class="store-header">
             <nav class="store-nav" aria-label="ناوبری اصلی">
                 <a href="{{ route('storefront.index') }}" class="store-nav__link {{ request()->routeIs('storefront.index') ? 'is-current' : '' }}">خانه</a>
-                <a href="{{ route('shop.index') }}#catalog" class="store-nav__link {{ request()->routeIs('shop.index', 'products.index') ? 'is-current' : '' }}">فروشگاه</a>
+                <a href="{{ route('shop.index') }}#catalog" class="store-nav__link {{ request()->routeIs('shop.index', 'products.index', 'try-on.index') ? 'is-current' : '' }}">فروشگاه</a>
                 <a href="{{ route('shop.index', ['sort' => 'newest']) }}#catalog" class="store-nav__link">تازه‌ها</a>
                 <a href="{{ route('shop.index', ['sale' => 1]) }}#catalog" class="store-nav__link {{ request()->boolean('sale') ? 'is-current' : '' }}">تخفیف‌ها</a>
             </nav>
@@ -101,7 +101,7 @@
 
         @include('store.footer')
 
-        @if (!request()->routeIs('shop.index', 'products.index'))
+        @if (!request()->routeIs('shop.index', 'products.index', 'try-on.index'))
         <div class="store-toast" data-store-toast role="status" aria-live="polite"></div>
         <button class="store-sidebar-backdrop" type="button" data-store-filter-backdrop aria-label="بستن فیلترها" tabindex="-1"></button>
         @endif

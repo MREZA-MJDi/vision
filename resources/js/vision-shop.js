@@ -70,10 +70,12 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   const stage = $("#stage");
   const sceneLoading = $("#load");
   const fit = $("#fit");
+  const fittingPage = catalog.dataset.fittingPage === "1";
   const compact = window.matchMedia("(max-width: 1039px)");
   const background = [$(".vision-shop-header"), $(".shop-filter"), $(".shop-results"), $(".vision-footer")];
   const setFitLayout = () => {
-    const modal = compact.matches && !fit.hidden;
+    if (!fit) return;
+    const modal = !fittingPage && compact.matches && !fit.hidden;
     background.forEach(element => { if (element) element.inert = modal; });
     if (modal) {
       fit.setAttribute("role", "dialog");
@@ -268,6 +270,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     ).join("");
     $("#addset").disabled = addingSet || items.length === 0;
     $("#strip").disabled = items.length === 0;
+    $("#addset").textContent = items.length === 1 ? "افزودن لباس به سبد خرید" : "افزودن انتخاب‌ها به سبد خرید";
     syncCardActions();
     renderRecommendations();
     renderComparison();
@@ -425,14 +428,14 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   async function openStudio(trigger, variantId = null) {
-    if (!S.routes.studio) return;
+    if (!fit || !S.routes.studio) return;
     const request = activation;
     fittingTrigger = trigger;
     const wasHidden = fit.hidden;
     fit.hidden = false;
     catalog.classList.add("fit-open");
     setFitLayout();
-    if (wasHidden) $("#close").focus({ preventScroll: true });
+    if (wasHidden && !fittingPage) $("#close").focus({ preventScroll: true });
 
     const notice = $("#fit-scene-notice");
     notice.hidden = true;
@@ -445,8 +448,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       if (variantId !== null) {
         const product = P.find(item => item.id === variantId);
         if (product && product.stock > 0) {
-          const source = trigger.closest(".shop-product-card")?.querySelector(".shop-pic img");
-          tryOn(product, source);
+          const source = trigger?.closest(".shop-product-card")?.querySelector(".shop-pic img");
+          if (W.has(Number(product.id)) && !trigger) refresh();
+          else tryOn(product, source);
           return;
         }
       }
@@ -548,6 +552,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   });
 
   function closeFit() {
+    if (fittingPage) { window.location.assign($("#close").dataset.shopUrl); return; }
     activation++;
     stopFittingFlight();
     fit.hidden = true;
@@ -556,27 +561,27 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     if (fittingTrigger?.isConnected) fittingTrigger.focus({ preventScroll: true });
   }
 
-  $("#close").addEventListener("click", closeFit);
+  $("#close")?.addEventListener("click", closeFit);
   $("#open-fit")?.addEventListener("click", event => openStudio(event.currentTarget));
-  $("#fit-retry").addEventListener("click", event => {
+  $("#fit-retry")?.addEventListener("click", event => {
     event.currentTarget.hidden = true;
     openStudio(fittingTrigger);
   });
-  $("#sugg").addEventListener("click", () => {
+  $("#sugg")?.addEventListener("click", () => {
     showingSuggestion = !showingSuggestion;
     setScene();
   });
-  $("#strip").addEventListener("click", clearAll);
-  $("#saveCompareA").addEventListener("click", () => saveComparison("A"));
-  $("#saveCompareB").addEventListener("click", () => saveComparison("B"));
-  $("#clearCompare").addEventListener("click", () => {
+  $("#strip")?.addEventListener("click", clearAll);
+  $("#saveCompareA")?.addEventListener("click", () => saveComparison("A"));
+  $("#saveCompareB")?.addEventListener("click", () => saveComparison("B"));
+  $("#clearCompare")?.addEventListener("click", () => {
     comparison.A = [];
     comparison.B = [];
     const persisted = persistComparison();
     renderComparison();
     showToast(persisted ? "استایل‌های مقایسه پاک شدند." : "استایل‌ها در همین صفحه پاک شدند.");
   });
-  $("#addset").addEventListener("click", async event => {
+  $("#addset")?.addEventListener("click", async event => {
     const button = event.currentTarget;
     if (button.disabled) return;
     const ids = [...W].map(Number);
@@ -584,7 +589,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     addingSet = button.disabled = true;
     try {
       const response = await addToCart(S.routes.cartMany, { variant_ids: ids });
-      showToast(response.message || "ست به سبد خرید اضافه شد.");
+      showToast(response.message || "انتخاب‌ها به سبد خرید اضافه شد.");
+      $("#fit-cart-next").hidden = false;
     } catch (error) {
       showToast(error.message || "افزودن ست به سبد خرید انجام نشد.");
     } finally {
@@ -603,7 +609,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     event.currentTarget.setAttribute("aria-pressed", String(light));
   });
   document.addEventListener("keydown", event => {
-    if (fit.hidden) return;
+    if (!fit || fit.hidden || fittingPage) return;
     if (event.key === "Escape") {
       closeFit();
     } else if (event.key === "Tab" && compact.matches) {
@@ -622,6 +628,14 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   });
 
   syncCardActions();
+  if (fittingPage && S.routes.studio) {
+    const id = Number(new URLSearchParams(location.search).get("variant_id"));
+    openStudio(null, id > 0 ? id : null);
+  } else if (fittingPage && fit) {
+    fit.hidden = false;
+    $("#fit-scene-notice").textContent = "اتاق پرو در حال حاضر در دسترس نیست.";
+    $("#fit-scene-notice").hidden = false;
+  }
 
   if (S.routes?.cartSummary) {
     fetch(S.routes.cartSummary, { credentials: "same-origin", headers: { "Accept": "application/json" } })

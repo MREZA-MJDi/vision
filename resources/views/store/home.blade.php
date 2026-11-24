@@ -1,7 +1,7 @@
 @extends('layouts.store')
 
 @section('title', 'VISION — پوشاک برای نگاه متفاوت')
-@section('meta-description', 'محصولات فروشگاه VISION را ببینید و استایل خود را در اتاق پرو استودیویی انتخاب کنید.')
+@section('meta-description', 'محصولات، برندها و کالکشن‌های فروشگاه پوشاک VISION را ببینید.')
 @section('canonical', route('storefront.index'))
 @section('og-image', $heroSlides->first()['image'] ?? '')
 
@@ -130,20 +130,6 @@
 
 
 
-    <section class="vision-shop-story" aria-labelledby="home-fitting-title">
-        <div class="home-fitting__content">
-            <h2 id="home-fitting-title">قبل از خرید، استایلت را ببین.</h2>
-            <p>لباس‌های دارای نشان چوب‌لباسی را در فروشگاه انتخاب کنید و ترکیب آن‌ها را روی مانکن استودیویی ببینید.</p>
-            <a class="home-hero__cta" href="{{ route('shop.index') }}#catalog">رفتن به اتاق پرو</a>
-        </div>
-        <div class="vision-home-benefits" aria-label="مراحل استفاده از اتاق پرو">
-            <ol>
-                <li>لباس را از کاتالوگ انتخاب کنید.</li>
-                <li>ترکیب لباس‌ها را در اتاق پرو ببینید.</li>
-                <li>محصولات انتخابی را به سبد اضافه کنید.</li>
-            </ol>
-        </div>
-    </section>
 
     @if($heroProducts->isNotEmpty())
         <section class="home-content-section vision-shop-collections" aria-labelledby="home-collections-title">
