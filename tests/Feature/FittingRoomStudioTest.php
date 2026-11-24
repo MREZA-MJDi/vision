@@ -213,14 +213,18 @@ class FittingRoomStudioTest extends TestCase
 
         $response = $this->get('/shop');
         $response->assertOk()
-            ->assertSee('id="shop-studio-data"', false)
-            ->assertSee('assets.example.test', false)
-            ->assertSee('"T":', false)
-            ->assertSee('"B":', false)
-            ->assertSee('"TB":', false)
-            ->assertSee('"S":', false)
-            ->assertSee('"slot":"top"', false)
-            ->assertSee('"slot":"bottom"', false);
+            ->assertSee('id="shop-config"', false)
+            ->assertDontSee('s0.jpg', false)
+            ->assertDontSee('TB.jpg', false)
+            ->assertDontSee('"garments":', false);
+
+        $this->getJson(route('shop.studio'))
+            ->assertOk()
+            ->assertJsonPath('base', 'https://assets.example.test/s0.jpg')
+            ->assertJsonPath('garments.0.scene', 'https://assets.example.test/T.jpg')
+            ->assertJsonPath('garments.1.scene', 'https://assets.example.test/B.jpg')
+            ->assertJsonPath('combinations.' . $variants['top']->id . '.' . $variants['bottom']->id, 'https://assets.example.test/TB.jpg')
+            ->assertJsonPath('suggestions.' . $variants['top']->id, 'https://assets.example.test/S.jpg');
     }
 
     public function test_admin_can_upload_shop_media_and_unpublish_a_look(): void
@@ -276,8 +280,9 @@ class FittingRoomStudioTest extends TestCase
         $this->assertTrue($look->is_active);
         Storage::disk('public')->assertExists($variant->primaryGalleryMedia()->firstOrFail()->path);
         $this->get(route('shop.index'))->assertOk()
-            ->assertSee('data-t="' . $variant->id . '"', false)
-            ->assertViewHas('studio', fn (array $studio) => $studio['suggestions'][$variant->id] === $look->previewSuggestedMedia->url);
+            ->assertSee('data-t="' . $variant->id . '"', false);
+        $this->getJson(route('shop.studio'))->assertOk()
+            ->assertJsonPath('suggestions.' . $variant->id, $look->previewSuggestedMedia->url);
 
         $this->put(route('commerce-admin.try-on.looks.update', $look), $fields)
             ->assertRedirect()->assertSessionHasNoErrors();
@@ -322,11 +327,9 @@ class FittingRoomStudioTest extends TestCase
             $look->save();
         }
 
-        $payload = app(\App\Services\FittingRoomShopData::class)->payload();
-        $this->assertStringContainsString('base-first-studio.jpg', $payload['studio']['base']);
-        $this->assertCount(1, $payload['studio']['looks']);
-        $this->assertArrayHasKey((string) $first->looks()->first()->getKey(), $payload['studio']['looks']);
-        $this->assertArrayNotHasKey((string) $second->looks()->first()->getKey(), $payload['studio']['looks']);
+        $this->getJson(route('shop.studio'))->assertOk()
+            ->assertJsonPath('base', 'https://assets.example.test/base-first-studio.jpg')
+            ->assertDontSee('base-second-studio.jpg', false);
     }
 
     public function test_shop_includes_outfit_recommendations_and_saved_style_comparison(): void

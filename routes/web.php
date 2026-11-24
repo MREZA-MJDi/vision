@@ -20,6 +20,7 @@ Route::get('/', [StorefrontController::class, 'home'])->name('storefront.index')
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/shop', [StorefrontController::class, 'index'])->name('shop.index');
+Route::get('/shop/studio', [StorefrontController::class, 'studio'])->name('shop.studio');
 Route::get('/products', [StorefrontController::class, 'index'])->name('products.index');
 Route::redirect('/try-on', '/shop')->name('try-on.index');
 Route::get('/products/{product:slug}', [StorefrontController::class, 'show'])

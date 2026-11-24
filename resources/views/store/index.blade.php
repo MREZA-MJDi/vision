@@ -14,7 +14,7 @@
     </nav>
     <a class="vision-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION صفحهٔ اصلی">VISION</a>
     <div class="vision-shop-tools">
-        @if($studio['garments'])
+        @if($studio['routes']['studio'])
             <button class="shop-open-fit" id="open-fit" type="button" aria-controls="fit">اتاق پرو</button>
         @endif
         <button class="ibtn" id="theme" type="button" aria-label="تغییر تم">◐</button>
@@ -88,6 +88,7 @@
     </div>
     <button type="button" id="sugg" class="shop-fit-suggestion" aria-pressed="false" hidden>دیدن ست پیشنهادی</button>
     <p class="fit-scene-notice" id="fit-scene-notice" role="status" aria-live="polite" hidden></p>
+    <button type="button" id="fit-retry" class="shop-fit-suggestion" hidden>تلاش دوباره</button>
     <div class="pk"><span>انتخاب‌های تو</span><span id="pcount">۰ تکه</span></div>
     <div class="picks" id="picks" aria-label="لباس‌های انتخاب‌شده"></div>
 
@@ -116,10 +117,10 @@
     </details>
 
     <div class="tot" id="tot">هنوز چیزی انتخاب نشده</div>
-    <div class="btns"><button class="pri" id="addset" type="button">افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
+    <div class="btns"><button class="pri" id="addset" type="button" disabled>افزودن ست به سبد</button><button id="strip" type="button">شروع دوباره</button></div>
 </aside>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="application/json" id="shop-studio-data">{!! \Illuminate\Support\Js::encode($studio) !!}</script>
+<script type="application/json" id="shop-config">{!! \Illuminate\Support\Js::encode($studio) !!}</script>
 @endsection
