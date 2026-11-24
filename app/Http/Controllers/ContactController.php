@@ -35,6 +35,6 @@ class ContactController extends Controller
             'updated_at' => now(),
         ]);
 
-        return redirect()->route('contact.index')->with('status', 'پیام شما ثبت شد. از طریق اطلاعات تماس ثبت‌شده با شما ارتباط می‌گیریم.');
+        return redirect()->to($request->input('source') === 'home' ? route('storefront.index') . '#home-contact' : route('contact.index'))->with('status', 'پیام شما ثبت شد. از طریق اطلاعات تماس ثبت‌شده با شما ارتباط می‌گیریم.');
     }
 }

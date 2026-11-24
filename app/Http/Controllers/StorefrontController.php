@@ -41,7 +41,11 @@ class StorefrontController extends Controller
             ->limit(6)
             ->get();
 
-        return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories'));
+        $homeBrands = Brand::query()->active()
+            ->whereHas('products', fn (Builder $query) => $query->active()->whereHas('activeVariants'))
+            ->with('logoMedia')->orderBy('name')->orderBy('id')->limit(8)->get();
+
+        return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories', 'homeBrands'));
     }
 
     public function index(Request $request): View

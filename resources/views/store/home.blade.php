@@ -22,6 +22,7 @@
                     <a href="{{ route('shop.index') }}">فروشگاه</a>
                     <a href="{{ route('shop.index', ['sort' => 'newest']) }}">تازه‌ها</a>
                     <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
+                    <a href="#home-contact">تماس با ما</a>
                 </nav>
                 <div class="home-hero__tools">
                     <a href="{{ route('account.show') }}" aria-label="حساب کاربری">
@@ -107,6 +108,15 @@
         </div>
     </section>
 
+    <section class="home-content-section home-trust" aria-labelledby="home-trust-title">
+        <div class="home-content-heading"><h2 id="home-trust-title">با اطمینان انتخاب کن</h2></div>
+        <div class="home-trust-grid">
+            <article><span>۰۱</span><h3>انتخاب آگاهانه</h3><p>تصاویر، مشخصات و قیمت محصولات را قبل از خرید بررسی کن.</p></article>
+            <article><span>۰۲</span><h3>پیگیری سفارش</h3><p>وضعیت خریدهای خود را از <a href="{{ route('account.show') }}">حساب کاربری</a> دنبال کن.</p></article>
+            <article><span>۰۳</span><h3>ارتباط مستقیم</h3><p>پرسش‌های خود را از طریق <a href="#home-contact">فرم تماس</a> با فروشگاه در میان بگذار.</p></article>
+        </div>
+    </section>
+
     @if($newProducts->isNotEmpty())
         <section class="home-content-section" aria-labelledby="home-new-title">
             <div class="home-content-heading">
@@ -135,6 +145,20 @@
                             <img src="{{ $category->coverMedia->url }}" loading="lazy" decoding="async" alt="">
                         @endif
                         <strong>{{ $category->name }}</strong>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    @if($homeBrands->isNotEmpty())
+        <section class="home-content-section" aria-labelledby="home-brands-title">
+            <div class="home-content-heading"><h2 id="home-brands-title">برندهای فروشگاه</h2></div>
+            <div class="home-brand-grid">
+                @foreach($homeBrands as $brand)
+                    <a class="home-brand-tile" href="{{ route('shop.index', ['brand' => $brand->slug]) }}#catalog">
+                        @if($brand->logoMedia?->url)<img src="{{ $brand->logoMedia->url }}" alt="" loading="lazy" decoding="async">@endif
+                        <strong>{{ $brand->name }}</strong>
                     </a>
                 @endforeach
             </div>
@@ -170,6 +194,14 @@
             </div>
         </section>
     @endif
+    <section id="home-contact" class="home-content-section home-contact" aria-labelledby="home-contact-title">
+        <div class="home-contact-intro">
+            <h2 id="home-contact-title">با ما در ارتباط باش</h2>
+            <p>برای پیگیری سفارش، پرسش درباره محصولات یا پیشنهاد همکاری پیام بفرست.</p>
+            <a href="{{ route('shop.index') }}#catalog">مشاهدهٔ فروشگاه</a>
+        </div>
+        <div class="home-contact-form">@include('store.contact-form', ['onHome' => true])</div>
+    </section>
     @include('store.home-cart-link', ['floating' => true])
 </main>
 @endsection

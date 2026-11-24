@@ -32,6 +32,18 @@ class ContactPageTest extends TestCase
         ]);
     }
 
+    public function test_home_contact_returns_to_home_section(): void
+    {
+        $this->withoutVite();
+        $this->get('/')->assertOk()->assertSee('home-contact', false);
+        $this->post('/contact', [
+            'source' => 'home', 'name' => 'Customer Example',
+            'phone' => '09123456789', 'subject' => 'Question',
+            'message' => 'Please help me with my order.',
+        ])->assertRedirect(route('storefront.index') . '#home-contact');
+        $this->assertDatabaseHas('contact_messages', ['phone' => '09123456789', 'status' => 'new']);
+    }
+
     public function test_contact_form_rejects_missing_reply_channel(): void
     {
         $this->post('/contact', [

@@ -22,33 +22,25 @@
                 <label class="ak-field ak-field-full"><span>توضیحات</span><textarea rows="4" name="description">{{ old('description', $record->description) }}</textarea></label>
             </div>
         </section>
-        @if($showParent)
-            <section class="ak-panel ak-form-panel">
-                <div class="ak-panel-heading"><div><h2>تصویر دسته‌بندی</h2><p>تصویر انتخاب‌شده در صفحهٔ اصلی فروشگاه نیز نمایش داده می‌شود.</p></div></div>
-                <div class="ak-category-cover-upload">
-                    <img data-category-cover-preview
-                         @if($record->coverMedia?->url) src="{{ $record->coverMedia->url }}" @else hidden @endif
-                         alt="{{ $record->coverMedia?->alt_text ?: $record->name }}"
-                         @if($record->coverMedia?->url) data-existing-src="{{ $record->coverMedia->url }}" @endif>
-                    <label class="ak-field">
-                        <span>انتخاب تصویر (JPG، PNG یا WebP)</span>
-                        <input type="file" name="cover_image" accept="image/jpeg,image/png,image/webp" data-category-cover-input>
-                        <small>حداکثر ۴ مگابایت. پس از ذخیره، تصویر روی دیسک عمومی و رکورد رسانه در دیتابیس ثبت می‌شود.</small>
-                        <small data-category-cover-filename aria-live="polite"></small>
-                    </label>
-                    <label class="ak-field">
-                        <span>متن جایگزین تصویر</span>
-                        <input type="text" name="cover_alt" maxlength="255" value="{{ old('cover_alt', $record->coverMedia?->alt_text) }}" placeholder="{{ $record->name ?: 'توضیح کوتاه تصویر' }}">
-                    </label>
-                    @if($record->coverMedia?->url)
-                        <label class="ak-check-card">
-                            <input type="checkbox" name="remove_cover" value="1" data-remove-category-cover @checked(old('remove_cover'))>
-                            <span><strong>حذف تصویر فعلی</strong><small>فایل ذخیره‌شده و رکورد رسانهٔ همین دسته‌بندی حذف می‌شود.</small></span>
-                        </label>
-                    @endif
-                </div>
-            </section>
-        @endif
+        @php
+            $image = $showParent ? $record->coverMedia : $record->logoMedia;
+            $prefix = $showParent ? 'cover' : 'logo';
+        @endphp
+        <section class="ak-panel ak-form-panel">
+            <div class="ak-panel-heading"><div><h2>تصویر {{ $taxonomyTitle }}</h2><p>تصویر در صفحهٔ اصلی فروشگاه نمایش داده می‌شود.</p></div></div>
+            <div class="ak-category-cover-upload" data-taxonomy-image>
+                <img data-taxonomy-image-preview @if($image?->url) src="{{ $image->url }}" data-existing-src="{{ $image->url }}" @else hidden @endif alt="{{ $image?->alt_text ?: $record->name }}">
+                <label class="ak-field"><span>انتخاب و برش تصویر</span>
+                    <input type="file" name="{{ $prefix }}_image" accept="image/jpeg,image/png,image/webp" data-taxonomy-image-input>
+                    <small>JPG، PNG یا WebP؛ حداکثر ۴ مگابایت پس از برش.</small>
+                    @error($prefix . '_image')<small role="alert">{{ $message }}</small>@enderror
+                </label>
+                <label class="ak-field"><span>متن جایگزین تصویر</span><input name="{{ $prefix }}_alt" maxlength="255" value="{{ old($prefix . '_alt', $image?->alt_text) }}"></label>
+                @if($image?->url)
+                    <label class="ak-check-card"><input type="checkbox" name="remove_{{ $prefix }}" value="1" data-remove-taxonomy-image @checked(old('remove_' . $prefix))><span>حذف تصویر فعلی</span></label>
+                @endif
+            </div>
+        </section>
 
         <section class="ak-panel ak-form-panel">
             <div class="ak-panel-heading"><div><h2>اطلاعات سئو</h2><p>اختیاری؛ برای نمایش و جست‌وجوی بهتر</p></div></div>
@@ -59,4 +51,5 @@
         </section>
         <div class="ak-heading-actions"><button class="ak-button ak-button-dark" type="submit">ذخیره</button><a class="ak-button ak-button-light" href="{{ route($routePrefix . '.index') }}">انصراف</a></div>
     </form>
+    @include('commerce-admin::catalog.image-cropper')
 @endsection

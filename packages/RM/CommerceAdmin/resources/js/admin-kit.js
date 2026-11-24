@@ -210,7 +210,9 @@
         activeImageInput = input || imageInput;
         activePreviewBox = activeImageInput?.matches('[data-variant-image-input]')
             ? activeImageInput.closest('[data-variant-row]')?.querySelector('[data-variant-image-preview]')
-            : previewBox;
+            : activeImageInput?.matches('[data-taxonomy-image-input]')
+                ? activeImageInput.closest('[data-taxonomy-image]')?.querySelector('[data-taxonomy-image-preview]')
+                : previewBox;
     };
     const renderImages = (files) => {
         if (!activePreviewBox) return;
@@ -220,7 +222,7 @@
 
         // A variant preview is a single <img>, not a gallery container. Update
         // its src directly instead of trying to append gallery tiles inside it.
-        if (isVariantUpload) {
+        if (isVariantUpload || activeImageInput?.matches('[data-taxonomy-image-input]')) {
             revokePreviewUrls(box);
             if (box.dataset.objectUrl) {
                 URL.revokeObjectURL(box.dataset.objectUrl);
@@ -228,7 +230,7 @@
             }
 
             const file = Array.from(files || []).find((candidate) => candidate.type?.startsWith('image/'));
-            const removeCheckbox = activeImageInput.closest('[data-variant-row]')?.querySelector('[data-remove-variant-image]');
+            const removeCheckbox = activeImageInput.closest('[data-variant-row], [data-taxonomy-image]')?.querySelector('[data-remove-variant-image], [data-remove-taxonomy-image]');
             if (file) {
                 const url = URL.createObjectURL(file);
                 box.src = url;
@@ -316,7 +318,7 @@
     };
     const assignCroppedFiles = () => {
         if (!activeImageInput) return;
-        const limit = activeImageInput.matches('[data-variant-image-input]') ? 4 : 8;
+        const limit = activeImageInput.matches('[data-taxonomy-image-input]') ? 1 : activeImageInput.matches('[data-variant-image-input]') ? 4 : 8;
         const files = cropResults.slice(0, limit);
         try {
             const transfer = new DataTransfer();
@@ -355,7 +357,7 @@
         selectImageTarget(targetInput);
         const files = Array.from(fileList || []);
         if (!files.length) return;
-        const maxImages = activeImageInput?.matches('[data-variant-image-input]') ? 4 : 8;
+        const maxImages = activeImageInput?.matches('[data-taxonomy-image-input]') ? 1 : activeImageInput?.matches('[data-variant-image-input]') ? 4 : 8;
         if (files.length > maxImages) {
             window.alert(activeImageInput?.matches('[data-variant-image-input]')
                 ? 'برای هر تنوع حداکثر ۴ تصویر انتخاب کنید.'
@@ -429,7 +431,7 @@
     // Delegation supports variant rows added dynamically after page load.
     document.addEventListener('change', (event) => {
         const input = event.target;
-        if (input instanceof HTMLInputElement && input.matches('[data-variant-image-input]')) {
+        if (input instanceof HTMLInputElement && input.matches('[data-variant-image-input], [data-taxonomy-image-input]')) {
             startImageCropping(input.files, input);
         }
     });

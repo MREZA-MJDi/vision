@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Brand;
 use App\Models\FittingRoomLook;
 use App\Models\FittingRoomLookItem;
 use App\Models\FittingRoomMannequin;
@@ -64,6 +65,10 @@ class FittingRoomShopData
         $search = mb_substr($read('q'), 0, 120);
         $category = $read('category');
         $categoryId = $categories->firstWhere('slug', $category)?->id;
+        $brand = $read('brand');
+        if ($brand !== '') {
+            $catalog->whereIn('products.brand_id', Brand::query()->active()->where('slug', $brand)->select('id'));
+        }
         $saleOnly = $request?->boolean('sale') ?? false;
         $priceMax = filter_var($read('price_max'), FILTER_VALIDATE_INT);
         $sort = match ($read('sort')) {

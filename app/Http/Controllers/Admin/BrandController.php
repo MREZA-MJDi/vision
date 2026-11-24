@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Brand;
+use App\Services\MediaService;
 use App\Support\SeoDefaults;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\Admin\SaveBrandRequest;
@@ -68,13 +69,13 @@ class BrandController
         return $this->formView(new $model(), false);
     }
 
-    public function store(SaveBrandRequest $request): RedirectResponse
+    public function store(SaveBrandRequest $request, MediaService $mediaService): RedirectResponse
     {
         $model = $this->model();
         $record = new $model();
         $data = $request->validated();
 
-        DB::transaction(function () use ($record, $data, $model): void {
+        DB::transaction(function () use ($record, $data, $model, $request, $mediaService): void {
             $record->fill([
                 'name' => $data['name'],
                 'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name']),
@@ -84,6 +85,11 @@ class BrandController
                 'is_active' => ($data['status'] ?? 'active') === 'active',
             ]);
             $record->save();
+            if ($request->hasFile('logo_image')) {
+                $mediaService->replace($record, 'logo', $request->file('logo_image'), 'brands', trim((string) ($data['logo_alt'] ?? '')) ?: $data['name']);
+            } elseif ($data['remove_logo'] ?? false) {
+                $mediaService->removeCollection($record, 'logo');
+            }
         });
 
         return redirect()->route('commerce-admin.brands.index')
@@ -98,13 +104,13 @@ class BrandController
         return $this->formView($record, true);
     }
 
-    public function update(SaveBrandRequest $request, int $brand): RedirectResponse
+    public function update(SaveBrandRequest $request, int $brand, MediaService $mediaService): RedirectResponse
     {
         $model = $this->model();
         $record = $model::query()->findOrFail($brand);
         $data = $request->validated();
 
-        DB::transaction(function () use ($record, $data, $model): void {
+        DB::transaction(function () use ($record, $data, $model, $request, $mediaService): void {
             $record->fill([
                 'name' => $data['name'],
                 'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name'], $record->getKey(), $record->slug),
@@ -114,6 +120,11 @@ class BrandController
                 'is_active' => ($data['status'] ?? 'active') === 'active',
             ]);
             $record->save();
+            if ($request->hasFile('logo_image')) {
+                $mediaService->replace($record, 'logo', $request->file('logo_image'), 'brands', trim((string) ($data['logo_alt'] ?? '')) ?: $data['name']);
+            } elseif ($data['remove_logo'] ?? false) {
+                $mediaService->removeCollection($record, 'logo');
+            }
         });
 
         return redirect()->route('commerce-admin.brands.index')

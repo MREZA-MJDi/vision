@@ -21,6 +21,9 @@ class SaveBrandRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($table, 'slug')->ignore($id)],
+            'logo_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'logo_alt' => ['nullable', 'string', 'max:255'],
+            'remove_logo' => ['nullable', 'boolean'],
             'description' => ['nullable', 'string', 'max:5000'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
