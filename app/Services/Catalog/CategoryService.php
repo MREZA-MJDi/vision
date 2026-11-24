@@ -20,7 +20,7 @@ final class CategoryService
     public function model(): string
     {
         return (string) config(
-            'commerce-admin.models.brand',
+            'commerce-admin.models.category',
             Category::class
         );
     }
