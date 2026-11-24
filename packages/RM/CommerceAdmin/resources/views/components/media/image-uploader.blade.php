@@ -19,7 +19,7 @@
             <button type="button" data-rm-remove @disabled(!$imageUrl)>حذف</button>
             <button type="button" data-rm-restore hidden>بازگردانی</button>
         </div>
-        <small data-rm-info aria-live="polite">حداکثر حجم خروجی ۴ مگابایت</small>
+        <small data-rm-info aria-live="polite">حداکثر حجم خروجی ۱۰ مگابایت</small>
         <p data-rm-error class="rm-uploader__error" role="alert" hidden></p>
         @error($prefix . '_image')<p class="rm-uploader__error" role="alert">{{ $message }}</p>@enderror
         <label class="ak-field"><span>متن جایگزین تصویر</span><input name="{{ $prefix }}_alt" maxlength="255" value="{{ $altText }}">@error($prefix . '_alt')<small role="alert">{{ $message }}</small>@enderror</label>

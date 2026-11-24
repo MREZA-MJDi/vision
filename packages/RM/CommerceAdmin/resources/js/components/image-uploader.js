@@ -1,7 +1,7 @@
 import '../../css/components/image-uploader.css';
 
-const MAX_SIZE = 4 * 1024 * 1024;
-const MAX_SOURCE = 20 * 1024 * 1024;
+const MAX_SIZE = 10 * 1024 * 1024;
+const MAX_SOURCE = MAX_SIZE;
 const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const clamp = (value, min, max) =>
@@ -233,7 +233,7 @@ class ImageUploader {
             }
 
             if (file.size > MAX_SOURCE) {
-                throw new Error('حجم تصویر اولیه بیشتر از ۲۰ مگابایت است.');
+                throw new Error('حجم تصویر اولیه بیشتر از ۱۰ مگابایت است.');
             }
 
             this.cropUrl = URL.createObjectURL(file);
@@ -447,7 +447,7 @@ class ImageUploader {
             ? 'تصویر آماده ذخیره است.'
             : this.removed
                 ? 'تصویر پس از ذخیره حذف می‌شود.'
-                : 'حداکثر حجم خروجی ۴ مگابایت';
+                : 'حداکثر حجم خروجی ۱۰ مگابایت';
     }
 
     releaseCrop() {

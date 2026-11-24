@@ -50,7 +50,7 @@ final class SaveCategoryRequest extends FormRequest
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:4096',
+                'max:10240',
                 'dimensions:max_width=4096,max_height=4096',
             ],
 
@@ -152,7 +152,7 @@ final class SaveCategoryRequest extends FormRequest
             'parent_id.exists' => 'دسته‌بندی والد معتبر نیست.',
             'cover_image.image' => 'فایل باید یک تصویر معتبر باشد.',
             'cover_image.mimes' => 'فرمت تصویر باید JPG، PNG یا WebP باشد.',
-            'cover_image.max' => 'حجم تصویر نباید بیشتر از ۴ مگابایت باشد.',
+            'cover_image.max' => 'حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد.',
             'cover_image.dimensions' => 'ابعاد تصویر بیش از حد مجاز است.',
         ];
     }
