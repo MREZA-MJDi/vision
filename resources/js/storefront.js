@@ -446,7 +446,7 @@ import { flyToCart, pulseCartTarget, prefersReducedMotion } from "./cart-motion"
                 ease: 'power2.out', clearProps: 'transform,opacity'
             });
         }, { threshold: 0.2 });
-        root.querySelectorAll('.home-content-heading, .home-rail > *, .vision-shop-story > *').forEach((element) => observer.observe(element));
+        root.querySelectorAll('.home-content-heading, .home-editorial-heading, .home-brand-shard, .home-category-mosaic__tile, .home-rail > *, .vision-shop-story > *').forEach((element) => observer.observe(element));
     }
 
     updateCartCount(0);
