@@ -75,6 +75,7 @@ class PaymentGatewayFlowTest extends TestCase
             'payment_method' => 'snappay',
         ]);
 
+        $response->assertSessionHasNoErrors();
         $order = Order::query()->firstOrFail();
         $payment = Payment::query()->where('order_id', $order->getKey())->firstOrFail();
 
@@ -148,6 +149,7 @@ class PaymentGatewayFlowTest extends TestCase
             'shipping_address' => 'Test street 14',
             'payment_method' => 'digipay',
         ]);
+        $response->assertSessionHasNoErrors();
         $order = Order::query()->firstOrFail();
         $payment = Payment::query()->where('order_id', $order->getKey())->firstOrFail();
 
