@@ -689,3 +689,10 @@ body.storefront-home-body { color-scheme: light; }
 .home-merchandise .home-content-heading .home-section-link:hover { background:#574737; color:#fffaf3; border-color:#574737; }
 .home-section-link:focus-visible { outline:2px solid #806348; outline-offset:3px; }
 @media(prefers-reduced-motion:reduce){.home-section-link{transition:none!important}}
+
+.home-trust-title { text-align:center; font-size:var(--vision-heading-size); margin:0 0 24px; }
+.home-trust-feature { display:grid; justify-items:center; gap:12px; padding:20px 8px; border-block:1px solid var(--home-line); text-align:center; color:var(--home-ink); }
+.home-trust-feature img { width:96px; height:96px; object-fit:contain; transition:transform .3s ease; }
+.home-trust-feature h3 { margin:0; font-size:15px; font-weight:600; }
+.home-trust-feature:hover img { transform:translateY(-4px); }
+@media(prefers-reduced-motion:reduce){.home-trust-feature img{transition:none}.home-trust-feature:hover img{transform:none}}

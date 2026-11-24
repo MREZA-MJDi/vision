@@ -102,8 +102,6 @@
     <div class="home-page-content">
     @include('store.home.brands')
 
-
-
     @include('store.home.identity')
     @include('store.home.categories')
 
@@ -123,19 +121,7 @@
         'destination' => route('shop.index', ['sale' => 1]),
     ])
 
-
-
-
-
-
-    <section class="home-content-section home-trust" aria-labelledby="home-trust-title">
-        <div class="home-content-heading"><h2 id="home-trust-title">با اطمینان انتخاب کن</h2></div>
-        <div class="home-trust-grid">
-            <article><span>۰۱</span><h3>انتخاب آگاهانه</h3><p>تصاویر، مشخصات و قیمت محصولات را قبل از خرید بررسی کن.</p></article>
-            <article><span>۰۲</span><h3>پیگیری سفارش</h3><p>وضعیت خریدهای خود را از <a href="{{ route('account.show') }}">حساب کاربری</a> دنبال کن.</p></article>
-            <article><span>۰۳</span><h3>ارتباط مستقیم</h3><p>پرسش‌های خود را از طریق <a href="{{ route('contact.index') }}">صفحه تماس</a> با فروشگاه در میان بگذار.</p></article>
-        </div>
-    </section>
+    @include('store.home.trust')
 
     @include('store.home.shop-finale')
     </div>

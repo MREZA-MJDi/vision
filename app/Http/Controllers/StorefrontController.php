@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Brand;
-use App\Models\Category;
 use App\Models\Product;
 use App\Services\FittingRoomShopData;
 use App\Services\HeroService;
@@ -16,44 +14,7 @@ class StorefrontController extends Controller
 {
     public function home(HeroService $hero): View
     {
-        $heroProducts = $this->catalogProducts()
-            ->where('is_hero', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->limit(HeroService::MAX_HOME_PRODUCTS)
-            ->get();
-
-        $heroProducts->loadMissing(['activeVariants.primaryGalleryMedia']);
-        $heroSlides = $hero->storefrontSlides($heroProducts);
-
-        $newProducts = $this->catalogProducts()
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->limit(8)
-            ->get();
-
-        $editorialProducts = $this->catalogProducts()
-            ->where('is_featured', true)
-            ->whereHas('primaryAvailableVariant')
-            ->orderBy('sort_order')->orderByDesc('id')->limit(4)->get();
-
-        $saleProducts = $this->catalogProducts()
-            ->whereHas('primaryAvailableVariant', fn (Builder $query) => $query
-                ->where('sale_price', '>=', 0)->whereColumn('sale_price', '<', 'price'))
-            ->orderByDesc('created_at')->orderByDesc('id')->limit(4)->get();
-
-        $homeCategories = Category::query()
-            ->active()
-            ->with('coverMedia')
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->limit(6)
-            ->get();
-
-        $homeBrands = Brand::query()->active()
-            ->with('logoMedia')->orderByDesc('created_at')->orderByDesc('id')->limit(8)->get();
-
-        return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories', 'homeBrands', 'editorialProducts', 'saleProducts'));
+        return view('store.home', app(\App\Services\HomepageContent::class)->data($hero));
     }
 
     public function index(Request $request): View
@@ -117,23 +78,4 @@ class StorefrontController extends Controller
         return view('store.products.show', compact('product', 'relatedProducts', 'selectedVariantId'));
     }
 
-    /**
-     * A bounded, eager-loaded base query shared by the homepage and catalog.
-     * The card templates never need per-product follow-up queries.
-     */
-    private function catalogProducts(): Builder
-    {
-        return Product::query()
-            ->active()
-            ->whereHas('activeVariants')
-            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
-            ->withCount('approvedReviews')
-            ->with([
-                'category',
-                'brand',
-                'primaryGalleryMedia',
-                'primaryAvailableVariant.primaryGalleryMedia',
-                'primaryActiveVariant.primaryGalleryMedia',
-            ]);
-    }
 }

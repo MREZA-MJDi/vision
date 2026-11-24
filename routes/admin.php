@@ -22,6 +22,9 @@ Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
 
     Route::middleware(EnsureAdmin::class)->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/homepage', [\App\Http\Controllers\Admin\HomepageController::class, 'index'])->name('homepage.index');
+        Route::put('/homepage/trust/{slot}', [\App\Http\Controllers\Admin\HomepageController::class, 'update'])->name('homepage.trust.update');
+        Route::delete('/homepage/trust/{slot}', [\App\Http\Controllers\Admin\HomepageController::class, 'destroy'])->name('homepage.trust.destroy');
         Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
         Route::get('/analytics/export', [DashboardController::class, 'export'])->name('analytics.export');
 
