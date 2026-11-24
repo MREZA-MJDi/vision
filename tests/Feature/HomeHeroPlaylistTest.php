@@ -25,10 +25,10 @@ class HomeHeroPlaylistTest extends TestCase
         ]);
 
         foreach ([
-            ['HERO-COLOR-BLACK', 'مشکی', '#171719', 1200],
-            ['HERO-COLOR-ORANGE', 'نارنجی', '#e96512', 1300],
-            ['HERO-COLOR-CREAM', 'کرم', '#DCCDB6', 1400],
-        ] as [$sku, $color, $colorCode, $price]) {
+            ['HERO-COLOR-BLACK', 'مشکی', '#171719', 1200, 2, 3],
+            ['HERO-COLOR-ORANGE', 'نارنجی', '#e96512', 1300, 0, 0],
+            ['HERO-COLOR-CREAM', 'کرم', '#DCCDB6', 1400, 1, 3],
+        ] as [$sku, $color, $colorCode, $price, $sortOrder, $stock]) {
             ProductVariant::query()->create([
                 'product_id' => $product->getKey(),
                 'sku' => $sku,
@@ -36,7 +36,8 @@ class HomeHeroPlaylistTest extends TestCase
                 'color' => $color,
                 'color_code' => $colorCode,
                 'price' => $price,
-                'stock' => 3,
+                'stock' => $stock,
+                'sort_order' => $sortOrder,
                 'low_stock_threshold' => 1,
                 'is_active' => true,
             ]);
@@ -44,6 +45,9 @@ class HomeHeroPlaylistTest extends TestCase
 
         $this->get(route('storefront.index'))
             ->assertOk()
+            ->assertSee('--home-hero-base: #e96512', false)
+            ->assertSeeInOrder(['data-theme="#e96512"', 'data-theme="#DCCDB6"', 'data-theme="#171719"'], false)
+            ->assertSee('data-home-hero-stock>فعلاً ناموجود', false)
             ->assertSee('data-home-hero-slide', false)
             ->assertSee('data-theme="#171719"', false)
             ->assertSee('data-theme="#e96512"', false)

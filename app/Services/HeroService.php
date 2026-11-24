@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Support\Money;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -29,6 +32,46 @@ final class HeroService
             now()->addMinutes(self::CACHE_TTL_MINUTES),
             fn () => $this->loadSlides()
         );
+    }
+
+    public function storefrontSlides(Collection $products): Collection
+    {
+        return $products->flatMap(function (Product $product): Collection {
+            $primary = $product->activeVariants->first();
+
+            return $product->activeVariants
+                ->groupBy(function (ProductVariant $variant): string {
+                    $color = mb_strtolower(trim((string) $variant->color));
+                    $code = mb_strtolower((string) $variant->color_code);
+
+                    return $color !== '' || $code !== ''
+                        ? "color:{$color}:{$code}"
+                        : 'option:' . trim((string) $variant->size);
+                })
+                ->map(function (Collection $variants) use ($product, $primary): array {
+                    $first = $variants->first();
+                    $variant = $first === $primary
+                        ? $first
+                        : ($variants->first(fn (ProductVariant $item) => $item->stock > 0 && $item->primaryGalleryMedia?->url)
+                            ?? $variants->first(fn (ProductVariant $item) => $item->stock > 0)
+                            ?? $first);
+                    $color = $variant->color_code;
+
+                    return [
+                        'title' => $product->name,
+                        'description' => Str::limit($product->short_description ?: $product->description ?: 'انتخابی از فروشگاه VISION.', 220),
+                        'image' => $variant->primaryGalleryMedia?->url ?: $product->primaryGalleryMedia?->url,
+                        'alt' => trim(implode(' ', array_filter([$product->name, $variant->color, $variant->size]))),
+                        'theme' => preg_match('/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/D', (string) $color) ? $color : '#9a5527',
+                        'url' => route('products.show', ['product' => $product->slug, 'variant_id' => $variant->getKey()]),
+                        'price' => Money::format($variant->effective_price),
+                        'originalPrice' => $variant->is_on_sale ? Money::format($variant->price) : '',
+                        'stock' => $variant->stock > 0 ? number_format($variant->stock) . ' عدد موجود' : 'فعلاً ناموجود',
+                        'label' => $variant->color ?: ($variant->size ?: 'محصول منتخب'),
+                    ];
+                })
+                ->values();
+        })->values();
     }
 
     public function toggle(Product $product): bool

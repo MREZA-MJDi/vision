@@ -24,7 +24,7 @@ class StorefrontBrowseTest extends TestCase
         $response->assertDontSee('home-featured', false);
         $response->assertDontSee('home-brand-story', false);
         $response->assertSee('vision-home-benefits', false);
-        $response->assertSee('vision-shop-collections', false);
+        $response->assertDontSee('vision-shop-collections', false);
         $response->assertSee('vision-shop-story', false);
         $response->assertSee('نماد کسب‌وکار', false);
         $response->assertSee('home-minimal-footer', false);

@@ -6,23 +6,21 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\FittingRoomShopData;
+use App\Services\HeroService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StorefrontController extends Controller
 {
-    public function home(): View
+    public function home(HeroService $hero): View
     {
-        // The homepage is a focused editorial hero. Products explicitly selected
-        // in Commerce Admin make the playlist; every color is a real active
-        // database variant with its own image, price, stock and color token.
         $heroProducts = $this->catalogProducts()
             ->where('is_hero', true)
             ->orderBy('sort_order')
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->limit(16)
+            ->limit(HeroService::MAX_SLIDES)
             ->get();
 
         if ($heroProducts->isEmpty()) {
@@ -31,11 +29,18 @@ class StorefrontController extends Controller
                 ->orderBy('sort_order')
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->limit(16)
+                ->limit(8)
                 ->get();
         }
 
         $heroProducts->loadMissing(['activeVariants.primaryGalleryMedia']);
+        $heroSlides = $hero->storefrontSlides($heroProducts);
+
+        $newProducts = $this->catalogProducts()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(4)
+            ->get();
 
         $homeCategories = Category::query()
             ->active()
@@ -46,7 +51,7 @@ class StorefrontController extends Controller
             ->limit(6)
             ->get();
 
-        return view('store.home', compact('heroProducts', 'homeCategories'));
+        return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories'));
     }
 
     public function index(Request $request): View

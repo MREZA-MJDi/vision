@@ -32,7 +32,10 @@
         @if (request()->routeIs('shop.index', 'products.index'))
             @vite(['resources/css/app.css', 'resources/css/vision-shop.css', 'resources/css/vision-polish.css', 'resources/js/vision-shop.js'])
         @else
-            @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/home-hero.css', 'resources/css/vision-polish.css', 'resources/js/storefront.js'])
+            @vite(['resources/css/app.css', 'resources/css/storefront.css', 'resources/css/vision-polish.css', 'resources/js/storefront.js'])
+            @if (request()->routeIs('storefront.index'))
+                @vite('resources/css/home-hero.css')
+            @endif
         @endif
     @elseif (app()->environment('testing'))
         {{-- Feature tests assert rendered storefront markup without requiring a Vite build. --}}
@@ -89,7 +92,7 @@
 
         @if (request()->routeIs('storefront.index'))
         <footer class="home-minimal-footer" aria-label="پاورقی VISION">
-            <a class="home-minimal-footer__brand" href="{{ route('storefront.index') }}">VISION<span>®</span></a>
+            <a class="home-minimal-footer__brand" href="{{ route('storefront.index') }}">VISION</a>
             <nav aria-label="پیوندهای ضروری">
                 <a href="{{ route('shop.index') }}">فروشگاه</a>
                 <a href="{{ route('cart.index') }}">سبد خرید</a>
@@ -97,10 +100,8 @@
                 <a href="{{ route('shop.index', ['sale' => 1]) }}">تخفیف‌ها</a>
                 <a href="{{ route('contact.index') }}">تماس با ما</a>
             </nav>
-            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span><div class="vision-trust-cards" aria-label="نمادهای اعتبار فروشگاه">
-<div class="vision-trust-card" aria-label="جایگاه اینماد"><span>ENAMAD</span><strong>نماد اعتماد الکترونیکی</strong><small>محل درج تصویر و لینک مجوز</small></div>
-<div class="vision-trust-card" aria-label="جایگاه نماد کسب‌وکار"><span>BUSINESS</span><strong>نماد کسب‌وکار</strong><small>محل درج تصویر و لینک مجوز</small></div>
-</div>
+            <span class="home-minimal-footer__copyright">© {{ now()->year }} VISION</span>
+            @include('store.trust-slots')
         </footer>
         @else
         <footer class="store-footer" aria-label="پاورقی فروشگاه VISION">
@@ -130,10 +131,8 @@
                 </nav>
             </div>
 
-            <div class="vision-trust-cards" aria-label="نمادهای اعتبار فروشگاه">
-<div class="vision-trust-card" aria-label="جایگاه اینماد"><span>ENAMAD</span><strong>نماد اعتماد الکترونیکی</strong><small>محل درج تصویر و لینک مجوز</small></div>
-<div class="vision-trust-card" aria-label="جایگاه نماد کسب‌وکار"><span>BUSINESS</span><strong>نماد کسب‌وکار</strong><small>محل درج تصویر و لینک مجوز</small></div>
-</div>
+
+            @include('store.trust-slots')
             <div class="store-footer__bottom">
                 <span>© {{ now()->year }} VISION — تمام حقوق محفوظ است.</span>
                 <a href="{{ route('storefront.index') }}">بازگشت به صفحهٔ اصلی <span aria-hidden="true">↑</span></a>
