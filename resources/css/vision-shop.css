@@ -633,7 +633,7 @@ body.storefront-body.store-shop-body {
 @media (min-width: 1040px) {
     .vision-shop-main.fit-open {
         width: min(100%, 1392px);
-        grid-template-columns: minmax(148px, 180px) minmax(0, 1fr) clamp(198px, 18vw, 242px);
+        grid-template-columns: minmax(148px, 180px) minmax(0, 1fr) clamp(300px, 27vw, 380px);
     }
 }
 
@@ -716,7 +716,7 @@ body.storefront-body.store-shop-body {
 
 .stage {
     flex: 0 0 auto;
-    width: min(100%, 255px, 35dvh);
+    width: min(100%, 320px, 42dvh);
     margin-inline: auto;
     position: relative;
     aspect-ratio: 2/3;
@@ -990,10 +990,10 @@ body.storefront-body.store-shop-body {
 }
 
 .fit-rec-card {
-    flex: 0 0 min(100%, 195px);
+    flex: 0 0 min(100%, 270px);
     scroll-snap-align: start;
     display: grid;
-    grid-template-columns: 42px minmax(0,1fr) auto;
+    grid-template-columns: 56px minmax(0,1fr) auto;
     align-items: center;
     gap: 8px;
     padding: 7px;
@@ -1004,8 +1004,8 @@ body.storefront-body.store-shop-body {
 }
 
 .fit-rec-thumb {
-    width: 42px;
-    height: 48px;
+    width: 56px;
+    height: 64px;
     display: grid;
     place-items: center;
     overflow: hidden;
