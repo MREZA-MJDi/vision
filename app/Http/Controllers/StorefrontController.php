@@ -22,9 +22,10 @@ class StorefrontController extends Controller
         return view('store.index', app(FittingRoomShopData::class)->payload($request));
     }
 
-    public function studio(FittingRoomShopData $shop): JsonResponse
+    public function studio(FittingRoomShopData $shop, Request $request): JsonResponse
     {
-        return response()->json($shop->studio());
+        $response = response()->json($shop->studio($request));
+        return $response->header('Cache-Control', 'private, no-store');
     }
 
     /**
