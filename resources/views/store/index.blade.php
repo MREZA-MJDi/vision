@@ -37,6 +37,9 @@
             <a href="{{ route('shop.index') }}">حذف فیلترها</a>
         </div>
         <div id="shop-filter-fields" class="shop-filter-fields">
+            @if(filled($filters['previewModel'] ?? null))
+                <input type="hidden" name="preview_model" value="{{ $filters['previewModel'] }}">
+            @endif
             @if(filled($filters['brand'] ?? null))
                 <input type="hidden" name="brand" value="{{ $filters['brand'] }}">
             @endif
