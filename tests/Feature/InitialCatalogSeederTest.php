@@ -104,4 +104,42 @@ class InitialCatalogSeederTest extends TestCase
         $this->assertSame(0, SiteSetting::query()->where('key', 'imports.sizen.initial-catalog.v1')->count());
         $this->assertSame([], Storage::disk('public')->allFiles());
     }
+
+    public function test_imported_catalog_is_visible_and_draft_model_preview_requires_admin(): void
+    {
+        $this->withoutVite();
+        $this->fixture();
+        $manifest = json_decode(file_get_contents($this->source . '/manifest.json'), true, 512, JSON_THROW_ON_ERROR);
+        $manifest['products'][0]['price'] = 1290000;
+        $manifest['products'][0]['price_status'] = 'proposed';
+        $manifest['products'][0]['publish'] = true;
+        $manifest['products'][0]['hero'] = true;
+        $manifest['models'][0]['base'] = 'item.png';
+        $manifest['category_images'] = ['coats' => 'item.png'];
+        file_put_contents($this->source . '/manifest.json', json_encode($manifest, JSON_THROW_ON_ERROR));
+        (new InitialCatalogSeeder())->importFrom($this->source);
+
+        $variant = Product::query()->where('slug', 'sizen-coat')->sole()->variants()->sole();
+        $model = FittingRoomMannequin::query()->sole();
+        $this->assertFalse($model->is_active);
+        $this->assertSame(0, $variant->stock);
+        $this->assertNotNull($variant->product->category->coverMedia);
+        $preview = ['preview_model' => $model->code];
+
+        $this->get('/')->assertOk()->assertSee($variant->primaryGalleryMedia->url, false);
+        $this->get(route('shop.index', $preview))->assertOk()->assertDontSee('data-t="' . $variant->id . '"', false);
+        $this->getJson(route('shop.studio', $preview))->assertNotFound();
+
+        $admin = \App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin)->get(route('shop.index', $preview))
+            ->assertOk()->assertSee('data-t="' . $variant->id . '"', false)
+            ->assertDontSee('data-c="' . $variant->id . '"', false);
+        $this->getJson(route('shop.studio', $preview))->assertOk()
+            ->assertJsonPath('base', $model->baseMedia->url)
+            ->assertJsonPath('garments.0.id', $variant->id)
+            ->assertJsonPath('garments.0.stock', 0);
+
+        $this->getJson(route('shop.studio'))->assertNotFound();
+    }
 }
