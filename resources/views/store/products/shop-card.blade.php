@@ -5,9 +5,9 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>
         </button>
         @if($product['fitReady'] && ($product['stock'] > 0 || ($studio['previewFit'] ?? false)))
-            <button type="button" class="try" data-t="{{ $product['id'] }}" aria-controls="fit"
+            <button type="button" class="try" title="پرو لباس" data-t="{{ $product['id'] }}" aria-controls="fit"
                     aria-label="امتحان {{ $product['name'] }} روی مانکن" aria-pressed="false">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg><span>پرو</span>
             </button>
         @endif
     </div>
@@ -17,7 +17,7 @@
     <a class="shop-pic product-media-frame" href="{{ $product['url'] }}" aria-label="مشاهدهٔ {{ $product['name'] }}"
        style="--product-image-scale: {{ $product['frame']['scale'] / 100 }}; --product-image-x: {{ $product['frame']['x'] }}%; --product-image-y: {{ $product['frame']['y'] }}%">
         @if($product['img'])
-            <img src="{{ $product['img'] }}" alt="" loading="lazy" decoding="async">
+            <img src="{{ $product['img'] }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async">
         @else
             <span class="shop-pic-empty">بدون تصویر</span>
         @endif
