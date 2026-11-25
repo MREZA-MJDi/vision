@@ -134,6 +134,7 @@ class FittingRoomShopData
                 'max' => $max,
             ],
             'studio' => [
+                'previewFit' => (bool) $request?->user()?->isAdmin(),
                 'favs' => array_values(array_unique(array_map('intval', (array) ($request?->session()->get('shop_favourites', []))))),
                 'currency' => (string) config('commerce-admin.currency_symbol', 'تومان'),
                 'routes' => [
