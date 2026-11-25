@@ -12,7 +12,7 @@
         <option value="">بدون {{ $slotLabel }}</option>
         @foreach($options as $variant)
             <option value="{{ $variant->id }}" data-audience="{{ $variant->product?->audience }}" @selected((int) $selectedId === (int) $variant->id)>
-                {{ $variant->product?->name }} — {{ $variant->display_name }} · {{ $variant->sku }}
+                {{ $variant->product?->name }} — {{ $variant->display_name }} · {{ $variant->sku }}{{ $variant->is_active && $variant->product?->is_active ? '' : ' (پیش‌نویس)' }}
             </option>
         @endforeach
     </select>
