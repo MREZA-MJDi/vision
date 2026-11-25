@@ -208,13 +208,19 @@ class FittingRoomStudioController extends Controller
         $mannequin = FittingRoomMannequin::query()->findOrFail((int) $data['mannequin_id']);
 
         $publishing = $request->boolean('is_active');
-        $hasScene = static fn (string $field, ?Media $media): bool => $request->hasFile($field)
-            || ($publishing ? $media?->url !== null : $media !== null);
-        $hasTopScene = $hasScene('preview_top', $look->previewTopMedia);
-        $hasBottomScene = $hasScene('preview_bottom', $look->previewBottomMedia);
-        $hasCombinedScene = $hasScene('preview_combined', $look->previewCombinedMedia);
-        $topVariantRequested = (int) ($data['top_variant_id'] ?? 0) > 0;
-        $bottomVariantRequested = (int) ($data['bottom_variant_id'] ?? 0) > 0;
+        $existingSlots = $look->exists ? $look->items()->pluck('product_variant_id', 'slot') : collect();
+        $mannequinChanged = $look->exists && (int) $look->mannequin_id !== (int) $mannequin->getKey();
+        $topVariantId = (int) ($data['top_variant_id'] ?? 0);
+        $bottomVariantId = (int) ($data['bottom_variant_id'] ?? 0);
+        $topChanged = $mannequinChanged || $topVariantId !== (int) $existingSlots->get('top', 0);
+        $bottomChanged = $mannequinChanged || $bottomVariantId !== (int) $existingSlots->get('bottom', 0);
+        $hasScene = static fn (string $field, ?Media $media, bool $changed): bool => $request->hasFile($field)
+            || (!$changed && ($publishing ? $media?->url !== null : $media !== null));
+        $hasTopScene = $hasScene('preview_top', $look->previewTopMedia, $topChanged);
+        $hasBottomScene = $hasScene('preview_bottom', $look->previewBottomMedia, $bottomChanged);
+        $hasCombinedScene = $hasScene('preview_combined', $look->previewCombinedMedia, $topChanged || $bottomChanged);
+        $topVariantRequested = $topVariantId > 0;
+        $bottomVariantRequested = $bottomVariantId > 0;
 
         foreach (['top', 'bottom'] as $slot) {
             if (($request->hasFile($slot . '_product_image') || isset($data[$slot . '_card_frame'])) && empty($data[$slot . '_variant_id'])) {
@@ -276,7 +282,7 @@ class FittingRoomStudioController extends Controller
         $storedPaths = [];
         $obsoleteMedia = [];
         try {
-            DB::transaction(function () use ($request, $data, $look, $mannequin, &$storedPaths, &$obsoleteMedia): void {
+            DB::transaction(function () use ($request, $data, $look, $mannequin, $topVariantRequested, $bottomVariantRequested, $topChanged, $bottomChanged, &$storedPaths, &$obsoleteMedia): void {
                 if ($look->exists && $look->mannequin_id != $mannequin->getKey()) {
                     $look->items()->delete();
                 }
@@ -294,6 +300,20 @@ class FittingRoomStudioController extends Controller
                     'preview_combined' => ['previewCombinedMedia', 'preview_combined_media_id', 'تصویر ست کامل'],
                     'preview_suggested' => ['previewSuggestedMedia', 'preview_suggested_media_id', 'تصویر ست پیشنهادی'],
                 ] as $input => [$relation, $foreignKey, $alt]) {
+                    $mustClear = match ($input) {
+                        'preview_top' => !$topVariantRequested,
+                        'preview_bottom' => !$bottomVariantRequested,
+                        'preview_combined' => !$topVariantRequested || !$bottomVariantRequested,
+                        'preview_suggested' => ($topChanged || $bottomChanged) && !$request->hasFile($input),
+                        default => false,
+                    };
+                    if ($mustClear) {
+                        if ($obsolete = $look->{$relation}) {
+                            $obsoleteMedia[] = $obsolete;
+                        }
+                        $look->{$foreignKey} = null;
+                        continue;
+                    }
                     if (!$request->hasFile($input)) {
                         continue;
                     }
