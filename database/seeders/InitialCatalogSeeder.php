@@ -56,6 +56,9 @@ class InitialCatalogSeeder extends Seeder
                             'name' => $manifest['categories'][$category],
                             'is_active' => true,
                         ]);
+                        if (!$categories[$category]->coverMedia && !empty($manifest['category_images'][$category])) {
+                            $this->media($categories[$category], $root, $manifest['category_images'][$category], 'cover', 'categories/' . $categories[$category]->id, $categories[$category]->name, false, $written);
+                        }
                     }
                     $price = $row['price'] ?? null;
                     if ($price !== null && (!is_numeric($price) || $price <= 0)) {
