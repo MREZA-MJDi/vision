@@ -728,7 +728,7 @@ body.storefront-body.store-shop-body {
 
 .stage {
     flex: 0 0 auto;
-    width: min(100%, 400px, 51dvh);
+    width: min(100%, 400px, max(0px, calc(66.667dvh - 200px)));
     margin-inline: auto;
     position: relative;
     aspect-ratio: 2/3;
@@ -1251,4 +1251,4 @@ body.storefront-body.store-shop-body {
 .fit-garment-picker small{color:var(--vs-muted);font-size:12px}
 .fit-guide{font-size:12px;line-height:1.8}
 .fit-rec-copy strong,.fit-rec-copy>span{font-size:12px}
-@media(max-width:760px){.shop-product-card{padding:6px}.shop-product-name{font-size:12px}.shop-product-details{margin:8px 2px 4px}.shop-product-price{font-size:12px}.shop-fit-intro{padding:12px}.stage{width:min(100%,380px,50dvh)}}
+@media(max-width:760px){.shop-product-card{padding:6px}.shop-product-name{font-size:12px}.shop-product-details{margin:8px 2px 4px}.shop-product-price{font-size:12px}.shop-fit-intro{padding:12px}.stage{width:min(100%,380px,max(0px,calc(66.667dvh - 200px)))}}
