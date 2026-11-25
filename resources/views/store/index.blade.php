@@ -75,6 +75,9 @@
                 <button type="submit" form="shop-filters">مرتب‌سازی</button>
             </div>
         </div>
+        @if($studio['routes']['studio'])
+            <div class="shop-fit-intro"><div><strong>قبل از خرید، لباس را روی مدل ببینید.</strong><p>محصولاتی که دکمهٔ «پرو» دارند، عکس واقعی مدل را دارند. یک لباس یا یک ست را انتخاب کنید.</p></div><button type="button" class="shop-open-fit" data-open-studio aria-controls="fit">ورود به اتاق پرو</button></div>
+        @endif
         <div class="shop-grid" id="grid">
             @forelse($products as $product)
                 @include('store.products.shop-card', ['product' => $product, 'isFavourite' => in_array($product['id'], $studio['favs'], true)])
@@ -103,9 +106,14 @@
             </button>
         </h2>
         <div class="fit-content">
-            <p class="fit-guide">با چوب‌لباسی روی هر کارت، لباس را روی مانکن ببین.</p>
+            <p class="fit-guide">۱. لباس را انتخاب کنید. ۲. نتیجه را روی مدل ببینید. ۳. در صورت موجود بودن به سبد اضافه کنید.</p>
             <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها" aria-busy="false">
                 <div class="load" id="load" role="status" hidden><span class="spin" aria-hidden="true"></span><b>در حال آماده‌سازی</b></div>
+            </div>
+            <div class="fit-garment-picker" id="fit-garment-picker" hidden>
+                <label for="fit-garment">انتخاب لباس روی مدل</label>
+                <div><select id="fit-garment" aria-label="انتخاب لباس قابل پرو"><option value="">لباس را انتخاب کنید</option></select><button type="button" id="fit-choose" disabled>پرو</button></div>
+                <small id="fit-garment-empty" hidden>هنوز لباس قابل پرو برای این مدل ثبت نشده است.</small>
             </div>
             <button type="button" id="sugg" class="shop-fit-suggestion" aria-pressed="false" hidden>دیدن ست پیشنهادی</button>
             <p class="fit-scene-notice" id="fit-scene-notice" role="status" aria-live="polite" hidden></p>
