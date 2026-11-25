@@ -66,6 +66,9 @@ class InitialCatalogSeeder extends Seeder
                         throw new RuntimeException('Invalid stock.');
                     }
                     $publish = ($row['publish'] ?? false) === true;
+                    if (($row['price_status'] ?? null) === 'proposed' && $stock !== 0) {
+                        throw new RuntimeException('Proposed catalog prices require zero unverified inventory.');
+                    }
                     if ($publish && ($price === null || !in_array($row['audience'] ?? null, ['men', 'women'], true))) {
                         throw new RuntimeException('Publishing requires a verified price and audience.');
                     }
@@ -74,12 +77,18 @@ class InitialCatalogSeeder extends Seeder
                         'name' => $row['name'],
                         'slug' => 'sizen-' . $row['code'],
                         'audience' => $row['audience'] ?? null,
+                        'short_description' => $row['short_description'] ?? null,
+                        'description' => $row['description'] ?? null,
+                        'meta_title' => $row['name'],
+                        'meta_description' => $row['short_description'] ?? null,
+                        'is_hero' => $publish && ($row['hero'] ?? false) === true,
                         'is_active' => $publish,
                     ]);
                     $variant = $product->variants()->create([
                         'sku' => 'SIZEN-' . strtoupper($row['code']),
                         'size' => $row['size'] ?? null,
                         'color' => $row['color'],
+                        'color_code' => $row['color_code'] ?? null,
                         'price' => $price ?? 0,
                         'stock' => $stock,
                         'low_stock_threshold' => 5,
@@ -91,15 +100,20 @@ class InitialCatalogSeeder extends Seeder
                 }
 
                 foreach ($manifest['models'] ?? [] as $row) {
-                    // Do not claim a fully dressed reference is a neutral base.
+                    // Fully dressed temporary references are explicitly labelled as such.
+                    $active = ($row['active'] ?? false) === true;
+                    if ($active && empty($row['base'])) {
+                        throw new RuntimeException('Active fitting model requires a base image.');
+                    }
                     $mannequin = FittingRoomMannequin::query()->create([
                         'code' => $row['code'],
                         'label' => $row['label'],
                         'audience' => $row['audience'],
-                        'pose_key' => 'front-neutral',
+                        'pose_key' => $row['pose_key'] ?? 'front-neutral',
                         'canvas_width' => 1024,
                         'canvas_height' => 1536,
-                        'is_active' => false,
+                        'is_active' => $active,
+                        'sort_order' => (int) ($row['sort_order'] ?? 0),
                     ]);
                     if (!empty($row['base'])) {
                         $base = $this->media($mannequin, $root, $row['base'], 'fitting-room-mannequin', 'fitting-room/mannequins/' . $mannequin->id, $row['label'], true, $written);
@@ -117,7 +131,7 @@ class InitialCatalogSeeder extends Seeder
                         $look = $mannequin->looks()->create([
                             'code' => $scene['product'],
                             'label' => $scene['label'],
-                            'is_active' => false,
+                            'is_active' => $active && ($scene['active'] ?? false) === true && $variant->product->is_active,
                         ]);
                         $preview = $this->media($look, $root, $scene['image'], 'fitting-room-scene', 'fitting-room/looks/' . $look->id, $look->label, true, $written);
                         $look->update(['preview_' . $slot . '_media_id' => $preview->id]);
