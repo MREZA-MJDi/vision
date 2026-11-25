@@ -18,8 +18,10 @@ class FittingRoomShopData
 {
     public function payload(?Request $request = null): array
     {
-        $mannequin = $this->publicMannequin();
-        $fitItems = $mannequin ? $this->fittingItems($mannequin, $this->missingSceneMediaIds($mannequin)) : null;
+        $previewModel = $this->previewModel($request);
+        $mannequin = $this->publicMannequin($previewModel);
+        $preview = $previewModel !== null;
+        $fitItems = $mannequin ? $this->fittingItems($mannequin, $this->missingSceneMediaIds($mannequin, $preview), $preview) : null;
 
         $catalog = ProductVariant::query()
             ->select('product_variants.*')
@@ -127,6 +129,8 @@ class FittingRoomShopData
             'categories' => $categories,
             'filters' => [
                 'q' => $search,
+                'brand' => $brand,
+                'previewModel' => $previewModel,
                 'category' => $categoryId === null ? '' : $category,
                 'sale' => $saleOnly,
                 'sort' => $sort,
@@ -138,7 +142,7 @@ class FittingRoomShopData
                 'favs' => array_values(array_unique(array_map('intval', (array) ($request?->session()->get('shop_favourites', []))))),
                 'currency' => (string) config('commerce-admin.currency_symbol', 'تومان'),
                 'routes' => [
-                    'studio' => $mannequin ? route('shop.studio') : null,
+                    'studio' => $mannequin ? route('shop.studio', $preview ? ['preview_model' => $previewModel] : []) : null,
                     'cart' => route('cart.items.store'),
                     'cartMany' => route('cart.items.bulk'),
                     'fav' => url('/shop/favourites'),
@@ -148,12 +152,13 @@ class FittingRoomShopData
         ];
     }
 
-    public function studio(): array
+    public function studio(?Request $request = null): array
     {
-        $mannequin = $this->publicMannequin();
+        $previewModel = $this->previewModel($request);
+        $mannequin = $this->publicMannequin($previewModel);
         abort_unless($mannequin, 404);
 
-        $items = $this->fittingItems($mannequin)
+        $items = $this->fittingItems($mannequin, [], $previewModel !== null)
             ->with([
                 'look.previewTopMedia',
                 'look.previewBottomMedia',
@@ -207,17 +212,24 @@ class FittingRoomShopData
         ];
     }
 
-    private function publicMannequin(): ?FittingRoomMannequin
+    private function previewModel(?Request $request): ?string
     {
-        return FittingRoomMannequin::query()->active()
+        $code = $request?->query('preview_model');
+        return $request?->user()?->isAdmin() && is_string($code) && preg_match('/^[a-zA-Z0-9_-]{1,80}$/D', $code) ? $code : null;
+    }
+
+    private function publicMannequin(?string $previewModel = null): ?FittingRoomMannequin
+    {
+        return FittingRoomMannequin::query()
+            ->when($previewModel === null, fn ($query) => $query->active(), fn ($query) => $query->where('code', $previewModel))
             ->with('baseMedia')->whereHas('baseMedia', fn ($media) => $media->whereNotNull('path'))
             ->orderBy('sort_order')->orderBy('id')
             ->lazy(16)->first(fn (FittingRoomMannequin $mannequin) => (bool) $mannequin->baseMedia?->url);
     }
 
-    private function missingSceneMediaIds(FittingRoomMannequin $mannequin): array
+    private function missingSceneMediaIds(FittingRoomMannequin $mannequin, bool $preview = false): array
     {
-        $looks = FittingRoomLook::query()->active()->where('mannequin_id', $mannequin->id);
+        $looks = FittingRoomLook::query()->when(!$preview, fn ($query) => $query->active())->where('mannequin_id', $mannequin->id);
         $sceneIds = (clone $looks)->select('preview_top_media_id')->toBase()
             ->union($looks->select('preview_bottom_media_id')->toBase());
 
@@ -227,7 +239,7 @@ class FittingRoomShopData
             ->pluck('id')->all();
     }
 
-    private function fittingItems(FittingRoomMannequin $mannequin, array $missingSceneMediaIds = []): Builder
+    private function fittingItems(FittingRoomMannequin $mannequin, array $missingSceneMediaIds = [], bool $preview = false): Builder
     {
         $hasPhoto = static fn ($media) => $media->whereRaw("TRIM(path) <> ''")
             ->whereIntegerNotInRaw('media.id', $missingSceneMediaIds);
@@ -235,7 +247,7 @@ class FittingRoomShopData
         return FittingRoomLookItem::query()->where('fitting_room_look_items.is_active', true)
             ->whereHas('variant', fn ($variant) => $variant->active()->whereHas('product', fn ($product) => $product
                 ->active()->when($mannequin->audience !== 'all', fn ($audience) => $audience->where('audience', $mannequin->audience))))
-            ->whereHas('look', fn ($look) => $look->active()->where('mannequin_id', $mannequin->id))
+            ->whereHas('look', fn ($look) => $look->when(!$preview, fn ($query) => $query->active())->where('mannequin_id', $mannequin->id))
             ->where(fn ($slot) => $slot
                 ->where(fn ($top) => $top->where('slot', 'top')->whereHas('look.previewTopMedia', $hasPhoto))
                 ->orWhere(fn ($bottom) => $bottom->where('slot', 'bottom')->whereHas('look.previewBottomMedia', $hasPhoto)));
