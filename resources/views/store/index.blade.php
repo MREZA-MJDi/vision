@@ -34,7 +34,7 @@
             <button type="button" id="shop-filter-toggle" aria-controls="shop-filter-fields" aria-expanded="false">
                 فیلترها <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
-            <a href="{{ route('shop.index') }}">حذف فیلترها</a>
+            <a href="{{ route('shop.index', array_filter(['preview_model' => $filters['previewModel']])) }}">حذف فیلترها</a>
         </div>
         <div id="shop-filter-fields" class="shop-filter-fields">
             @if(filled($filters['previewModel'] ?? null))
@@ -64,6 +64,15 @@
     </form>
 
     <section class="shop-results" aria-labelledby="shop-title">
+        @if($previewModels->isNotEmpty())
+            <nav class="shop-fit-intro" aria-label="پیش‌نمایش مدیر">
+                <div><strong>پیش‌نمایش اتاق پرو برای مدیر</strong><p>در این حالت محصولات غیرفعال نیز قابل بررسی هستند؛ خرید آزمایشی غیرفعال است.</p></div>
+                @foreach($previewModels as $model)
+                    <a class="shop-open-fit" href="{{ route('shop.index', ['preview_model' => $model['code']]) }}" @if($filters['previewModel'] === $model['code']) aria-current="page" @endif>{{ $model['label'] }}</a>
+                @endforeach
+                @if($studio['previewOnly'])<a href="{{ route('shop.index') }}">خروج از پیش‌نمایش</a>@endif
+            </nav>
+        @endif
         <div class="shop-topline">
             <h1 id="shop-title">فروشگاه <small>{{ \App\Support\Money::number($products->total()) }} کالا</small></h1>
             <div class="shop-sort">
