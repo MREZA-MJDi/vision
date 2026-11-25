@@ -340,6 +340,8 @@ body.storefront-body.store-shop-body {
 }
 
 .shop-pic img {
+    object-fit: contain;
+    image-rendering: auto;
     filter: drop-shadow(0 12px 14px rgb(0 0 0 / 24%));
     transition: transform .4s;
 }
@@ -560,7 +562,7 @@ body.storefront-body.store-shop-body {
     position: sticky;
     top: 16px;
     min-width: 0;
-    height: min(670px, calc(100dvh - 86px));
+    height: min(780px, calc(100dvh - 40px));
     padding: 11px;
     border: 1px solid var(--vs-line);
     border-radius: 13px;
@@ -632,8 +634,12 @@ body.storefront-body.store-shop-body {
 
 @media (min-width: 1040px) {
     .vision-shop-main.fit-open {
-        width: min(100%, 1392px);
-        grid-template-columns: minmax(148px, 180px) minmax(0, 1fr) clamp(300px, 27vw, 380px);
+        width: min(100%, 1480px);
+        grid-template-columns: minmax(148px, 180px) minmax(0, 1fr) clamp(320px, 29vw, 420px);
+    }
+
+    .vision-shop-main.fit-open .shop-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
     }
 }
 
@@ -716,7 +722,7 @@ body.storefront-body.store-shop-body {
 
 .stage {
     flex: 0 0 auto;
-    width: min(100%, 320px, 42dvh);
+    width: min(100%, 360px, 48dvh);
     margin-inline: auto;
     position: relative;
     aspect-ratio: 2/3;
