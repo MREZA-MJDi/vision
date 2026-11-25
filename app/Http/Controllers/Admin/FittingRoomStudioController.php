@@ -63,6 +63,7 @@ class FittingRoomStudioController extends Controller
                 return [$variant->id => [
                     'image' => $image,
                     'editable' => $editable,
+                    'audience' => $variant->product?->audience,
                     'frame' => $media?->cardFrame() ?? Media::DEFAULT_CARD_FRAME,
                     'name' => Money::persianDigits((string) $variant->product?->name),
                     'variant' => Money::persianDigits($variant->display_name),
@@ -76,6 +77,9 @@ class FittingRoomStudioController extends Controller
 
     public function storeMannequin(Request $request): RedirectResponse
     {
+        if (!$request->filled('code')) {
+            $request->merge(['code' => 'model-' . Str::lower((string) Str::ulid())]);
+        }
         $data = $request->validate([
             'code' => ['required', 'string', 'max:80', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:fitting_room_mannequins,code'],
             'label' => ['required', 'string', 'max:160'],
@@ -173,6 +177,9 @@ class FittingRoomStudioController extends Controller
     private function saveLook(Request $request, FittingRoomLook $look): RedirectResponse
     {
         $creating = !$look->exists;
+        if (!$request->filled('code')) {
+            $request->merge(['code' => $creating ? 'look-' . Str::lower((string) Str::ulid()) : $look->code]);
+        }
         $codeRule = Rule::unique('fitting_room_looks', 'code')
             ->where('mannequin_id', (int) $request->input('mannequin_id'));
         if (!$creating) {
