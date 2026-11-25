@@ -35,8 +35,7 @@ class FittingRoomStudioController extends Controller
         $variantSearch = is_string($query) ? mb_substr(trim($query), 0, 100) : '';
 
         $variants = ProductVariant::query()
-            ->where('is_active', true)
-            ->whereHas('product', fn ($query) => $query->where('is_active', true))
+            ->whereHas('product')
             ->when($variantSearch !== '', fn ($query) => $query->where(fn ($search) => $search
                 ->whereLike('sku', '%' . $variantSearch . '%')
                 ->orWhereHas('product', fn ($product) => $product->whereLike('name', '%' . $variantSearch . '%'))))
@@ -279,9 +278,9 @@ class FittingRoomStudioController extends Controller
                 || $product->audience === $mannequin->audience
             );
 
-            if (!$variant || !$variant->is_active || !$product || !$product->is_active || !$audienceMatches) {
+            if (!$variant || !$product || !$audienceMatches || ($publishing && (!$variant->is_active || !$product->is_active))) {
                 throw ValidationException::withMessages([
-                    $field => 'محصول باید فعال باشد و گروه آن با مانکن انتخاب‌شده سازگار باشد.',
+                    $field => 'گروه محصول باید با مدل سازگار باشد؛ برای انتشار، محصول و تنوع نیز باید فعال باشند.',
                 ]);
             }
         }
