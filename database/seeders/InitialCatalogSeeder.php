@@ -69,8 +69,11 @@ class InitialCatalogSeeder extends Seeder
                     if (($row['price_status'] ?? null) === 'proposed' && $stock !== 0) {
                         throw new RuntimeException('Proposed catalog prices require zero unverified inventory.');
                     }
-                    if ($publish && ($price === null || !in_array($row['audience'] ?? null, ['men', 'women'], true))) {
-                        throw new RuntimeException('Publishing requires a verified price and audience.');
+                    if ($publish && $price === null) {
+                        throw new RuntimeException('Publishing requires a price.');
+                    }
+                    if (!in_array($row['audience'] ?? null, [null, 'men', 'women'], true)) {
+                        throw new RuntimeException('Invalid product audience.');
                     }
                     $product = Product::query()->create([
                         'category_id' => $categories[$category]->id,
