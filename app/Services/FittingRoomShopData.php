@@ -20,7 +20,7 @@ class FittingRoomShopData
     {
         $previewModel = $this->previewModel($request);
         $mannequin = $this->publicMannequin($previewModel);
-        $preview = $previewModel !== null;
+        $preview = $previewModel !== null && $mannequin !== null;
         $fitItems = $mannequin ? $this->fittingItems($mannequin, $this->missingSceneMediaIds($mannequin, $preview), $preview) : null;
 
         $catalog = ProductVariant::query()
@@ -274,6 +274,7 @@ class FittingRoomShopData
             'frame' => $media?->cardFrame() ?? Media::DEFAULT_CARD_FRAME,
             'stock' => $variant->stock,
             'published' => $variant->is_active && $product->is_active,
+            'productId' => $product->id,
         ];
     }
 
