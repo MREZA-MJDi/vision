@@ -15,7 +15,7 @@
     <a class="vision-wordmark" href="{{ route('storefront.index') }}" aria-label="VISION صفحهٔ اصلی">VISION</a>
     <div class="vision-shop-tools">
         @if($studio['routes']['studio'])
-            <button class="shop-open-fit" id="open-fit" type="button" aria-controls="fit">اتاق پرو</button>
+            <button class="shop-open-fit" id="open-fit" type="button" aria-controls="fit" aria-label="باز کردن اتاق پرو" title="اتاق پرو"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg></button>
         @endif
         <button class="ibtn" id="theme" type="button" aria-label="تم روشن" aria-pressed="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M19 5l-1.5 1.5m-11 11L5 19"/></svg>
@@ -75,9 +75,6 @@
                 <button type="submit" form="shop-filters">مرتب‌سازی</button>
             </div>
         </div>
-        @if($studio['routes']['studio'])
-            <div class="shop-fit-intro"><div><strong>قبل از خرید، لباس را روی مدل ببینید.</strong><p>محصولاتی که دکمهٔ «پرو» دارند، عکس واقعی مدل را دارند. یک لباس یا یک ست را انتخاب کنید.</p></div><button type="button" class="shop-open-fit" data-open-studio aria-controls="fit">ورود به اتاق پرو</button></div>
-        @endif
         <div class="shop-grid" id="grid">
             @forelse($products as $product)
                 @include('store.products.shop-card', ['product' => $product, 'isFavourite' => in_array($product['id'], $studio['favs'], true)])
@@ -105,11 +102,10 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
             </button>
         </h2>
-        <div class="fit-content">
-            <p class="fit-guide">۱. لباس را انتخاب کنید. ۲. نتیجه را روی مدل ببینید. ۳. در صورت موجود بودن به سبد اضافه کنید.</p>
-            <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها" aria-busy="false">
-                <div class="load" id="load" role="status" hidden><span class="spin" aria-hidden="true"></span><b>در حال آماده‌سازی</b></div>
-            </div>
+        <div class="stage" id="stage" role="group" aria-label="پیش‌نمایش مانکن و لباس‌ها" aria-busy="false">
+            <div class="load" id="load" role="status" hidden><span class="spin" aria-hidden="true"></span><b>در حال آماده‌سازی</b></div>
+        </div>
+        <div class="fit-content" aria-label="انتخاب‌ها و پیشنهادهای اتاق پرو" tabindex="0">
             <div class="fit-garment-picker" id="fit-garment-picker" hidden>
                 <label for="fit-garment">انتخاب لباس روی مدل</label>
                 <div><select id="fit-garment" aria-label="انتخاب لباس قابل پرو"><option value="">لباس را انتخاب کنید</option></select><button type="button" id="fit-choose" disabled>پرو</button></div>
