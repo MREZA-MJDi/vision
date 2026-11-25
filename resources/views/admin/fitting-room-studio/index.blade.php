@@ -9,7 +9,7 @@
             <h1>استودیوی <em>اتاق پرو</em></h1>
             <p>مانکن‌ها، تصویر لباس‌ها و ست‌های پیشنهادی را در یک گالری منظم بساز و کنترل کن. داده‌ها مستقیم به کاتالوگ و واریانت‌های واقعی متصل هستند.</p>
             <div class="fr-hero__actions">
-                <a class="fr-button fr-button--primary" href="#fr-looks">ساخت ست جدید <span>↗</span></a>
+                <a class="fr-button fr-button--primary" href="#fr-mannequins">۱. ثبت مدل</a><a class="fr-button" href="#fr-looks">۲. اتصال لباس‌ها</a>
                 <a class="fr-button" href="{{ route('commerce-admin.products.index') }}">مدیریت محصولات و واریانت‌ها <span>↗</span></a>
                 <a class="fr-button" href="{{ route('shop.index') }}" target="_blank" rel="noopener">پیش‌نمایش فروشگاه <span>↗</span></a>
             </div>
@@ -21,6 +21,15 @@
             <div><strong>{{ \App\Support\Money::number($variants->count()) }}</strong><span>واریانت صفحهٔ فعلی از {{ \App\Support\Money::number($variants->total()) }} مورد</span></div>
         </div>
     </header>
+    @if($errors->any())
+        <section class="fr-feedback fr-feedback--error" role="alert"><strong>اطلاعات نیاز به اصلاح دارد.</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></section>
+    @endif
+    @if(session('status'))<p class="fr-feedback" role="status">{{ session('status') }}</p>@endif
+    <nav class="fr-guide-grid" aria-label="راهنمای ساخت اتاق پرو">
+        <a href="#fr-mannequins"><b>۱</b><strong>مدل را ثبت کنید</strong><span>یک عکس تمام‌قد روبه‌رو، بدون برش بدن، نسبت ۲:۳. مثلاً ۱۰۲۴ × ۱۵۳۶.</span></a>
+        <a href="#fr-looks"><b>۲</b><strong>لباس را انتخاب کنید</strong><span>محصول و رنگ واقعی آن را انتخاب کنید؛ تصویر کارت از فروشگاه خوانده می‌شود.</span></a>
+        <a href="#fr-looks"><b>۳</b><strong>عکس پوشیده‌شده را ثبت کنید</strong><span>همان مدل، همان زاویه و اندازه. برای یک لباس فقط عکس همان لباس کافی است.</span></a>
+    </nav>
 
     <form method="GET" action="{{ route('commerce-admin.try-on.index') }}" class="fr-panel fr-variant-search" role="search">
         <label class="fr-field" for="fr-variant-search-input"><span>جست‌وجوی واریانت برای ساخت ست</span>
@@ -62,17 +71,17 @@
                     @csrf
                     <label class="fr-field"><span>نام نمایشی</span><input name="label" value="{{ old('label') }}" placeholder="مانکن زنانه — نمای روبه‌رو" required maxlength="160"></label>
                     <div class="fr-form-row">
-                        <label class="fr-field"><span>کد یکتا</span><input name="code" value="{{ old('code') }}" placeholder="women-front" pattern="[a-zA-Z0-9_-]+" required maxlength="80"></label>
+                        <input type="hidden" name="code" value="{{ old('code') }}">
                         <label class="fr-field"><span>گروه</span><select name="audience" required><option value="women">زنانه</option><option value="men">مردانه</option><option value="all">عمومی</option></select></label>
                     </div>
-                    <label class="fr-field"><span>اولویت نمایش</span><input type="number" name="sort_order" value="0" min="0" max="65535"></label>
+                    <details class="fr-advanced"><summary>تنظیمات پیشرفته (اختیاری)</summary><label class="fr-field"><span>اولویت نمایش</span><input type="number" name="sort_order" value="0" min="0" max="65535"></label></details>
                     <label class="fr-upload">
                         <input type="file" name="base_image" accept="image/png,image/webp,image/jpeg" required data-fr-preview-input>
                         <span class="fr-upload__icon">＋</span><strong>انتخاب تصویر مانکن</strong><small>نسبت تصویر ۲:۳ · حداکثر ۸ مگابایت</small>
                         <img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
                         <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small>
                     </label>
-                    <label class="fr-check"><input type="checkbox" name="is_active" value="1" checked><span>در فروشگاه فعال باشد</span></label>
+                    <label class="fr-check"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', false))><span>انتشار در فروشگاه (پس از بررسی عکس)</span></label>
                     <button class="fr-button fr-button--primary fr-button--wide" type="submit">افزودن به گالری <span>↗</span></button>
                 </form>
             </section>
@@ -90,6 +99,8 @@
                     </div>
                     <div class="fr-mannequin-card__body">
                         <div class="fr-mannequin-card__title"><div><h3>{{ $mannequin->label }}</h3><p>{{ $mannequin->code }} · {{ $mannequin->audience === 'women' ? 'زنانه' : ($mannequin->audience === 'men' ? 'مردانه' : 'عمومی') }}</p></div><span class="fr-order">#{{ $mannequin->sort_order }}</span></div>
+                        @if($mannequin->baseMedia?->url)<a class="fr-button fr-button--wide" href="{{ route('shop.index', ['preview_model' => $mannequin->code]) }}" target="_blank" rel="noopener">تست این مدل در فروشگاه</a>@endif
+                        <details class="fr-edit-details"><summary>ویرایش مشخصات و عکس مدل</summary>
                         <form method="POST" action="{{ route('commerce-admin.try-on.mannequins.update', $mannequin) }}" enctype="multipart/form-data" class="fr-compact-form">
                             @csrf @method('PUT')
                             <label class="fr-field"><span>نام مدل</span><input name="label" value="{{ $mannequin->label }}" required maxlength="160"></label>
@@ -106,6 +117,7 @@
                             @csrf @method('DELETE')
                             <button class="fr-danger-link" type="submit">حذف مانکن و ست‌هایش</button>
                         </form>
+                        </details>
                     </div>
                 </article>
             @empty
@@ -116,7 +128,7 @@
 
     <section class="fr-section" id="fr-looks">
         <div class="fr-section__head">
-            <div><h2>گالری ست‌ها و صحنه‌ها</h2><p>هر ست، واریانت واقعی بالاپوش/پایین‌تنه را به تصاویر T، B، TB و S متصل می‌کند. برای کارت محصول هم تصویر و قیمت از دیتابیس محصولات خوانده می‌شود.</p></div>
+            <div><h2>گالری ست‌ها و صحنه‌ها</h2><p>یک لباس یا یک ست کامل بسازید. عکس مدل پوشیده‌شده باید با محصول انتخابی دقیقاً یکسان باشد.</p></div>
             <span class="fr-section__count">{{ \App\Support\Money::number($mannequins->sum('looks_count')) }} ست</span>
         </div>
 
@@ -126,32 +138,32 @@
             @if($mannequins->isEmpty())
                 <p class="fr-muted"><a href="#fr-mannequins">برای ذخیرهٔ ست، ابتدا یک مانکن اضافه کن.</a></p>
             @endif
-            <p class="fr-muted">صحنه‌ها در قاب ۲ به ۳ و عکس کارت‌ها در قاب ۵ به ۴ فروشگاه پیش‌نمایش داده می‌شوند. برای تغییر کادر، عکس اختصاصی وریانت را انتخاب کن.</p>
+            <p class="fr-muted">ابتدا مدل و لباس را انتخاب کنید. برای یک بالاپوش یا پایین‌تنه فقط عکس همان حالت لازم است. برای دو لباس، عکس ترکیب کامل هم لازم است.</p>
             <form method="POST" action="{{ route('commerce-admin.try-on.looks.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="fr-look-meta">
-                    <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required>@foreach($mannequins as $mannequin)<option value="{{ $mannequin->id }}">{{ $mannequin->label }}{{ $mannequin->is_active ? '' : ' (غیرفعال)' }}</option>@endforeach</select></label>
+                    <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required data-fr-model>@foreach($mannequins as $mannequin)<option value="{{ $mannequin->id }}" data-audience="{{ $mannequin->audience }}" @selected((int) old('mannequin_id') === $mannequin->id)>{{ $mannequin->label }}{{ $mannequin->is_active ? '' : ' (غیرفعال)' }}</option>@endforeach</select></label>
                     <label class="fr-field"><span>عنوان ست</span><input name="label" value="{{ old('label') }}" placeholder="استایل روزمره نارنجی" required maxlength="160"></label>
-                    <label class="fr-field"><span>کد یکتا</span><input name="code" value="{{ old('code') }}" placeholder="orange-casual" pattern="[a-zA-Z0-9_-]+" required maxlength="80"></label>
-                    <label class="fr-field"><span>اولویت گالری</span><input type="number" name="sort_order" value="0" min="0" max="65535"></label>
+                    <input type="hidden" name="code" value="{{ old('code') }}">
+                    <details class="fr-advanced"><summary>اولویت نمایش (اختیاری)</summary><label class="fr-field"><span>اولویت گالری</span><input type="number" name="sort_order" value="0" min="0" max="65535"></label></details>
                 </div>
-                <div class="fr-look-products">
+                <div class="fr-step-heading"><strong>۲. انتخاب لباس</strong><small>حداقل یک محصول انتخاب کنید.</small></div><div class="fr-look-products">
                     <div class="fr-assignment">
-                        <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>واریانت واقعی + تصویر کارت</small></div></div>
+                        <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>رنگ و سایز محصول + تصویر کارت</small></div></div>
                         @include('admin.fitting-room-studio.variant-picker', ['slot' => 'top', 'slotLabel' => 'بالاپوش', 'currentVariant' => null])
                         <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
                         <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
-                        <label class="fr-field"><span>نقطهٔ حرکت انیمیشن</span><input type="number" name="fit_y_top" value="0.38" min="0" max="1" step="0.01"></label>
+                        <details class="fr-advanced"><summary>تنظیم حرکت (اختیاری)</summary><label class="fr-field"><span>موقعیت پایان حرکت</span><input type="number" name="fit_y_top" value="0.38" min="0" max="1" step="0.01"></label></details>
                     </div>
                     <div class="fr-assignment">
-                        <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>واریانت واقعی + تصویر کارت</small></div></div>
+                        <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>رنگ و سایز محصول + تصویر کارت</small></div></div>
                         @include('admin.fitting-room-studio.variant-picker', ['slot' => 'bottom', 'slotLabel' => 'پایین‌تنه', 'currentVariant' => null])
                         <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">＋</span><strong>آپلود عکس محصول</strong><small>برای کارت فروشگاه · تصویر واریانت</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
                         <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
-                        <label class="fr-field"><span>نقطهٔ حرکت انیمیشن</span><input type="number" name="fit_y_bottom" value="0.66" min="0" max="1" step="0.01"></label>
+                        <details class="fr-advanced"><summary>تنظیم حرکت (اختیاری)</summary><label class="fr-field"><span>موقعیت پایان حرکت</span><input type="number" name="fit_y_bottom" value="0.66" min="0" max="1" step="0.01"></label></details>
                     </div>
                 </div>
-                <div class="fr-scene-grid">
+                <div class="fr-step-heading"><strong>۳. عکس‌های مدل با لباس</strong><small>نسبت ۲:۳، حالت و اندازهٔ مدل یکسان؛ حداکثر ۸ مگابایت.</small></div><div class="fr-scene-grid">
                     @foreach([
                         ['preview_top','T','نمای بالاپوش','برای حالت انتخاب بالاپوش؛ فایل ۲:۳'],
                         ['preview_bottom','B','نمای پایین‌تنه','برای حالت انتخاب پایین‌تنه؛ فایل ۲:۳'],
@@ -161,14 +173,14 @@
                         <label class="fr-scene-upload">
                             <span class="fr-scene-upload__code">{{ $code }}</span>
                             <span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $hint }}</small></span>
-                            <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input>
+                            <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input data-fr-scene>
                             <span class="fr-scene-upload__choose">انتخاب تصویر <span>↗</span></span>
                             <img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
                         <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small>
                         </label>
                     @endforeach
                 </div>
-                <label class="fr-check"><input type="checkbox" name="is_active" value="1" checked><span>ست در فروشگاه فعال باشد</span></label>
+                <label class="fr-check"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', false))><span>انتشار در فروشگاه پس از بررسی</span></label>
                 <button class="fr-button fr-button--primary fr-button--wide" type="submit" @disabled($mannequins->isEmpty())>ذخیرهٔ ست و صحنه‌ها <span>↗</span></button>
             </form>
         </section>
@@ -189,6 +201,8 @@
                                         <img src="{{ $look->previewCombinedMedia->url }}" alt="{{ $look->label }}" loading="lazy">
                                     @elseif($look->previewTopMedia?->url)
                                         <img src="{{ $look->previewTopMedia->url }}" alt="{{ $look->label }}" loading="lazy">
+                                    @elseif($look->previewBottomMedia?->url)
+                                        <img src="{{ $look->previewBottomMedia->url }}" alt="{{ $look->label }}" loading="lazy">
                                     @else
                                         <div class="fr-image-empty"><span>TB</span><small>تصویر ست ثبت نشده</small></div>
                                     @endif
@@ -216,28 +230,28 @@
                                         <form method="POST" action="{{ route('commerce-admin.try-on.looks.update', $look) }}" enctype="multipart/form-data">
                                             @csrf @method('PUT')
                                             <div class="fr-look-meta">
-                                                <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required>@foreach($mannequins as $option)<option value="{{ $option->id }}" @selected($option->id === $mannequin->id)>{{ $option->label }}</option>@endforeach</select></label>
+                                                <label class="fr-field"><span>مانکن</span><select name="mannequin_id" required data-fr-model>@foreach($mannequins as $option)<option value="{{ $option->id }}" data-audience="{{ $option->audience }}" @selected($option->id === $mannequin->id)>{{ $option->label }}</option>@endforeach</select></label>
                                                 <label class="fr-field"><span>عنوان ست</span><input name="label" value="{{ $look->label }}" required maxlength="160"></label>
                                                 <label class="fr-field"><span>کد</span><input name="code" value="{{ $look->code }}" required pattern="[a-zA-Z0-9_-]+" maxlength="80"></label>
                                                 <label class="fr-field"><span>اولویت</span><input type="number" name="sort_order" value="{{ $look->sort_order }}" min="0" max="65535"></label>
                                             </div>
-                                            <div class="fr-look-products">
+                                            <div class="fr-step-heading"><strong>۲. انتخاب لباس</strong><small>حداقل یک محصول انتخاب کنید.</small></div><div class="fr-look-products">
                                                 <div class="fr-assignment">
-                                                    <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>تصویر کارت محصول واریانت</small></div></div>
+                                                    <div class="fr-assignment__title"><span class="fr-slot-icon">T</span><div><strong>بالاپوش</strong><small>تصویر کارت محصول</small></div></div>
                                                     @include('admin.fitting-room-studio.variant-picker', ['slot' => 'top', 'slotLabel' => 'بالاپوش', 'currentVariant' => $topItem?->variant])
                                                     <label class="fr-upload fr-upload--compact"><input type="file" name="top_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
                         <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
                                                     <label class="fr-field"><span>نقطهٔ حرکت</span><input type="number" name="fit_y_top" value="{{ $topItem?->fit_y ?? 0.38 }}" min="0" max="1" step="0.01"></label>
                                                 </div>
                                                 <div class="fr-assignment">
-                                                    <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>تصویر کارت محصول واریانت</small></div></div>
+                                                    <div class="fr-assignment__title"><span class="fr-slot-icon">B</span><div><strong>پایین‌تنه</strong><small>تصویر کارت محصول</small></div></div>
                                                     @include('admin.fitting-room-studio.variant-picker', ['slot' => 'bottom', 'slotLabel' => 'پایین‌تنه', 'currentVariant' => $bottomItem?->variant])
                                                     <label class="fr-upload fr-upload--compact"><input type="file" name="bottom_product_image" accept="image/png,image/webp,image/jpeg" data-fr-preview-input><span class="fr-upload__icon">↻</span><strong>تعویض عکس کارت</strong><small>خالی بماند تا تصویر فعلی حفظ شود</small><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
                         <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small></label>
                                                     <label class="fr-field"><span>نقطهٔ حرکت</span><input type="number" name="fit_y_bottom" value="{{ $bottomItem?->fit_y ?? 0.66 }}" min="0" max="1" step="0.01"></label>
                                                 </div>
                                             </div>
-                                            <div class="fr-scene-grid fr-scene-grid--compact">
+                                            <div class="fr-step-heading"><strong>۳. عکس‌های مدل با لباس</strong><small>در صورت تغییر مدل یا لباس، عکس جدید همان حالت را ثبت کنید.</small></div><div class="fr-scene-grid fr-scene-grid--compact">
                                                 @foreach([
                                                     ['preview_top','T','بالاپوش',$look->previewTopMedia?->url],
                                                     ['preview_bottom','B','پایین‌تنه',$look->previewBottomMedia?->url],
@@ -246,7 +260,7 @@
                                                 ] as [$input,$code,$title,$url])
                                                     <label class="fr-scene-upload">
                                                         <span class="fr-scene-upload__code">{{ $code }}</span><span class="fr-scene-upload__copy"><strong>{{ $title }}</strong><small>{{ $url ? 'عکس فعلی محفوظ است؛ برای تعویض فایل جدید انتخاب کن.' : 'هنوز تصویری ندارد.' }}</small></span>
-                                                        <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input>
+                                                        <input type="file" name="{{ $input }}" accept="image/png,image/webp,image/jpeg" data-fr-preview-input data-fr-scene data-existing="{{ $url ? '1' : '0' }}">
                                                         @if($url)<img class="fr-scene-current" src="{{ $url }}" alt="صحنهٔ فعلی {{ $code }}">@endif
                                                         <span class="fr-scene-upload__choose">تعویض تصویر <span>↗</span></span><img class="fr-preview-image" alt="پیش‌نمایش فایل انتخابی" data-fr-preview hidden>
                         <small class="fr-preview-status" data-fr-preview-status aria-live="polite"></small>
@@ -270,7 +284,7 @@
         @endforeach
 
         @if($mannequins->isEmpty())
-            <div class="fr-empty"><strong>اولین مانکن را اضافه کن.</strong><span>برای ساخت ست‌ها، حداقل یک مانکن فعال لازم است.</span></div>
+            <div class="fr-empty"><strong>اولین مانکن را اضافه کن.</strong><span>برای ساخت ست‌ها، ابتدا یک مدل با عکس پایه ثبت کنید؛ می‌توانید آن را پیش از انتشار تست کنید.</span></div>
         @endif
     </section>
     <script type="application/json" id="fr-variant-cards">{!! \Illuminate\Support\Js::encode($variantCards) !!}</script>

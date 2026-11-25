@@ -6,11 +6,12 @@
 @endphp
 
 <label class="fr-field">
-    <span>محصول و وریانت</span>
+    <span>انتخاب محصول و رنگ / سایز</span>
+    <input type="search" data-fr-picker-search placeholder="جست‌وجو در همین فهرست" aria-label="جست‌وجوی محصول {{ $slotLabel }}">
     <select name="{{ $slot }}_variant_id" data-fr-variant>
         <option value="">بدون {{ $slotLabel }}</option>
         @foreach($options as $variant)
-            <option value="{{ $variant->id }}" @selected((int) $selectedId === (int) $variant->id)>
+            <option value="{{ $variant->id }}" data-audience="{{ $variant->product?->audience }}" @selected((int) $selectedId === (int) $variant->id)>
                 {{ $variant->product?->name }} — {{ $variant->display_name }} · {{ $variant->sku }}
             </option>
         @endforeach
@@ -29,7 +30,7 @@
     </figcaption>
 </figure>
 <fieldset class="fr-card-framing" data-fr-frame-controls hidden disabled>
-    <legend>کادر کارت در فروشگاه</legend>
+    <legend>تنظیم اختیاری اندازه و موقعیت تصویر کارت</legend>
     @foreach([
         ['scale', 'اندازهٔ تصویر', 80, 125],
         ['x', 'جابه‌جایی افقی', -12, 12],

@@ -7,6 +7,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   const S = JSON.parse(studioData.textContent);
   let P = [];
+  const canTry = product => Boolean(product?.scene && product?.slot);
+  const canBuySet = () => W.size > 0 && [...W].every(id => Number(P.find(p => Number(p.id) === Number(id))?.stock || 0) > 0);
   let studio = null;
   let studioRequest = null;
   let activation = 0;
@@ -26,7 +28,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     try {
       const stored = JSON.parse(sessionStorage.getItem(selectionKey) || "{}");
       for (const slot of ["top", "bottom"]) {
-        const item = P.find(garment => garment.slot === slot && garment.id === stored[slot] && garment.stock > 0);
+        const item = P.find(garment => garment.slot === slot && garment.id === stored[slot] && canTry(garment));
         if (item) W.add(item.id);
       }
       state.lastFittedId = stored.lastFittedId;
@@ -52,8 +54,9 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       }).then(async response => {
         if (!response.ok) throw new Error("اتاق پرو در دسترس نیست.");
         studio = await response.json();
-        P = studio.garments;
+        P = Array.isArray(studio.garments) ? studio.garments : [];
         restoreStudioSelections();
+        renderGarmentPicker();
       }).catch(error => {
         studioRequest = null;
         throw error;
@@ -173,6 +176,24 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
   const scenes = {};
 
+  function renderGarmentPicker() {
+    const picker = $("#fit-garment");
+    const available = P.filter(product => product.scene && product.slot && canTry(product));
+    picker.replaceChildren(new Option("لباس را انتخاب کنید", ""));
+    for (const slot of ["top", "bottom"]) {
+      const items = available.filter(product => product.slot === slot);
+      if (!items.length) continue;
+      const group = document.createElement("optgroup");
+      group.label = slot === "top" ? "بالاپوش" : "پایین‌تنه";
+      for (const product of items) group.append(new Option(product.title || product.name, String(product.id)));
+      picker.append(group);
+    }
+    $("#fit-garment-picker").hidden = false;
+    $("#fit-garment-empty").hidden = available.length > 0;
+    picker.disabled = !available.length;
+    $("#fit-choose").disabled = !picker.value;
+  }
+
   function setScene() {
     const selected = P.filter(product => W.has(Number(product.id)));
     const top = selected.find(product => product.slot === "top") || null;
@@ -196,8 +217,28 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       if (fit.hidden) return true;
       activeScene = key;
       const image = scenes[key] ??= makeScene(url, key);
-      setSceneLoading(!image.complete);
-      Object.values(scenes).forEach(scene => scene.classList.toggle("on", scene === image));
+      if (image.complete && !image.naturalWidth) {
+        delete scenes[key];
+        image.remove();
+        return false;
+      }
+      const reveal = () => {
+        if (activeScene !== key || fit.hidden || fittingFlight) return;
+        setSceneLoading(false);
+        if (image.naturalWidth) {
+          Object.values(scenes).forEach(scene => scene.classList.toggle("on", scene === image));
+        } else {
+          announce("تصویر این حالت بارگذاری نشد. نمای قبلی تا انتخاب دوباره حفظ می‌شود.");
+          delete scenes[key];
+          image.remove();
+        }
+      };
+      if (image.complete) reveal();
+      else {
+        setSceneLoading(true);
+        image.addEventListener("load", reveal, { once: true });
+        image.addEventListener("error", reveal, { once: true });
+      }
       return true;
     };
 
@@ -207,8 +248,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     }
 
     if (!top && !bottom) {
-      activate("base", studio.base);
-      announce("");
+      const visible = activate("base", studio.base);
+      announce(visible ? "" : "تصویر پایه مدل در دسترس نیست.");
       return;
     }
 
@@ -265,7 +306,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
         (product.img ? '<img src="' + escapeHtml(product.img) + '" alt="">' : '<span>V.</span>') +
       '</button>'
     ).join("");
-    $("#addset").disabled = addingSet || items.length === 0;
+    $("#addset").disabled = addingSet || !canBuySet();
     $("#strip").disabled = items.length === 0;
     syncCardActions();
     renderRecommendations();
@@ -295,7 +336,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       .filter(product => {
         if (product.slot !== recommendationSlot
           || W.has(Number(product.id))
-          || Number(product.stock || 0) < 1
+          || !canTry(product)
           || !product.img
           || !product.scene) return false;
 
@@ -392,6 +433,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     if (RM || !source || !source.getBoundingClientRect) return;
     const start = source.getBoundingClientRect(), end = stage.getBoundingClientRect();
     if (start.width < 1 || start.height < 1 || end.width < 1 || end.height < 1) return;
+    if (typeof source.animate !== "function") return;
     const element = document.createElement("img");
     element.src = source.currentSrc || source.src;
     element.className = "fly";
@@ -425,8 +467,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   async function openStudio(trigger, variantId = null) {
     if (!S.routes.studio) return;
-    const request = activation;
-    fittingTrigger = trigger;
+    const request = ++activation;
+    if (trigger) fittingTrigger = trigger;
     const wasHidden = fit.hidden;
     fit.hidden = false;
     catalog.classList.add("fit-open");
@@ -443,8 +485,8 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
       if (variantId !== null) {
         const product = P.find(item => item.id === variantId);
-        if (product && product.stock > 0) {
-          const source = trigger.closest(".shop-product-card")?.querySelector(".shop-pic img");
+        if (product && canTry(product)) {
+          const source = trigger?.closest(".shop-product-card")?.querySelector(".shop-pic img");
           tryOn(product, source);
           return;
         }
@@ -464,7 +506,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   function tryOn(product, source) {
-    if (!product?.scene || !product.slot || Number(product.stock || 0) < 1) return;
+    if (!product?.scene || !product.slot || !canTry(product)) return;
     stopFittingFlight();
     showingSuggestion = false;
 
@@ -557,6 +599,16 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   $("#close").addEventListener("click", closeFit);
   $("#open-fit")?.addEventListener("click", event => openStudio(event.currentTarget));
+  document.querySelectorAll("[data-open-studio]").forEach(button => button.addEventListener("click", event => openStudio(event.currentTarget)));
+  $("#fit-garment").addEventListener("change", event => { $("#fit-choose").disabled = !event.target.value; });
+  $("#fit-choose").addEventListener("click", () => {
+    const picker = $("#fit-garment");
+    const product = P.find(item => Number(item.id) === Number(picker.value));
+    if (!product) return;
+    if (!W.has(Number(product.id))) tryOn(product, null);
+    picker.value = "";
+    $("#fit-choose").disabled = true;
+  });
   $("#fit-retry").addEventListener("click", event => {
     event.currentTarget.hidden = true;
     openStudio(fittingTrigger);
@@ -580,6 +632,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     if (button.disabled) return;
     const ids = [...W].map(Number);
     if (!ids.length) { showToast("اول یک لباس انتخاب کن."); return; }
+    if (!canBuySet()) { showToast("بعضی لباس‌ها موجود نیستند."); return; }
     addingSet = button.disabled = true;
     try {
       const response = await addToCart(S.routes.cartMany, { variant_ids: ids });
@@ -588,7 +641,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       showToast(error.message || "افزودن ست به سبد خرید انجام نشد.");
     } finally {
       addingSet = false;
-      button.disabled = W.size === 0;
+      button.disabled = !canBuySet();
     }
   });
 
@@ -606,7 +659,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
     if (event.key === "Escape") {
       closeFit();
     } else if (event.key === "Tab" && compact.matches) {
-      const focusable = Array.from(fit.querySelectorAll("button:not(:disabled), summary"))
+      const focusable = Array.from(fit.querySelectorAll("button:not(:disabled), select:not(:disabled), summary"))
         .filter(element => element.getClientRects().length);
       const first = focusable[0];
       const last = focusable[focusable.length - 1];

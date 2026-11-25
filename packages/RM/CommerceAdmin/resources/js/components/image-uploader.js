@@ -448,7 +448,7 @@ class ImageUploader {
 
         this.renderPreview(url);
 
-        this.cropButton.disabled = !url;
+        this.cropButton.disabled = !url || (!this.file && this.root.dataset.existingCrop === '0');
         this.removeButton.disabled = !url;
 
         this.restoreButton.hidden = !(

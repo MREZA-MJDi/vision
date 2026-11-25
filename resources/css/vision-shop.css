@@ -321,9 +321,9 @@ body.storefront-body.store-shop-body {
     flex-direction: column;
     position: relative;
     min-width: 0;
-    padding: 7px;
+    padding: 10px;
     border: 1px solid var(--vs-line);
-    border-radius: 12px;
+    border-radius: 14px;
     background: linear-gradient(155deg, var(--vs-panel), var(--vs-card));
     isolation: isolate;
     transition: border-color .25s, transform .25s, box-shadow .25s;
@@ -340,6 +340,8 @@ body.storefront-body.store-shop-body {
 }
 
 .shop-pic img {
+    object-fit: contain;
+    image-rendering: auto;
     filter: drop-shadow(0 12px 14px rgb(0 0 0 / 24%));
     transition: transform .4s;
 }
@@ -359,9 +361,9 @@ body.storefront-body.store-shop-body {
 }
 
 .shop-product-side button, .shop-cart-add {
-    width: 36px;
-    height: 36px;
-    flex: 0 0 36px;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
     display: grid;
     place-items: center;
     border: 1px solid var(--vs-line);
@@ -403,16 +405,22 @@ body.storefront-body.store-shop-body {
 
 .shop-product-details {
     display: grid;
-    gap: 3px;
-    margin: 6px 4px 4px;
-    padding-inline-end: 30px;
+    gap: 5px;
+    margin: 10px 3px 6px;
+    padding-inline-end: 0;
 }
 
 .shop-product-name {
     color: var(--vs-text);
     text-decoration: none;
     overflow-wrap: anywhere;
-    font-size: .82rem;
+    font-size: .86rem;
+    line-height: 1.6;
+    min-height: 3.2em;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
     font-weight: 650;
 }
 
@@ -560,7 +568,7 @@ body.storefront-body.store-shop-body {
     position: sticky;
     top: 16px;
     min-width: 0;
-    height: min(670px, calc(100dvh - 86px));
+    height: min(840px, calc(100dvh - 32px));
     padding: 11px;
     border: 1px solid var(--vs-line);
     border-radius: 13px;
@@ -632,8 +640,12 @@ body.storefront-body.store-shop-body {
 
 @media (min-width: 1040px) {
     .vision-shop-main.fit-open {
-        width: min(100%, 1392px);
-        grid-template-columns: minmax(148px, 180px) minmax(0, 1fr) clamp(300px, 27vw, 380px);
+        width: min(100%, 1480px);
+        grid-template-columns: minmax(148px, 180px) minmax(0, 1fr) clamp(340px, 30vw, 440px);
+    }
+
+    .vision-shop-main.fit-open .shop-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
     }
 }
 
@@ -716,7 +728,7 @@ body.storefront-body.store-shop-body {
 
 .stage {
     flex: 0 0 auto;
-    width: min(100%, 320px, 42dvh);
+    width: min(100%, 400px, 51dvh);
     margin-inline: auto;
     position: relative;
     aspect-ratio: 2/3;
@@ -990,10 +1002,10 @@ body.storefront-body.store-shop-body {
 }
 
 .fit-rec-card {
-    flex: 0 0 min(100%, 270px);
+    flex: 0 0 min(100%, 300px);
     scroll-snap-align: start;
     display: grid;
-    grid-template-columns: 56px minmax(0,1fr) auto;
+    grid-template-columns: 64px minmax(0,1fr) auto;
     align-items: center;
     gap: 8px;
     padding: 7px;
@@ -1004,8 +1016,8 @@ body.storefront-body.store-shop-body {
 }
 
 .fit-rec-thumb {
-    width: 56px;
-    height: 64px;
+    width: 64px;
+    height: 72px;
     display: grid;
     place-items: center;
     overflow: hidden;
@@ -1223,4 +1235,93 @@ body.storefront-body.store-shop-body {
     .spin {
         animation: none;
     }
+}
+
+/* Keep the try-on stage independent of the recommendation rail. */
+.shop-fit-intro{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-block:0 18px;padding:16px;border:1px solid var(--vs-line);border-radius:12px;background:var(--vs-panel)}
+.shop-fit-intro strong{font-size:14px}.shop-fit-intro p{margin:4px 0 0;color:var(--vs-muted);font-size:12px;line-height:1.8}
+.shop-product-side .try{width:44px;height:48px;display:flex;flex-direction:column;justify-content:center;gap:2px;border-radius:10px;font-size:10px;line-height:1}
+.shop-product-side .try svg{width:19px;height:19px}
+.fit-garment-picker{display:grid;gap:6px;border:1px solid var(--vs-line);padding:10px;border-radius:10px;background:var(--vs-card)}
+.fit-garment-picker[hidden]{display:none}
+.fit-garment-picker label{font-size:13px;font-weight:650}.fit-garment-picker>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.fit-garment-picker :is(select,button){min-width:0;min-height:44px;border:1px solid var(--vs-line);border-radius:8px;padding:8px;background:var(--vs-panel);color:var(--vs-text);font:inherit;font-size:12px}
+.fit-garment-picker button{min-width:58px;background:var(--vs-accent);color:#fff}
+.fit-garment-picker button:disabled{opacity:.45;cursor:not-allowed}
+.fit-garment-picker small{color:var(--vs-muted);font-size:12px}
+.fit-guide{font-size:12px;line-height:1.8}
+.fit-rec-copy strong,.fit-rec-copy>span{font-size:12px}
+@media(max-width:760px){.shop-product-card{padding:6px}.shop-product-name{font-size:12px}.shop-product-details{margin:8px 2px 4px}.shop-product-price{font-size:12px}.shop-fit-intro{padding:12px}.stage{width:min(100%,380px,50dvh)}}
+
+/* Shop and fitting room: keep the preview visible while choices scroll. */
+.shop-fit-intro {
+    gap: 16px;
+    padding: 18px 20px;
+    background: linear-gradient(120deg, var(--vs-panel), var(--vs-glow));
+}
+.shop-fit-intro > div { flex: 1 1 260px; min-width: 0; }
+.shop-fit-intro strong { display: block; font-size: 1rem; line-height: 1.7; }
+.shop-fit-intro p { font-size: .875rem; }
+.shop-fit-intro .shop-open-fit { min-height: 44px; padding-inline: 18px; font-size: .875rem; }
+.shop-product-card { padding: 10px; }
+.shop-product-name { font-size: .9rem; }
+.shop-product-colour, .shop-stock { font-size: .8rem; }
+.shop-product-price { font-size: .875rem; }
+.shop-product-side .try {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    border-color: color-mix(in srgb, var(--vs-accent) 70%, var(--vs-line));
+    background: color-mix(in srgb, var(--vs-panel) 94%, transparent);
+    color: var(--vs-accent-2);
+}
+.shop-product-side .try[aria-pressed="true"] { background: var(--vs-accent); color: #17100c; }
+.vision-shop-tools .shop-open-fit {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 50%;
+}
+.vision-shop-tools .shop-open-fit svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+#fit { gap: 7px; }
+#fit .fit-guide { flex: 0 0 auto; font-size: .8rem; line-height: 1.6; }
+#fit .stage {
+    flex: 0 0 auto;
+    width: min(100%, 350px, max(120px, calc(66.667dvh - 215px)));
+}
+.fit-content { flex: 1 1 0; min-height: 72px; padding: 2px 4px; }
+.fit-content > * { flex-shrink: 0; }
+.fit-footer .tot, .pk { font-size: .8rem; }
+.fit-footer .btns button { font-size: .85rem; }
+.fit-compare-summary { cursor: pointer; min-height: 44px; font-size: .875rem; }
+.fit-section-head h3, .fit-rec-copy strong, .fit-rec-copy > span { font-size: .875rem; }
+.fit-compare-actions button, .fit-compare-head > button, .fit-rec-card > button { min-height: 44px; font-size: .8rem; }
+.fit-compare-piece strong, .fit-compare-total, .fit-compare-empty, .fit-section-head p { font-size: .8rem; }
+@media (max-width: 1039px) {
+    #fit > .fit-guide, #fit > .fit-content { width: min(100%, 520px); margin-inline: auto; }
+    #fit .stage { width: min(100%, 350px, max(120px, calc(66.667dvh - 215px))); }
+}
+@media (max-width: 760px) {
+    .shop-fit-intro { padding: 14px; }
+    .shop-product-card { padding: 8px; }
+    .shop-product-name { font-size: .85rem; }
+    .shop-product-side .try { width: 44px; min-width: 44px; }
+}
+@media (max-height: 480px) {
+    #fit { overflow-y: auto; }
+    #fit .stage { width: min(100%, 180px); }
+    .fit-content { flex: 0 0 auto; max-height: 180px; }
 }

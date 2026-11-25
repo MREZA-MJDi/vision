@@ -290,6 +290,17 @@ class FittingRoomStudioTest extends TestCase
         $this->getJson(route('shop.studio'))->assertOk()
             ->assertJsonPath('suggestions.' . $variant->id, $look->previewSuggestedMedia->url);
 
+        // A valid scene can be previewed even when it cannot be purchased.
+        $variant->update(['stock' => 0]);
+        $customer = User::factory()->create();
+        $this->actingAs($customer)->get(route('shop.index'))->assertOk()
+            ->assertSee('data-t="' . $variant->id . '"', false)
+            ->assertDontSee('data-c="' . $variant->id . '"', false);
+        $this->getJson(route('shop.studio'))->assertOk()
+            ->assertJsonPath('garments.0.stock', 0);
+        $variant->update(['stock' => 4]);
+        $this->actingAs($admin);
+
         $this->put(route('commerce-admin.try-on.looks.update', $look), $fields + [
             'is_active' => 1,
             'top_card_frame' => ['scale' => 130, 'x' => 0, 'y' => 0],
@@ -454,5 +465,151 @@ class FittingRoomStudioTest extends TestCase
             ->assertUnprocessable();
 
         $this->assertDatabaseCount('cart_items', 0);
+    }
+
+    public function test_remapping_a_look_requires_fresh_scene_photos_for_the_new_garment_pair(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Studio Admin',
+            'email' => 'studio-remap@example.test',
+            'password' => 'studio-password-123',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $mannequin = FittingRoomMannequin::query()->create([
+            'code' => 'remap-test-mannequin',
+            'label' => 'Remap test mannequin',
+            'audience' => 'women',
+            'pose_key' => 'front-neutral',
+            'canvas_width' => 640,
+            'canvas_height' => 960,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+        $base = $mannequin->media()->create([
+            'collection' => 'fitting-room-mannequin',
+            'disk' => 'public',
+            'path' => 'https://assets.example.test/remap-base.jpg',
+            'original_name' => 'remap-base.jpg',
+            'mime_type' => 'image/jpeg',
+            'size' => 1,
+            'width' => 640,
+            'height' => 960,
+            'alt_text' => 'Remap base',
+            'sort_order' => 0,
+        ]);
+        $mannequin->forceFill(['base_media_id' => $base->getKey()])->save();
+
+        $variants = [];
+        foreach ([
+            ['name' => 'Original top', 'slug' => 'remap-original-top', 'sku' => 'REMAP-ORIGINAL-TOP'],
+            ['name' => 'Replacement top', 'slug' => 'remap-replacement-top', 'sku' => 'REMAP-REPLACEMENT-TOP'],
+            ['name' => 'Original bottom', 'slug' => 'remap-original-bottom', 'sku' => 'REMAP-ORIGINAL-BOTTOM'],
+        ] as $item) {
+            $product = Product::query()->create([
+                'name' => $item['name'],
+                'slug' => $item['slug'],
+                'audience' => 'women',
+                'is_active' => true,
+            ]);
+            $variants[$item['sku']] = ProductVariant::query()->create([
+                'product_id' => $product->getKey(),
+                'sku' => $item['sku'],
+                'price' => 120000,
+                'stock' => 3,
+                'low_stock_threshold' => 1,
+                'is_active' => true,
+            ]);
+        }
+
+        $look = FittingRoomLook::query()->create([
+            'mannequin_id' => $mannequin->getKey(),
+            'code' => 'remap-test-look',
+            'label' => 'Original outfit',
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $scenes = [];
+        foreach ([
+            'preview_top' => 'original-top.jpg',
+            'preview_bottom' => 'original-bottom.jpg',
+            'preview_combined' => 'original-combined.jpg',
+        ] as $field => $filename) {
+            $scenes[$field] = $look->media()->create([
+                'collection' => 'fitting-room-scene',
+                'disk' => 'public',
+                'path' => 'https://assets.example.test/' . $filename,
+                'original_name' => $filename,
+                'mime_type' => 'image/jpeg',
+                'size' => 1,
+                'width' => 420,
+                'height' => 630,
+                'alt_text' => $filename,
+                'sort_order' => 0,
+            ]);
+        }
+        $look->forceFill([
+            'preview_top_media_id' => $scenes['preview_top']->getKey(),
+            'preview_bottom_media_id' => $scenes['preview_bottom']->getKey(),
+            'preview_combined_media_id' => $scenes['preview_combined']->getKey(),
+        ])->save();
+
+        FittingRoomLookItem::query()->create([
+            'look_id' => $look->getKey(),
+            'product_variant_id' => $variants['REMAP-ORIGINAL-TOP']->getKey(),
+            'slot' => 'top',
+            'fit_y' => 0.38,
+            'is_active' => true,
+            'sort_order' => 10,
+        ]);
+        FittingRoomLookItem::query()->create([
+            'look_id' => $look->getKey(),
+            'product_variant_id' => $variants['REMAP-ORIGINAL-BOTTOM']->getKey(),
+            'slot' => 'bottom',
+            'fit_y' => 0.66,
+            'is_active' => true,
+            'sort_order' => 20,
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.try-on.index'))
+            ->put(route('commerce-admin.try-on.looks.update', $look), [
+                'mannequin_id' => $mannequin->getKey(),
+                'code' => $look->code,
+                'label' => 'Changed top without new scenes',
+                'top_variant_id' => $variants['REMAP-REPLACEMENT-TOP']->getKey(),
+                'bottom_variant_id' => $variants['REMAP-ORIGINAL-BOTTOM']->getKey(),
+                'fit_y_top' => 0.38,
+                'fit_y_bottom' => 0.66,
+                'is_active' => '1',
+            ])
+            ->assertSessionHasErrors('preview_top');
+
+        $this->actingAs($admin)
+            ->from(route('commerce-admin.try-on.index'))
+            ->put(route('commerce-admin.try-on.looks.update', $look), [
+                'mannequin_id' => $mannequin->getKey(),
+                'code' => $look->code,
+                'label' => 'Changed top with only a new top scene',
+                'top_variant_id' => $variants['REMAP-REPLACEMENT-TOP']->getKey(),
+                'bottom_variant_id' => $variants['REMAP-ORIGINAL-BOTTOM']->getKey(),
+                'fit_y_top' => 0.38,
+                'fit_y_bottom' => 0.66,
+                'is_active' => '1',
+                'preview_top' => \Illuminate\Http\UploadedFile::fake()->image('replacement-top.jpg', 420, 630),
+            ])
+            ->assertSessionHasErrors('preview_combined');
+
+        $this->assertDatabaseHas('fitting_room_look_items', [
+            'look_id' => $look->getKey(),
+            'slot' => 'top',
+            'product_variant_id' => $variants['REMAP-ORIGINAL-TOP']->getKey(),
+        ]);
+        $this->assertDatabaseHas('fitting_room_looks', [
+            'id' => $look->getKey(),
+            'preview_top_media_id' => $scenes['preview_top']->getKey(),
+            'preview_combined_media_id' => $scenes['preview_combined']->getKey(),
+        ]);
     }
 }

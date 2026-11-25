@@ -23,6 +23,8 @@ Route::prefix('admin')->as('commerce-admin.')->group(function (): void {
     Route::middleware(EnsureAdmin::class)->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/homepage', [\App\Http\Controllers\Admin\HomepageController::class, 'index'])->name('homepage.index');
+        Route::put('/homepage/images/{type}/{owner}', [\App\Http\Controllers\Admin\HomepageImageController::class, 'update'])->whereIn('type', ['product', 'variant', 'category', 'brand'])->whereNumber('owner')->name('homepage.images.update');
+        Route::delete('/homepage/images/{type}/{owner}', [\App\Http\Controllers\Admin\HomepageImageController::class, 'destroy'])->whereIn('type', ['product', 'variant', 'category', 'brand'])->whereNumber('owner')->name('homepage.images.destroy');
         Route::put('/homepage/trust/{slot}', [\App\Http\Controllers\Admin\HomepageController::class, 'update'])->name('homepage.trust.update');
         Route::delete('/homepage/trust/{slot}', [\App\Http\Controllers\Admin\HomepageController::class, 'destroy'])->name('homepage.trust.destroy');
         Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');

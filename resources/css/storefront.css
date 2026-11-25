@@ -1265,13 +1265,15 @@ body.storefront-body {
 
 /* Homepage header: keep the shared navigation functional, but align it to the reference. */
 body.storefront-home-body .store-shell {
+    position: relative;
     width: 100%;
+    max-width: none;
     min-height: 100vh;
     margin: 0;
-    overflow: clip;
+    overflow: visible;
     border: 0;
     border-radius: 0;
-    background: linear-gradient(90deg, #ff9a1b 0 50%, #202020 50% 100%);
+    background: transparent;
     box-shadow: none;
 }
 body.storefront-home-body .store-atmosphere { display: none; }
@@ -1501,18 +1503,7 @@ body.storefront-home-body .store-icon-button { border-color: rgba(255,255,255,.1
     line-height: 1.8;
 }
 
-body.storefront-home-body .store-shell {
-    position: relative;
-    width: 100%;
-    max-width: none;
-    min-height: 100vh;
-    margin: 0;
-    overflow: clip;
-    border: 0;
-    border-radius: 0;
-    background: linear-gradient(145deg, #ff4e05 0%, #ff7100 37%, #ff9700 72%, #ffc20b 100%);
-    box-shadow: none;
-}
+
 body.storefront-home-body .store-atmosphere, body.storefront-home-body > .store-header {
     display: none !important;
 }
