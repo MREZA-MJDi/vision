@@ -26,9 +26,8 @@ class FittingRoomShopData
         $catalog = ProductVariant::query()
             ->select('product_variants.*')
             ->join('products', 'products.id', '=', 'product_variants.product_id')
-            ->where('products.is_active', true)
             ->whereNull('products.deleted_at')
-            ->where('product_variants.is_active', true);
+            ->when(!$preview, fn ($query) => $query->where('products.is_active', true)->where('product_variants.is_active', true));
 
         $price = 'CASE WHEN product_variants.sale_price >= 0 AND product_variants.sale_price < product_variants.price THEN product_variants.sale_price ELSE product_variants.price END';
         $categories = Category::query()
@@ -39,7 +38,8 @@ class FittingRoomShopData
         $primaryVariant = ProductVariant::query()
             ->select('product_variants.id')
             ->whereColumn('product_variants.product_id', 'products.id')
-            ->active()
+            ->when(!$preview, fn ($query) => $query->active())
+            ->orderByRaw('CASE WHEN product_variants.is_active = 1 THEN 0 ELSE 1 END')
             ->orderByRaw('CASE WHEN product_variants.stock > 0 THEN 0 ELSE 1 END')
             ->orderBy('product_variants.sort_order')
             ->orderBy('product_variants.id')
@@ -127,6 +127,7 @@ class FittingRoomShopData
         return [
             'products' => $products,
             'categories' => $categories,
+            'previewModels' => $request?->user()?->isAdmin() ? FittingRoomMannequin::query()->with('baseMedia')->orderBy('sort_order')->orderBy('id')->get()->filter(fn ($model) => (bool) $model->baseMedia?->url)->map(fn ($model) => ['code' => $model->code, 'label' => $model->label])->values() : collect(),
             'filters' => [
                 'q' => $search,
                 'brand' => $brand,
@@ -139,6 +140,7 @@ class FittingRoomShopData
             ],
             'studio' => [
                 'previewFit' => (bool) $request?->user()?->isAdmin(),
+                'previewOnly' => $preview,
                 'favs' => array_values(array_unique(array_map('intval', (array) ($request?->session()->get('shop_favourites', []))))),
                 'currency' => (string) config('commerce-admin.currency_symbol', 'تومان'),
                 'routes' => [
@@ -158,7 +160,7 @@ class FittingRoomShopData
         $mannequin = $this->publicMannequin($previewModel);
         abort_unless($mannequin, 404);
 
-        $items = $this->fittingItems($mannequin, [], $previewModel !== null)
+        $items = $this->fittingItems($mannequin, $this->missingSceneMediaIds($mannequin, $previewModel !== null), $previewModel !== null)
             ->with([
                 'look.previewTopMedia',
                 'look.previewBottomMedia',
@@ -244,9 +246,9 @@ class FittingRoomShopData
         $hasPhoto = static fn ($media) => $media->whereRaw("TRIM(path) <> ''")
             ->whereIntegerNotInRaw('media.id', $missingSceneMediaIds);
 
-        return FittingRoomLookItem::query()->where('fitting_room_look_items.is_active', true)
-            ->whereHas('variant', fn ($variant) => $variant->active()->whereHas('product', fn ($product) => $product
-                ->active()->when($mannequin->audience !== 'all', fn ($audience) => $audience->where('audience', $mannequin->audience))))
+        return FittingRoomLookItem::query()->when(!$preview, fn ($query) => $query->where('fitting_room_look_items.is_active', true))
+            ->whereHas('variant', fn ($variant) => $variant->when(!$preview, fn ($query) => $query->active())->whereHas('product', fn ($product) => $product
+                ->when(!$preview, fn ($query) => $query->active())->when($mannequin->audience !== 'all', fn ($audience) => $audience->where('audience', $mannequin->audience))))
             ->whereHas('look', fn ($look) => $look->when(!$preview, fn ($query) => $query->active())->where('mannequin_id', $mannequin->id))
             ->where(fn ($slot) => $slot
                 ->where(fn ($top) => $top->where('slot', 'top')->whereHas('look.previewTopMedia', $hasPhoto))
@@ -271,6 +273,7 @@ class FittingRoomShopData
             'img' => $image,
             'frame' => $media?->cardFrame() ?? Media::DEFAULT_CARD_FRAME,
             'stock' => $variant->stock,
+            'published' => $variant->is_active && $product->is_active,
         ];
     }
 
