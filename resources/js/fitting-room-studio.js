@@ -66,7 +66,9 @@ if (studio) {
                 picker.value = '';
                 clearFile(picker.closest('.fr-assignment').querySelector('[data-fr-preview-input]'));
             }
-            updateCard(picker.closest('.fr-assignment'));
+            if (changed !== 'search' && (changed === null || changed === 'model' || picker.name.startsWith(changed))) {
+                updateCard(picker.closest('.fr-assignment'));
+            }
         }
         const hasTop = Boolean(top.value), hasBottom = Boolean(bottom.value);
         const requirements = { preview_top: hasTop, preview_bottom: hasBottom, preview_combined: hasTop && hasBottom };
@@ -96,7 +98,7 @@ if (studio) {
 
     studio.addEventListener('input', event => {
         if (event.target.matches('[data-fr-frame]')) updateFrame(event.target.closest('.fr-assignment'));
-        if (event.target.matches('[data-fr-picker-search]')) syncLook(event.target.closest('form'));
+        if (event.target.matches('[data-fr-picker-search]')) syncLook(event.target.closest('form'), 'search');
     });
 
     studio.addEventListener('click', event => {
