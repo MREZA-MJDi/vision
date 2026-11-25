@@ -61,6 +61,7 @@ final class HeroService
 
                     return [
                         'productId' => $product->getKey(),
+                        'variantId' => $variant->getKey(),
                         'title' => $product->name,
                         'description' => Str::limit($product->short_description ?: $product->description ?: 'انتخابی از فروشگاه VISION.', 220),
                         'image' => $variant->primaryGalleryMedia?->url ?: $product->primaryGalleryMedia?->url,
