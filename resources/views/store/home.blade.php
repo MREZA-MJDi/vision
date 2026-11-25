@@ -12,9 +12,8 @@
 @endphp
 
 <main class="store-main store-home">
-    <section class="home-hero" aria-labelledby="home-hero-title" data-home-hero
+    <section class="home-hero home-hero__frame" aria-labelledby="home-hero-title" data-home-hero
              style="--home-hero-base: {{ $featured['theme'] ?? '#9a5527' }}">
-        <div class="home-hero__frame">
             <header class="home-hero__header">
                 <a class="home-hero__brand" href="{{ route('storefront.index') }}" aria-label="صفحهٔ اصلی VISION">VISION</a>
                 <nav class="home-hero__nav" aria-label="ناوبری اصلی">
@@ -95,14 +94,10 @@
                 @endif
             </div>
 
-
-        </div>
     </section>
 
-    <div class="home-page-content">
-    @include('store.home.brands')
-
     @include('store.home.identity')
+    @include('store.home.brands')
     @include('store.home.categories')
 
     @include('store.home.product-section', [
@@ -124,7 +119,6 @@
     @include('store.home.trust')
 
     @include('store.home.shop-finale')
-    </div>
     @include('store.home-cart-link', ['floating' => true])
 </main>
 @endsection
