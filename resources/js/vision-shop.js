@@ -7,7 +7,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
 
   const S = JSON.parse(studioData.textContent);
   let P = [];
-  const canTry = product => Number(product?.stock || 0) > 0 || S.previewFit === true;
+  const canTry = product => Boolean(product?.scene && product?.slot);
   const canBuySet = () => W.size > 0 && [...W].every(id => Number(P.find(p => Number(p.id) === Number(id))?.stock || 0) > 0);
   let studio = null;
   let studioRequest = null;

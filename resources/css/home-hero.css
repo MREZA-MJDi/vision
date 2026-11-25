@@ -324,16 +324,21 @@ body.storefront-home-body {
 
 .home-product-card__body { display: grid; grid-template-rows: minmax(3em,1fr) auto auto; align-content: start; gap: 7px; padding: 14px; overflow-wrap: anywhere; }
 .home-product-card__body button {
-    justify-self: stretch;
+    justify-self: start;
+    display: grid;
+    place-items: center;
+    width: 44px;
     min-height: 44px;
     margin-block-start: 5px;
-    padding-inline: 12px;
+    padding: 0;
     color: #fff;
     background: #343a40;
     border: 1px solid #343a40;
-    border-radius: 8px;
+    border-radius: 50%;
 }
 .home-product-card__body button:hover { background: #505860; }
+.home-product-card__body button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.home-product-card__body button:focus-visible { outline: 3px solid #d9742b; outline-offset: 3px; }
 .home-product-card__body span { color: var(--home-muted); font-size: .875rem; }
 
 .home-category-tile {
@@ -674,3 +679,27 @@ body.storefront-home-body { color-scheme: light; }
 .storefront-home-body .vision-footer__main,.storefront-home-body .vision-footer__bottom{max-width:calc(var(--vision-shell) - 2 * var(--vision-gutter))}
 .home-shop-finale{border-block-end:0}
 @media(max-width:620px){.storefront-home-body .store-main.store-home{padding:12px}.home-product-card__body{padding:10px;gap:6px}.home-product-card__body button{font-size:12px;padding-inline:6px}.home-hero{padding:14px}.home-hero__nav{background:transparent}}
+
+/* Keep the supporting editorial products compact beside the featured look. */
+.home-feature-edit__more {
+    width: min(100%, 960px);
+    margin-inline: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(10px, 1.5vw, 18px);
+}
+.home-feature-edit__more .home-product-card__image {
+    --store-media-ratio: 1 / 1;
+    --store-media-inset: clamp(14px, 6%, 22px);
+}
+.home-feature-edit__more .home-product-card__body {
+    grid-template-rows: minmax(2.8em, auto) auto auto;
+    gap: 6px;
+    padding: 12px;
+}
+.home-feature-edit__more .home-product-card__body strong { min-height: 2.8em; }
+@media (max-width: 760px) {
+    .home-feature-edit__more { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 350px) {
+    .home-feature-edit__more { grid-template-columns: minmax(0, 1fr); max-width: 300px; }
+}

@@ -4,7 +4,7 @@
                 aria-label="علاقه‌مندی {{ $product['name'] }}" aria-pressed="{{ $isFavourite ? 'true' : 'false' }}">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>
         </button>
-        @if($product['fitReady'] && ($product['stock'] > 0 || ($studio['previewFit'] ?? false)))
+        @if($product['fitReady'])
             <button type="button" class="try" title="پرو لباس" data-t="{{ $product['id'] }}" aria-controls="fit"
                     aria-label="امتحان {{ $product['name'] }} روی مانکن" aria-pressed="false">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5V5.8a2.3 2.3 0 1 0-2.3-2.3"/><path d="m12 8.5-8.3 4.7a1.6 1.6 0 0 0 .8 3h15a1.6 1.6 0 0 0 .8-3L12 8.5Z"/></svg>

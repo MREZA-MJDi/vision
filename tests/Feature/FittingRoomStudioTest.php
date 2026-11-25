@@ -290,6 +290,17 @@ class FittingRoomStudioTest extends TestCase
         $this->getJson(route('shop.studio'))->assertOk()
             ->assertJsonPath('suggestions.' . $variant->id, $look->previewSuggestedMedia->url);
 
+        // A valid scene can be previewed even when it cannot be purchased.
+        $variant->update(['stock' => 0]);
+        $customer = User::factory()->create();
+        $this->actingAs($customer)->get(route('shop.index'))->assertOk()
+            ->assertSee('data-t="' . $variant->id . '"', false)
+            ->assertDontSee('data-c="' . $variant->id . '"', false);
+        $this->getJson(route('shop.studio'))->assertOk()
+            ->assertJsonPath('garments.0.stock', 0);
+        $variant->update(['stock' => 4]);
+        $this->actingAs($admin);
+
         $this->put(route('commerce-admin.try-on.looks.update', $look), $fields + [
             'is_active' => 1,
             'top_card_frame' => ['scale' => 130, 'x' => 0, 'y' => 0],
