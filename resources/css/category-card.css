@@ -1,0 +1,19 @@
+/* Shared image framing for storefront and catalog administration. */
+.vision-category-card__caption {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    display: grid;
+    gap: 4px;
+    padding: clamp(12px, 2vw, 26px);
+    color: #fff;
+    text-align: start;
+    line-height: 1.5;
+    z-index: 1;
+    background: linear-gradient(transparent, rgb(29 23 18 / 78%));
+    padding-block-start: clamp(36px, 6vw, 92px);
+    pointer-events: none;
+}
+.vision-category-card__caption small { color: #f2e3cb; font-size: .68rem; font-weight: 500; }
+.vision-category-card__caption strong { color: #fff; font-size: clamp(.95rem, 2vw, 1.7rem); font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.vision-category-card__caption > span { color: #fff4e3; font-size: .75rem; }

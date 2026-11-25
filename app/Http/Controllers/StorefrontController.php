@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Brand;
-use App\Models\Category;
 use App\Models\Product;
 use App\Services\FittingRoomShopData;
 use App\Services\HeroService;
@@ -16,32 +14,7 @@ class StorefrontController extends Controller
 {
     public function home(HeroService $hero): View
     {
-        $heroProducts = $this->catalogProducts()
-            ->where('is_hero', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->limit(HeroService::MAX_HOME_PRODUCTS)
-            ->get();
-
-        $heroProducts->loadMissing(['activeVariants.primaryGalleryMedia']);
-        $heroSlides = $hero->storefrontSlides($heroProducts);
-
-        $newProducts = $this->catalogProducts()
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->limit(10)
-            ->get();
-
-        $homeCategories = Category::query()
-            ->active()
-            ->whereHas('products', fn (Builder $query) => $query->active()->whereHas('activeVariants'))
-            ->with('coverMedia')
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->limit(6)
-            ->get();
-
-        return view('store.home', compact('heroProducts', 'heroSlides', 'newProducts', 'homeCategories'));
+        return view('store.home', app(\App\Services\HomepageContent::class)->data($hero));
     }
 
     public function index(Request $request): View
@@ -49,9 +22,10 @@ class StorefrontController extends Controller
         return view('store.index', app(FittingRoomShopData::class)->payload($request));
     }
 
-    public function studio(FittingRoomShopData $shop): JsonResponse
+    public function studio(FittingRoomShopData $shop, Request $request): JsonResponse
     {
-        return response()->json($shop->studio());
+        $response = response()->json($shop->studio($request));
+        return $response->header('Cache-Control', 'private, no-store');
     }
 
     /**
@@ -105,23 +79,4 @@ class StorefrontController extends Controller
         return view('store.products.show', compact('product', 'relatedProducts', 'selectedVariantId'));
     }
 
-    /**
-     * A bounded, eager-loaded base query shared by the homepage and catalog.
-     * The card templates never need per-product follow-up queries.
-     */
-    private function catalogProducts(): Builder
-    {
-        return Product::query()
-            ->active()
-            ->whereHas('activeVariants')
-            ->withAvg('approvedReviews as approved_reviews_avg_rating', 'rating')
-            ->withCount('approvedReviews')
-            ->with([
-                'category',
-                'brand',
-                'primaryGalleryMedia',
-                'primaryAvailableVariant.primaryGalleryMedia',
-                'primaryActiveVariant.primaryGalleryMedia',
-            ]);
-    }
 }

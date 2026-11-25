@@ -1,176 +1,146 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Brand;
-use App\Support\SeoDefaults;
-use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\Admin\SaveBrandRequest;
+use App\Services\Catalog\BrandService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
-class BrandController
+final class BrandController
 {
-    private function model(): string
-    {
-        return (string) config('commerce-admin.models.brand', Brand::class);
-    }
+    public function __construct(
+        private readonly BrandService $brands,
+    ) {}
 
     public function index(Request $request): View
     {
-        $model = $this->model();
-        $search = trim((string) $request->query('q', ''));
-        $status = (string) $request->query('status', 'all');
-        $query = $model::query()->withCount('products');
+        $model = $this->brands->model();
 
-        if ($search !== '') {
-            $query->where(fn ($q) => $q->where('name', 'like', '%' . $search . '%')
-                ->orWhere('slug', 'like', '%' . $search . '%'));
-        }
+        $search = mb_substr(
+            trim($request->string('q')->toString()),
+            0,
+            120
+        );
 
-        if ($status === 'active') {
-            $query->where('is_active', true);
-        } elseif ($status === 'inactive') {
-            $query->where('is_active', false);
-        } else {
+        $status = $request->string('status', 'all')->toString();
+
+        if (! in_array($status, ['all', 'active', 'inactive'], true)) {
             $status = 'all';
         }
 
-        $items = $query->orderBy('name')
-            ->paginate((int) config('commerce-admin.items_per_page', 10))
+        $items = $model::query()
+            ->with('logoMedia')
+            ->withCount('products')
+            ->when(
+                $search !== '',
+                fn ($query) => $query->where(
+                    fn ($q) => $q
+                        ->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('slug', 'like', '%' . $search . '%')
+                )
+            )
+            ->when(
+                $status !== 'all',
+                fn ($query) => $query->where(
+                    'is_active',
+                    $status === 'active'
+                )
+            )
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate((int) config(
+                'commerce-admin.items_per_page',
+                10
+            ))
             ->withQueryString();
 
         $stats = [
             'all' => $model::query()->count(),
-            'active' => $model::query()->where('is_active', true)->count(),
+            'active' => $model::query()
+                ->where('is_active', true)->count(),
             'used' => $model::query()->whereHas('products')->count(),
         ];
 
-        return view('commerce-admin::catalog.taxonomy-index', [
-            'items' => $items,
-            'search' => $search,
-            'status' => $status,
-            'stats' => $stats,
-            'type' => 'brands',
-            'taxonomyTitle' => 'برند',
-            'taxonomyPlural' => 'برندها',
-            'routePrefix' => 'commerce-admin.brands',
-            'showParent' => false,
-        ]);
+        return view('commerce-admin::brands.index', compact(
+            'items',
+            'search',
+            'status',
+            'stats',
+        ));
     }
 
     public function create(): View
     {
-        $model = $this->model();
+        $model = $this->brands->model();
 
-        return $this->formView(new $model(), false);
+        return view('commerce-admin::brands.create', [
+            'record' => new $model(),
+        ]);
     }
 
-    public function store(SaveBrandRequest $request): RedirectResponse
-    {
-        $model = $this->model();
-        $record = new $model();
-        $data = $request->validated();
+    public function store(
+        SaveBrandRequest $request
+    ): RedirectResponse {
+        $model = $this->brands->model();
 
-        DB::transaction(function () use ($record, $data, $model): void {
-            $record->fill([
-                'name' => $data['name'],
-                'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name']),
-                'description' => $data['description'] ?? null,
-                'meta_title' => SeoDefaults::title((string) $data['name'], $data['meta_title'] ?? null),
-                'meta_description' => SeoDefaults::description((string) $data['name'], $data['meta_description'] ?? null, $data['description'] ?? null),
-                'is_active' => ($data['status'] ?? 'active') === 'active',
-            ]);
-            $record->save();
-        });
+        $this->brands->save(
+            new $model(),
+            $request->validated(),
+            $request->file('logo_image')
+        );
 
-        return redirect()->route('commerce-admin.brands.index')
+        return redirect()
+            ->route('commerce-admin.brands.index')
             ->with('status', 'برند با موفقیت ایجاد شد.');
     }
 
     public function edit(int $brand): View
     {
-        $model = $this->model();
-        $record = $model::query()->findOrFail($brand);
+        $model = $this->brands->model();
 
-        return $this->formView($record, true);
+        return view('commerce-admin::brands.edit', [
+            'record' => $model::query()
+                ->with('logoMedia')
+                ->findOrFail($brand),
+        ]);
     }
 
-    public function update(SaveBrandRequest $request, int $brand): RedirectResponse
-    {
-        $model = $this->model();
-        $record = $model::query()->findOrFail($brand);
-        $data = $request->validated();
+    public function update(
+        SaveBrandRequest $request,
+        int $brand
+    ): RedirectResponse {
+        $model = $this->brands->model();
 
-        DB::transaction(function () use ($record, $data, $model): void {
-            $record->fill([
-                'name' => $data['name'],
-                'slug' => $this->resolveSlug($model, $data['slug'] ?? '', $data['name'], $record->getKey(), $record->slug),
-                'description' => $data['description'] ?? null,
-                'meta_title' => SeoDefaults::title((string) $data['name'], $data['meta_title'] ?? null),
-                'meta_description' => SeoDefaults::description((string) $data['name'], $data['meta_description'] ?? null, $data['description'] ?? null),
-                'is_active' => ($data['status'] ?? 'active') === 'active',
-            ]);
-            $record->save();
-        });
+        $this->brands->save(
+            $model::query()->findOrFail($brand),
+            $request->validated(),
+            $request->file('logo_image')
+        );
 
-        return redirect()->route('commerce-admin.brands.index')
+        return redirect()
+            ->route('commerce-admin.brands.index')
             ->with('status', 'تغییرات برند ذخیره شد.');
     }
 
     public function destroy(int $brand): RedirectResponse
     {
-        $model = $this->model();
-        $record = $model::query()->findOrFail($brand);
+        $model = $this->brands->model();
 
-        if ($record->products()->withTrashed()->exists()) {
-            $record->forceFill(['is_active' => false])->save();
+        $deleted = $this->brands->destroy(
+            $model::query()->findOrFail($brand)
+        );
 
-            return redirect()->route('commerce-admin.brands.index')
-                ->with('status', 'این برند به محصول متصل است؛ برای حفظ ارتباط‌ها غیرفعال شد.');
-        }
-
-        $record->delete();
-
-        return redirect()->route('commerce-admin.brands.index')
-            ->with('status', 'برند حذف شد.');
-    }
-
-    private function formView(object $record, bool $editing): View
-    {
-        return view('commerce-admin::catalog.taxonomy-form', [
-            'record' => $record,
-            'editing' => $editing,
-            'type' => 'brands',
-            'taxonomyTitle' => 'برند',
-            'routePrefix' => 'commerce-admin.brands',
-            'parents' => collect(),
-            'showParent' => false,
-        ]);
-    }
-
-    private function resolveSlug(string $model, string $requestedSlug, string $name, ?int $ignoreId = null, ?string $currentSlug = null): string
-    {
-        $requestedSlug = trim($requestedSlug);
-        if ($requestedSlug === '' && $currentSlug !== null) {
-            return $currentSlug;
-        }
-
-        $base = Str::slug($requestedSlug !== '' ? $requestedSlug : $name);
-        if ($base === '') {
-            $base = 'brand-' . Str::lower(Str::random(8));
-        }
-
-        $candidate = $base;
-        $suffix = 2;
-        while ($model::withTrashed()->where('slug', $candidate)
-            ->when($ignoreId, fn ($query) => $query->where($query->getModel()->getKeyName(), '<>', $ignoreId))
-            ->exists()) {
-            $candidate = $base . '-' . $suffix++;
-        }
-
-        return $candidate;
+        return redirect()
+            ->route('commerce-admin.brands.index')
+            ->with(
+                'status',
+                $deleted
+                    ? 'برند حذف شد.'
+                    : 'برند دارای محصول است و غیرفعال شد.'
+            );
     }
 }

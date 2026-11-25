@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" @if(request()->routeIs('shop.index', 'products.index')) class="vision-shop-document" @endif>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,6 +48,9 @@
         @endif
     @elseif (app()->environment('testing'))
         {{-- Feature tests assert rendered storefront markup without requiring a Vite build. --}}
+    @endif
+    @if(request()->routeIs('shop.index', 'products.index'))
+        <script>document.documentElement.classList.add('shop-js');</script>
     @endif
     @stack('styles')
 </head>

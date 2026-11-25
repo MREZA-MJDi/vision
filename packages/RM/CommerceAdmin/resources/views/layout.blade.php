@@ -47,6 +47,8 @@
 <a class="{{ request()->routeIs('commerce-admin.orders.index','commerce-admin.orders.create') ? 'is-active' : '' }}" href="{{ route('commerce-admin.orders.index') }}">فهرست سفارش‌ها</a>
 <a class="{{ request()->routeIs('commerce-admin.orders.show') ? 'is-active' : '' }}" href="{{ request()->routeIs('commerce-admin.orders.show') ? url()->current() : route('commerce-admin.orders.index') }}">جزئیات سفارش</a>
 </div>
+<div class="ak-nav-caption">مدیریت محتوا</div>
+<a class="ak-nav-link {{ request()->routeIs('commerce-admin.homepage.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.homepage.index') }}"><span class="ak-nav-icon" aria-hidden="true">▧</span><span>تصاویر صفحه اصلی</span></a>
 <div class="ak-nav-caption">مدیریت عملیات</div>
 <a class="ak-nav-link {{ request()->routeIs('commerce-admin.payments.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.payments.index') }}"><span class="ak-nav-icon" aria-hidden="true">◷</span><span>پرداخت‌ها</span></a>
 <a class="ak-nav-link {{ request()->routeIs('commerce-admin.inventory.*') ? 'is-active' : '' }}" href="{{ route('commerce-admin.inventory.index') }}"><span class="ak-nav-icon" aria-hidden="true">▣</span><span>انبار و موجودی</span></a>
