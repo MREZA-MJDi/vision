@@ -41,10 +41,62 @@ if (studio) {
         updateFrame(assignment, newFile?.valid ? {} : card.frame);
     }
 
-    studio.querySelectorAll('.fr-assignment').forEach(updateCard);
+    const clearFile = input => {
+        if (!input || !input.files.length) return;
+        input.value = '';
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    function syncLook(form, changed = null) {
+        const model = form.querySelector('[data-fr-model]');
+        if (!model) return;
+        const audience = model.selectedOptions[0]?.dataset.audience;
+        const top = form.querySelector('[name="top_variant_id"]');
+        const bottom = form.querySelector('[name="bottom_variant_id"]');
+        for (const picker of [top, bottom]) {
+            const search = picker.closest('.fr-assignment').querySelector('[data-fr-picker-search]');
+            const query = search?.value.trim().toLocaleLowerCase('fa') || '';
+            for (const option of picker.options) {
+                if (!option.value) continue;
+                const compatible = audience === 'all' || option.dataset.audience === audience;
+                option.disabled = !compatible;
+                option.hidden = !compatible || (option.value !== picker.value && !option.textContent.toLocaleLowerCase('fa').includes(query));
+            }
+            if (changed === 'model' && picker.selectedOptions[0]?.disabled) {
+                picker.value = '';
+                clearFile(picker.closest('.fr-assignment').querySelector('[data-fr-preview-input]'));
+            }
+            updateCard(picker.closest('.fr-assignment'));
+        }
+        const hasTop = Boolean(top.value), hasBottom = Boolean(bottom.value);
+        const requirements = { preview_top: hasTop, preview_bottom: hasBottom, preview_combined: hasTop && hasBottom };
+        for (const input of form.querySelectorAll('[data-fr-scene]')) {
+            const needed = requirements[input.name];
+            const stale = changed === 'model'
+                || (changed === 'top' && ['preview_top', 'preview_combined', 'preview_suggested'].includes(input.name))
+                || (changed === 'bottom' && ['preview_bottom', 'preview_combined', 'preview_suggested'].includes(input.name));
+            if (stale) {
+                input.dataset.existing = '0';
+                clearFile(input);
+                const old = input.closest('label').querySelector('.fr-scene-current');
+                if (old) old.hidden = true;
+            }
+            if (needed !== undefined) {
+                input.disabled = !needed;
+                input.required = needed && input.dataset.existing !== '1';
+                input.closest('label').hidden = !needed;
+                if (!needed) clearFile(input);
+            }
+        }
+        top.setCustomValidity(hasTop || hasBottom ? '' : 'حداقل یک لباس انتخاب کنید.');
+        bottom.setCustomValidity(hasTop && top.value === bottom.value ? 'دو لباس باید متفاوت باشند.' : '');
+    }
+
+    studio.querySelectorAll('form:has([data-fr-model])').forEach(form => syncLook(form));
 
     studio.addEventListener('input', event => {
         if (event.target.matches('[data-fr-frame]')) updateFrame(event.target.closest('.fr-assignment'));
+        if (event.target.matches('[data-fr-picker-search]')) syncLook(event.target.closest('form'));
     });
 
     studio.addEventListener('click', event => {
@@ -55,8 +107,13 @@ if (studio) {
     studio.addEventListener('change', (event) => {
         const input = event.target;
         const assignment = input.closest('.fr-assignment');
+        if (input.matches('[data-fr-model]')) {
+            syncLook(input.closest('form'), 'model');
+            return;
+        }
         if (input.matches('[data-fr-variant]')) {
-            updateCard(assignment);
+            clearFile(assignment.querySelector('[data-fr-preview-input]'));
+            syncLook(input.closest('form'), input.name.startsWith('top') ? 'top' : 'bottom');
             return;
         }
         if (!input.matches('[data-fr-preview-input]')) return;
