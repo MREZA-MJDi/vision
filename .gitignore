@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local initial catalog source assets (never publish model photos to Git)
+/forvision/
+/forvision.zip
