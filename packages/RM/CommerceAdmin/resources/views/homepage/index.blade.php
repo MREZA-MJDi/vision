@@ -71,14 +71,31 @@
 </section>
 @endforeach
 <section class="ak-panel ak-home-media">
-<h2>۷. اعتمادسازی — تصاویر مستقل</h2><p>تصاویر اختصاصی Home؛ فرمت WebP، حداکثر ۱۰ مگابایت، نسبت پیشنهادی مربع.</p>
-<div class="ak-home-media-grid">
+<h2>۷. اعتمادسازی — تصاویر مستقل</h2><p>JPG، PNG یا WebP؛ حداکثر ۱۰ مگابایت. قاب مربع پیشنهادی است؛ خروجی به WebP تبدیل می‌شود.</p>
+<div class="ak-home-media-grid ak-home-media-grid--trust">
 @foreach($trustImages as $slot => $image)
-    <article><img src="{{ $image['url'] }}" alt="" loading="lazy"><strong>{{ $image['label'] }}</strong>
+    <article>
+        <strong>{{ $image['label'] }}</strong>
+        <small>{{ $image['custom'] ? 'تصویر اختصاصی' : 'تصویر پیش‌فرض' }}</small>
         <form method="POST" enctype="multipart/form-data" action="{{ route('commerce-admin.homepage.trust.update', $slot) }}">
             @csrf @method('PUT')
-            <label class="ak-field"><span>تصویر جدید</span><input type="file" name="image" accept="image/webp" required></label>
-            <button class="ak-button ak-button-dark" type="submit">ذخیره</button>
+            <div class="rm-uploader rm-uploader--trust" data-rm-uploader data-existing-url="{{ $image['url'] }}" data-aspect="1" data-existing-crop="{{ $image['custom'] ? '1' : '0' }}">
+                <label class="ak-field"><span>انتخاب فایل تصویر</span><input type="file" name="image" accept="image/jpeg,image/png,image/webp" data-rm-input required></label>
+                <input type="hidden" data-rm-remove-input value="0">
+                <button type="button" class="rm-uploader__drop" data-rm-drop aria-label="انتخاب یا تغییر تصویر {{ $image['label'] }}">
+                    <img src="{{ $image['url'] }}" data-rm-preview alt="{{ $image['label'] }}">
+                    <span data-rm-placeholder hidden>انتخاب یا رها کردن تصویر</span>
+                </button>
+                <div class="rm-uploader__actions">
+                    <button type="button" data-rm-crop @disabled(!$image['custom'])>تنظیم کادر</button>
+                    <button type="button" data-rm-remove hidden>حذف انتخاب</button>
+                    <button type="button" data-rm-restore hidden>لغو تغییر</button>
+                </div>
+                <small data-rm-info aria-live="polite">حداکثر حجم خروجی ۱۰ مگابایت</small>
+                <p data-rm-error class="rm-uploader__error" role="alert" hidden></p>
+                @include('commerce-admin::components.media.image-cropper')
+            </div>
+            <button class="ak-button ak-button-dark" type="submit">ذخیره تصویر</button>
         </form>
         @if($image['custom'])
         <form method="POST" action="{{ route('commerce-admin.homepage.trust.destroy', $slot) }}">@csrf @method('DELETE')<button class="ak-button ak-button-light" type="submit">بازگشت به پیش‌فرض</button></form>
