@@ -17,9 +17,13 @@ class StorefrontController extends Controller
         return view('store.home', app(\App\Services\HomepageContent::class)->data($hero));
     }
 
-    public function index(Request $request): View
+    public function index(Request $request): \Illuminate\Http\Response
     {
-        return view('store.index', app(FittingRoomShopData::class)->payload($request));
+        $response = response()->view('store.index', app(FittingRoomShopData::class)->payload($request));
+        if ($request->user()?->isAdmin()) {
+            $response->header('Cache-Control', 'private, no-store');
+        }
+        return $response;
     }
 
     public function studio(FittingRoomShopData $shop, Request $request): JsonResponse
