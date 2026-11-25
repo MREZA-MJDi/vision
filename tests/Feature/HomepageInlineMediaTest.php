@@ -71,4 +71,40 @@ class HomepageInlineMediaTest extends TestCase
         $this->assertNull($category->fresh()->coverMedia);
         $this->assertSame([], Storage::disk('public')->allFiles());
     }
+
+    public function test_trust_image_upload_accepts_png_and_jpeg_and_normalizes_webp(): void
+    {
+        $this->withoutVite();
+        Storage::fake('public');
+        $admin = User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin);
+        $url = route('commerce-admin.homepage.trust.update', 'support');
+        $path = 'homepage/trust/support.webp';
+
+        $this->get(route('commerce-admin.homepage.index'))->assertOk()
+            ->assertSee('data-rm-uploader', false)
+            ->assertSee('image/jpeg,image/png,image/webp', false);
+
+        $this->put($url, ['image' => UploadedFile::fake()->image('support.png', 1200, 1200)])
+            ->assertRedirect(route('commerce-admin.homepage.index'));
+        Storage::disk('public')->assertExists($path);
+        $dimensions = getimagesize(Storage::disk('public')->path($path));
+        $this->assertSame('image/webp', $dimensions['mime']);
+        $this->assertSame(1024, $dimensions[0]);
+        $this->assertSame(1024, $dimensions[1]);
+        $this->get('/')->assertOk()->assertSee('homepage/trust/support.webp', false);
+
+        $this->put($url, ['image' => UploadedFile::fake()->image('support.jpg', 600, 600)])
+            ->assertRedirect(route('commerce-admin.homepage.index'));
+        $this->assertSame(600, getimagesize(Storage::disk('public')->path($path))[0]);
+        $before = Storage::disk('public')->get($path);
+        $this->put($url, ['image' => UploadedFile::fake()->create('invalid.txt', 1, 'text/plain')])
+            ->assertSessionHasErrors('image');
+        $this->assertSame($before, Storage::disk('public')->get($path));
+
+        $this->delete(route('commerce-admin.homepage.trust.destroy', 'support'))->assertRedirect();
+        Storage::disk('public')->assertMissing($path);
+        $this->get('/')->assertOk()->assertSee('images/home/trust/support.svg', false);
+    }
 }
