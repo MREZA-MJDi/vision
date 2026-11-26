@@ -2,14 +2,22 @@
 
 VISION is a Laravel 12 storefront backed by Eloquent, Blade and Vite. The reusable Commerce Admin UI kit contains Blade views and static CSS/JavaScript only; this application owns routes, controllers, authorization, configuration and database migrations.
 
+**Live storefront** · [sizenshop.com](https://sizenshop.com/)
+
+## Technical highlights
+
+- Persian RTL fashion storefront with server-rendered catalog filters and variant-aware pricing and stock.
+- Fitting Room Studio links curated mannequin looks to real product variants and validates stock when adding an outfit to the cart.
+- Database-backed guest and customer carts, with transactional checkout and an inventory audit trail.
+
 ## Customer routes
 
-- \`/\` and \`/shop\` — product discovery. The catalog uses server-rendered search, category and price filters, sorting and 12-card pages.
-- \`/products/{slug}\` — active product detail with selectable variants, current server-backed price and stock.
-- \`/cart\` — database-backed bag for guest sessions and signed-in customers.
-- \`/checkout\` — guest or signed-in checkout. The server validates availability and recalculates prices, tax and shipping.
-- \`/order-confirmation/{uuid}\` — confirmation for the order's unguessable public token.
-- \`/register\`, \`/login\`, \`/logout\`, \`/account\`, \`/account/orders/{id}\` — customer identity and private order history.
+- `/` and `/shop` — product discovery. The catalog uses server-rendered search, category and price filters, sorting and 12-card pages.
+- `/products/{slug}` — active product detail with selectable variants, current server-backed price and stock.
+- `/cart` — database-backed bag for guest sessions and signed-in customers.
+- `/checkout` — guest or signed-in checkout. The server validates availability and recalculates prices, tax and shipping.
+- `/order-confirmation/{uuid}` — confirmation for the order's unguessable public token.
+- `/register`, `/login`, `/logout`, `/account`, `/account/orders/{id}` — customer identity and private order history.
 
 When a customer signs in or registers, their guest bag is merged into their account bag. Checkout re-locks variants, checks stock, snapshots product/variant data, writes order items and a pending payment record, decrements stock, records inventory movements and clears the bag in a database transaction. The order confirmation link does not expose the customer's address or phone number.
 
@@ -21,7 +29,7 @@ Wishlist hearts are currently device-local. They are not synced across browsers 
 - The redesigned `/shop` page reads active products and variant pricing/media from the existing commerce models. Hanger actions appear only for variants mapped to a valid studio scene; the outfit add-to-cart action validates stock and adds all selected variants atomically.
 - The new `fitting_room_mannequins`, `fitting_room_looks`, and `fitting_room_look_items` tables replace the retired transparent-layer schema. The migration removes the old fitting-room tables and legacy try-on media records, but leaves product, variant, cart, order, inventory, and payment records intact.
 
-- \`/admin/login\` and \`/admin\` — protected by the configured administrator flag.
+- `/admin/login` and `/admin` — protected by the configured administrator flag.
 - Persian RTL administration using the local IRANYekanX font, with four live dashboard KPIs and a 12-month grouped sales/order chart.
 - Paginated product CRUD with variants, SKU validation, product and per-variant image uploads/cropping, grouped local-currency prices, taxable flag, and inventory audit trail.
 - Category and brand management with unique slugs and safe deactivation when products still reference a record.
@@ -30,9 +38,9 @@ Wishlist hearts are currently device-local. They are not synced across browsers 
 
 Create a customer account first, then promote an existing account to administrator from the project root:
 
-\`\`\`bash
+```bash
 php artisan commerce-admin:make-admin admin@example.com
-\`\`\`
+```
 
 The command changes only the configured administrator flag on an existing user by default. To create a new administrator deliberately, run `php artisan commerce-admin:make-admin admin@example.com --create`; it requests the name and a confirmed password interactively. No account is created without `--create`.
 
@@ -42,14 +50,14 @@ An optional `AdminSeeder` can bootstrap the first admin from environment values;
 
 The sample environment file exposes:
 
-\`\`\`dotenv
+```dotenv
 COMMERCE_ADMIN_CURRENCY=IRR
 COMMERCE_ADMIN_CURRENCY_SYMBOL="تومان"
 COMMERCE_ADMIN_TAX_RATE=0
 COMMERCE_ADMIN_SHIPPING_FLAT_RATE=0
-\`\`\`
+```
 
-Tax rate is fractional: \`0.08\` means 8%. Shipping is a fixed per-order amount. Both default to zero until explicitly configured. Product taxability is controlled by each product's \`is_taxable\` flag.
+Tax rate is fractional: `0.08` means 8%. Shipping is a fixed per-order amount. Both default to zero until explicitly configured. Product taxability is controlled by each product's `is_taxable` flag.
 
 **Money-unit caution:** `COMMERCE_ADMIN_CURRENCY` and `COMMERCE_ADMIN_CURRENCY_SYMBOL` are labels only; they do not convert values. Product prices, shipping, tax, orders, payments, and ledger records must use one explicitly agreed unit end to end. The sample uses ISO code `IRR` while displaying `تومان`; verify intended units against existing production records before changing either setting or integrating a payment gateway.
 
@@ -79,16 +87,16 @@ The commands are idempotent and do not delete unrelated records. Demo categories
 
 Requirements: PHP 8.2+, Composer, Node.js/npm, and a Laravel-supported database.
 
-\`\`\`bash
+```bash
 git clone https://github.com/MREZA-MJDi/vision.git
 cd vision
 composer install
 npm ci
-\`\`\`
+```
 
-Copy \`.env.example\` to \`.env\` (Windows CMD: \`copy .env.example .env\`; PowerShell: \`Copy-Item .env.example .env\`), create/configure your database, then run:
+Copy `.env.example` to `.env` (Windows CMD: `copy .env.example .env`; PowerShell: `Copy-Item .env.example .env`), create/configure your database, then run:
 
-\`\`\`bash
+```bash
 php artisan key:generate
 php artisan migrate
 php artisan vendor:publish --tag=commerce-admin-assets --force
@@ -96,18 +104,18 @@ npm install
 npm run build
 php artisan storage:link
 php artisan serve
-\`\`\`
+```
 
-Open \`http://127.0.0.1:8000\`. During frontend development, use \`npm run dev\` in a second terminal.
+Open `http://127.0.0.1:8000`. During frontend development, use `npm run dev` in a second terminal.
 
 ## Verification
 
 Run the application checks before merging or deploying:
 
-\`\`\`bash
+```bash
 php artisan test
 npm run build
-\`\`\`
+```
 
 The test suite covers public catalog browsing, customer cart/checkout, order totals, stock accounting, customer order privacy, administrator access, payment-state synchronization, and order-state transitions.
 
