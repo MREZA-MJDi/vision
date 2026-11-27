@@ -8,7 +8,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   const S = JSON.parse(studioData.textContent);
   let P = [];
   const canTry = product => Number(product?.stock || 0) > 0 || S.previewFit === true;
-  const canBuySet = () => W.size > 0 && [...W].every(id => Number(P.find(p => Number(p.id) === Number(id))?.stock || 0) > 0);
+  const canBuySet = () => !S.previewOnly && W.size > 0 && [...W].every(id => Number(P.find(p => Number(p.id) === Number(id))?.stock || 0) > 0);
   let studio = null;
   let studioRequest = null;
   let activation = 0;
@@ -307,6 +307,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
       '</button>'
     ).join("");
     $("#addset").disabled = addingSet || !canBuySet();
+    if (S.previewOnly) $("#addset").textContent = "فقط پیش‌نمایش مدیر";
     $("#strip").disabled = items.length === 0;
     syncCardActions();
     renderRecommendations();
@@ -536,7 +537,7 @@ import { flyToCart, pulseCartTarget } from "./cart-motion";
   }
 
   async function addOne(productId, trigger) {
-    if (trigger.disabled) return;
+    if (trigger.disabled || S.previewOnly) return;
     trigger.disabled = true;
     try {
       const response = await addToCart(S.routes.cart, { variant_id: productId, quantity: 1 });

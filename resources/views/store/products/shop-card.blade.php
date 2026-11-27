@@ -1,9 +1,11 @@
 <article class="shop-product-card" data-product="{{ $product['id'] }}">
     <div class="shop-product-side">
+        @unless($studio['previewOnly'] ?? false)
         <button type="button" class="fav {{ $isFavourite ? 'on' : '' }}" data-f="{{ $product['id'] }}"
                 aria-label="علاقه‌مندی {{ $product['name'] }}" aria-pressed="{{ $isFavourite ? 'true' : 'false' }}">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 8.8c0 5.1-8.5 10-8.5 10s-8.5-4.9-8.5-10A4.6 4.6 0 0 1 12 6.3a4.6 4.6 0 0 1 8.5 2.5Z"/></svg>
         </button>
+        @endunless
         @if($product['fitReady'] && ($product['stock'] > 0 || ($studio['previewFit'] ?? false)))
             <button type="button" class="try" title="پرو لباس" data-t="{{ $product['id'] }}" aria-controls="fit"
                     aria-label="امتحان {{ $product['name'] }} روی مانکن" aria-pressed="false">
@@ -14,7 +16,7 @@
     @if($product['rate'] !== null)
         <span class="shop-rate">★ {{ \App\Support\Money::persianDigits(str_replace('.', '٫', (string) $product['rate'])) }}</span>
     @endif
-    <a class="shop-pic product-media-frame" href="{{ $product['url'] }}" aria-label="مشاهدهٔ {{ $product['name'] }}"
+    <a class="shop-pic product-media-frame" href="{{ $product['published'] ? $product['url'] : route('commerce-admin.products.edit', $product['productId']) }}" aria-label="مشاهدهٔ {{ $product['name'] }}"
        style="--product-image-scale: {{ $product['frame']['scale'] / 100 }}; --product-image-x: {{ $product['frame']['x'] }}%; --product-image-y: {{ $product['frame']['y'] }}%">
         @if($product['img'])
             <img src="{{ $product['img'] }}" alt="{{ $product['name'] }}" loading="lazy" decoding="async">
@@ -23,7 +25,7 @@
         @endif
     </a>
     <div class="shop-product-details">
-        <a class="shop-product-name" href="{{ $product['url'] }}">{{ \App\Support\Money::persianDigits($product['title']) }}</a>
+        <a class="shop-product-name" href="{{ $product['published'] ? $product['url'] : route('commerce-admin.products.edit', $product['productId']) }}">{{ \App\Support\Money::persianDigits($product['title']) }}</a>
         @if($product['color'] !== '' || $product['size'] !== '')
             <span class="shop-product-colour">
                 @if($product['color'] !== '')
@@ -39,7 +41,9 @@
             @if($product['old'] !== null)<del>@money($product['old'])</del>@endif
             <strong>@money($product['price'])</strong>
         </div>
-        @if($product['stock'] > 0)
+        @if($studio['previewOnly'] ?? false)
+            <span class="shop-stock">{{ $product['published'] ? 'فقط پیش‌نمایش' : 'پیش‌نویس' }}</span>
+        @elseif($product['stock'] > 0)
             <button type="button" class="shop-cart-add" data-c="{{ $product['id'] }}" aria-label="افزودن {{ $product['name'] }} به سبد خرید">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 12H5.2L4 8Z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2M12 12v4m-2-2h4"/></svg>
             </button>

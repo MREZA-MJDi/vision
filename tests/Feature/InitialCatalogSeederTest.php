@@ -142,4 +142,42 @@ class InitialCatalogSeederTest extends TestCase
 
         $this->getJson(route('shop.studio'))->assertNotFound();
     }
+
+    public function test_admin_can_preview_unpublished_products_without_purchase_or_public_leak(): void
+    {
+        $this->withoutVite();
+        $this->fixture();
+        $manifest = json_decode(file_get_contents($this->source . '/manifest.json'), true, 512, JSON_THROW_ON_ERROR);
+        $manifest['models'][0]['base'] = 'item.png';
+        file_put_contents($this->source . '/manifest.json', json_encode($manifest, JSON_THROW_ON_ERROR));
+        (new InitialCatalogSeeder())->importFrom($this->source);
+
+        $product = Product::query()->where('slug', 'sizen-coat')->sole();
+        $variant = $product->variants()->sole();
+        $variant->update(['is_active' => false, 'stock' => 5, 'price' => 1290000]);
+        $model = FittingRoomMannequin::query()->sole();
+        $preview = ['preview_model' => $model->code];
+        $card = 'data-product="' . $variant->id . '"';
+
+        $this->get(route('shop.index', $preview))->assertOk()->assertDontSee($card, false);
+        $this->getJson(route('shop.studio', $preview))->assertNotFound();
+        $customer = \App\Models\User::factory()->create();
+        $this->actingAs($customer)->get(route('shop.index', $preview))->assertOk()->assertDontSee($card, false);
+
+        $admin = \App\Models\User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin)->get(route('shop.index'))->assertOk()->assertDontSee($card, false);
+        $response = $this->get(route('shop.index', $preview))->assertOk()
+            ->assertSee($card, false)
+            ->assertSee('data-t="' . $variant->id . '"', false)
+            ->assertDontSee('data-c="' . $variant->id . '"', false)
+            ->assertSee('پیش‌نویس');
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $this->getJson(route('shop.studio', $preview))->assertOk()
+            ->assertJsonPath('garments.0.id', $variant->id)
+            ->assertJsonPath('garments.0.published', false);
+        $this->assertFalse($product->fresh()->is_active);
+        $this->assertFalse($variant->fresh()->is_active);
+        $this->assertSame(5, $variant->fresh()->stock);
+    }
 }
